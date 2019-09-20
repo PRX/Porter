@@ -2,6 +2,11 @@
 AWSTemplateFormatVersion: "2010-09-09"
 Description: >
   TKTKTK
+Parameters:
+  AwsXraySdkLambdaLayerVersionArn:
+    Type: String
+  FfmepgLambdaLayerVersionArn:
+    Type: String
 Resources:
   # SNS
   ## Messages sent to this topic will be handled by a Lambda function which
