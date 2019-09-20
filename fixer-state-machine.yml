@@ -1,0 +1,1273 @@
+# etc/sample-step-functions.yml
+AWSTemplateFormatVersion: "2010-09-09"
+Description: >
+  TKTKTK
+Resources:
+  # SNS
+  ## Messages sent to this topic will be handled by a Lambda function which
+  ## executes the Step Functions state machine. The `input` to the state machine
+  ## execution will be the body of the SNS message. The SNS message must be
+  ## valic JSON.
+  SnsTopic:
+    Type: AWS::SNS::Topic
+  SnsTopicLambdaIamRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+            - Effect: Allow
+              Principal:
+                Service:
+                  - lambda.amazonaws.com
+              Action:
+                - sts:AssumeRole
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+      Path: "/"
+      Policies:
+        - PolicyName: XrayPolicy
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Effect: Allow
+                Action:
+                  - xray:PutTraceSegments
+                  - xray:PutTelemetryRecords
+                Resource:
+                  - "*"
+        - PolicyName: StepFunctionsPolicy
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Effect: Allow
+                Action:
+                  - states:StartExecution
+                Resource:
+                  - !Ref StateMachine
+      Tags:
+        - Key: Project
+          Value: Rexif
+        - Key: prx:cloudformation:stack-name
+          Value: !Ref AWS::StackName
+        - Key: prx:cloudformation:stack-id
+          Value: !Ref AWS::StackId
+  SnsTopicLambdaFunction:
+    Type: AWS::Lambda::Function
+    Properties:
+      Code:
+        ZipFile: |-
+          const AWS = require('aws-sdk');
+          const stepfunctions = new AWS.StepFunctions({ apiVersion: '2016-11-23' });
+
+          exports.handler = async (event) => {
+            const stateMachineArn = process.env.STATE_MACHINE_ARN;
+            const input = event.Records[0].Sns.Message;
+            await stepfunctions.startExecution({stateMachineArn, input}).promise();
+          };
+      Description: >
+        Relays SNS messages sent to a subscribed topic to a State Machine
+      Environment:
+        Variables:
+          ACCOUNT_ID: !Ref AWS::AccountId
+          STATE_MACHINE_ARN: !Ref StateMachine
+      Handler: index.handler
+      MemorySize: 128
+      Role: !GetAtt SnsTopicLambdaIamRole.Arn
+      Runtime: nodejs8.10
+      Tags:
+        - Key: Project
+          Value: Rexif
+        - Key: prx:cloudformation:stack-name
+          Value: !Ref AWS::StackName
+        - Key: prx:cloudformation:stack-id
+          Value: !Ref AWS::StackId
+      Timeout: 8
+  SnsTopicLambdaPermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      Action: lambda:InvokeFunction
+      FunctionName: !GetAtt SnsTopicLambdaFunction.Arn
+      Principal: sns.amazonaws.com
+      SourceArn: !Ref SnsTopic
+  SnsTopicLambdaSubscription:
+    Type: AWS::SNS::Subscription
+    Properties:
+      Endpoint: !GetAtt SnsTopicLambdaFunction.Arn
+      Protocol: lambda
+      TopicArn: !Ref SnsTopic
+  # Ingest Bucket
+  IngestBucket:
+    Type: AWS::S3::Bucket
+    DeletionPolicy: Retain
+    Properties:
+      LifecycleConfiguration:
+        Rules:
+          - ExpirationInDays: 1
+            Status: Enabled
+      Tags:
+        - Key: Project
+          Value: Rexif
+        - Key: prx:cloudformation:stack-name
+          Value: !Ref AWS::StackName
+        - Key: prx:cloudformation:stack-id
+          Value: !Ref AWS::StackId
+  # Ingest Lambda
+  IngestLambdaIamRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+            - Effect: Allow
+              Principal:
+                Service:
+                  - lambda.amazonaws.com
+              Action:
+                - sts:AssumeRole
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+      Path: "/"
+      Policies:
+        - PolicyName: XrayPolicy
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Effect: Allow
+                Action:
+                  - xray:PutTraceSegments
+                  - xray:PutTelemetryRecords
+                Resource:
+                  - "*"
+        - PolicyName: S3IngestBucketPolicy
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Effect: Allow
+                Action:
+                  - "s3:*"
+                Resource:
+                  - !Sub "arn:aws:s3:::${IngestBucket}"
+                  - !Sub "arn:aws:s3:::${IngestBucket}/*"
+        - PolicyName: S3CopyPolicy
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Effect: Allow
+                Action:
+                  - "s3:Get*"
+                Resource:
+                  - "*"
+      Tags:
+        - Key: Project
+          Value: Rexif
+        - Key: prx:cloudformation:stack-name
+          Value: !Ref AWS::StackName
+        - Key: prx:cloudformation:stack-id
+          Value: !Ref AWS::StackId
+  IngestLambdaFunction:
+    Type: AWS::Lambda::Function
+    Properties:
+      Code:
+        ZipFile: |-
+          // This function is invoked at the start of a state machine execution, and
+          // ingests the source file declared in the job to a short-term S3 bucket.
+          // Subsequent states in the step function access the file from that location.
+          // Source files can be ingested from either S3 or HTTP origins.
+          //
+          // The input for this state is the original job object that was sent as input
+          // to the state machine execution, eg:
+          // { "Job": { "Id": "xyz", "Source": { "URI": "s3://myBucket/myObject" }, … } }
+          //
+          // The input path for this Lambda function is $.Job.Source, eg
+          // { "URI": "s3://myBucket/myObject" }
+          //
+          // The function returns an object like
+          // { "BucketName": "abc", "ObjectKey": "xyz" }
+          //
+          // The result path is $.Ingest, so the output of the state looks like
+          // { "Job": { … }, "Ingest": { "BucketName": "abc", "ObjectKey": "xyz" } }
+
+          const path = require('path');
+          const os = require('os');
+          const fs = require('fs');
+          const http = require('http');
+          const https = require('https');
+          const aws = require('aws-sdk');
+
+          const s3 = new aws.S3();
+
+          // Returns a buffer with the file
+          function httpGet(uri) {
+              return new Promise((resolve, reject) => {
+                  const h = /^https/.test(uri) ? https : http;
+
+                  const req = h.get(uri, (res) => {
+                      let data = [];
+                      res.on('data', chunk => data.push(chunk));
+                      res.on('end', async () => {
+                          if (res.statusCode === 301 || res.statusCode === 302) {
+                              console.log(`Following redirect ${res.headers.location}`);
+                              const resp = await httpGet(res.headers.location);
+                              resolve(resp);
+                          } else if (res.statusCode === 200) {
+                              console.log(`Done getting ${res.statusCode} ${uri}`);
+                              const buffer = Buffer.concat(data);
+                              resolve(buffer);
+                          }
+                      });
+                  });
+
+                  // Generic request error handling
+                  req.on('error', error => reject(error));
+              });
+          }
+
+          function writeBufferToPath(buffer, filePath) {
+              return new Promise((resolve, reject) => {
+                  fs.writeFile(filePath, buffer, err => err ? reject(err) : resolve(filePath));
+              });
+          }
+
+          exports.handler = async (event, context) => {
+
+              const sourceUri = event.URI;
+              const sourceFilename = sourceUri.split('/').pop();
+
+              const ingestBucketName = process.env.INGEST_BUCKET_NAME;
+              const ingestObjectKey = `${context.awsRequestId}/${sourceFilename}`;
+
+              if (sourceUri.startsWith('https://') || sourceUri.startsWith('http://')) {
+                  // Downloads the HTTP resource to a file on disk in the Lambda's tmp
+                  // directory, and then uploads that file to the S3 ingest bucket.
+                  const localFilePath = path.join(os.tmpdir(), sourceFilename);
+
+                  const fileBuffer = await httpGet(sourceUri);
+                  await writeBufferToPath(fileBuffer, localFilePath);
+
+                  await s3.upload({
+                      Bucket: ingestBucketName,
+                      Key: ingestObjectKey,
+                      Body: fs.createReadStream(localFilePath),
+                  }).promise();
+
+                  fs.unlinkSync(localFilePath);
+              } else if (sourceUri.startsWith('s3://')) {
+                  // Copies an existing S3 object to the S3 ingest bucket.
+                  await s3.copyObject({
+                      CopySource: sourceUri.replace(/^s3:\//),
+                      Bucket: ingestBucketName,
+                      Key: ingestObjectKey
+                  }).promise();
+              }
+
+              return { "BucketName": ingestBucketName, "ObjectKey": ingestObjectKey };
+          };
+      Description: >
+        Ingests a source file defined in Rexif input to a predefined S3 bucket,
+        returning the resulting bucket name and object key
+      Environment:
+        Variables:
+          ACCOUNT_ID: !Ref AWS::AccountId
+          INGEST_BUCKET_NAME: !Ref IngestBucket
+      Handler: index.handler
+      MemorySize: 512
+      Role: !GetAtt IngestLambdaIamRole.Arn
+      Runtime: nodejs8.10
+      Tags:
+        - Key: Project
+          Value: Rexif
+        - Key: prx:cloudformation:stack-name
+          Value: !Ref AWS::StackName
+        - Key: prx:cloudformation:stack-id
+          Value: !Ref AWS::StackId
+      Timeout: 30
+  # Inspect Media Lambda
+  InspectMediaLambdaIamRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+            - Effect: Allow
+              Principal:
+                Service:
+                  - lambda.amazonaws.com
+              Action:
+                - sts:AssumeRole
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+      Path: "/"
+      Policies:
+        - PolicyName: XrayPolicy
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Effect: Allow
+                Action:
+                  - xray:PutTraceSegments
+                  - xray:PutTelemetryRecords
+                Resource:
+                  - "*"
+        - PolicyName: S3IngestBucketPolicy
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Effect: Allow
+                Action:
+                  - "s3:Get*"
+                Resource:
+                  - !Sub "arn:aws:s3:::${IngestBucket}"
+                  - !Sub "arn:aws:s3:::${IngestBucket}/*"
+      Tags:
+        - Key: Project
+          Value: Rexif
+        - Key: prx:cloudformation:stack-name
+          Value: !Ref AWS::StackName
+        - Key: prx:cloudformation:stack-id
+          Value: !Ref AWS::StackId
+  InspectMediaLambdaFunction:
+    Type: AWS::Lambda::Function
+    Properties:
+      Code:
+        ZipFile: |-
+          const childProcess = require('child_process');
+          const path = require('path');
+          const os = require('os');
+          const fs = require('fs');
+          const http = require('http');
+          const https = require('https');
+
+          function spawn(command, argsarray, envOptions) {
+            return new Promise((resolve, reject) => {
+              console.log('executing', command, argsarray.join(' '));
+
+              const childProc = childProcess.spawn(command, argsarray, envOptions || { env: process.env, cwd: process.cwd() });
+              const resultBuffers = [];
+
+              childProc.stdout.on('data', buffer => resultBuffers.push(buffer));
+              childProc.stderr.on('data', buffer => console.error(buffer.toString()));
+
+              childProc.on('exit', (code, signal) => {
+                console.log(`${command} completed with ${code}:${signal}`);
+
+                if (code || signal) {
+                  reject(`${command} failed with ${code || signal}`);
+                } else {
+                  resolve(Buffer.concat(resultBuffers).toString().trim());
+                }
+              });
+            });
+          }
+
+          // Returns a buffer with the file
+          function httpGet(uri) {
+              return new Promise((resolve, reject) => {
+                  const h = /^https/.test(uri) ? https : http;
+
+                  const req = h.get(uri, (res) => {
+                      let data = [];
+                      res.on('data', chunk => data.push(chunk));
+                      res.on('end', async () => {
+                          if (res.statusCode === 301 || res.statusCode === 302) {
+                              console.log(`Following redirect ${res.headers.location}`);
+                              const resp = await httpGet(res.headers.location);
+                              resolve(resp);
+                          } else if (res.statusCode === 200) {
+                              console.log(`Done getting ${res.statusCode} ${uri}`);
+                              const buffer = Buffer.concat(data);
+                              resolve(buffer);
+                          }
+                      });
+                  });
+
+                  // Generic request error handling
+                  req.on('error', error => reject(error));
+              });
+          }
+
+          function writeBufferToPath(buffer, filePath) {
+              return new Promise((resolve, reject) => {
+                  fs.writeFile(filePath, buffer, err => err ? reject(err) : resolve(filePath));
+              });
+          }
+
+          exports.handler = async (event) => {
+              return {};
+              const mediaUri = event.source.uri;
+
+              const filePath = path.join(os.tmpdir(), event.source.filename);
+
+              const fileBuffer = await httpGet(mediaUri, filePath);
+              await writeBufferToPath(fileBuffer, filePath);
+
+              const json = await spawn('/opt/bin/ffprobe',
+                                  ['-v', 'error', '-show_format', '-i', filePath, '-print_format', 'json'],
+                                  { env: process.env, cwd: os.tmpdir() });
+
+              return Object.assign(event, { "Inspection": JSON.parse(json) });
+          };
+      Description: >
+        tktk
+      Environment:
+        Variables:
+          ACCOUNT_ID: !Ref AWS::AccountId
+      Handler: index.handler
+      Layers:
+        - arn:aws:lambda:us-east-2:127213743756:layer:ffmpeg:1
+      MemorySize: 512
+      Role: !GetAtt InspectMediaLambdaIamRole.Arn
+      Runtime: nodejs8.10
+      Tags:
+        - Key: Project
+          Value: Rexif
+        - Key: prx:cloudformation:stack-name
+          Value: !Ref AWS::StackName
+        - Key: prx:cloudformation:stack-id
+          Value: !Ref AWS::StackId
+      Timeout: 30
+  # Copy Media Lambda
+  CopyMediaLambdaIamRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+            - Effect: Allow
+              Principal:
+                Service:
+                  - lambda.amazonaws.com
+              Action:
+                - sts:AssumeRole
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+      Path: "/"
+      Policies:
+        - PolicyName: XrayPolicy
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Effect: Allow
+                Action:
+                  - xray:PutTraceSegments
+                  - xray:PutTelemetryRecords
+                Resource:
+                  - "*"
+        - PolicyName: S3MediaBucketPolicy
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Effect: Allow
+                Action:
+                  - "s3:*"
+                Resource:
+                  - !Sub "arn:aws:s3:::${IngestBucket}"
+                  - !Sub "arn:aws:s3:::${IngestBucket}/*"
+        - PolicyName: S3PutPolicy
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Effect: Allow
+                Action:
+                  - "s3:Put*"
+                Resource:
+                  - "*"
+      Tags:
+        - Key: Project
+          Value: Rexif
+        - Key: prx:cloudformation:stack-name
+          Value: !Ref AWS::StackName
+        - Key: prx:cloudformation:stack-id
+          Value: !Ref AWS::StackId
+  CopyMediaLambdaFunction:
+    Type: AWS::Lambda::Function
+    Properties:
+      Code:
+        ZipFile: |-
+          const aws = require('aws-sdk');
+
+          const s3 = new aws.S3();
+
+          // Ex. input:  { "Ingest": { "BucketName": "SourceBucket", "ObjectKey": "Abc.wav" }, "Copy": { "Mode": "S3", "BucketName": "DestinationBucket", "ObjectKey": "Abc.wav" } }
+          // Ex. output: { "Task",: "Copy", "BucketName": "ResultBucket", "ObjectKey": "Abc.wav" }
+          exports.handler = async (event) => {
+              await s3.copyObject({
+                  CopySource: `/${event.Ingest.BucketName}/${event.Ingest.ObjectKey}`,
+                  Bucket: event.Copy.BucketName,
+                  Key: event.Copy.ObjectKey
+              }).promise();
+              console.log(`Copied /${event.Ingest.BucketName}/${event.Ingest.ObjectKey} to /${event.Copy.BucketName}/${event.Copy.ObjectKey}`);
+
+              return { Task: "Copy", BucketName: event.Copy.BucketName, ObjectKey: event.Copy.ObjectKey };
+          };
+      Description: >
+        Copies an object in S3 to another location in S3
+      Environment:
+        Variables:
+          ACCOUNT_ID: !Ref AWS::AccountId
+      Handler: index.handler
+      MemorySize: 512
+      Role: !GetAtt CopyMediaLambdaIamRole.Arn
+      Runtime: nodejs8.10
+      Tags:
+        - Key: Project
+          Value: Rexif
+        - Key: prx:cloudformation:stack-name
+          Value: !Ref AWS::StackName
+        - Key: prx:cloudformation:stack-id
+          Value: !Ref AWS::StackId
+      Timeout: 30
+  # Inspect Media Lambda
+  TranscodeMediaLambdaIamRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+            - Effect: Allow
+              Principal:
+                Service:
+                  - lambda.amazonaws.com
+              Action:
+                - sts:AssumeRole
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+      Path: "/"
+      Policies:
+        - PolicyName: XrayPolicy
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Effect: Allow
+                Action:
+                  - xray:PutTraceSegments
+                  - xray:PutTelemetryRecords
+                Resource:
+                  - "*"
+        - PolicyName: S3PutPolicy
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Effect: Allow
+                Action:
+                  - "s3:Put*"
+                Resource:
+                  - "*"
+        - PolicyName: IngestBucketPolicy
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Effect: Allow
+                Action:
+                  - "s3:Get*"
+                  - "s3:List*"
+                Resource:
+                  - !Sub "arn:aws:s3:::${IngestBucket}"
+                  - !Sub "arn:aws:s3:::${IngestBucket}/*"
+      Tags:
+        - Key: Project
+          Value: Rexif
+        - Key: prx:cloudformation:stack-name
+          Value: !Ref AWS::StackName
+        - Key: prx:cloudformation:stack-id
+          Value: !Ref AWS::StackId
+  TranscodeMediaLambdaFunction:
+    Type: AWS::Lambda::Function
+    Properties:
+      Code:
+        ZipFile: |-
+          const childProcess = require('child_process');
+          const path = require('path');
+          const os = require('os');
+          const fs = require('fs');
+          const aws = require('aws-sdk');
+
+          const s3 = new aws.S3();
+
+          function spawn(command, argsarray, envOptions) {
+            return new Promise((resolve, reject) => {
+              console.log('executing', command, argsarray.join(' '));
+
+              const childProc = childProcess.spawn(command, argsarray, envOptions || { env: process.env, cwd: process.cwd() });
+              const resultBuffers = [];
+
+              childProc.stdout.on('data', buffer => resultBuffers.push(buffer));
+              childProc.stderr.on('data', buffer => console.error(buffer.toString()));
+
+              childProc.on('exit', (code, signal) => {
+                console.log(`${command} completed with ${code}:${signal}`);
+
+                if (code || signal) {
+                  reject(`${command} failed with ${code || signal}`);
+                } else {
+                  resolve(Buffer.concat(resultBuffers).toString().trim());
+                }
+              });
+            });
+          }
+
+          function s3GetObject(bucket, fileKey, filePath) {
+            return new Promise(function (resolve, reject) {
+              const file = fs.createWriteStream(filePath);
+              const stream = s3.getObject({
+                      Bucket: bucket,
+                      Key: fileKey
+                  }).createReadStream();
+
+              stream.on('error', reject);
+              file.on('error', reject);
+
+              file.on('finish', function () {
+                  console.log('downloaded', bucket, fileKey);
+                  resolve(filePath);
+              });
+
+              stream.pipe(file);
+            });
+          }
+
+          // Ex. input:  { "Ingest": { "BucketName": "SourceBucket", "ObjectKey": "Abc.wav" }, "Encoding": { "Format": "flac" } }
+          // Ex. output: { "Task",: "Transcode", "Format": "flac", "BucketName": "ResultBucket", "ObjectKey": "Xyz.flac" }
+          exports.handler = async (event, context) => {
+              const ingestedFileTmpPath = path.join(os.tmpdir(), context.awsRequestId);
+
+              await s3GetObject(event.Ingest.BucketName, event.Ingest.ObjectKey, ingestedFileTmpPath);
+              console.log(`Got ${event.Ingest.BucketName}/${event.Ingest.ObjectKey} to ${ingestedFileTmpPath}`);
+
+              const transcodedMediaFilePath = `${ingestedFileTmpPath}-transcoded.${event.Encoding.Format}`;
+              console.log(`Transcoding as [${event.Encoding.Format}] to ${transcodedMediaFilePath}`);
+
+              await spawn(
+                  '/opt/bin/ffmpeg',
+                  ['-loglevel', 'error', '-i', ingestedFileTmpPath, transcodedMediaFilePath],
+                  { env: process.env, cwd: os.tmpdir() }
+              );
+              console.log('finished transcode');
+
+              if (event.Encoding.Destination.Mode === 'S3') {
+                  // Upload the transcoded file to the destination specified in the job
+                  const s3OutputBucketName = event.Encoding.Destination.BucketName;
+                  const s3OutputObjectKey = event.Encoding.Destination.ObjectKey;
+
+                  await s3.upload({
+                      Bucket: s3OutputBucketName,
+                      Key: s3OutputObjectKey,
+                      Body: fs.createReadStream(transcodedMediaFilePath),
+                  }).promise();
+                  console.log(`Uploaded to ${s3OutputBucketName}/${s3OutputObjectKey}`);
+              }
+
+              fs.unlinkSync(ingestedFileTmpPath);
+              fs.unlinkSync(transcodedMediaFilePath);
+
+              return {
+                  "Task": "Transcode",
+                  "Format": event.Encoding.format,
+                  "BucketName": event.Encoding.Destination.BucketName,
+                  "ObjectKey": event.Encoding.Destination.ObjectKey
+              };
+          };
+      Description: >
+        tktk
+      Environment:
+        Variables:
+          ACCOUNT_ID: !Ref AWS::AccountId
+      Handler: index.handler
+      Layers:
+        - arn:aws:lambda:us-east-2:127213743756:layer:ffmpeg:1
+      MemorySize: 3008
+      Role: !GetAtt TranscodeMediaLambdaIamRole.Arn
+      Runtime: nodejs8.10
+      Tags:
+        - Key: Project
+          Value: Rexif
+        - Key: prx:cloudformation:stack-name
+          Value: !Ref AWS::StackName
+        - Key: prx:cloudformation:stack-id
+          Value: !Ref AWS::StackId
+      Timeout: 300
+  # Callback Lambda
+  JobCallbackLambdaIamRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+            - Effect: Allow
+              Principal:
+                Service:
+                  - lambda.amazonaws.com
+              Action:
+                - sts:AssumeRole
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+      Path: "/"
+      Policies:
+        - PolicyName: XrayPolicy
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Effect: Allow
+                Action:
+                  - xray:PutTraceSegments
+                  - xray:PutTelemetryRecords
+                Resource:
+                  - "*"
+        - PolicyName: Sns
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Effect: Allow
+                Action:
+                  - "sns:Publish"
+                Resource:
+                  - "*"
+        - PolicyName: Sqs
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Effect: Allow
+                Action:
+                  - "sqs:SendMessage"
+                Resource:
+                  - "*"
+      Tags:
+        - Key: Project
+          Value: Rexif
+        - Key: prx:cloudformation:stack-name
+          Value: !Ref AWS::StackName
+        - Key: prx:cloudformation:stack-id
+          Value: !Ref AWS::StackId
+  JobCallbackLambdaFunction:
+    Type: AWS::Lambda::Function
+    Properties:
+      Code:
+        ZipFile: |-
+          const aws = require('aws-sdk');
+          const url = require('url');
+          const querystring = require('querystring');
+          const http = require('http');
+          const https = require('https');
+
+          const sns = new aws.SNS({ apiVersion: '2010-03-31' });
+          const sqs = new aws.SQS({ apiVersion: '2012-11-05' });
+
+          function httpRequest(event, message) {
+              return (new Promise((resolve, reject) => {
+                  const options = url.parse(event.URL);
+                  options.method = event.Method;
+
+                  let body;
+                  if (event['Content-Type'] === 'application/json') {
+                      body = JSON.stringify(message);
+                  } else if (event['Content-Type'] === 'application/x-www-form-urlencoded') {
+                      body = querystring.encode(message);
+                  } else {
+                      reject(new Error('Unknown HTTP Content-Type'));
+                  }
+
+                  if (event.Method === 'GET') {
+                      // TODO This will clobber an existing query string
+                      options.search = `${event.Name}=${querystring.encode(message)}`;
+                  }
+
+                  options.headers['Content-Type'] = event['Content-Type'];
+                  options.headers['Content-Length'] = Buffer.byteLength(body);
+
+                  const h = options.protocol === 'https:' ? https : http;
+                  const req = h.request(options, (res) => {
+                      res.setEncoding('utf8');
+
+                      let resData = '';
+                      res.on('data', (chunk) => resData += chunk );
+
+                      res.on('end', () => {
+                          if (res.statusCode >= 200 && res.statusCode < 300) {
+                              resolve();
+                          } else {
+                              const error = new Error(`Error ${res.statusCode}: ${resData}`);
+                              reject(error);
+                          }
+                      });
+                  });
+
+                  req.on('error', error => reject(error));
+
+                  req.write(body);
+                  req.end();
+              }));
+          }
+
+          // Ex. input: { "Callback": { "Mode": "SNS", "Topic": "arn:aws…" }, "JobResult": { "Job": { … }, "Result": { … } } }
+          // Ex. error: { "Callback": { "Mode": "SNS", "Topic": "arn:aws…" }, "JobResult": { "Job": { … }, "Error": { … } } }
+          // Ex. msg:   { "JobResult": { "Job": { … }, "Result": { … } } }
+          // Ex. msg:   { "JobResult": { "Job": { … }, "Error": { … } } }
+          exports.handler = async (event) => {
+              const msg = {};
+              if (event.JobResult) { Object.assign(msg, { JobResult: event.JobResult }); }
+              if (event.TaskResult) { Object.assign(msg, { TaskResult: event.TaskResult }); }
+
+              if (event.Callback.Mode === 'SNS') {
+                  const TopicArn = event.Callback.Topic;
+                  const Message = JSON.stringify(msg);
+
+                  await sns.publish({ Message, TopicArn }).promise();
+              } else if (event.Callback.Mode === 'SQS') {
+                  const QueueUrl = event.Callback.Queue;
+                  const MessageBody = JSON.stringify(msg);
+
+                  await sqs.sendMessage({ QueueUrl, MessageBody }).promise();
+              }  else if (event.Callback.Mode === 'HTTP') {
+                  await httpRequest(event, msg);
+              }
+          };
+      Description: >
+        tktk
+      Environment:
+        Variables:
+          ACCOUNT_ID: !Ref AWS::AccountId
+      Handler: index.handler
+      MemorySize: 256
+      Role: !GetAtt JobCallbackLambdaIamRole.Arn
+      Runtime: nodejs8.10
+      Tags:
+        - Key: Project
+          Value: Rexif
+        - Key: prx:cloudformation:stack-name
+          Value: !Ref AWS::StackName
+        - Key: prx:cloudformation:stack-id
+          Value: !Ref AWS::StackId
+      Timeout: 300
+  # Step Functions
+  StateMachineIamRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+                - !Sub states.${AWS::Region}.amazonaws.com
+            Action:
+              - sts:AssumeRole
+      Path: "/"
+      Policies:
+        - PolicyName: LambdaTaskPolicy
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Effect: Allow
+                Action:
+                  - lambda:InvokeFunction
+                Resource:
+                  - !GetAtt IngestLambdaFunction.Arn
+                  - !GetAtt CopyMediaLambdaFunction.Arn
+                  - !GetAtt InspectMediaLambdaFunction.Arn
+                  - !GetAtt TranscodeMediaLambdaFunction.Arn
+                  - !GetAtt JobCallbackLambdaFunction.Arn
+      Tags:
+        - Key: Project
+          Value: Rexif
+        - Key: prx:cloudformation:stack-name
+          Value: !Ref AWS::StackName
+        - Key: prx:cloudformation:stack-id
+          Value: !Ref AWS::StackId
+  StateMachine:
+    Type: AWS::StepFunctions::StateMachine
+    Properties:
+      DefinitionString:
+        Fn::Sub:
+          - |-
+            {
+              "StartAt": "IngestSourceFile",
+              "States": {
+                "IngestSourceFile": {
+                  "Comment": "(I{Job}/ {Job,Ingest}) Downloads the given source file to S3",
+                  "Type": "Task",
+                  "Resource": "${IngestLambdaFunctionArn}",
+                  "InputPath": "$.Job.Source",
+                  "ResultPath": "$.Ingest",
+                  "Next": "JobTasks",
+                  "Retry": [
+                    {
+                      "ErrorEquals": ["States.ALL"],
+                      "IntervalSeconds": 5,
+                      "MaxAttempts": 1,
+                      "BackoffRate": 2
+                    }
+                  ],
+                  "Catch": [
+                    {
+                      "ErrorEquals": ["States.ALL"],
+                      "ResultPath": "$.Error",
+                      "Next": "JobErrorCallbacks"
+                    }
+                  ]
+                },
+                "JobTasks": {
+                  "Type": "Parallel",
+                  "Comment": "(I/O {Job,Ingest}/{Job,Ingest,JobTaskResults}) Executes the tasks defined by the input job",
+                  "InputPath": "$",
+                  "ResultPath": "$.JobTaskResults",
+                  "Next": "JobCallbacks",
+                  "Catch": [
+                    {
+                      "ErrorEquals": ["States.ALL"],
+                      "ResultPath": "$.Error",
+                      "Next": "JobErrorCallbacks"
+                    }
+                  ],
+                  "Branches": [
+                    {
+                      "StartAt": "InspectBranch",
+                      "States": {
+                        "InspectBranch": {
+                          "Type": "Choice",
+                          "Comment": "(I/O {Job,Ingest}/{Job,Ingest}) Determines if the Inspect operation was included in the job",
+                          "Choices": [
+                            { "Variable": "$.Job.Inspect.Perform", "BooleanEquals": true, "Next": "Inspect" },
+                            { "Variable": "$.Job.Inspect.Perform", "BooleanEquals": false, "Next": "SkipInspect"}
+                          ]
+                        },
+                        "SkipInspect": {
+                          "Type": "Pass",
+                          "Comment": "(I/O {Job,Ingest}/{TaskResult})",
+                          "End": true,
+                          "ResultPath": "$",
+                          "Result": {
+                            "TaskResult": {
+                              "Task": "Null"
+                            }
+                          }
+                        },
+                        "Inspect": {
+                          "Type": "Task",
+                          "Comment": "(I/O {Job,Ingest}/{Job,Ingest,TaskResult}) Inspects the source file",
+                          "Resource": "${InspectMediaLambdaFunctionArn}",
+                          "InputPath": "$",
+                          "Parameters": {
+                            "Job": { "Id.$": "$.Job.Id" },
+                            "Ingest.$": "$.Ingest"
+                          },
+                          "ResultPath": "$.TaskResult",
+                          "Next": "InspectCallbacks"
+                        },
+                        "InspectCallbacks": {
+                          "Type": "Map",
+                          "Comment": "(I/O {Job,Ingest,TaskResult}/{Job,Ingest,TaskResult,Void}) Sends a successful inspection result to each callback defined in the job via an iterator",
+                          "End": true,
+                          "InputPath": "$",
+                          "ItemsPath": "$.Job.Callbacks",
+                          "Parameters": {
+                            "Callback.$": "$$.Map.Item.Value",
+                            "TaskResult": {
+                              "Job": { "Id.$": "$.Job.Id" },
+                              "Result.$": "$.TaskResult"
+                            }
+                          },
+                          "ResultPath": "$.Void",
+                          "MaxConcurrency": 0,
+                          "Iterator": {
+                            "StartAt": "SendInspectCallback",
+                            "States": {
+                              "SendInspectCallback": {
+                                "Type": "Task",
+                                "Comment": "(I/O {Callback,TaskResult}/{Callback,TaskResult,Void}) Sends a successful task result for a single callback in the iterator",
+                                "Resource": "${JobCallbackLambdaFunctionArn}",
+                                "ResultPath": "$.Void",
+                                "OutputPath": "$.TaskResult.Job.Id",
+                                "End": true,
+                                "Retry": [
+                                  {
+                                    "ErrorEquals": ["States.ALL"],
+                                    "IntervalSeconds": 5,
+                                    "MaxAttempts": 3,
+                                    "BackoffRate": 2
+                                  }
+                                ]
+                              }
+                            }
+                          }
+                        }
+                      }
+                    }, {
+                      "StartAt": "CopyBranch",
+                      "States": {
+                        "CopyBranch": {
+                          "Type": "Choice",
+                          "Comment": "(I/O {Job,Ingest}/{Job,Ingest}) Determines if the Copy operation was included in the job",
+                          "Choices": [
+                            { "Variable": "$.Job.Copy.Perform", "BooleanEquals": true, "Next": "CopyAll" },
+                            { "Variable": "$.Job.Copy.Perform", "BooleanEquals": false, "Next": "SkipCopy"}
+                          ]
+                        },
+                        "SkipCopy": {
+                          "Type": "Pass",
+                          "Comment": "(I/O {Job,Ingest}/{TaskResult})",
+                          "End": true,
+                          "ResultPath": "$",
+                          "Result": {
+                            "TaskResult": {
+                              "Task": "Null"
+                            }
+                          }
+                        },
+                        "CopyAll": {
+                          "Type": "Map",
+                          "Comment": "(I/O {Job,Ingest}/[{Job,Ingest,Copy,TaskResult,Void}])",
+                          "End": true,
+                          "InputPath": "$",
+                          "ItemsPath": "$.Job.Copy.Destinations",
+                          "Parameters": {
+                            "Copy.$": "$$.Map.Item.Value",
+                            "Job": {
+                              "Id.$": "$.Job.Id",
+                              "Callbacks.$": "$.Job.Callbacks"
+                            },
+                            "Ingest.$": "$.Ingest"
+                          },
+                          "MaxConcurrency": 0,
+                          "Iterator": {
+                            "StartAt": "CopyEach",
+                            "States": {
+                              "CopyEach": {
+                                "Type": "Task",
+                                "Comment": "(I/O {Job,Ingest,Copy}/{Job,Ingest,Copy,TaskResult})",
+                                "Resource": "${CopyMediaLambdaFunctionArn}",
+                                "InputPath": "$",
+                                "ResultPath": "$.TaskResult",
+                                "Next": "CopyCallbacks",
+                                "Retry": [
+                                  {
+                                    "ErrorEquals": ["States.ALL"],
+                                    "IntervalSeconds": 5,
+                                    "MaxAttempts": 3,
+                                    "BackoffRate": 2
+                                  }
+                                ]
+                              },
+                              "CopyCallbacks": {
+                                "Type": "Map",
+                                "Comment": "(I/O {Job,Ingest,Copy,TaskResult}/{Job,Ingest,Copy,TaskResult,Void})",
+                                "End": true,
+                                "InputPath": "$",
+                                "ItemsPath": "$.Job.Callbacks",
+                                "Parameters": {
+                                  "Callback.$": "$$.Map.Item.Value",
+                                  "TaskResult": {
+                                    "Job.$": "$.Job",
+                                    "Result.$": "$.TaskResult"
+                                  }
+                                },
+                                "ResultPath": "$.Void",
+                                "MaxConcurrency": 0,
+                                "Iterator": {
+                                  "StartAt": "SendCopyCallback",
+                                  "States": {
+                                    "SendCopyCallback": {
+                                      "Type": "Task",
+                                      "Comment": "(I/O {TaskResult,Callback}/id)",
+                                      "Resource": "${JobCallbackLambdaFunctionArn}",
+                                      "ResultPath": "$.Void",
+                                      "OutputPath": "$.TaskResult.Job.Id",
+                                      "End": true,
+                                      "Retry": [
+                                        {
+                                          "ErrorEquals": ["States.ALL"],
+                                          "IntervalSeconds": 5,
+                                          "MaxAttempts": 3,
+                                          "BackoffRate": 2
+                                        }
+                                      ]
+                                    }
+                                  }
+                                }
+                              }
+                            }
+                          }
+                        }
+                      }
+                    }, {
+                      "StartAt": "TranscodeBranch",
+                      "States": {
+                        "TranscodeBranch": {
+                          "Type": "Choice",
+                          "Comment": "(I/O {Job,Ingest}/{Job,Ingest}) Determines if the Transcode operation was included in the job",
+                          "Choices": [
+                            { "Variable": "$.Job.Transcode.Perform", "BooleanEquals": true, "Next": "TranscodeAll" },
+                            { "Variable": "$.Job.Transcode.Perform", "BooleanEquals": false, "Next": "SkipTranscode"}
+                          ]
+                        },
+                        "SkipTranscode": {
+                          "Type": "Pass",
+                          "Comment": "(I/O {Job,Ingest}/{TaskResult})",
+                          "End": true,
+                          "ResultPath": "$",
+                          "Result": {
+                            "TaskResult": {
+                              "Task": "Null"
+                            }
+                          }
+                        },
+                        "TranscodeAll": {
+                          "Type": "Map",
+                          "Comment": "(I/O {Job,Ingest}/[{Job,Ingest,Transcribe,TaskResult,Void}])",
+                          "End": true,
+                          "InputPath": "$",
+                          "ItemsPath": "$.Job.Transcode.Encodings",
+                          "Parameters": {
+                            "Encoding.$": "$$.Map.Item.Value",
+                            "Job": {
+                              "Id.$": "$.Job.Id",
+                              "Callbacks.$": "$.Job.Callbacks"
+                            },
+                            "Ingest.$": "$.Ingest"
+                          },
+                          "MaxConcurrency": 0,
+                          "Iterator": {
+                            "StartAt": "TranscodeEach",
+                            "States": {
+                              "TranscodeEach": {
+                                "Type": "Task",
+                                "Comment": "(I/O {Job,Ingest,Transcribe}/{Job,Ingest,Transcribe,TaskResult})",
+                                "Resource": "${TranscodeMediaLambdaFunctionArn}",
+                                "InputPath": "$",
+                                "ResultPath": "$.TaskResult",
+                                "Next": "TranscodeCallbacks",
+                                "Retry": [
+                                  {
+                                    "ErrorEquals": ["States.ALL"],
+                                    "IntervalSeconds": 5,
+                                    "MaxAttempts": 3,
+                                    "BackoffRate": 2
+                                  }
+                                ]
+                              },
+                              "TranscodeCallbacks": {
+                                "Type": "Map",
+                                "Comment": "(I/O {Job,Ingest,Transcribe,TaskResult}/{Job,Ingest,Transcribe,TaskResult,Void})",
+                                "End": true,
+                                "InputPath": "$",
+                                "ItemsPath": "$.Job.Callbacks",
+                                "Parameters": {
+                                  "Callback.$": "$$.Map.Item.Value",
+                                  "TaskResult": {
+                                    "Job.$": "$.Job",
+                                    "Result.$": "$.TaskResult"
+                                  }
+                                },
+                                "ResultPath": "$.Void",
+                                "MaxConcurrency": 0,
+                                "Iterator": {
+                                  "StartAt": "SendTranscodeCallback",
+                                  "States": {
+                                    "SendTranscodeCallback": {
+                                      "Type": "Task",
+                                      "Comment": "(I/O {TaskResult,Callback}/id)",
+                                      "Resource": "${JobCallbackLambdaFunctionArn}",
+                                      "ResultPath": "$.Void",
+                                      "OutputPath": "$.TaskResult.Job.Id",
+                                      "End": true,
+                                      "Retry": [
+                                        {
+                                          "ErrorEquals": ["States.ALL"],
+                                          "IntervalSeconds": 5,
+                                          "MaxAttempts": 3,
+                                          "BackoffRate": 2
+                                        }
+                                      ]
+                                    }
+                                  }
+                                }
+                              }
+                            }
+                          }
+                        }
+                      }
+                    }
+                  ]
+                },
+                "JobCallbacks": {
+                  "Type": "Map",
+                  "Comment": "Sends a successful job result to each callback defined in the job via an iterator",
+                  "End": true,
+                  "InputPath": "$",
+                  "ItemsPath": "$.Job.Callbacks",
+                  "Parameters": {
+                    "Callback.$": "$$.Map.Item.Value",
+                    "JobResult": {
+                      "Job": { "Id.$": "$.Job.Id" },
+                      "Result.$": "$.JobTaskResults..[?(@.Task && @.Task != 'Null')]"
+                    }
+                  },
+                  "MaxConcurrency": 0,
+                  "Iterator": {
+                    "StartAt": "SendCallback",
+                    "States": {
+                      "SendCallback": {
+                        "Type": "Task",
+                        "Comment": "Sends a successful job result for a single callback in the iterator",
+                        "Resource": "${JobCallbackLambdaFunctionArn}",
+                        "End": true,
+                        "Retry": [
+                          {
+                            "ErrorEquals": ["States.ALL"],
+                            "IntervalSeconds": 5,
+                            "MaxAttempts": 3,
+                            "BackoffRate": 2
+                          }
+                        ]
+                      }
+                    }
+                  }
+                },
+                "JobErrorCallbacks": {
+                  "Type": "Map",
+                  "Comment": "(I/O {Job,Error}/null) Sends an error result to each callback defined in the job via an iterator",
+                  "End": true,
+                  "InputPath": "$",
+                  "ItemsPath": "$.Job.Callbacks",
+                  "Parameters": {
+                    "Callback.$": "$$.Map.Item.Value",
+                    "JobResult": {
+                      "Job": { "Id.$": "$.Job.Id" },
+                      "Error.$": "$.Error"
+                    }
+                  },
+                  "MaxConcurrency": 0,
+                  "Iterator": {
+                    "StartAt": "SendErrorCallback",
+                    "States": {
+                      "SendErrorCallback": {
+                        "Type": "Task",
+                        "Comment": "Sends an error result for a single callback in the iterator",
+                        "Resource": "${JobCallbackLambdaFunctionArn}",
+                        "End": true,
+                        "Retry": [
+                          {
+                            "ErrorEquals": ["States.ALL"],
+                            "IntervalSeconds": 5,
+                            "MaxAttempts": 3,
+                            "BackoffRate": 2
+                          }
+                        ]
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          - IngestLambdaFunctionArn: !GetAtt IngestLambdaFunction.Arn
+            CopyMediaLambdaFunctionArn: !GetAtt CopyMediaLambdaFunction.Arn
+            InspectMediaLambdaFunctionArn: !GetAtt InspectMediaLambdaFunction.Arn
+            TranscodeMediaLambdaFunctionArn: !GetAtt TranscodeMediaLambdaFunction.Arn
+            JobCallbackLambdaFunctionArn: !GetAtt JobCallbackLambdaFunction.Arn
+      RoleArn: !GetAtt StateMachineIamRole.Arn
+      Tags:
+        - Key: Project
+          Value: Rexif
+        - Key: prx:cloudformation:stack-name
+          Value: !Ref AWS::StackName
+        - Key: prx:cloudformation:stack-id
+          Value: !Ref AWS::StackId

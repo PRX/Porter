@@ -1,0 +1,47 @@
+{
+	"Job": {
+		"Id": "1234567890asdfghjkl",
+    "Source": {
+      "URI": "https://dts.podtrac.com/redirect.mp3/dovetail.prxu.org/232/613701eb-b242-4810-8ca3-a6770c262775/Passenger_List_EP02_SEG_A.mp3"
+    },
+		"Copy": {
+			"Perform": true,
+			"Destinations": [
+				{
+					"Mode": "S3",
+					"BucketName": "farski-sf-test-bucket",
+					"ObjectKey": "copy1.mp3"
+				}, {
+					"Mode": "S3",
+					"BucketName": "farski-sf-test-bucket",
+					"ObjectKey": "some/deep/prefix/path/copy2.mp3"
+				}
+			]
+		},
+		"Inspect": {
+			"Perform": true
+		},
+		"Transcode": {
+			"Perform": true,
+			"Encodings": [
+				{
+					"Format": "flac",
+					"Destination": {
+						"Mode": "S3",
+						"BucketName": "farski-sf-test-bucket",
+						"ObjectKey": "transcode.flac"
+					}
+				}
+			]
+		},
+		"Callbacks": [
+			{
+				"Mode": "SNS",
+				"Topic": "arn:aws:sns:us-east-2:127213743756:sf-test"
+			}, {
+				"Mode": "SQS",
+				"Queue": "https://sqs.us-east-2.amazonaws.com/127213743756/sf-test"
+			}
+		]
+	}
+}
