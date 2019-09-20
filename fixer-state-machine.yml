@@ -24,18 +24,9 @@ Resources:
                 - sts:AssumeRole
       ManagedPolicyArns:
         - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+        - arn:aws:iam::aws:policy/AWSXrayWriteOnlyAccess
       Path: "/"
       Policies:
-        - PolicyName: XrayPolicy
-          PolicyDocument:
-            Version: "2012-10-17"
-            Statement:
-              - Effect: Allow
-                Action:
-                  - xray:PutTraceSegments
-                  - xray:PutTelemetryRecords
-                Resource:
-                  - "*"
         - PolicyName: StepFunctionsPolicy
           PolicyDocument:
             Version: "2012-10-17"
@@ -126,18 +117,9 @@ Resources:
                 - sts:AssumeRole
       ManagedPolicyArns:
         - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+        - arn:aws:iam::aws:policy/AWSXrayWriteOnlyAccess
       Path: "/"
       Policies:
-        - PolicyName: XrayPolicy
-          PolicyDocument:
-            Version: "2012-10-17"
-            Statement:
-              - Effect: Allow
-                Action:
-                  - xray:PutTraceSegments
-                  - xray:PutTelemetryRecords
-                Resource:
-                  - "*"
         - PolicyName: S3IngestBucketPolicy
           PolicyDocument:
             Version: "2012-10-17"
@@ -295,18 +277,9 @@ Resources:
                 - sts:AssumeRole
       ManagedPolicyArns:
         - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+        - arn:aws:iam::aws:policy/AWSXrayWriteOnlyAccess
       Path: "/"
       Policies:
-        - PolicyName: XrayPolicy
-          PolicyDocument:
-            Version: "2012-10-17"
-            Statement:
-              - Effect: Allow
-                Action:
-                  - xray:PutTraceSegments
-                  - xray:PutTelemetryRecords
-                Resource:
-                  - "*"
         - PolicyName: S3IngestBucketPolicy
           PolicyDocument:
             Version: "2012-10-17"
@@ -436,18 +409,9 @@ Resources:
                 - sts:AssumeRole
       ManagedPolicyArns:
         - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+        - arn:aws:iam::aws:policy/AWSXrayWriteOnlyAccess
       Path: "/"
       Policies:
-        - PolicyName: XrayPolicy
-          PolicyDocument:
-            Version: "2012-10-17"
-            Statement:
-              - Effect: Allow
-                Action:
-                  - xray:PutTraceSegments
-                  - xray:PutTelemetryRecords
-                Resource:
-                  - "*"
         - PolicyName: S3MediaBucketPolicy
           PolicyDocument:
             Version: "2012-10-17"
@@ -524,18 +488,9 @@ Resources:
                 - sts:AssumeRole
       ManagedPolicyArns:
         - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+        - arn:aws:iam::aws:policy/AWSXrayWriteOnlyAccess
       Path: "/"
       Policies:
-        - PolicyName: XrayPolicy
-          PolicyDocument:
-            Version: "2012-10-17"
-            Statement:
-              - Effect: Allow
-                Action:
-                  - xray:PutTraceSegments
-                  - xray:PutTelemetryRecords
-                Resource:
-                  - "*"
         - PolicyName: S3PutPolicy
           PolicyDocument:
             Version: "2012-10-17"
@@ -690,18 +645,9 @@ Resources:
                 - sts:AssumeRole
       ManagedPolicyArns:
         - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+        - arn:aws:iam::aws:policy/AWSXrayWriteOnlyAccess
       Path: "/"
       Policies:
-        - PolicyName: XrayPolicy
-          PolicyDocument:
-            Version: "2012-10-17"
-            Statement:
-              - Effect: Allow
-                Action:
-                  - xray:PutTraceSegments
-                  - xray:PutTelemetryRecords
-                Resource:
-                  - "*"
         - PolicyName: Sns
           PolicyDocument:
             Version: "2012-10-17"
