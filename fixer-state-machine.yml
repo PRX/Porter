@@ -69,7 +69,6 @@ Resources:
         Relays SNS messages sent to a subscribed topic to a State Machine
       Environment:
         Variables:
-          ACCOUNT_ID: !Ref AWS::AccountId
           STATE_MACHINE_ARN: !Ref StateMachine
       Handler: index.handler
       MemorySize: 128
@@ -268,7 +267,6 @@ Resources:
         returning the resulting bucket name and object key
       Environment:
         Variables:
-          ACCOUNT_ID: !Ref AWS::AccountId
           INGEST_BUCKET_NAME: !Ref IngestBucket
       Handler: index.handler
       MemorySize: 512
@@ -409,9 +407,6 @@ Resources:
           };
       Description: >
         tktk
-      Environment:
-        Variables:
-          ACCOUNT_ID: !Ref AWS::AccountId
       Handler: index.handler
       Layers:
         - arn:aws:lambda:us-east-2:127213743756:layer:ffmpeg:1
@@ -502,9 +497,6 @@ Resources:
           };
       Description: >
         Copies an object in S3 to another location in S3
-      Environment:
-        Variables:
-          ACCOUNT_ID: !Ref AWS::AccountId
       Handler: index.handler
       MemorySize: 512
       Role: !GetAtt CopyMediaLambdaIamRole.Arn
@@ -669,9 +661,6 @@ Resources:
           };
       Description: >
         tktk
-      Environment:
-        Variables:
-          ACCOUNT_ID: !Ref AWS::AccountId
       Handler: index.handler
       Layers:
         - arn:aws:lambda:us-east-2:127213743756:layer:ffmpeg:1
@@ -823,9 +812,6 @@ Resources:
           };
       Description: >
         tktk
-      Environment:
-        Variables:
-          ACCOUNT_ID: !Ref AWS::AccountId
       Handler: index.handler
       MemorySize: 256
       Role: !GetAtt JobCallbackLambdaIamRole.Arn
@@ -893,7 +879,7 @@ Resources:
                     {
                       "ErrorEquals": ["States.ALL"],
                       "IntervalSeconds": 5,
-                      "MaxAttempts": 1,
+                      "MaxAttempts": 3,
                       "BackoffRate": 2
                     }
                   ],
