@@ -53,8 +53,10 @@ Resources:
     Properties:
       Code:
         ZipFile: |-
-          const AWS = require('aws-sdk');
-          const stepfunctions = new AWS.StepFunctions({ apiVersion: '2016-11-23' });
+          const awsxray = require('aws-xray-sdk');
+          const aws = awsxray.captureAWS(require('aws-sdk'));
+
+          const stepfunctions = new aws.StepFunctions({ apiVersion: '2016-11-23' });
 
           exports.handler = async (event) => {
             const stateMachineArn = process.env.STATE_MACHINE_ARN;
@@ -181,7 +183,8 @@ Resources:
           const fs = require('fs');
           const http = require('http');
           const https = require('https');
-          const aws = require('aws-sdk');
+          const awsxray = require('aws-xray-sdk');
+          const aws = awsxray.captureAWS(require('aws-sdk'));
 
           const s3 = new aws.S3();
 
@@ -315,8 +318,10 @@ Resources:
           const path = require('path');
           const os = require('os');
           const fs = require('fs');
-          const http = require('http');
-          const https = require('https');
+          const awsxray = require('aws-xray-sdk');
+          const aws = awsxray.captureAWS(require('aws-sdk'));
+
+          const s3 = new aws.S3();
 
           function spawn(command, argsarray, envOptions) {
             return new Promise((resolve, reject) => {
@@ -453,7 +458,8 @@ Resources:
     Properties:
       Code:
         ZipFile: |-
-          const aws = require('aws-sdk');
+          const awsxray = require('aws-xray-sdk');
+          const aws = awsxray.captureAWS(require('aws-sdk'));
 
           const s3 = new aws.S3();
 
@@ -539,7 +545,8 @@ Resources:
           const path = require('path');
           const os = require('os');
           const fs = require('fs');
-          const aws = require('aws-sdk');
+          const awsxray = require('aws-xray-sdk');
+          const aws = awsxray.captureAWS(require('aws-sdk'));
 
           const s3 = new aws.S3();
 
@@ -630,7 +637,8 @@ Resources:
         tktk
       Handler: index.handler
       Layers:
-        - arn:aws:lambda:us-east-2:127213743756:layer:ffmpeg:1
+        - !Ref AwsXraySdkLambdaLayerVersionArn
+        - !Ref FfmepgLambdaLayerVersionArn
       MemorySize: 3008
       Role: !GetAtt TranscodeMediaLambdaIamRole.Arn
       Runtime: nodejs8.10
@@ -690,7 +698,8 @@ Resources:
     Properties:
       Code:
         ZipFile: |-
-          const aws = require('aws-sdk');
+          const awsxray = require('aws-xray-sdk');
+          const aws = awsxray.captureAWS(require('aws-sdk'));
           const url = require('url');
           const querystring = require('querystring');
           const http = require('http');
