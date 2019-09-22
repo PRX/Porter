@@ -677,18 +677,6 @@ Resources:
         - Key: prx:cloudformation:stack-id
           Value: !Ref AWS::StackId
       Timeout: 300
-  # Transcode Activity
-  TranscodeMediaStepFunctionActivity:
-    Type: AWS::StepFunctions::Activity
-    Properties:
-      Name: !Sub "${AWS::StackName}-TranscodeActivity"
-      Tags:
-        - Key: Project
-          Value: Rexif
-        - Key: prx:cloudformation:stack-name
-          Value: !Ref AWS::StackName
-        - Key: prx:cloudformation:stack-id
-          Value: !Ref AWS::StackId
   # Callback Lambda
   JobCallbackLambdaIamRole:
     Type: AWS::IAM::Role
