@@ -67,6 +67,8 @@ Resources:
         Variables:
           STATE_MACHINE_ARN: !Ref StateMachine
       Handler: index.handler
+      Layers:
+        - !Ref AwsXraySdkLambdaLayerVersionArn
       MemorySize: 128
       Role: !GetAtt SnsTopicLambdaIamRole.Arn
       Runtime: nodejs8.10
@@ -256,6 +258,8 @@ Resources:
         Variables:
           INGEST_BUCKET_NAME: !Ref IngestBucket
       Handler: index.handler
+      Layers:
+        - !Ref AwsXraySdkLambdaLayerVersionArn
       MemorySize: 512
       Role: !GetAtt IngestLambdaIamRole.Arn
       Runtime: nodejs8.10
@@ -387,7 +391,8 @@ Resources:
         tktk
       Handler: index.handler
       Layers:
-        - arn:aws:lambda:us-east-2:127213743756:layer:ffmpeg:1
+        - !Ref AwsXraySdkLambdaLayerVersionArn
+        - !Ref FfmepgLambdaLayerVersionArn
       MemorySize: 512
       Role: !GetAtt InspectMediaLambdaIamRole.Arn
       Runtime: nodejs8.10
@@ -467,6 +472,8 @@ Resources:
       Description: >
         Copies an object in S3 to another location in S3
       Handler: index.handler
+      Layers:
+        - !Ref AwsXraySdkLambdaLayerVersionArn
       MemorySize: 512
       Role: !GetAtt CopyMediaLambdaIamRole.Arn
       Runtime: nodejs8.10
@@ -764,6 +771,8 @@ Resources:
       Description: >
         tktk
       Handler: index.handler
+      Layers:
+        - !Ref AwsXraySdkLambdaLayerVersionArn
       MemorySize: 256
       Role: !GetAtt JobCallbackLambdaIamRole.Arn
       Runtime: nodejs8.10
