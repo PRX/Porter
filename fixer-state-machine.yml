@@ -7,6 +7,8 @@ Parameters:
     Type: String
   FfmepgLambdaLayerVersionArn:
     Type: String
+  MpckLambdaLayerVersionArn:
+    Type: String
 Resources:
   # SNS
   ## Messages sent to this topic will be handled by a Lambda function which
@@ -697,6 +699,7 @@ Resources:
       Layers:
         - !Ref AwsXraySdkLambdaLayerVersionArn
         - !Ref FfmepgLambdaLayerVersionArn
+        - !Ref MpckLambdaLayerVersionArn
       MemorySize: 512
       Role: !GetAtt InspectMediaLambdaIamRole.Arn
       Runtime: nodejs8.10
@@ -937,6 +940,7 @@ Resources:
       Layers:
         - !Ref AwsXraySdkLambdaLayerVersionArn
         - !Ref FfmepgLambdaLayerVersionArn
+        - !Ref MpckLambdaLayerVersionArn
       MemorySize: 3008
       Role: !GetAtt TranscodeMediaLambdaIamRole.Arn
       Runtime: nodejs8.10
