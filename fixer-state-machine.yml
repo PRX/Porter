@@ -95,6 +95,279 @@ Resources:
       Endpoint: !GetAtt SnsTopicLambdaFunction.Arn
       Protocol: lambda
       TopicArn: !Ref SnsTopic
+# VPC
+  VPC:
+    Type: AWS::EC2::VPC
+    Properties:
+      CidrBlock: 10.0.0.0/16
+      EnableDnsSupport: true
+      EnableDnsHostnames: true
+      InstanceTenancy: default
+      Tags:
+        - Key: Project
+          Value: Rexif
+        - Key: Name
+          Value: !Sub ${AWS::StackName}-VPC
+        - Key: "prx:cloudformation:stack-name"
+          Value: !Ref AWS::StackName
+        - Key: "prx:cloudformation:stack-id"
+          Value: !Ref AWS::StackId
+  InternetGateway:
+    Type: AWS::EC2::InternetGateway
+    Properties:
+      Tags:
+        - Key: Project
+          Value: Rexif
+        - Key: Name
+          Value: !Sub ${AWS::StackName}-InternetGateway
+        - Key: "prx:cloudformation:stack-name"
+          Value: !Ref AWS::StackName
+        - Key: "prx:cloudformation:stack-id"
+          Value: !Ref AWS::StackId
+  GatewayAttachment:
+    Type: AWS::EC2::VPCGatewayAttachment
+    Properties:
+      VpcId: !Ref VPC
+      InternetGatewayId: !Ref InternetGateway
+  RouteTable:
+    Type: AWS::EC2::RouteTable
+    Properties:
+      VpcId: !Ref VPC
+      Tags:
+        - Key: Project
+          Value: Rexif
+        - Key: Name
+          Value: !Sub ${AWS::StackName}-RouteTable
+        - Key: "prx:cloudformation:stack-name"
+          Value: !Ref AWS::StackName
+        - Key: "prx:cloudformation:stack-id"
+          Value: !Ref AWS::StackId
+  Route:
+    Type: AWS::EC2::Route
+    DependsOn: GatewayAttachment
+    Properties:
+      RouteTableId: !Ref RouteTable
+      GatewayId: !Ref InternetGateway
+      DestinationCidrBlock: 0.0.0.0/0
+  Subnet1:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref VPC
+      AvailabilityZone: !Join ["", [!Ref "AWS::Region", a]]
+      CidrBlock: 10.0.1.0/24
+      Tags:
+        - Key: Project
+          Value: Rexif
+        - Key: Name
+          Value: !Sub ${AWS::StackName}-Subnet-1
+        - Key: "prx:cloudformation:stack-name"
+          Value: !Ref AWS::StackName
+        - Key: "prx:cloudformation:stack-id"
+          Value: !Ref AWS::StackId
+  Subnet2:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref VPC
+      AvailabilityZone: !Join ["", [!Ref "AWS::Region", b]]
+      CidrBlock: 10.0.2.0/24
+      Tags:
+        - Key: Project
+          Value: Rexif
+        - Key: Name
+          Value: !Sub ${AWS::StackName}-Subnet-2
+        - Key: "prx:cloudformation:stack-name"
+          Value: !Ref AWS::StackName
+        - Key: "prx:cloudformation:stack-id"
+          Value: !Ref AWS::StackId
+  Subnet1RouteTableAssociation:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      SubnetId: !Ref Subnet1
+      RouteTableId: !Ref RouteTable
+  Subnet2RouteTableAssociation:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      SubnetId: !Ref Subnet2
+      RouteTableId: !Ref RouteTable
+  NetworkAcl:
+    Type: AWS::EC2::NetworkAcl
+    Properties:
+      VpcId: !Ref VPC
+      Tags:
+        - Key: Project
+          Value: Rexif
+        - Key: Name
+          Value: !Sub ${AWS::StackName}-NetworkAcl
+        - Key: "prx:cloudformation:stack-name"
+          Value: !Ref AWS::StackName
+        - Key: "prx:cloudformation:stack-id"
+          Value: !Ref AWS::StackId
+  InboundTrafficNetworkAclEntry:
+    # TODO This is only for debugging
+    Type: AWS::EC2::NetworkAclEntry
+    Properties:
+      CidrBlock: 0.0.0.0/0
+      Egress: false
+      NetworkAclId: !Ref NetworkAcl
+      Protocol: -1 # All
+      RuleAction : allow
+      RuleNumber : 100
+  OutboudTrafficNetworkAclEntry:
+    Type: AWS::EC2::NetworkAclEntry
+    Properties:
+      CidrBlock: 0.0.0.0/0
+      Egress: true
+      NetworkAclId: !Ref NetworkAcl
+      Protocol: -1 # All
+      RuleAction : allow
+      RuleNumber : 100
+  Subnet1NetworkAclAssociation:
+    Type: AWS::EC2::SubnetNetworkAclAssociation
+    Properties:
+      SubnetId: !Ref Subnet1
+      NetworkAclId: !Ref NetworkAcl
+  Subnet2NetworkAclAssociation:
+    Type: AWS::EC2::SubnetNetworkAclAssociation
+    Properties:
+      SubnetId: !Ref Subnet2
+      NetworkAclId: !Ref NetworkAcl
+  DhcpOptions:
+    Type: AWS::EC2::DHCPOptions
+    Properties:
+      DomainName: ec2.internal
+      DomainNameServers:
+        - AmazonProvidedDNS
+      Tags:
+        - Key: Project
+          Value: Rexif
+        - Key: Name
+          Value: !Sub ${AWS::StackName}-DhcpOptions
+        - Key: "prx:cloudformation:stack-name"
+          Value: !Ref AWS::StackName
+        - Key: "prx:cloudformation:stack-id"
+          Value: !Ref AWS::StackId
+  DhcpOptionsAssociation:
+    Type: AWS::EC2::VPCDHCPOptionsAssociation
+    Properties:
+      DhcpOptionsId: !Ref DhcpOptions
+      VpcId: !Ref VPC
+  # ECS Cluster
+  EcsCluster:
+    Type: AWS::ECS::Cluster
+    Properties:
+      Tags:
+        - Key: Project
+          Value: Rexif
+        - Key: "prx:cloudformation:stack-name"
+          Value: !Ref AWS::StackName
+        - Key: "prx:cloudformation:stack-id"
+          Value: !Ref AWS::StackId
+  # Transcode ECS Service
+  TranscodeEcsTaskLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      RetentionInDays: 14
+  TranscodeEcsTaskExecutionIamRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Action:
+              - sts:AssumeRole
+            Effect: Allow
+            Principal:
+              Service:
+                - ecs-tasks.amazonaws.com
+      Description: String
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AmazonECSTaskExecutionRolePolicy
+      Path: "/"
+      Tags:
+        - Key: Project
+          Value: Rexif
+        - Key: "prx:cloudformation:stack-name"
+          Value: !Ref AWS::StackName
+        - Key: "prx:cloudformation:stack-id"
+          Value: !Ref AWS::StackId
+  TranscodeEcsTaskIamRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Action:
+              - sts:AssumeRole
+            Effect: Allow
+            Principal:
+              Service:
+                - ecs-tasks.amazonaws.com
+      Description: String
+      Path: "/"
+      Policies:
+        - PolicyName: S3PutPolicy
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Effect: Allow
+                Action:
+                  - "s3:Put*"
+                Resource:
+                  - "*"
+        - PolicyName: S3IngestBucketPolicy
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Effect: Allow
+                Action:
+                  - "s3:Get*"
+                Resource:
+                  - !Sub "arn:aws:s3:::${IngestBucket}"
+                  - !Sub "arn:aws:s3:::${IngestBucket}/*"
+      Tags:
+        - Key: Project
+          Value: Rexif
+        - Key: "prx:cloudformation:stack-name"
+          Value: !Ref AWS::StackName
+        - Key: "prx:cloudformation:stack-id"
+          Value: !Ref AWS::StackId
+  TranscodeEcsTaskDefinition:
+    Type: AWS::ECS::TaskDefinition
+    Properties:
+      ContainerDefinitions:
+        -
+          Command:
+            - "$TASK_TOKEN"
+          EntryPoint:
+            - echo
+          Environment:
+            - Name: FOO
+              Value: bar
+          Essential: true
+          Image: alpine
+          LogConfiguration:
+            LogDriver: awslogs
+            Options:
+              awslogs-group: !Ref TranscodeEcsTaskLogGroup
+              awslogs-region: !Ref AWS::Region
+              awslogs-stream-prefix: ecs
+          Name: !Sub ${AWS::StackName}-transcode-container
+      Cpu: "4096"
+      ExecutionRoleArn: !GetAtt TranscodeEcsTaskExecutionIamRole.Arn
+      Memory: "8192"
+      NetworkMode: awsvpc
+      RequiresCompatibilities:
+        - FARGATE
+      Tags:
+        - Key: Project
+          Value: Rexif
+        - Key: "prx:cloudformation:stack-name"
+          Value: !Ref AWS::StackName
+        - Key: "prx:cloudformation:stack-id"
+          Value: !Ref AWS::StackId
+      TaskRoleArn: !GetAtt TranscodeEcsTaskIamRole.Arn
+      # Volumes:
+      #   - Volume
   # Ingest Bucket
   IngestBucket:
     Type: AWS::S3::Bucket
@@ -655,7 +928,6 @@ Resources:
 
               return {
                   "Task": "Transcode",
-                  "Format": event.Encoding.format,
                   "BucketName": event.Encoding.Destination.BucketName,
                   "ObjectKey": event.Encoding.Destination.ObjectKey
               };
@@ -850,6 +1122,59 @@ Resources:
                   - !GetAtt InspectMediaLambdaFunction.Arn
                   - !GetAtt TranscodeMediaLambdaFunction.Arn
                   - !GetAtt JobCallbackLambdaFunction.Arn
+        - PolicyName: PassRoleToEcsPolicy
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Effect: Allow
+                Action:
+                  - iam:PassRole
+                Resource:
+                  - !GetAtt TranscodeEcsTaskExecutionIamRole.Arn
+                  - !GetAtt TranscodeEcsTaskIamRole.Arn
+        # https://docs.aws.amazon.com/step-functions/latest/dg/ecs-iam.html
+        - PolicyName: EcsSyncStaticResourcesPolicy
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Effect: Allow
+                Action:
+                  - ecs:RunTask
+                Resource:
+                  - "*"
+                  # - "arn:aws:ecs:[[region]]:[[accountId]]:task-definition/[[taskDefinition]]"
+              - Effect: Allow
+                Action:
+                  - ecs:StopTask
+                  - ecs:DescribeTasks
+                Resource:
+                  - "*"
+              - Effect: Allow
+                Action:
+                  - events:PutTargets
+                  - events:PutRule
+                  - events:DescribeRule
+                Resource:
+                  - !Sub "arn:aws:events:${AWS::Region}:${AWS::AccountId}:rule/StepFunctionsGetEventsForECSTaskRule"
+        # https://docs.aws.amazon.com/step-functions/latest/dg/ecs-iam.html
+        - PolicyName: EcsSyncDynamicResourcesPolicy
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Effect: Allow
+                Action:
+                  - ecs:RunTask
+                  - ecs:StopTask
+                  - ecs:DescribeTasks
+                Resource:
+                  - "*"
+              - Effect: Allow
+                Action:
+                  - events:PutTargets
+                  - events:PutRule
+                  - events:DescribeRule
+                Resource:
+                  - !Sub "arn:aws:events:${AWS::Region}:${AWS::AccountId}:rule/StepFunctionsGetEventsForECSTaskRule"
       Tags:
         - Key: Project
           Value: Rexif
@@ -1169,6 +1494,134 @@ Resources:
                           }
                         }
                       }
+                    }, {
+                      "StartAt": "FargateTranscodeBranch",
+                      "States": {
+                        "FargateTranscodeBranch": {
+                          "Type": "Choice",
+                          "Comment": "(I/O {Job,Ingest}/{Job,Ingest}) Determines if the Transcode operation was included in the job",
+                          "Choices": [
+                            { "Variable": "$.Job.Transcode.Perform", "BooleanEquals": true, "Next": "FargateTranscodeAll" },
+                            { "Variable": "$.Job.Transcode.Perform", "BooleanEquals": false, "Next": "SkipFargateTranscode"}
+                          ]
+                        },
+                        "SkipFargateTranscode": {
+                          "Type": "Pass",
+                          "Comment": "(I/O {Job,Ingest}/{TaskResult})",
+                          "End": true,
+                          "ResultPath": "$",
+                          "Result": {
+                            "TaskResult": {
+                              "Task": "Null"
+                            }
+                          }
+                        },
+                        "FargateTranscodeAll": {
+                          "Type": "Map",
+                          "Comment": "(I/O {Job,Ingest}/[{Job,Ingest,Transcode,TaskResult,Void}])",
+                          "End": true,
+                          "InputPath": "$",
+                          "ItemsPath": "$.Job.Transcode.Encodings",
+                          "Parameters": {
+                            "Encoding.$": "$$.Map.Item.Value",
+                            "Job": {
+                              "Id.$": "$.Job.Id",
+                              "Callbacks.$": "$.Job.Callbacks"
+                            },
+                            "Ingest.$": "$.Ingest"
+                          },
+                          "MaxConcurrency": 0,
+                          "Iterator": {
+                            "StartAt": "FargateTranscodeEach",
+                            "States": {
+                              "FargateTranscodeEach": {
+                                "Type": "Task",
+                                "Comment": "(I/O {Job,Ingest,Transcode}/{Job,Ingest,Transcode,TaskResult})",
+                                "Resource": "arn:aws:states:::ecs:runTask.sync",
+                                "Parameters": {
+                                  "Cluster": "${EcsClusterArn}",
+                                  "LaunchType":"FARGATE",
+                                  "Overrides": {
+                                    "ContainerOverrides": [
+                                      {
+                                        "Environment": [
+                                          {
+                                            "Name": "STATE_MACHINE_EXECUTION_ID",
+                                            "Value.$": "$$.Execution.Id"
+                                          }
+                                        ],
+                                        "Name": "${TranscodeContainerName}"
+                                      }
+                                    ]
+                                  },
+                                  "NetworkConfiguration": {
+                                    "AwsvpcConfiguration": {
+                                      "AssignPublicIp": "ENABLED",
+                                      "Subnets": [
+                                        "${VpcSubnet1}",
+                                        "${VpcSubnet2}"
+                                      ]
+                                    }
+                                  },
+                                  "TaskDefinition": "${TranscodeEcsTaskDefinitionArn}"
+                                },
+                                "InputPath": "$",
+                                "ResultPath": "$.EcsTaskRunDetails",
+                                "Next": "FargateTranscodeCallbacks",
+                                "Retry": [
+                                  {
+                                    "ErrorEquals": ["States.ALL"],
+                                    "IntervalSeconds": 5,
+                                    "MaxAttempts": 3,
+                                    "BackoffRate": 2
+                                  }
+                                ]
+                              },
+                              "FargateTranscodeCallbacks": {
+                                "Type": "Map",
+                                "Comment": "(I/O {Job,Ingest,Transcode,EcsTaskRunDetails}/{Job,Ingest,Transcode,TaskResult,Void})",
+                                "End": true,
+                                "InputPath": "$",
+                                "ItemsPath": "$.Job.Callbacks",
+                                "Parameters": {
+                                  "Callback.$": "$$.Map.Item.Value",
+                                  "TaskResult": {
+                                    "Job.$": "$.Job",
+                                    "Result": {
+                                      "Task": "Transcode",
+                                      "BucketName.$": "$.Encoding.Destination.BucketName",
+                                      "ObjectKey.$": "$.Encoding.Destination.ObjectKey"
+                                    }
+                                  }
+                                },
+                                "ResultPath": "$.Void",
+                                "MaxConcurrency": 0,
+                                "Iterator": {
+                                  "StartAt": "SendFargateTranscodeCallback",
+                                  "States": {
+                                    "SendFargateTranscodeCallback": {
+                                      "Type": "Task",
+                                      "Comment": "(I/O {TaskResult,Callback}/id)",
+                                      "Resource": "${JobCallbackLambdaFunctionArn}",
+                                      "ResultPath": "$.Void",
+                                      "OutputPath": "$.TaskResult.Job.Id",
+                                      "End": true,
+                                      "Retry": [
+                                        {
+                                          "ErrorEquals": ["States.ALL"],
+                                          "IntervalSeconds": 5,
+                                          "MaxAttempts": 3,
+                                          "BackoffRate": 2
+                                        }
+                                      ]
+                                    }
+                                  }
+                                }
+                              }
+                            }
+                          }
+                        }
+                      }
                     }
                   ]
                 },
@@ -1247,6 +1700,11 @@ Resources:
             InspectMediaLambdaFunctionArn: !GetAtt InspectMediaLambdaFunction.Arn
             TranscodeMediaLambdaFunctionArn: !GetAtt TranscodeMediaLambdaFunction.Arn
             JobCallbackLambdaFunctionArn: !GetAtt JobCallbackLambdaFunction.Arn
+            EcsClusterArn: !GetAtt EcsCluster.Arn
+            TranscodeEcsTaskDefinitionArn: !Ref TranscodeEcsTaskDefinition
+            VpcSubnet1: !Ref Subnet1
+            VpcSubnet2: !Ref Subnet2
+            TranscodeContainerName: !Sub ${AWS::StackName}-transcode-container
       RoleArn: !GetAtt StateMachineIamRole.Arn
       Tags:
         - Key: Project
