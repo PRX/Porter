@@ -493,13 +493,13 @@ Resources:
               });
           }
 
-          exports.handler = async (event, context) => {
+          exports.handler = async (event) => {
 
-              const sourceUri = event.URI;
+              const sourceUri = event.Job.Source.URI;
               const sourceFilename = sourceUri.split('/').pop();
 
               const artifactBucketName = process.env.ARTIFACT_BUCKET_NAME;
-              const artifactObjectKey = `${context.awsRequestId}/${sourceFilename}`;
+              const artifactObjectKey = `${event.Execution.Id}/${sourceFilename}`;
 
               if (sourceUri.startsWith('https://') || sourceUri.startsWith('http://')) {
                   // Downloads the HTTP resource to a file on disk in the Lambda's tmp
@@ -1195,7 +1195,15 @@ Resources:
                   "Comment": "(I/O {Job}/{Job,Artifact}) Downloads the given source file to S3",
                   "Type": "Task",
                   "Resource": "${IngestLambdaFunctionArn}",
-                  "InputPath": "$.Job.Source",
+                  "InputPath": "$",
+                  "Parameters": {
+                    "Job": {
+                      "Source.$": "$.Job.Source"
+                    },
+                    "Execution": {
+                      "Id.$": "$$.Execution.Id"
+                    }
+                  },
                   "ResultPath": "$.Artifact",
                   "Next": "JobTasks",
                   "Retry": [
