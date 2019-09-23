@@ -528,8 +528,7 @@ Resources:
               return { "BucketName": artifactBucketName, "ObjectKey": artifactObjectKey };
           };
       Description: >
-        Ingests a source file defined in Rexif input to a predefined S3 bucket,
-        returning the resulting bucket name and object key
+        Ingests a source file to a predefined S3 artifact bucket
       Environment:
         Variables:
           ARTIFACT_BUCKET_NAME: !Ref ArtifactBucket
@@ -693,7 +692,7 @@ Resources:
               return { Task: "Inspect", Inspection: inspection };
           };
       Description: >
-        tktk
+        Inspects (ffprobe, etc) the source file
       Handler: index.handler
       Layers:
         - !Ref AwsXraySdkLambdaLayerVersionArn
@@ -933,7 +932,7 @@ Resources:
               };
           };
       Description: >
-        tktk
+        Encodes a source file using ffmpeg
       Handler: index.handler
       Layers:
         - !Ref AwsXraySdkLambdaLayerVersionArn
