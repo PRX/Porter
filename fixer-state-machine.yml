@@ -314,7 +314,7 @@ Resources:
                   - "s3:Put*"
                 Resource:
                   - "*"
-        - PolicyName: S3IngestBucketPolicy
+        - PolicyName: S3ArtifactBucketPolicy
           PolicyDocument:
             Version: "2012-10-17"
             Statement:
@@ -322,8 +322,8 @@ Resources:
                 Action:
                   - "s3:Get*"
                 Resource:
-                  - !Sub "arn:aws:s3:::${IngestBucket}"
-                  - !Sub "arn:aws:s3:::${IngestBucket}/*"
+                  - !Sub "arn:aws:s3:::${ArtifactBucket}"
+                  - !Sub "arn:aws:s3:::${ArtifactBucket}/*"
       Tags:
         - Key: Project
           Value: Rexif
@@ -368,8 +368,8 @@ Resources:
       TaskRoleArn: !GetAtt TranscodeEcsTaskIamRole.Arn
       # Volumes:
       #   - Volume
-  # Ingest Bucket
-  IngestBucket:
+  # Artifact Bucket
+  ArtifactBucket:
     Type: AWS::S3::Bucket
     DeletionPolicy: Retain
     Properties:
@@ -402,7 +402,7 @@ Resources:
         - arn:aws:iam::aws:policy/AWSXrayWriteOnlyAccess
       Path: "/"
       Policies:
-        - PolicyName: S3IngestBucketPolicy
+        - PolicyName: S3ArtifactBucketPolicy
           PolicyDocument:
             Version: "2012-10-17"
             Statement:
@@ -410,8 +410,8 @@ Resources:
                 Action:
                   - "s3:*"
                 Resource:
-                  - !Sub "arn:aws:s3:::${IngestBucket}"
-                  - !Sub "arn:aws:s3:::${IngestBucket}/*"
+                  - !Sub "arn:aws:s3:::${ArtifactBucket}"
+                  - !Sub "arn:aws:s3:::${ArtifactBucket}/*"
         - PolicyName: S3CopyPolicy
           PolicyDocument:
             Version: "2012-10-17"
@@ -448,8 +448,8 @@ Resources:
           // The function returns an object like
           // { "BucketName": "abc", "ObjectKey": "xyz" }
           //
-          // The result path is $.Ingest, so the output of the state looks like
-          // { "Job": { … }, "Ingest": { "BucketName": "abc", "ObjectKey": "xyz" } }
+          // The result path is $.Artifact, so the output of the state looks like
+          // { "Job": { … }, "Artifact": { "BucketName": "abc", "ObjectKey": "xyz" } }
 
           const path = require('path');
           const os = require('os');
@@ -498,41 +498,41 @@ Resources:
               const sourceUri = event.URI;
               const sourceFilename = sourceUri.split('/').pop();
 
-              const ingestBucketName = process.env.INGEST_BUCKET_NAME;
-              const ingestObjectKey = `${context.awsRequestId}/${sourceFilename}`;
+              const artifactBucketName = process.env.ARTIFACT_BUCKET_NAME;
+              const artifactObjectKey = `${context.awsRequestId}/${sourceFilename}`;
 
               if (sourceUri.startsWith('https://') || sourceUri.startsWith('http://')) {
                   // Downloads the HTTP resource to a file on disk in the Lambda's tmp
-                  // directory, and then uploads that file to the S3 ingest bucket.
+                  // directory, and then uploads that file to the S3 artifact bucket.
                   const localFilePath = path.join(os.tmpdir(), sourceFilename);
 
                   const fileBuffer = await httpGet(sourceUri);
                   await writeBufferToPath(fileBuffer, localFilePath);
 
                   await s3.upload({
-                      Bucket: ingestBucketName,
-                      Key: ingestObjectKey,
+                      Bucket: artifactBucketName,
+                      Key: artifactObjectKey,
                       Body: fs.createReadStream(localFilePath),
                   }).promise();
 
                   fs.unlinkSync(localFilePath);
               } else if (sourceUri.startsWith('s3://')) {
-                  // Copies an existing S3 object to the S3 ingest bucket.
+                  // Copies an existing S3 object to the S3 artifact bucket.
                   await s3.copyObject({
                       CopySource: sourceUri.replace(/^s3:\//),
-                      Bucket: ingestBucketName,
-                      Key: ingestObjectKey
+                      Bucket: artifactBucketName,
+                      Key: artifactObjectKey
                   }).promise();
               }
 
-              return { "BucketName": ingestBucketName, "ObjectKey": ingestObjectKey };
+              return { "BucketName": artifactBucketName, "ObjectKey": artifactObjectKey };
           };
       Description: >
         Ingests a source file defined in Rexif input to a predefined S3 bucket,
         returning the resulting bucket name and object key
       Environment:
         Variables:
-          INGEST_BUCKET_NAME: !Ref IngestBucket
+          ARTIFACT_BUCKET_NAME: !Ref ArtifactBucket
       Handler: index.handler
       Layers:
         - !Ref AwsXraySdkLambdaLayerVersionArn
@@ -565,7 +565,7 @@ Resources:
         - arn:aws:iam::aws:policy/AWSXrayWriteOnlyAccess
       Path: "/"
       Policies:
-        - PolicyName: S3IngestBucketPolicy
+        - PolicyName: S3ArtifactBucketPolicy
           PolicyDocument:
             Version: "2012-10-17"
             Statement:
@@ -573,8 +573,8 @@ Resources:
                 Action:
                   - "s3:Get*"
                 Resource:
-                  - !Sub "arn:aws:s3:::${IngestBucket}"
-                  - !Sub "arn:aws:s3:::${IngestBucket}/*"
+                  - !Sub "arn:aws:s3:::${ArtifactBucket}"
+                  - !Sub "arn:aws:s3:::${ArtifactBucket}/*"
       Tags:
         - Key: Project
           Value: Rexif
@@ -669,21 +669,21 @@ Resources:
               }
           }
 
-          // Ex. input:  { "Ingest": { "BucketName": "SourceBucket", "ObjectKey": "Abc.wav" }, "Encoding": { "Format": "flac" } }
+          // Ex. input:  { "Artifact": { "BucketName": "SourceBucket", "ObjectKey": "Abc.wav" }, "Encoding": { "Format": "flac" } }
           // Ex. output: { "Task",: "Transcode", "Format": "flac", "BucketName": "ResultBucket", "ObjectKey": "Xyz.flac" }
           exports.handler = async (event, context) => {
-              const ingestedFileTmpPath = path.join(os.tmpdir(), context.awsRequestId);
+              const artifactFileTmpPath = path.join(os.tmpdir(), context.awsRequestId);
 
-              console.log(`Getting ${event.Ingest.BucketName}/${event.Ingest.ObjectKey} to ${ingestedFileTmpPath}`);
-              await s3GetObject(event.Ingest.BucketName, event.Ingest.ObjectKey, ingestedFileTmpPath);
-              console.log(`Got ${event.Ingest.BucketName}/${event.Ingest.ObjectKey} to ${ingestedFileTmpPath}`);
+              console.log(`Getting ${event.Artifact.BucketName}/${event.Artifact.ObjectKey} to ${artifactFileTmpPath}`);
+              await s3GetObject(event.Artifact.BucketName, event.Artifact.ObjectKey, artifactFileTmpPath);
+              console.log(`Got ${event.Artifact.BucketName}/${event.Artifact.ObjectKey} to ${artifactFileTmpPath}`);
 
               const json = await spawn('/opt/bin/ffprobe',
-                                  ['-v', 'error', '-show_streams', '-show_format', '-i', ingestedFileTmpPath, '-print_format', 'json'],
+                                  ['-v', 'error', '-show_streams', '-show_format', '-i', artifactFileTmpPath, '-print_format', 'json'],
                                   { env: process.env, cwd: os.tmpdir() });
               const ffprobe = JSON.parse(json);
 
-              fs.unlinkSync(ingestedFileTmpPath);
+              fs.unlinkSync(artifactFileTmpPath);
 
               const inspection = { size: ffprobe.format.size };
 
@@ -735,8 +735,8 @@ Resources:
                 Action:
                   - "s3:*"
                 Resource:
-                  - !Sub "arn:aws:s3:::${IngestBucket}"
-                  - !Sub "arn:aws:s3:::${IngestBucket}/*"
+                  - !Sub "arn:aws:s3:::${ArtifactBucket}"
+                  - !Sub "arn:aws:s3:::${ArtifactBucket}/*"
         - PolicyName: S3PutPolicy
           PolicyDocument:
             Version: "2012-10-17"
@@ -763,15 +763,15 @@ Resources:
 
           const s3 = new aws.S3();
 
-          // Ex. input:  { "Ingest": { "BucketName": "SourceBucket", "ObjectKey": "Abc.wav" }, "Copy": { "Mode": "S3", "BucketName": "DestinationBucket", "ObjectKey": "Abc.wav" } }
+          // Ex. input:  { "Artifact": { "BucketName": "SourceBucket", "ObjectKey": "Abc.wav" }, "Copy": { "Mode": "S3", "BucketName": "DestinationBucket", "ObjectKey": "Abc.wav" } }
           // Ex. output: { "Task",: "Copy", "BucketName": "ResultBucket", "ObjectKey": "Abc.wav" }
           exports.handler = async (event) => {
               await s3.copyObject({
-                  CopySource: `/${event.Ingest.BucketName}/${event.Ingest.ObjectKey}`,
+                  CopySource: `/${event.Artifact.BucketName}/${event.Artifact.ObjectKey}`,
                   Bucket: event.Copy.BucketName,
                   Key: event.Copy.ObjectKey
               }).promise();
-              console.log(`Copied /${event.Ingest.BucketName}/${event.Ingest.ObjectKey} to /${event.Copy.BucketName}/${event.Copy.ObjectKey}`);
+              console.log(`Copied /${event.Artifact.BucketName}/${event.Artifact.ObjectKey} to /${event.Copy.BucketName}/${event.Copy.ObjectKey}`);
 
               return { Task: "Copy", BucketName: event.Copy.BucketName, ObjectKey: event.Copy.ObjectKey };
           };
@@ -818,7 +818,7 @@ Resources:
                   - "s3:Put*"
                 Resource:
                   - "*"
-        - PolicyName: IngestBucketPolicy
+        - PolicyName: ArtifactBucketPolicy
           PolicyDocument:
             Version: "2012-10-17"
             Statement:
@@ -827,8 +827,8 @@ Resources:
                   - "s3:Get*"
                   - "s3:List*"
                 Resource:
-                  - !Sub "arn:aws:s3:::${IngestBucket}"
-                  - !Sub "arn:aws:s3:::${IngestBucket}/*"
+                  - !Sub "arn:aws:s3:::${ArtifactBucket}"
+                  - !Sub "arn:aws:s3:::${ArtifactBucket}/*"
       Tags:
         - Key: Project
           Value: Rexif
@@ -892,20 +892,20 @@ Resources:
             });
           }
 
-          // Ex. input:  { "Ingest": { "BucketName": "SourceBucket", "ObjectKey": "Abc.wav" }, "Encoding": { "Format": "flac" } }
+          // Ex. input:  { "Artifact": { "BucketName": "SourceBucket", "ObjectKey": "Abc.wav" }, "Encoding": { "Format": "flac" } }
           // Ex. output: { "Task",: "Transcode", "Format": "flac", "BucketName": "ResultBucket", "ObjectKey": "Xyz.flac" }
           exports.handler = async (event, context) => {
-              const ingestedFileTmpPath = path.join(os.tmpdir(), context.awsRequestId);
+              const artifactFileTmpPath = path.join(os.tmpdir(), context.awsRequestId);
 
-              await s3GetObject(event.Ingest.BucketName, event.Ingest.ObjectKey, ingestedFileTmpPath);
-              console.log(`Got ${event.Ingest.BucketName}/${event.Ingest.ObjectKey} to ${ingestedFileTmpPath}`);
+              await s3GetObject(event.Artifact.BucketName, event.Artifact.ObjectKey, artifactFileTmpPath);
+              console.log(`Got ${event.Artifact.BucketName}/${event.Artifact.ObjectKey} to ${artifactFileTmpPath}`);
 
-              const transcodedMediaFilePath = `${ingestedFileTmpPath}-transcoded.${event.Encoding.Format}`;
+              const transcodedMediaFilePath = `${artifactFileTmpPath}-transcoded.${event.Encoding.Format}`;
               console.log(`Transcoding as [${event.Encoding.Format}] to ${transcodedMediaFilePath}`);
 
               await spawn(
                   '/opt/bin/ffmpeg',
-                  ['-loglevel', 'error', '-i', ingestedFileTmpPath, transcodedMediaFilePath],
+                  ['-loglevel', 'error', '-i', artifactFileTmpPath, transcodedMediaFilePath],
                   { env: process.env, cwd: os.tmpdir() }
               );
               console.log('finished transcode');
@@ -923,7 +923,7 @@ Resources:
                   console.log(`Uploaded to ${s3OutputBucketName}/${s3OutputObjectKey}`);
               }
 
-              fs.unlinkSync(ingestedFileTmpPath);
+              fs.unlinkSync(artifactFileTmpPath);
               fs.unlinkSync(transcodedMediaFilePath);
 
               return {
@@ -1192,11 +1192,11 @@ Resources:
               "StartAt": "IngestSourceFile",
               "States": {
                 "IngestSourceFile": {
-                  "Comment": "(I/O {Job}/{Job,Ingest}) Downloads the given source file to S3",
+                  "Comment": "(I/O {Job}/{Job,Artifact}) Downloads the given source file to S3",
                   "Type": "Task",
                   "Resource": "${IngestLambdaFunctionArn}",
                   "InputPath": "$.Job.Source",
-                  "ResultPath": "$.Ingest",
+                  "ResultPath": "$.Artifact",
                   "Next": "JobTasks",
                   "Retry": [
                     {
@@ -1216,7 +1216,7 @@ Resources:
                 },
                 "JobTasks": {
                   "Type": "Parallel",
-                  "Comment": "(I/O {Job,Ingest}/{Job,Ingest,JobTaskResults}) Executes the tasks defined by the input job",
+                  "Comment": "(I/O {Job,Artifact}/{Job,Artifact,JobTaskResults}) Executes the tasks defined by the input job",
                   "InputPath": "$",
                   "ResultPath": "$.JobTaskResults",
                   "Next": "JobCallbacks",
@@ -1233,7 +1233,7 @@ Resources:
                       "States": {
                         "InspectBranch": {
                           "Type": "Choice",
-                          "Comment": "(I/O {Job,Ingest}/{Job,Ingest}) Determines if the Inspect operation was included in the job",
+                          "Comment": "(I/O {Job,Artifact}/{Job,Artifact}) Determines if the Inspect operation was included in the job",
                           "Choices": [
                             { "Variable": "$.Job.Inspect.Perform", "BooleanEquals": true, "Next": "Inspect" },
                             { "Variable": "$.Job.Inspect.Perform", "BooleanEquals": false, "Next": "SkipInspect"}
@@ -1241,7 +1241,7 @@ Resources:
                         },
                         "SkipInspect": {
                           "Type": "Pass",
-                          "Comment": "(I/O {Job,Ingest}/{TaskResult})",
+                          "Comment": "(I/O {Job,Artifact}/{TaskResult})",
                           "End": true,
                           "ResultPath": "$",
                           "Result": {
@@ -1252,19 +1252,19 @@ Resources:
                         },
                         "Inspect": {
                           "Type": "Task",
-                          "Comment": "(I/O {Job,Ingest}/{Job,Ingest,TaskResult}) Inspects the source file",
+                          "Comment": "(I/O {Job,Artifact}/{Job,Artifact,TaskResult}) Inspects the source file",
                           "Resource": "${InspectMediaLambdaFunctionArn}",
                           "InputPath": "$",
                           "Parameters": {
                             "Job": { "Id.$": "$.Job.Id" },
-                            "Ingest.$": "$.Ingest"
+                            "Artifact.$": "$.Artifact"
                           },
                           "ResultPath": "$.TaskResult",
                           "Next": "InspectCallbacks"
                         },
                         "InspectCallbacks": {
                           "Type": "Map",
-                          "Comment": "(I/O {Job,Ingest,TaskResult}/{Job,Ingest,TaskResult,Void}) Sends a successful inspection result to each callback defined in the job via an iterator",
+                          "Comment": "(I/O {Job,Artifact,TaskResult}/{Job,Artifact,TaskResult,Void}) Sends a successful inspection result to each callback defined in the job via an iterator",
                           "End": true,
                           "InputPath": "$",
                           "ItemsPath": "$.Job.Callbacks",
@@ -1305,7 +1305,7 @@ Resources:
                       "States": {
                         "CopyBranch": {
                           "Type": "Choice",
-                          "Comment": "(I/O {Job,Ingest}/{Job,Ingest}) Determines if the Copy operation was included in the job",
+                          "Comment": "(I/O {Job,Artifact}/{Job,Artifact}) Determines if the Copy operation was included in the job",
                           "Choices": [
                             { "Variable": "$.Job.Copy.Perform", "BooleanEquals": true, "Next": "CopyAll" },
                             { "Variable": "$.Job.Copy.Perform", "BooleanEquals": false, "Next": "SkipCopy"}
@@ -1313,7 +1313,7 @@ Resources:
                         },
                         "SkipCopy": {
                           "Type": "Pass",
-                          "Comment": "(I/O {Job,Ingest}/{TaskResult})",
+                          "Comment": "(I/O {Job,Artifact}/{TaskResult})",
                           "End": true,
                           "ResultPath": "$",
                           "Result": {
@@ -1324,7 +1324,7 @@ Resources:
                         },
                         "CopyAll": {
                           "Type": "Map",
-                          "Comment": "(I/O {Job,Ingest}/[{Job,Ingest,Copy,TaskResult,Void}])",
+                          "Comment": "(I/O {Job,Artifact}/[{Job,Artifact,Copy,TaskResult,Void}])",
                           "End": true,
                           "InputPath": "$",
                           "ItemsPath": "$.Job.Copy.Destinations",
@@ -1334,7 +1334,7 @@ Resources:
                               "Id.$": "$.Job.Id",
                               "Callbacks.$": "$.Job.Callbacks"
                             },
-                            "Ingest.$": "$.Ingest"
+                            "Artifact.$": "$.Artifact"
                           },
                           "MaxConcurrency": 0,
                           "Iterator": {
@@ -1342,7 +1342,7 @@ Resources:
                             "States": {
                               "CopyEach": {
                                 "Type": "Task",
-                                "Comment": "(I/O {Job,Ingest,Copy}/{Job,Ingest,Copy,TaskResult})",
+                                "Comment": "(I/O {Job,Artifact,Copy}/{Job,Artifact,Copy,TaskResult})",
                                 "Resource": "${CopyLambdaFunctionArn}",
                                 "InputPath": "$",
                                 "ResultPath": "$.TaskResult",
@@ -1358,7 +1358,7 @@ Resources:
                               },
                               "CopyCallbacks": {
                                 "Type": "Map",
-                                "Comment": "(I/O {Job,Ingest,Copy,TaskResult}/{Job,Ingest,Copy,TaskResult,Void})",
+                                "Comment": "(I/O {Job,Artifact,Copy,TaskResult}/{Job,Artifact,Copy,TaskResult,Void})",
                                 "End": true,
                                 "InputPath": "$",
                                 "ItemsPath": "$.Job.Callbacks",
@@ -1402,7 +1402,7 @@ Resources:
                       "States": {
                         "TranscodeBranch": {
                           "Type": "Choice",
-                          "Comment": "(I/O {Job,Ingest}/{Job,Ingest}) Determines if the Transcode operation was included in the job",
+                          "Comment": "(I/O {Job,Artifact}/{Job,Artifact}) Determines if the Transcode operation was included in the job",
                           "Choices": [
                             { "Variable": "$.Job.Transcode.Perform", "BooleanEquals": true, "Next": "TranscodeAll" },
                             { "Variable": "$.Job.Transcode.Perform", "BooleanEquals": false, "Next": "SkipTranscode"}
@@ -1410,7 +1410,7 @@ Resources:
                         },
                         "SkipTranscode": {
                           "Type": "Pass",
-                          "Comment": "(I/O {Job,Ingest}/{TaskResult})",
+                          "Comment": "(I/O {Job,Artifact}/{TaskResult})",
                           "End": true,
                           "ResultPath": "$",
                           "Result": {
@@ -1421,7 +1421,7 @@ Resources:
                         },
                         "TranscodeAll": {
                           "Type": "Map",
-                          "Comment": "(I/O {Job,Ingest}/[{Job,Ingest,Transcribe,TaskResult,Void}])",
+                          "Comment": "(I/O {Job,Artifact}/[{Job,Artifact,Transcribe,TaskResult,Void}])",
                           "End": true,
                           "InputPath": "$",
                           "ItemsPath": "$.Job.Transcode.Encodings",
@@ -1431,7 +1431,7 @@ Resources:
                               "Id.$": "$.Job.Id",
                               "Callbacks.$": "$.Job.Callbacks"
                             },
-                            "Ingest.$": "$.Ingest"
+                            "Artifact.$": "$.Artifact"
                           },
                           "MaxConcurrency": 0,
                           "Iterator": {
@@ -1439,7 +1439,7 @@ Resources:
                             "States": {
                               "TranscodeEach": {
                                 "Type": "Task",
-                                "Comment": "(I/O {Job,Ingest,Transcribe}/{Job,Ingest,Transcribe,TaskResult})",
+                                "Comment": "(I/O {Job,Artifact,Transcribe}/{Job,Artifact,Transcribe,TaskResult})",
                                 "Resource": "${TranscodeMediaLambdaFunctionArn}",
                                 "InputPath": "$",
                                 "ResultPath": "$.TaskResult",
@@ -1455,7 +1455,7 @@ Resources:
                               },
                               "TranscodeCallbacks": {
                                 "Type": "Map",
-                                "Comment": "(I/O {Job,Ingest,Transcribe,TaskResult}/{Job,Ingest,Transcribe,TaskResult,Void})",
+                                "Comment": "(I/O {Job,Artifact,Transcribe,TaskResult}/{Job,Artifact,Transcribe,TaskResult,Void})",
                                 "End": true,
                                 "InputPath": "$",
                                 "ItemsPath": "$.Job.Callbacks",
@@ -1499,7 +1499,7 @@ Resources:
                       "States": {
                         "FargateTranscodeBranch": {
                           "Type": "Choice",
-                          "Comment": "(I/O {Job,Ingest}/{Job,Ingest}) Determines if the Transcode operation was included in the job",
+                          "Comment": "(I/O {Job,Artifact}/{Job,Artifact}) Determines if the Transcode operation was included in the job",
                           "Choices": [
                             { "Variable": "$.Job.Transcode.Perform", "BooleanEquals": true, "Next": "FargateTranscodeAll" },
                             { "Variable": "$.Job.Transcode.Perform", "BooleanEquals": false, "Next": "SkipFargateTranscode"}
@@ -1507,7 +1507,7 @@ Resources:
                         },
                         "SkipFargateTranscode": {
                           "Type": "Pass",
-                          "Comment": "(I/O {Job,Ingest}/{TaskResult})",
+                          "Comment": "(I/O {Job,Artifact}/{TaskResult})",
                           "End": true,
                           "ResultPath": "$",
                           "Result": {
@@ -1518,7 +1518,7 @@ Resources:
                         },
                         "FargateTranscodeAll": {
                           "Type": "Map",
-                          "Comment": "(I/O {Job,Ingest}/[{Job,Ingest,Transcode,TaskResult,Void}])",
+                          "Comment": "(I/O {Job,Artifact}/[{Job,Artifact,Transcode,TaskResult,Void}])",
                           "End": true,
                           "InputPath": "$",
                           "ItemsPath": "$.Job.Transcode.Encodings",
@@ -1528,7 +1528,7 @@ Resources:
                               "Id.$": "$.Job.Id",
                               "Callbacks.$": "$.Job.Callbacks"
                             },
-                            "Ingest.$": "$.Ingest"
+                            "Artifact.$": "$.Artifact"
                           },
                           "MaxConcurrency": 0,
                           "Iterator": {
@@ -1536,7 +1536,7 @@ Resources:
                             "States": {
                               "FargateTranscodeEach": {
                                 "Type": "Task",
-                                "Comment": "(I/O {Job,Ingest,Transcode}/{Job,Ingest,Transcode,TaskResult})",
+                                "Comment": "(I/O {Job,Artifact,Transcode}/{Job,Artifact,Transcode,TaskResult})",
                                 "Resource": "arn:aws:states:::ecs:runTask.sync",
                                 "Parameters": {
                                   "Cluster": "${EcsClusterArn}",
@@ -1579,7 +1579,7 @@ Resources:
                               },
                               "FargateTranscodeCallbacks": {
                                 "Type": "Map",
-                                "Comment": "(I/O {Job,Ingest,Transcode,EcsTaskRunDetails}/{Job,Ingest,Transcode,TaskResult,Void})",
+                                "Comment": "(I/O {Job,Artifact,Transcode,EcsTaskRunDetails}/{Job,Artifact,Transcode,TaskResult,Void})",
                                 "End": true,
                                 "InputPath": "$",
                                 "ItemsPath": "$.Job.Callbacks",
