@@ -640,22 +640,35 @@ Resources:
             });
           }
 
-          function audioInspection(ffprobe) {
+          function audioInspection(ffprobe, mpck) {
               const stream = ffprobe.streams.find(s => s.codec_type === 'audio');
 
+              const inspection = {};
+
               if (stream) {
-                  return {
+                  Object.assign(inspection, {
                       duration:  Math.round(stream.duration * 1000),
                       format:    stream.codec_name,
                       bitrate:   stream.bit_rate,
                       frequency: stream.sample_rate,
                       channels:  stream.channels,
                       layout:    stream.channel_layout
-                  };
+                  });
               }
+
+              if (stream.codec_name === 'mp3') {
+                  Object.assign(inspection, {
+                      // This is bad
+                      layer: (res.match(/layer (.+)/) ? res.match(/layer (.+)/)[1] : null),
+                      samples: (res.match(/samples (.+)/) ? res.match(/samples (.+)/)[1] : null),
+                      frames: (res.match(/frames (.+)/) ? res.match(/frames (.+)/)[1] : null)
+                  });
+              }
+
+              return inspection;
           }
 
-          function videoInspection(ffprobe) {
+          function videoInspection(ffprobe, mpck) {
               const stream = ffprobe.streams.find(s => s.codec_type === 'video' && s.duration > 0 && s.bit_rate > 0);
 
               if (stream) {
@@ -685,12 +698,16 @@ Resources:
                                   { env: process.env, cwd: os.tmpdir() });
               const ffprobe = JSON.parse(json);
 
+              const mpck = await spawn('/opt/bin/mpck',
+                                  ['-v', artifactFileTmpPath],
+                                  { env: process.env, cwd: os.tmpdir() });
+
               fs.unlinkSync(artifactFileTmpPath);
 
               const inspection = { size: ffprobe.format.size };
 
-              Object.assign(inspection, { audio: audioInspection(ffprobe) });
-              Object.assign(inspection, { video: videoInspection(ffprobe) });
+              Object.assign(inspection, { audio: audioInspection(ffprobe, mpck) });
+              Object.assign(inspection, { video: videoInspection(ffprobe, mpck) });
 
               return { Task: "Inspect", Inspection: inspection };
           };
