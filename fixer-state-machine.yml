@@ -1,7 +1,8 @@
 # etc/sample-step-functions.yml
 AWSTemplateFormatVersion: "2010-09-09"
 Description: >
-  TKTKTK
+  Creates a Step Function state machine for processing user created content, as
+  well as some supporting resources
 Parameters:
   AwsXraySdkLambdaLayerVersionArn:
     Type: String
