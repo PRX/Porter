@@ -1724,3 +1724,7 @@ Resources:
           Value: !Ref AWS::StackName
         - Key: prx:cloudformation:stack-id
           Value: !Ref AWS::StackId
+Outputs:
+  # Slack relay topic used by many other notification handlers
+  JobExecutionSnsTopicArn:
+    Value: !Ref JobExecutionSnsTopic
