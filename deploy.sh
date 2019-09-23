@@ -1,9 +1,9 @@
 #!/bin/bash
 
 aws cloudformation deploy \
-        --region us-east-2 \
-        --profile prx_it_services \
-        --s3-bucket cf-templates-19dybi845jxs3-us-east-2 \
+        --region us-east-1 \
+        --profile prx_legacy \
+        --s3-bucket cf-templates-1r2sjvlu82hbi-us-east-1 \
         --template-file ./fixer-state-machine.yml \
         --stack-name fixer-state-machine-prototype \
         --capabilities CAPABILITY_IAM \
