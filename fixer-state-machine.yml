@@ -1428,7 +1428,7 @@ Resources:
                         },
                         "TranscodeAll": {
                           "Type": "Map",
-                          "Comment": "(I/O {Job,Artifact}/[{Job,Artifact,Transcribe,TaskResult,Void}])",
+                          "Comment": "(I/O {Job,Artifact}/[{Job,Artifact,Transcode,TaskResult,Void}])",
                           "End": true,
                           "InputPath": "$",
                           "ItemsPath": "$.Job.Transcode.Encodings",
@@ -1446,7 +1446,7 @@ Resources:
                             "States": {
                               "TranscodeEach": {
                                 "Type": "Task",
-                                "Comment": "(I/O {Job,Artifact,Transcribe}/{Job,Artifact,Transcribe,TaskResult})",
+                                "Comment": "(I/O {Job,Artifact,Transcode}/{Job,Artifact,Transcode,TaskResult})",
                                 "Resource": "${TranscodeMediaLambdaFunctionArn}",
                                 "InputPath": "$",
                                 "ResultPath": "$.TaskResult",
@@ -1462,7 +1462,7 @@ Resources:
                               },
                               "TranscodeCallbacks": {
                                 "Type": "Map",
-                                "Comment": "(I/O {Job,Artifact,Transcribe,TaskResult}/{Job,Artifact,Transcribe,TaskResult,Void})",
+                                "Comment": "(I/O {Job,Artifact,Transcode,TaskResult}/{Job,Artifact,Transcode,TaskResult,Void})",
                                 "End": true,
                                 "InputPath": "$",
                                 "ItemsPath": "$.Job.Callbacks",
