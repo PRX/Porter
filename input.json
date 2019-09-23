@@ -1,9 +1,9 @@
 {
 	"Job": {
 		"Id": "1234567890asdfghjkl",
-    "Source": {
-      "URI": "https://dts.podtrac.com/redirect.mp3/dovetail.prxu.org/232/613701eb-b242-4810-8ca3-a6770c262775/Passenger_List_EP02_SEG_A.mp3"
-    },
+		"Source": {
+			"URI": "https://dts.podtrac.com/redirect.mp3/dovetail.prxu.org/232/613701eb-b242-4810-8ca3-a6770c262775/Passenger_List_EP02_SEG_A.mp3"
+		},
 		"Copy": {
 			"Perform": true,
 			"Destinations": [
