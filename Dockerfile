@@ -6,7 +6,7 @@ RUN apk add -v --update --no-cache python3 && \
     rm -rf /var/cache/apk/* && \
     rm -rf /tmp/* /var/tmp/*
 
-ADD transcode.sh /transcode.sh
-RUN chmod +x /transcode.sh
+# TODO This should run a script that Gets the job artifact from S3, processes
+# it based on the job parameters, and sends the results back to S3
 
-ENTRYPOINT ["/transcode.sh"]
+ENTRYPOINT ["ffmpeg", "-formats"]

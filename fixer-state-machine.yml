@@ -336,15 +336,15 @@ Resources:
     Properties:
       ContainerDefinitions:
         -
-          Command:
-            - "$TASK_TOKEN"
-          EntryPoint:
-            - echo
+          # Command:
+          #   - "$TASK_TOKEN"
+          # EntryPoint:
+          #   - echo
           Environment:
             - Name: FOO
               Value: bar
           Essential: true
-          Image: alpine
+          Image: 127213743756.dkr.ecr.us-east-2.amazonaws.com/sf-test:latest
           LogConfiguration:
             LogDriver: awslogs
             Options:
