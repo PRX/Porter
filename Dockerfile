@@ -1,12 +1,19 @@
-FROM jrottenberg/ffmpeg:4.1-alpine
+FROM amazonlinux:latest
+RUN yum -y install aws-cli
+RUN yum -y install wget
+RUN yum -y install tar
+RUN yum -y install xz
 
-RUN apk add -v --update --no-cache python3 && \
-    pip3 install --upgrade pip setuptools && \
-    pip3 install --upgrade --no-cache-dir awscli && \
-    rm -rf /var/cache/apk/* && \
-    rm -rf /tmp/* /var/tmp/*
+ENV APP_HOME /transcode
+RUN mkdir -p $APP_HOME
+WORKDIR $APP_HOME
 
-# TODO This should run a script that Gets the job artifact from S3, processes
-# it based on the job parameters, and sends the results back to S3
+RUN wget https://johnvansickle.com/ffmpeg/builds/ffmpeg-git-amd64-static.tar.xz
+RUN tar xvf ffmpeg-git-amd64-static.tar.xz
 
-ENTRYPOINT ["ffmpeg", "-formats"]
+ADD transcode.sh ./
+RUN chmod +x ./transcode.sh
+
+RUN ls
+
+ENTRYPOINT ["./transcode.sh"]
