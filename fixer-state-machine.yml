@@ -1268,7 +1268,6 @@ Resources:
           - IngestLambdaFunctionArn: !GetAtt IngestLambdaFunction.Arn
             CopyLambdaFunctionArn: !GetAtt CopyLambdaFunction.Arn
             InspectMediaLambdaFunctionArn: !GetAtt InspectMediaLambdaFunction.Arn
-            TranscodeMediaLambdaFunctionArn: !GetAtt TranscodeMediaLambdaFunction.Arn
             JobCallbackLambdaFunctionArn: !GetAtt JobCallbackLambdaFunction.Arn
             EcsClusterArn: !GetAtt EcsCluster.Arn
             TranscodeEcsTaskDefinitionArn: !Ref TranscodeEcsTaskDefinition
