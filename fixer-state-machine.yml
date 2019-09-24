@@ -353,7 +353,7 @@ Resources:
             - Name: FOO
               Value: bar
           Essential: true
-          Image: 127213743756.dkr.ecr.us-east-2.amazonaws.com/sf-test:latest
+          Image: 561178107736.dkr.ecr.us-east-1.amazonaws.com/rexif-prototype:latest
           LogConfiguration:
             LogDriver: awslogs
             Options:

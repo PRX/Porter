@@ -9,6 +9,11 @@ export AWS_DEFAULT_REGION=us-east-1
 export STACK_RESOURCES_BUCKET=farski-sandbox-prx
 export CLOUDFORMATION_STACK_NAME=fixer-state-machine-prototype
 
+# $(aws ecr get-login --no-include-email --region us-east-1)
+# docker build -t rexif-prototype .
+# docker tag rexif-prototype:latest 561178107736.dkr.ecr.us-east-1.amazonaws.com/rexif-prototype:latest
+# docker push 561178107736.dkr.ecr.us-east-1.amazonaws.com/rexif-prototype:latest
+
 # Check Versioning status for resources bucket
 bucket_versioning=`aws s3api get-bucket-versioning --bucket "$STACK_RESOURCES_BUCKET" --output text --query 'Status'`
 if [ "$bucket_versioning" != "Enabled" ]
