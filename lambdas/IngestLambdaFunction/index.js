@@ -88,7 +88,7 @@ exports.handler = async (event, context) => {
     // https://docs.aws.amazon.com/AmazonS3/latest/API/RESTObjectCOPY.html
     // CopySource expects: "/sourcebucket/path/to/object.extension"
     await s3.copyObject({
-      CopySource: sourceUri.replace(/^s3:\//),
+      CopySource: sourceUri.replace(/^s3:\//, ''),
       Bucket: artifactBucketName,
       Key: artifactObjectKey
     }).promise();
