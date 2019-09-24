@@ -1200,6 +1200,21 @@ Resources:
                                           {
                                             "Name": "STATE_MACHINE_EXECUTION_ID",
                                             "Value.$": "$$.Execution.Id"
+                                          }, {
+                                            "Name": "STATE_MACHINE_ARTIFACT_BUCKET_NAME",
+                                            "Value.$": "$.Artifact.BucketName"
+                                          }, {
+                                            "Name": "STATE_MACHINE_ARTIFACT_OBJECT_KEY",
+                                            "Value.$": "$.Artifact.ObjectKey"
+                                          }, {
+                                            "Name": "STATE_MACHINE_DESTINATION_BUCKET_NAME",
+                                            "Value.$": "$.Encoding.Destination.BucketName"
+                                          }, {
+                                            "Name": "STATE_MACHINE_DESTINATION_OBJECT_KEY",
+                                            "Value.$": "$.Encoding.Destination.ObjectKey"
+                                          }, {
+                                            "Name": "STATE_MACHINE_DESTINATION_FORMAT",
+                                            "Value.$": "$.Encoding.Format"
                                           }
                                         ],
                                         "Name": "${TranscodeContainerName}"
