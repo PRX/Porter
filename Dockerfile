@@ -14,6 +14,4 @@ RUN tar xvf ffmpeg-git-amd64-static.tar.xz
 ADD transcode.sh ./
 RUN chmod +x ./transcode.sh
 
-RUN ls
-
 ENTRYPOINT ["./transcode.sh"]
