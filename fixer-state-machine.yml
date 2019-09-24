@@ -25,6 +25,24 @@ Parameters:
   JobCallbackLambdaFunctionS3ObjectVersion:
     Type: String
 Resources:
+  ##############################################################################
+  ##############################################################################
+  ## FOR DEBUGGING USE ONLY
+  DebugSnsTopic:
+    Type: AWS::SNS::Topic
+  DebugSqsQueue:
+    Type: AWS::SQS::Queue
+    Properties:
+      Tags:
+        - Key: Project
+          Value: Rexif
+        - Key: prx:cloudformation:stack-name
+          Value: !Ref AWS::StackName
+        - Key: prx:cloudformation:stack-id
+          Value: !Ref AWS::StackId
+  ## END FOR DEBUGGING USE ONLY
+  ##############################################################################
+  ##############################################################################
   # SNS
   ## Messages sent to this topic will be handled by a Lambda function which
   ## executes the Step Functions state machine. The `input` to the state machine
