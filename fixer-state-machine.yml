@@ -340,7 +340,8 @@ Resources:
                 Action:
                   - "s3:Put*"
                 Resource:
-                  - "*"
+                  - "arn:aws:s3:::farski-sandbox-prx"
+                  - "arn:aws:s3:::farski-sandbox-prx/*"
         - PolicyName: S3ArtifactBucketPolicy
           PolicyDocument:
             Version: "2012-10-17"
@@ -581,7 +582,8 @@ Resources:
                 Action:
                   - "s3:Put*"
                 Resource:
-                  - "*"
+                  - "arn:aws:s3:::farski-sandbox-prx"
+                  - "arn:aws:s3:::farski-sandbox-prx/*"
       Tags:
         - Key: Project
           Value: Rexif
