@@ -11,24 +11,25 @@ const sqs = new AWS.SQS({ apiVersion: '2012-11-05' });
 
 function httpRequest(event, message) {
   return (new Promise((resolve, reject) => {
-    const options = url.parse(event.URL);
-    options.method = event.Method;
+    const options = url.parse(event.Callback.URL);
+    options.method = event.Callback.Method;
+    options.headers = {};
 
     let body;
-    if (event['Content-Type'] === 'application/json') {
+    if (event.Callback['Content-Type'] === 'application/json') {
       body = JSON.stringify(message);
-    } else if (event['Content-Type'] === 'application/x-www-form-urlencoded') {
+    } else if (event.Callback['Content-Type'] === 'application/x-www-form-urlencoded') {
       body = querystring.encode(message);
     } else {
       reject(new Error('Unknown HTTP Content-Type'));
     }
 
-    if (event.Method === 'GET') {
+    if (event.Callback.Method === 'GET') {
       // TODO This will clobber an existing query string
-      options.search = `${event.Name}=${querystring.encode(message)}`;
+      options.search = `${event.Callback.Name}=${querystring.encode(message)}`;
     }
 
-    options.headers['Content-Type'] = event['Content-Type'];
+    options.headers['Content-Type'] = event.Callback['Content-Type'];
     options.headers['Content-Length'] = Buffer.byteLength(body);
 
     const h = options.protocol === 'https:' ? https : http;
