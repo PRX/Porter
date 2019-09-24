@@ -82,7 +82,7 @@ Resources:
         - !Ref AwsXraySdkLambdaLayerVersionArn
       MemorySize: 128
       Role: !GetAtt JobExecutionSnsTopicLambdaIamRole.Arn
-      Runtime: nodejs8.10
+      Runtime: nodejs10.x
       Tags:
         - Key: Project
           Value: Rexif
@@ -454,7 +454,7 @@ Resources:
         - !Ref AwsXraySdkLambdaLayerVersionArn
       MemorySize: 512
       Role: !GetAtt IngestLambdaIamRole.Arn
-      Runtime: nodejs8.10
+      Runtime: nodejs10.x
       Tags:
         - Key: Project
           Value: Rexif
@@ -516,7 +516,7 @@ Resources:
         - !Ref MpckLambdaLayerVersionArn
       MemorySize: 512
       Role: !GetAtt InspectMediaLambdaIamRole.Arn
-      Runtime: nodejs8.10
+      Runtime: nodejs10.x
       Tags:
         - Key: Project
           Value: Rexif
@@ -585,7 +585,7 @@ Resources:
         - !Ref AwsXraySdkLambdaLayerVersionArn
       MemorySize: 512
       Role: !GetAtt CopyLambdaIamRole.Arn
-      Runtime: nodejs8.10
+      Runtime: nodejs10.x
       Tags:
         - Key: Project
           Value: Rexif
@@ -657,7 +657,7 @@ Resources:
         - !Ref MpckLambdaLayerVersionArn
       MemorySize: 3008
       Role: !GetAtt TranscodeMediaLambdaIamRole.Arn
-      Runtime: nodejs8.10
+      Runtime: nodejs10.x
       Tags:
         - Key: Project
           Value: Rexif
@@ -725,7 +725,7 @@ Resources:
         - !Ref AwsXraySdkLambdaLayerVersionArn
       MemorySize: 256
       Role: !GetAtt JobCallbackLambdaIamRole.Arn
-      Runtime: nodejs8.10
+      Runtime: nodejs10.x
       Tags:
         - Key: Project
           Value: Rexif
