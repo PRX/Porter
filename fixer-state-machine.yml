@@ -4,11 +4,25 @@ Description: >
   Creates a Step Function state machine for processing user created content, as
   well as some supporting resources
 Parameters:
+  StackResourcesBucket:
+    Type: String
   AwsXraySdkLambdaLayerVersionArn:
     Type: String
   FfmepgLambdaLayerVersionArn:
     Type: String
   MpckLambdaLayerVersionArn:
+    Type: String
+  JobExecutionSnsTopicLambdaFunctionS3ObjectVersion:
+    Type: String
+  IngestLambdaFunctionS3ObjectVersion:
+    Type: String
+  InspectMediaLambdaFunctionS3ObjectVersion:
+    Type: String
+  CopyLambdaFunctionS3ObjectVersion:
+    Type: String
+  TranscodeMediaLambdaFunctionS3ObjectVersion:
+    Type: String
+  JobCallbackLambdaFunctionS3ObjectVersion:
     Type: String
 Resources:
   # SNS
@@ -55,17 +69,9 @@ Resources:
     Type: AWS::Lambda::Function
     Properties:
       Code:
-        ZipFile: |-
-          const awsxray = require('aws-xray-sdk');
-          const aws = awsxray.captureAWS(require('aws-sdk'));
-
-          const stepfunctions = new aws.StepFunctions({ apiVersion: '2016-11-23' });
-
-          exports.handler = async (event) => {
-            const stateMachineArn = process.env.STATE_MACHINE_ARN;
-            const input = event.Records[0].Sns.Message;
-            await stepfunctions.startExecution({stateMachineArn, input}).promise();
-          };
+        S3Bucket: !Ref StackResourcesBucket
+        S3Key: !Sub ${AWS::StackName}/lambdas/JobExecutionSnsTopicLambdaFunction.zip
+        S3ObjectVersion: !Ref JobExecutionSnsTopicLambdaFunctionS3ObjectVersion
       Description: >
         Relays SNS messages sent to a subscribed topic to a State Machine
       Environment:
@@ -435,101 +441,9 @@ Resources:
     Type: AWS::Lambda::Function
     Properties:
       Code:
-        ZipFile: |-
-          // This function is invoked at the start of a state machine execution, and
-          // ingests the source file declared in the job to a short-term S3 bucket.
-          // Subsequent states in the step function access the file from that location.
-          // Source files can be ingested from either S3 or HTTP origins.
-          //
-          // The input for this state is the original job object that was sent as input
-          // to the state machine execution, eg:
-          // { "Job": { "Id": "xyz", "Source": { "URI": "s3://myBucket/myObject" }, … } }
-          //
-          // The input path for this Lambda function is $.Job.Source, eg
-          // { "URI": "s3://myBucket/myObject" }
-          //
-          // The function returns an object like
-          // { "BucketName": "abc", "ObjectKey": "xyz" }
-          //
-          // The result path is $.Artifact, so the output of the state looks like
-          // { "Job": { … }, "Artifact": { "BucketName": "abc", "ObjectKey": "xyz" } }
-
-          const path = require('path');
-          const os = require('os');
-          const fs = require('fs');
-          const http = require('http');
-          const https = require('https');
-          const awsxray = require('aws-xray-sdk');
-          const aws = awsxray.captureAWS(require('aws-sdk'));
-
-          const s3 = new aws.S3();
-
-          // Returns a buffer with the file
-          function httpGet(uri) {
-              return new Promise((resolve, reject) => {
-                  const h = /^https/.test(uri) ? https : http;
-
-                  const req = h.get(uri, (res) => {
-                      let data = [];
-                      res.on('data', chunk => data.push(chunk));
-                      res.on('end', async () => {
-                          if (res.statusCode === 301 || res.statusCode === 302) {
-                              console.log(`Following redirect ${res.headers.location}`);
-                              const resp = await httpGet(res.headers.location);
-                              resolve(resp);
-                          } else if (res.statusCode === 200) {
-                              console.log(`Done getting ${res.statusCode} ${uri}`);
-                              const buffer = Buffer.concat(data);
-                              resolve(buffer);
-                          }
-                      });
-                  });
-
-                  // Generic request error handling
-                  req.on('error', error => reject(error));
-              });
-          }
-
-          function writeBufferToPath(buffer, filePath) {
-              return new Promise((resolve, reject) => {
-                  fs.writeFile(filePath, buffer, err => err ? reject(err) : resolve(filePath));
-              });
-          }
-
-          exports.handler = async (event) => {
-
-              const sourceUri = event.Job.Source.URI;
-              const sourceFilename = sourceUri.split('/').pop();
-
-              const artifactBucketName = process.env.ARTIFACT_BUCKET_NAME;
-              const artifactObjectKey = `${event.Execution.Id}/${sourceFilename}`;
-
-              if (sourceUri.startsWith('https://') || sourceUri.startsWith('http://')) {
-                  // Downloads the HTTP resource to a file on disk in the Lambda's tmp
-                  // directory, and then uploads that file to the S3 artifact bucket.
-                  const localFilePath = path.join(os.tmpdir(), sourceFilename);
-
-                  const fileBuffer = await httpGet(sourceUri);
-                  await writeBufferToPath(fileBuffer, localFilePath);
-
-                  await s3.upload({
-                      Bucket: artifactBucketName,
-                      Key: artifactObjectKey,
-                      Body: fs.createReadStream(localFilePath),
-                  }).promise();
-
-                  fs.unlinkSync(localFilePath);
-              } else if (sourceUri.startsWith('s3://')) {
-                  // Copies an existing S3 object to the S3 artifact bucket.
-                  await s3.copyObject({
-                      CopySource: sourceUri.replace(/^s3:\//),
-                      Bucket: artifactBucketName,
-                      Key: artifactObjectKey
-                  }).promise();
-              }
-
-              return { "BucketName": artifactBucketName, "ObjectKey": artifactObjectKey };
-          };
+        S3Bucket: !Ref StackResourcesBucket
+        S3Key: !Sub ${AWS::StackName}/lambdas/IngestLambdaFunction.zip
+        S3ObjectVersion: !Ref IngestLambdaFunctionS3ObjectVersion
       Description: >
         Ingests a source file to a predefined S3 artifact bucket
       Environment:
@@ -549,6 +463,8 @@ Resources:
         - Key: prx:cloudformation:stack-id
           Value: !Ref AWS::StackId
       Timeout: 30
+      TracingConfig:
+        Mode: Active
   # Inspect Lambda
   InspectMediaLambdaIamRole:
     Type: AWS::IAM::Role
@@ -588,129 +504,9 @@ Resources:
     Type: AWS::Lambda::Function
     Properties:
       Code:
-        ZipFile: |-
-          const childProcess = require('child_process');
-          const path = require('path');
-          const os = require('os');
-          const fs = require('fs');
-          const awsxray = require('aws-xray-sdk');
-          const aws = awsxray.captureAWS(require('aws-sdk'));
-
-          const s3 = new aws.S3();
-
-          function spawn(command, argsarray, envOptions) {
-            return new Promise((resolve, reject) => {
-              console.log('executing', command, argsarray.join(' '));
-
-              const childProc = childProcess.spawn(command, argsarray, envOptions || { env: process.env, cwd: process.cwd() });
-              const resultBuffers = [];
-
-              childProc.stdout.on('data', buffer => resultBuffers.push(buffer));
-              childProc.stderr.on('data', buffer => console.error(buffer.toString()));
-
-              childProc.on('exit', (code, signal) => {
-                console.log(`${command} completed with ${code}:${signal}`);
-
-                if (code || signal) {
-                  reject(`${command} failed with ${code || signal}`);
-                } else {
-                  resolve(Buffer.concat(resultBuffers).toString().trim());
-                }
-              });
-            });
-          }
-
-          function s3GetObject(bucket, fileKey, filePath) {
-            return new Promise(function (resolve, reject) {
-              const file = fs.createWriteStream(filePath);
-              const stream = s3.getObject({
-                      Bucket: bucket,
-                      Key: fileKey
-                  }).createReadStream();
-
-              stream.on('error', reject);
-              file.on('error', reject);
-
-              file.on('finish', function () {
-                  console.log('downloaded', bucket, fileKey);
-                  resolve(filePath);
-              });
-
-              stream.pipe(file);
-            });
-          }
-
-          function audioInspection(ffprobe, mpck) {
-              const stream = ffprobe.streams.find(s => s.codec_type === 'audio');
-
-              const inspection = {};
-
-              if (stream) {
-                  Object.assign(inspection, {
-                      duration:  Math.round(stream.duration * 1000),
-                      format:    stream.codec_name,
-                      bitrate:   stream.bit_rate,
-                      frequency: stream.sample_rate,
-                      channels:  stream.channels,
-                      layout:    stream.channel_layout
-                  });
-              }
-
-              if (stream.codec_name === 'mp3') {
-                  Object.assign(inspection, {
-                      // This is bad
-                      layer: (res.match(/layer (.+)/) ? res.match(/layer (.+)/)[1] : null),
-                      samples: (res.match(/samples (.+)/) ? res.match(/samples (.+)/)[1] : null),
-                      frames: (res.match(/frames (.+)/) ? res.match(/frames (.+)/)[1] : null)
-                  });
-              }
-
-              return inspection;
-          }
-
-          function videoInspection(ffprobe, mpck) {
-              const stream = ffprobe.streams.find(s => s.codec_type === 'video' && s.duration > 0 && s.bit_rate > 0);
-
-              if (stream) {
-                  return {
-                      duration:  Math.round(stream.duration * 1000),
-                      format:    stream.codec_name,
-                      bitrate:   stream.bit_rate,
-                      width:     stream.width,
-                      height:    stream.height,
-                      aspect:    stream.display_aspect_ratio,
-                      framerate: stream.r_frame_rate
-                  };
-              }
-          }
-
-          // Ex. input:  { "Artifact": { "BucketName": "SourceBucket", "ObjectKey": "Abc.wav" }, "Encoding": { "Format": "flac" } }
-          // Ex. output: { "Task",: "Transcode", "Format": "flac", "BucketName": "ResultBucket", "ObjectKey": "Xyz.flac" }
-          exports.handler = async (event, context) => {
-              const artifactFileTmpPath = path.join(os.tmpdir(), context.awsRequestId);
-
-              console.log(`Getting ${event.Artifact.BucketName}/${event.Artifact.ObjectKey} to ${artifactFileTmpPath}`);
-              await s3GetObject(event.Artifact.BucketName, event.Artifact.ObjectKey, artifactFileTmpPath);
-              console.log(`Got ${event.Artifact.BucketName}/${event.Artifact.ObjectKey} to ${artifactFileTmpPath}`);
-
-              const json = await spawn('/opt/bin/ffprobe',
-                                  ['-v', 'error', '-show_streams', '-show_format', '-i', artifactFileTmpPath, '-print_format', 'json'],
-                                  { env: process.env, cwd: os.tmpdir() });
-              const ffprobe = JSON.parse(json);
-
-              const mpck = await spawn('/opt/bin/mpck',
-                                  ['-v', artifactFileTmpPath],
-                                  { env: process.env, cwd: os.tmpdir() });
-
-              fs.unlinkSync(artifactFileTmpPath);
-
-              const inspection = { size: ffprobe.format.size };
-
-              Object.assign(inspection, { audio: audioInspection(ffprobe, mpck) });
-              Object.assign(inspection, { video: videoInspection(ffprobe, mpck) });
-
-              return { Task: "Inspect", Inspection: inspection };
-          };
+        S3Bucket: !Ref StackResourcesBucket
+        S3Key: !Sub ${AWS::StackName}/lambdas/InspectMediaLambdaFunction.zip
+        S3ObjectVersion: !Ref InspectMediaLambdaFunctionS3ObjectVersion
       Description: >
         Inspects (ffprobe, etc) the source file
       Handler: index.handler
@@ -729,6 +525,8 @@ Resources:
         - Key: prx:cloudformation:stack-id
           Value: !Ref AWS::StackId
       Timeout: 30
+      TracingConfig:
+        Mode: Active
   # Copy Lambda
   CopyLambdaIamRole:
     Type: AWS::IAM::Role
@@ -777,24 +575,9 @@ Resources:
     Type: AWS::Lambda::Function
     Properties:
       Code:
-        ZipFile: |-
-          const awsxray = require('aws-xray-sdk');
-          const aws = awsxray.captureAWS(require('aws-sdk'));
-
-          const s3 = new aws.S3();
-
-          // Ex. input:  { "Artifact": { "BucketName": "SourceBucket", "ObjectKey": "Abc.wav" }, "Copy": { "Mode": "S3", "BucketName": "DestinationBucket", "ObjectKey": "Abc.wav" } }
-          // Ex. output: { "Task",: "Copy", "BucketName": "ResultBucket", "ObjectKey": "Abc.wav" }
-          exports.handler = async (event) => {
-              await s3.copyObject({
-                  CopySource: `/${event.Artifact.BucketName}/${event.Artifact.ObjectKey}`,
-                  Bucket: event.Copy.BucketName,
-                  Key: event.Copy.ObjectKey
-              }).promise();
-              console.log(`Copied /${event.Artifact.BucketName}/${event.Artifact.ObjectKey} to /${event.Copy.BucketName}/${event.Copy.ObjectKey}`);
-
-              return { Task: "Copy", BucketName: event.Copy.BucketName, ObjectKey: event.Copy.ObjectKey };
-          };
+        S3Bucket: !Ref StackResourcesBucket
+        S3Key: !Sub ${AWS::StackName}/lambdas/CopyLambdaFunction.zip
+        S3ObjectVersion: !Ref CopyLambdaFunctionS3ObjectVersion
       Description: >
         Copies an object in S3 to another location in S3
       Handler: index.handler
@@ -811,6 +594,8 @@ Resources:
         - Key: prx:cloudformation:stack-id
           Value: !Ref AWS::StackId
       Timeout: 30
+      TracingConfig:
+        Mode: Active
   # Transcode Lambda
   TranscodeMediaLambdaIamRole:
     Type: AWS::IAM::Role
@@ -860,98 +645,9 @@ Resources:
     Type: AWS::Lambda::Function
     Properties:
       Code:
-        ZipFile: |-
-          const childProcess = require('child_process');
-          const path = require('path');
-          const os = require('os');
-          const fs = require('fs');
-          const awsxray = require('aws-xray-sdk');
-          const aws = awsxray.captureAWS(require('aws-sdk'));
-
-          const s3 = new aws.S3();
-
-          function spawn(command, argsarray, envOptions) {
-            return new Promise((resolve, reject) => {
-              console.log('executing', command, argsarray.join(' '));
-
-              const childProc = childProcess.spawn(command, argsarray, envOptions || { env: process.env, cwd: process.cwd() });
-              const resultBuffers = [];
-
-              childProc.stdout.on('data', buffer => resultBuffers.push(buffer));
-              childProc.stderr.on('data', buffer => console.error(buffer.toString()));
-
-              childProc.on('exit', (code, signal) => {
-                console.log(`${command} completed with ${code}:${signal}`);
-
-                if (code || signal) {
-                  reject(`${command} failed with ${code || signal}`);
-                } else {
-                  resolve(Buffer.concat(resultBuffers).toString().trim());
-                }
-              });
-            });
-          }
-
-          function s3GetObject(bucket, fileKey, filePath) {
-            return new Promise(function (resolve, reject) {
-              const file = fs.createWriteStream(filePath);
-              const stream = s3.getObject({
-                      Bucket: bucket,
-                      Key: fileKey
-                  }).createReadStream();
-
-              stream.on('error', reject);
-              file.on('error', reject);
-
-              file.on('finish', function () {
-                  console.log('downloaded', bucket, fileKey);
-                  resolve(filePath);
-              });
-
-              stream.pipe(file);
-            });
-          }
-
-          // Ex. input:  { "Artifact": { "BucketName": "SourceBucket", "ObjectKey": "Abc.wav" }, "Encoding": { "Format": "flac" } }
-          // Ex. output: { "Task",: "Transcode", "Format": "flac", "BucketName": "ResultBucket", "ObjectKey": "Xyz.flac" }
-          exports.handler = async (event, context) => {
-              const artifactFileTmpPath = path.join(os.tmpdir(), context.awsRequestId);
-
-              await s3GetObject(event.Artifact.BucketName, event.Artifact.ObjectKey, artifactFileTmpPath);
-              console.log(`Got ${event.Artifact.BucketName}/${event.Artifact.ObjectKey} to ${artifactFileTmpPath}`);
-
-              const transcodedMediaFilePath = `${artifactFileTmpPath}-transcoded.${event.Encoding.Format}`;
-              console.log(`Transcoding as [${event.Encoding.Format}] to ${transcodedMediaFilePath}`);
-
-              await spawn(
-                  '/opt/bin/ffmpeg',
-                  ['-loglevel', 'error', '-i', artifactFileTmpPath, transcodedMediaFilePath],
-                  { env: process.env, cwd: os.tmpdir() }
-              );
-              console.log('finished transcode');
-
-              if (event.Encoding.Destination.Mode === 'S3') {
-                  // Upload the transcoded file to the destination specified in the job
-                  const s3OutputBucketName = event.Encoding.Destination.BucketName;
-                  const s3OutputObjectKey = event.Encoding.Destination.ObjectKey;
-
-                  await s3.upload({
-                      Bucket: s3OutputBucketName,
-                      Key: s3OutputObjectKey,
-                      Body: fs.createReadStream(transcodedMediaFilePath),
-                  }).promise();
-                  console.log(`Uploaded to ${s3OutputBucketName}/${s3OutputObjectKey}`);
-              }
-
-              fs.unlinkSync(artifactFileTmpPath);
-              fs.unlinkSync(transcodedMediaFilePath);
-
-              return {
-                  "Task": "Transcode",
-                  "BucketName": event.Encoding.Destination.BucketName,
-                  "ObjectKey": event.Encoding.Destination.ObjectKey
-              };
-          };
+        S3Bucket: !Ref StackResourcesBucket
+        S3Key: !Sub ${AWS::StackName}/lambdas/TranscodeMediaLambdaFunction.zip
+        S3ObjectVersion: !Ref TranscodeMediaLambdaFunctionS3ObjectVersion
       Description: >
         Encodes a source file using ffmpeg
       Handler: index.handler
@@ -970,6 +666,8 @@ Resources:
         - Key: prx:cloudformation:stack-id
           Value: !Ref AWS::StackId
       Timeout: 300
+      TracingConfig:
+        Mode: Active
   # Callback Lambda
   JobCallbackLambdaIamRole:
     Type: AWS::IAM::Role
@@ -1017,86 +715,9 @@ Resources:
     Type: AWS::Lambda::Function
     Properties:
       Code:
-        ZipFile: |-
-          const awsxray = require('aws-xray-sdk');
-          const aws = awsxray.captureAWS(require('aws-sdk'));
-          const url = require('url');
-          const querystring = require('querystring');
-          const http = require('http');
-          const https = require('https');
-
-          const sns = new aws.SNS({ apiVersion: '2010-03-31' });
-          const sqs = new aws.SQS({ apiVersion: '2012-11-05' });
-
-          function httpRequest(event, message) {
-              return (new Promise((resolve, reject) => {
-                  const options = url.parse(event.URL);
-                  options.method = event.Method;
-
-                  let body;
-                  if (event['Content-Type'] === 'application/json') {
-                      body = JSON.stringify(message);
-                  } else if (event['Content-Type'] === 'application/x-www-form-urlencoded') {
-                      body = querystring.encode(message);
-                  } else {
-                      reject(new Error('Unknown HTTP Content-Type'));
-                  }
-
-                  if (event.Method === 'GET') {
-                      // TODO This will clobber an existing query string
-                      options.search = `${event.Name}=${querystring.encode(message)}`;
-                  }
-
-                  options.headers['Content-Type'] = event['Content-Type'];
-                  options.headers['Content-Length'] = Buffer.byteLength(body);
-
-                  const h = options.protocol === 'https:' ? https : http;
-                  const req = h.request(options, (res) => {
-                      res.setEncoding('utf8');
-
-                      let resData = '';
-                      res.on('data', (chunk) => resData += chunk );
-
-                      res.on('end', () => {
-                          if (res.statusCode >= 200 && res.statusCode < 300) {
-                              resolve();
-                          } else {
-                              const error = new Error(`Error ${res.statusCode}: ${resData}`);
-                              reject(error);
-                          }
-                      });
-                  });
-
-                  req.on('error', error => reject(error));
-
-                  req.write(body);
-                  req.end();
-              }));
-          }
-
-          // Ex. input: { "Callback": { "Mode": "SNS", "Topic": "arn:aws…" }, "JobResult": { "Job": { … }, "Result": { … } } }
-          // Ex. error: { "Callback": { "Mode": "SNS", "Topic": "arn:aws…" }, "JobResult": { "Job": { … }, "Error": { … } } }
-          // Ex. msg:   { "JobResult": { "Job": { … }, "Result": { … } } }
-          // Ex. msg:   { "JobResult": { "Job": { … }, "Error": { … } } }
-          exports.handler = async (event) => {
-              const msg = {};
-              if (event.JobResult) { Object.assign(msg, { JobResult: event.JobResult }); }
-              if (event.TaskResult) { Object.assign(msg, { TaskResult: event.TaskResult }); }
-
-              if (event.Callback.Mode === 'SNS') {
-                  const TopicArn = event.Callback.Topic;
-                  const Message = JSON.stringify(msg);
-
-                  await sns.publish({ Message, TopicArn }).promise();
-              } else if (event.Callback.Mode === 'SQS') {
-                  const QueueUrl = event.Callback.Queue;
-                  const MessageBody = JSON.stringify(msg);
-
-                  await sqs.sendMessage({ QueueUrl, MessageBody }).promise();
-              }  else if (event.Callback.Mode === 'HTTP') {
-                  await httpRequest(event, msg);
-              }
-          };
+        S3Bucket: !Ref StackResourcesBucket
+        S3Key: !Sub ${AWS::StackName}/lambdas/JobCallbackLambdaFunction.zip
+        S3ObjectVersion: !Ref JobCallbackLambdaFunctionS3ObjectVersion
       Description: >
         Sends a job or task callback message to a single endpoint
       Handler: index.handler
@@ -1113,6 +734,8 @@ Resources:
         - Key: prx:cloudformation:stack-id
           Value: !Ref AWS::StackId
       Timeout: 300
+      TracingConfig:
+        Mode: Active
   # Step Functions
   StateMachineIamRole:
     Type: AWS::IAM::Role
@@ -1743,6 +1366,5 @@ Resources:
         - Key: prx:cloudformation:stack-id
           Value: !Ref AWS::StackId
 Outputs:
-  # Slack relay topic used by many other notification handlers
   JobExecutionSnsTopicArn:
     Value: !Ref JobExecutionSnsTopic

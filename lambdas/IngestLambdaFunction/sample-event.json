@@ -1,0 +1,10 @@
+{
+  "Job": {
+    "Source": {
+      "URI": "s3://myBucket/myObject"
+    }
+  },
+  "Execution": {
+    "Id": "x85a61ed-1111-aaaa-2222-616797212639"
+  }
+}
