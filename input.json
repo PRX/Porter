@@ -2,19 +2,19 @@
 	"Job": {
 		"Id": "1234567890asdfghjkl",
 		"Source": {
-			"URI": "https://dts.podtrac.com/redirect.mp3/dovetail.prxu.org/232/613701eb-b242-4810-8ca3-a6770c262775/Passenger_List_EP02_SEG_A.mp3"
+			"URI": "s3://farski-sandbox-prx/130224.mp2"
 		},
 		"Copy": {
 			"Perform": true,
 			"Destinations": [
 				{
 					"Mode": "S3",
-					"BucketName": "farski-sf-test-bucket",
-					"ObjectKey": "copy1.mp3"
+					"BucketName": "farski-sandbox-prx",
+					"ObjectKey": "rexif-output/copy-task/copy1.mp3"
 				}, {
 					"Mode": "S3",
-					"BucketName": "farski-sf-test-bucket",
-					"ObjectKey": "some/deep/prefix/path/copy2.mp3"
+					"BucketName": "farski-sandbox-prx",
+					"ObjectKey": "rexif-output/copy-task/some/deep/prefix/path/copy2.mp3"
 				}
 			]
 		},
@@ -28,8 +28,22 @@
 					"Format": "flac",
 					"Destination": {
 						"Mode": "S3",
-						"BucketName": "farski-sf-test-bucket",
-						"ObjectKey": "transcode.flac"
+						"BucketName": "farski-sandbox-prx",
+						"ObjectKey": "rexif-output/transcode-task/transcode.flac"
+					}
+				}, {
+					"Format": "wav",
+					"Destination": {
+						"Mode": "S3",
+						"BucketName": "farski-sandbox-prx",
+						"ObjectKey": "rexif-output/transcode-task/transcode.wav"
+					}
+				}, {
+					"Format": "mp3",
+					"Destination": {
+						"Mode": "S3",
+						"BucketName": "farski-sandbox-prx",
+						"ObjectKey": "rexif-output/transcode-task/transcode.mp3"
 					}
 				}
 			]
@@ -37,10 +51,15 @@
 		"Callbacks": [
 			{
 				"Mode": "SNS",
-				"Topic": "arn:aws:sns:us-east-2:127213743756:sf-test"
+				"Topic": "arn:aws:sns:us-east-1:561178107736:fixer-state-machine-prototype-DebugSnsTopic-12W1C4BEPSMH7"
 			}, {
 				"Mode": "SQS",
-				"Queue": "https://sqs.us-east-2.amazonaws.com/127213743756/sf-test"
+				"Queue": "https://sqs.us-east-1.amazonaws.com/561178107736/fixer-state-machine-prototype-DebugSqsQueue-1UD51Y8WGGJFR"
+			}, {
+				"Mode": "HTTP",
+				"Method": "POST",
+				"Content-Type": "application/json",
+				"URL": "https://kehigfomk6.execute-api.us-east-1.amazonaws.com/prod/test"
 			}
 		]
 	}
