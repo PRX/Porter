@@ -481,7 +481,7 @@ Resources:
           Value: !Ref AWS::StackName
         - Key: prx:cloudformation:stack-id
           Value: !Ref AWS::StackId
-      Timeout: 30
+      Timeout: 90
       TracingConfig:
         Mode: Active
   # Inspect Lambda
