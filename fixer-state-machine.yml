@@ -948,6 +948,7 @@ Resources:
                             "Callback.$": "$$.Map.Item.Value",
                             "TaskResult": {
                               "Job": { "Id.$": "$.Job.Id" },
+                              "Execution": "$$.Execution.Id",
                               "Result.$": "$.TaskResult"
                             }
                           },
@@ -1042,6 +1043,7 @@ Resources:
                                   "Callback.$": "$$.Map.Item.Value",
                                   "TaskResult": {
                                     "Job.$": "$.Job",
+                                    "Execution": "$$.Execution.Id",
                                     "Result.$": "$.TaskResult"
                                   }
                                 },
@@ -1184,6 +1186,7 @@ Resources:
                                   "Callback.$": "$$.Map.Item.Value",
                                   "TaskResult": {
                                     "Job.$": "$.Job",
+                                    "Execution": "$$.Execution.Id",
                                     "Result": {
                                       "Task": "Transcode",
                                       "BucketName.$": "$.Encoding.Destination.BucketName",
@@ -1232,6 +1235,7 @@ Resources:
                     "Callback.$": "$$.Map.Item.Value",
                     "JobResult": {
                       "Job": { "Id.$": "$.Job.Id" },
+                      "Execution": "$$.Execution.Id",
                       "Result.$": "$.JobTaskResults..[?(@.Task && @.Task != 'Null')]"
                     }
                   },
@@ -1266,6 +1270,7 @@ Resources:
                     "Callback.$": "$$.Map.Item.Value",
                     "JobResult": {
                       "Job": { "Id.$": "$.Job.Id" },
+                      "Execution": "$$.Execution.Id",
                       "Error.$": "$.Error"
                     }
                   },

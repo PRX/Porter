@@ -117,6 +117,9 @@ Callbacks are sent as individual tasks are completed. For example, if a job incl
         "Job": {
             "Id": "1234567890asdfghjkl"
         },
+        "Execution": {
+            "Id": "arn:aws:states:us-east-1:561178107736:execution:StateMachine-cvPVX5enHWdj:221672a9-ada6-483f-a5a7-ccffd4eee8c5"
+        },
         "Result": {
             "Task": "Copy"
             (Additional task-specific results)
@@ -134,6 +137,9 @@ Callbacks are also sent when the job completes. Job callbacks can be identified 
     "JobResult": {
         "Job": {
             "Id": "1234567890asdfghjkl"
+        },
+        "Execution": {
+            "Id": "arn:aws:states:us-east-1:561178107736:execution:StateMachine-cvPVX5enHWdj:221672a9-ada6-483f-a5a7-ccffd4eee8c5"
         },
         "Result": [
             {
@@ -161,6 +167,9 @@ If there's a failure during the job execution in any part of the state machine, 
     "JobResult": {
         "Job": {
             "Id": "1234567890asdfghjkl"
+        },
+        "Execution": {
+            "Id": "arn:aws:states:us-east-1:561178107736:execution:StateMachine-cvPVX5enHWdj:221672a9-ada6-483f-a5a7-ccffd4eee8c5"
         },
         "Error": {
             (Details about the error)
