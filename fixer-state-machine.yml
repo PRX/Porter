@@ -4,6 +4,10 @@ Description: >
   Creates a Step Function state machine for processing user created content, as
   well as some supporting resources
 Parameters:
+  OpsWarnMessagesSnsTopic:
+    Type: String
+  OpsErrorMessagesSnsTopic:
+    Type: String
   StackResourcesBucket:
     Type: String
   AwsXraySdkLambdaLayerVersionArn:
@@ -1305,6 +1309,78 @@ Resources:
           Value: !Ref AWS::StackName
         - Key: prx:cloudformation:stack-id
           Value: !Ref AWS::StackId
+  StateMachineTimedOutAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      ActionsEnabled: true
+      AlarmName: "[Rexif][States] Experiencing time outs"
+      AlarmActions:
+        - !Ref OpsWarnMessagesSnsTopic
+      InsufficientDataActions:
+        - !Ref OpsWarnMessagesSnsTopic
+      OKActions:
+        - !Ref OpsWarnMessagesSnsTopic
+      AlarmDescription: >
+        Rexif state machine has experienced execution time outs
+      ComparisonOperator: GreaterThanOrEqualToThreshold
+      EvaluationPeriods: 1
+      MetricName: ExecutionsTimedOut
+      Namespace: AWS/States
+      Period: 60
+      Statistic: Sum
+      Threshold: 1
+      TreatMissingData: notBreaching
+      Dimensions:
+        - Name: StateMachineArn
+          Value: !Ref StateMachine
+  StateMachineThrottleAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      ActionsEnabled: true
+      AlarmName: "[Rexif][States] Events being throttled"
+      AlarmActions:
+        - !Ref OpsWarnMessagesSnsTopic
+      InsufficientDataActions:
+        - !Ref OpsWarnMessagesSnsTopic
+      OKActions:
+        - !Ref OpsWarnMessagesSnsTopic
+      AlarmDescription: >
+        Rexif state machine is being throttled
+      ComparisonOperator: GreaterThanOrEqualToThreshold
+      EvaluationPeriods: 1
+      MetricName: ExecutionThrottled
+      Namespace: AWS/States
+      Period: 60
+      Statistic: Sum
+      Threshold: 1
+      TreatMissingData: notBreaching
+      Dimensions:
+        - Name: StateMachineArn
+          Value: !Ref StateMachine
+  StateMachineFailureAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      ActionsEnabled: true
+      AlarmName: "[Rexif][States] Experiencing failures"
+      AlarmActions:
+        - !Ref OpsErrorMessagesSnsTopic
+      InsufficientDataActions:
+        - !Ref OpsErrorMessagesSnsTopic
+      OKActions:
+        - !Ref OpsErrorMessagesSnsTopic
+      AlarmDescription: >
+        Rexif state machine is being throttled
+      ComparisonOperator: GreaterThanOrEqualToThreshold
+      EvaluationPeriods: 1
+      MetricName: ExecutionsFailed
+      Namespace: AWS/States
+      Period: 60
+      Statistic: Sum
+      Threshold: 1
+      TreatMissingData: notBreaching
+      Dimensions:
+        - Name: StateMachineArn
+          Value: !Ref StateMachine
 Outputs:
   JobExecutionSnsTopicArn:
     Value: !Ref JobExecutionSnsTopic
