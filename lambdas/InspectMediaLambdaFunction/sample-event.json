@@ -1,0 +1,9 @@
+{
+  "Job": {
+    "Id": "asdfghjkl1234567890"
+  },
+  "Artifact": {
+    "BucketName": "myStackName-artifactbucket-1rdtvp055oauu",
+    "ObjectKey": "0ef48c81-431b-431e-b21c-090726411608/myPodcastEpisode.mp3"
+  }
+}

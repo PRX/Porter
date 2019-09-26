@@ -1,6 +1,6 @@
 {
   "Artifact": {
-    "BucketName": "fixer-state-machine-prototype-artifactbucket-1hnyu12xzvbel",
+    "BucketName": "myStackName-artifactbucket-1hnyu12xzvbel",
     "ObjectKey": "test000-1111-aaaa-2222-616797212639/c6cd0af8-ac3d-424b-bbb7-fac5f9189a60/Passenger_List_EP02_SEG_A.mp3"
   },
   "Copy": {
