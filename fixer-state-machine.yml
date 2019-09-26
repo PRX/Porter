@@ -128,7 +128,7 @@ Resources:
       Endpoint: !GetAtt JobExecutionSnsTopicLambdaFunction.Arn
       Protocol: lambda
       TopicArn: !Ref JobExecutionSnsTopic
-# VPC
+  # VPC
   VPC:
     Type: AWS::EC2::VPC
     Properties:
@@ -338,15 +338,23 @@ Resources:
       Description: String
       Path: "/"
       Policies:
+        # The destination of transcode operations is somewhat arbitrary
+        # TODO Figure out what this should be
         - PolicyName: S3PutPolicy
           PolicyDocument:
             Version: "2012-10-17"
             Statement:
               - Effect: Allow
                 Action:
-                  - "s3:Put*"
+                  - "s3:ListBucketMultipartUploads"
                 Resource:
                   - "arn:aws:s3:::farski-sandbox-prx"
+              - Effect: Allow
+                Action:
+                  - "s3:PutObject"
+                  - "s3:AbortMultipartUpload"
+                  - "s3:ListMultipartUploadParts"
+                Resource:
                   - "arn:aws:s3:::farski-sandbox-prx/*"
         - PolicyName: S3ArtifactBucketPolicy
           PolicyDocument:
@@ -354,9 +362,8 @@ Resources:
             Statement:
               - Effect: Allow
                 Action:
-                  - "s3:Get*"
+                  - "s3:GetObject"
                 Resource:
-                  - !Sub "arn:aws:s3:::${ArtifactBucket}"
                   - !Sub "arn:aws:s3:::${ArtifactBucket}/*"
       Tags:
         - Key: Project
@@ -436,23 +443,31 @@ Resources:
         - arn:aws:iam::aws:policy/AWSXrayWriteOnlyAccess
       Path: "/"
       Policies:
-        - PolicyName: S3ArtifactBucketPolicy
+        # For uploading files and file parts to the artifact store
+        - PolicyName: S3ArtifactUploadPolicy
           PolicyDocument:
             Version: "2012-10-17"
             Statement:
               - Effect: Allow
                 Action:
-                  - "s3:*"
+                  - "s3:ListBucketMultipartUploads"
                 Resource:
                   - !Sub "arn:aws:s3:::${ArtifactBucket}"
+              - Effect: Allow
+                Action:
+                  - "s3:PutObject"
+                  - "s3:AbortMultipartUpload"
+                  - "s3:ListMultipartUploadParts"
+                Resource:
                   - !Sub "arn:aws:s3:::${ArtifactBucket}/*"
-        - PolicyName: S3CopyPolicy
+        # Allow GET-only access to any object in S3
+        - PolicyName: S3CopySourcePolicy
           PolicyDocument:
             Version: "2012-10-17"
             Statement:
               - Effect: Allow
                 Action:
-                  - "s3:Get*"
+                  - "s3:GetObject*"
                 Resource:
                   - "*"
       Tags:
@@ -514,9 +529,8 @@ Resources:
             Statement:
               - Effect: Allow
                 Action:
-                  - "s3:Get*"
+                  - "s3:GetObject"
                 Resource:
-                  - !Sub "arn:aws:s3:::${ArtifactBucket}"
                   - !Sub "arn:aws:s3:::${ArtifactBucket}/*"
       Tags:
         - Key: Project
@@ -570,25 +584,33 @@ Resources:
         - arn:aws:iam::aws:policy/AWSXrayWriteOnlyAccess
       Path: "/"
       Policies:
-        - PolicyName: S3MediaBucketPolicy
+        # Copy operations are always copying FROM the artifact bucket
+        - PolicyName: S3ArtifactBucketReadPolicy
           PolicyDocument:
             Version: "2012-10-17"
             Statement:
               - Effect: Allow
                 Action:
-                  - "s3:*"
+                  - "s3:GetObject*"
                 Resource:
-                  - !Sub "arn:aws:s3:::${ArtifactBucket}"
                   - !Sub "arn:aws:s3:::${ArtifactBucket}/*"
+        # The destination of the copy operation is somewhat arbitrary
+        # TODO Figure out what this should be
         - PolicyName: S3PutPolicy
           PolicyDocument:
             Version: "2012-10-17"
             Statement:
               - Effect: Allow
                 Action:
-                  - "s3:Put*"
+                  - "s3:ListBucketMultipartUploads"
                 Resource:
                   - "arn:aws:s3:::farski-sandbox-prx"
+              - Effect: Allow
+                Action:
+                  - "s3:PutObject"
+                  - "s3:AbortMultipartUpload"
+                  - "s3:ListMultipartUploadParts"
+                Resource:
                   - "arn:aws:s3:::farski-sandbox-prx/*"
       Tags:
         - Key: Project
@@ -712,7 +734,8 @@ Resources:
         - arn:aws:iam::aws:policy/AWSXrayWriteOnlyAccess
       Path: "/"
       Policies:
-        - PolicyName: Sns
+        # Must be able to publish to whatever SNS topics are defined by a job
+        - PolicyName: SnsPublish
           PolicyDocument:
             Version: "2012-10-17"
             Statement:
@@ -721,7 +744,8 @@ Resources:
                   - "sns:Publish"
                 Resource:
                   - "*"
-        - PolicyName: Sqs
+        # Must be able to publish to whatever SQS queues are defined by a job
+        - PolicyName: SqsSendMessage
           PolicyDocument:
             Version: "2012-10-17"
             Statement:
