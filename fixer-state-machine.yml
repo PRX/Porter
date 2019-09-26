@@ -28,6 +28,8 @@ Parameters:
     Type: String
   JobCallbackLambdaFunctionS3ObjectVersion:
     Type: String
+  TranscodeEcsTaskDefinitionImage:
+    Type: String
 Resources:
   ##############################################################################
   ##############################################################################
@@ -376,7 +378,7 @@ Resources:
             - Name: FOO
               Value: bar
           Essential: true
-          Image: 561178107736.dkr.ecr.us-east-1.amazonaws.com/rexif-prototype:latest
+          Image: !Ref TranscodeEcsTaskDefinitionImage
           LogConfiguration:
             LogDriver: awslogs
             Options:

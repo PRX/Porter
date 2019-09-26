@@ -49,5 +49,6 @@ aws cloudformation deploy \
                 CopyLambdaFunctionS3ObjectVersion="$CopyLambdaFunction_S3ObjectVersion" \
                 TranscodeMediaLambdaFunctionS3ObjectVersion="$TranscodeMediaLambdaFunction_S3ObjectVersion" \
                 JobCallbackLambdaFunctionS3ObjectVersion="$JobCallbackLambdaFunction_S3ObjectVersion" \
+                TranscodeEcsTaskDefinitionImage=561178107736.dkr.ecr.us-east-1.amazonaws.com/rexif-prototype:latest \
                 OpsWarnMessagesSnsTopicArn=arn:aws:sns:us-east-1:561178107736:infrastructure-notifications-OpsWarnMessagesSnsTopic-1F2NNQY5K8YE \
                 OpsErrorMessagesSnsTopicArn=arn:aws:sns:us-east-1:561178107736:infrastructure-notifications-OpsErrorMessagesSnsTopic-A4U0VVXEKBIL
