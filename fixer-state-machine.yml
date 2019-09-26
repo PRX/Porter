@@ -760,8 +760,7 @@ Resources:
                 Action:
                   - ecs:RunTask
                 Resource:
-                  - "*"
-                  # - "arn:aws:ecs:[[region]]:[[accountId]]:task-definition/[[taskDefinition]]"
+                  - !Ref TranscodeEcsTaskDefinition
               - Effect: Allow
                 Action:
                   - ecs:StopTask
