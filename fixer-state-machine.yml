@@ -4,9 +4,9 @@ Description: >
   Creates a Step Function state machine for processing user created content, as
   well as some supporting resources
 Parameters:
-  OpsWarnMessagesSnsTopic:
+  OpsWarnMessagesSnsTopicArn:
     Type: String
-  OpsErrorMessagesSnsTopic:
+  OpsErrorMessagesSnsTopicArn:
     Type: String
   StackResourcesBucket:
     Type: String
@@ -1320,11 +1320,11 @@ Resources:
       ActionsEnabled: true
       AlarmName: "[Rexif][States] Experiencing time outs"
       AlarmActions:
-        - !Ref OpsWarnMessagesSnsTopic
+        - !Ref OpsWarnMessagesSnsTopicArn
       InsufficientDataActions:
-        - !Ref OpsWarnMessagesSnsTopic
+        - !Ref OpsWarnMessagesSnsTopicArn
       OKActions:
-        - !Ref OpsWarnMessagesSnsTopic
+        - !Ref OpsWarnMessagesSnsTopicArn
       AlarmDescription: >
         Rexif state machine has experienced execution time outs
       ComparisonOperator: GreaterThanOrEqualToThreshold
@@ -1344,11 +1344,11 @@ Resources:
       ActionsEnabled: true
       AlarmName: "[Rexif][States] Events being throttled"
       AlarmActions:
-        - !Ref OpsWarnMessagesSnsTopic
+        - !Ref OpsWarnMessagesSnsTopicArn
       InsufficientDataActions:
-        - !Ref OpsWarnMessagesSnsTopic
+        - !Ref OpsWarnMessagesSnsTopicArn
       OKActions:
-        - !Ref OpsWarnMessagesSnsTopic
+        - !Ref OpsWarnMessagesSnsTopicArn
       AlarmDescription: >
         Rexif state machine is being throttled
       ComparisonOperator: GreaterThanOrEqualToThreshold
@@ -1368,11 +1368,11 @@ Resources:
       ActionsEnabled: true
       AlarmName: "[Rexif][States] Experiencing failures"
       AlarmActions:
-        - !Ref OpsErrorMessagesSnsTopic
+        - !Ref OpsErrorMessagesSnsTopicArn
       InsufficientDataActions:
-        - !Ref OpsErrorMessagesSnsTopic
+        - !Ref OpsErrorMessagesSnsTopicArn
       OKActions:
-        - !Ref OpsErrorMessagesSnsTopic
+        - !Ref OpsErrorMessagesSnsTopicArn
       AlarmDescription: >
         Rexif state machine is being throttled
       ComparisonOperator: GreaterThanOrEqualToThreshold

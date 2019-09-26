@@ -48,4 +48,6 @@ aws cloudformation deploy \
                 InspectMediaLambdaFunctionS3ObjectVersion="$InspectMediaLambdaFunction_S3ObjectVersion" \
                 CopyLambdaFunctionS3ObjectVersion="$CopyLambdaFunction_S3ObjectVersion" \
                 TranscodeMediaLambdaFunctionS3ObjectVersion="$TranscodeMediaLambdaFunction_S3ObjectVersion" \
-                JobCallbackLambdaFunctionS3ObjectVersion="$JobCallbackLambdaFunction_S3ObjectVersion"
+                JobCallbackLambdaFunctionS3ObjectVersion="$JobCallbackLambdaFunction_S3ObjectVersion" \
+                OpsWarnMessagesSnsTopicArn=arn:aws:sns:us-east-1:561178107736:infrastructure-notifications-OpsWarnMessagesSnsTopic-1F2NNQY5K8YE \
+                OpsErrorMessagesSnsTopicArn=arn:aws:sns:us-east-1:561178107736:infrastructure-notifications-OpsErrorMessagesSnsTopic-A4U0VVXEKBIL
