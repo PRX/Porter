@@ -50,13 +50,13 @@
 		},
 		"Callbacks": [
 			{
-				"Mode": "SNS",
+				"Typ": "SNS",
 				"Topic": "arn:aws:sns:us-east-1:561178107736:fixer-state-machine-prototype-DebugSnsTopic-12W1C4BEPSMH7"
 			}, {
-				"Mode": "SQS",
+				"Type": "SQS",
 				"Queue": "https://sqs.us-east-1.amazonaws.com/561178107736/fixer-state-machine-prototype-DebugSqsQueue-1UD51Y8WGGJFR"
 			}, {
-				"Mode": "HTTP",
+				"Type": "HTTP",
 				"Method": "POST",
 				"Content-Type": "application/json",
 				"URL": "https://kehigfomk6.execute-api.us-east-1.amazonaws.com/prod/test"

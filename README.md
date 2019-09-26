@@ -69,23 +69,23 @@ sns.publish(
         },
         "Callbacks": [
             {
-                "Mode": "SNS",
+                "Type": "SNS",
                 "Topic": "arn:aws:sns:us-east-2:127213743756:my-callback-topic"
             }, {
-                "Mode": "SQS",
+                "Type": "SQS",
                 "Queue": "https://sqs.us-east-2.amazonaws.com/1234512355/my-callback-queue"
             }, {
-                "Mode": "HTTP",
+                "Type": "HTTP",
                 "URL": "https://example.com/callbacks/jobs"
                 "Method": "POST",
                 "Content-Type": "application/json"
             }, {
-                "Mode": "HTTP",
+                "Type": "HTTP",
                 "URL": "https://example.com/callbacks/jobs",
                 "Method": "PUT",
                 "Content-Type": "application/x-www-form-urlencoded"
             }, {
-                "Mode": "HTTP",
+                "Type": "HTTP",
                 "URL": "https://example.com/callbacks/jobs",
                 "Method": "GET",
                 "Name": "payload"
