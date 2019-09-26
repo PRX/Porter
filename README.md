@@ -107,7 +107,7 @@ The `Job.Id` is a user-defined value, and is distinct from any execution IDs cre
 
 ### Callback Messages
 
-Callback messages are dispatched at various points throughout the execution of a job. Whenever callback messages are sent, messages are always sent to all callbacks defined in the job.
+Callback messages are dispatched at various points throughout the execution of a job. Whenever callback messages are sent, messages are always sent to all callbacks defined in the job. If you don't need any callbacks, include an empty array in the job (ie, `"Callbacks": []`).
 
 Callbacks are sent as individual tasks are completed. For example, if a job includes three `Copy` destinations, a callback will be sent after each copy task completes. (Tasks are processed in parallel, so callbacks may arrive in any order). Task callbacks can be identified by the `TaskResult` key. The JSON message for a `Copy` task callback looks like this:
 
@@ -184,6 +184,8 @@ If there's a failure during the job execution in any part of the state machine, 
 
 `Copy` tasks create copies of the job's source file at locations in S3 defined on the task. The locations are declared as `Destinations`. Currently the only supported destination mode is `S3`. Copy tasks **do not** check if an object already exists in the given location. The copy operation is done by the [copyObject()](https://docs.aws.amazon.com/AWSJavaScriptSDK/latest/AWS/S3.html#copyObject-property) method in the AWS Node SDK. A copy task can include any number of destinations.
 
+The behavior when `Perform` is `true` and `Destinations` is missing or empty is undefined. Avoid doing that.
+
 Input:
 
 ```
@@ -214,6 +216,8 @@ Output:
 ### Transcode
 
 `Transcode` tasks encode and otherwise manipulate the source file. These are intended for audio and video source files. The desired transcoding are declared as `Encodings`, and each encoding includes the properties of the output file, and a single destination for the output file to be sent to. A transcode task can include any number of encodings.
+
+The behavior when `Perform` is `true` and `Encodings` is missing or empty is undefined. Avoid doing that.
 
 Input:
 
