@@ -143,23 +143,6 @@ Resources:
           Value: !Ref AWS::StackName
         - Key: "prx:cloudformation:stack-id"
           Value: !Ref AWS::StackId
-  InternetGateway:
-    Type: AWS::EC2::InternetGateway
-    Properties:
-      Tags:
-        - Key: Project
-          Value: Rexif
-        - Key: Name
-          Value: !Sub ${AWS::StackName}-InternetGateway
-        - Key: "prx:cloudformation:stack-name"
-          Value: !Ref AWS::StackName
-        - Key: "prx:cloudformation:stack-id"
-          Value: !Ref AWS::StackId
-  GatewayAttachment:
-    Type: AWS::EC2::VPCGatewayAttachment
-    Properties:
-      VpcId: !Ref VPC
-      InternetGatewayId: !Ref InternetGateway
   RouteTable:
     Type: AWS::EC2::RouteTable
     Properties:
@@ -173,13 +156,101 @@ Resources:
           Value: !Ref AWS::StackName
         - Key: "prx:cloudformation:stack-id"
           Value: !Ref AWS::StackId
-  Route:
-    Type: AWS::EC2::Route
-    DependsOn: GatewayAttachment
+  S3VpcEndpoint:
+    Type: AWS::EC2::VPCEndpoint
     Properties:
-      RouteTableId: !Ref RouteTable
-      GatewayId: !Ref InternetGateway
-      DestinationCidrBlock: 0.0.0.0/0
+      RouteTableIds:
+        - !Ref RouteTable
+      ServiceName: !Sub com.amazonaws.${AWS::Region}.s3
+      VpcEndpointType: Gateway
+      VpcId: !Ref VPC
+  AwsServiceInterfaceEndpointsSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      VpcId: !Ref VPC
+      GroupDescription: Allow ECS traffic
+      SecurityGroupIngress:
+        - CidrIp: 0.0.0.0/0
+          IpProtocol: tcp
+          FromPort: 443
+          ToPort: 443
+      Tags:
+        - Key: Project
+          Value: Rexif
+        - Key: Name
+          Value: !Sub ${AWS::StackName}-EcsEndpointsSecurityGroup
+        - Key: "prx:cloudformation:stack-name"
+          Value: !Ref AWS::StackName
+        - Key: "prx:cloudformation:stack-id"
+          Value: !Ref AWS::StackId
+  EcsVpcEndpoint:
+    Type: AWS::EC2::VPCEndpoint
+    Properties:
+      PrivateDnsEnabled: true
+      RouteTableIds:
+        - !Ref RouteTable
+      SecurityGroupIds:
+        - !Ref EcsEndpointsSecurityGroup
+      ServiceName: !Sub com.amazonaws.${AWS::Region}.ecs
+      SubnetIds:
+        - !Ref Subnet1
+        - !Ref Subnet2
+      VpcEndpointType: Interface
+      VpcId: !Ref VPC
+  EcsAgentVpcEndpoint:
+    Type: AWS::EC2::VPCEndpoint
+    Properties:
+      PrivateDnsEnabled: true
+      RouteTableIds:
+        - !Ref RouteTable
+      SecurityGroupIds:
+        - !Ref EcsEndpointsSecurityGroup
+      ServiceName: !Sub com.amazonaws.${AWS::Region}.ecs-agent
+      SubnetIds:
+        - !Ref Subnet1
+        - !Ref Subnet2
+      VpcEndpointType: Interface
+      VpcId: !Ref VPC
+  EcsTelemetryVpcEndpoint:
+    Type: AWS::EC2::VPCEndpoint
+    Properties:
+      PrivateDnsEnabled: true
+      RouteTableIds:
+        - !Ref RouteTable
+      SecurityGroupIds:
+        - !Ref EcsEndpointsSecurityGroup
+      ServiceName: !Sub com.amazonaws.${AWS::Region}.ecs-telemetry
+      SubnetIds:
+        - !Ref Subnet1
+        - !Ref Subnet2
+      VpcEndpointType: Interface
+      VpcId: !Ref VPC
+  EcrVpcEndpoint:
+    # https://docs.aws.amazon.com/AmazonECR/latest/userguide/vpc-endpoints.html#ecr-vpc-endpoint-considerations
+    Type: AWS::EC2::VPCEndpoint
+    Properties:
+      PrivateDnsEnabled: true
+      SecurityGroupIds:
+        - !Ref AwsServiceInterfaceEndpointsSecurityGroup
+      ServiceName: !Sub com.amazonaws.${AWS::Region}.ecr.dkr
+      SubnetIds:
+        - !Ref Subnet1
+        - !Ref Subnet2
+      VpcEndpointType: Interface
+      VpcId: !Ref VPC
+  CloudWatchLogsVpcEndpoint:
+    # https://docs.aws.amazon.com/AmazonCloudWatch/latest/logs/cloudwatch-logs-and-interface-VPC.html
+    Type: AWS::EC2::VPCEndpoint
+    Properties:
+      PrivateDnsEnabled: true
+      SecurityGroupIds:
+        - !Ref AwsServiceInterfaceEndpointsSecurityGroup
+      ServiceName: !Sub com.amazonaws.${AWS::Region}.logs
+      SubnetIds:
+        - !Ref Subnet1
+        - !Ref Subnet2
+      VpcEndpointType: Interface
+      VpcId: !Ref VPC
   Subnet1:
     Type: AWS::EC2::Subnet
     Properties:
@@ -213,17 +284,16 @@ Resources:
   Subnet1RouteTableAssociation:
     Type: AWS::EC2::SubnetRouteTableAssociation
     Properties:
-      SubnetId: !Ref Subnet1
       RouteTableId: !Ref RouteTable
+      SubnetId: !Ref Subnet1
   Subnet2RouteTableAssociation:
     Type: AWS::EC2::SubnetRouteTableAssociation
     Properties:
-      SubnetId: !Ref Subnet2
       RouteTableId: !Ref RouteTable
+      SubnetId: !Ref Subnet2
   NetworkAcl:
     Type: AWS::EC2::NetworkAcl
     Properties:
-      VpcId: !Ref VPC
       Tags:
         - Key: Project
           Value: Rexif
@@ -233,6 +303,7 @@ Resources:
           Value: !Ref AWS::StackName
         - Key: "prx:cloudformation:stack-id"
           Value: !Ref AWS::StackId
+      VpcId: !Ref VPC
   InboundTrafficNetworkAclEntry:
     # TODO This is only for debugging
     Type: AWS::EC2::NetworkAclEntry
@@ -255,13 +326,13 @@ Resources:
   Subnet1NetworkAclAssociation:
     Type: AWS::EC2::SubnetNetworkAclAssociation
     Properties:
-      SubnetId: !Ref Subnet1
       NetworkAclId: !Ref NetworkAcl
+      SubnetId: !Ref Subnet1
   Subnet2NetworkAclAssociation:
     Type: AWS::EC2::SubnetNetworkAclAssociation
     Properties:
-      SubnetId: !Ref Subnet2
       NetworkAclId: !Ref NetworkAcl
+      SubnetId: !Ref Subnet2
   DhcpOptions:
     Type: AWS::EC2::DHCPOptions
     Properties:
@@ -311,9 +382,33 @@ Resources:
               Service:
                 - ecs-tasks.amazonaws.com
       Description: String
-      ManagedPolicyArns:
-        - arn:aws:iam::aws:policy/service-role/AmazonECSTaskExecutionRolePolicy
       Path: "/"
+      Policies:
+        # https://docs.aws.amazon.com/AmazonECS/latest/developerguide/task_execution_IAM_role.html#task-execution-ecr-conditionkeys
+        # An alternative to the managed AmazonECSTaskExecutionRolePolicy, which
+        # restrics access to a specific VPC and VPC endpoint
+        - PolicyName: TaskExecutionPolicy
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Effect: Allow
+                Action:
+                  - "ecr:GetAuthorizationToken"
+                  - "logs:CreateLogStream"
+                  - "logs:PutLogEvents"
+                Resource:
+                  - "*"
+              - Effect: Allow
+                Action:
+                  - "ecr:BatchCheckLayerAvailability"
+                  - "ecr:GetDownloadUrlForLayer"
+                  - "ecr:BatchGetImage"
+                Condition:
+                  "StringEquals":
+                    "aws:sourceVpce": !Ref EcrVpcEndpoint
+                    "aws:sourceVpc": !Ref VPC
+                Resource:
+                  - "*"
       Tags:
         - Key: Project
           Value: Rexif
