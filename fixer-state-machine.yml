@@ -183,48 +183,6 @@ Resources:
           Value: !Ref AWS::StackName
         - Key: "prx:cloudformation:stack-id"
           Value: !Ref AWS::StackId
-  EcsVpcEndpoint:
-    Type: AWS::EC2::VPCEndpoint
-    Properties:
-      PrivateDnsEnabled: true
-      RouteTableIds:
-        - !Ref RouteTable
-      SecurityGroupIds:
-        - !Ref EcsEndpointsSecurityGroup
-      ServiceName: !Sub com.amazonaws.${AWS::Region}.ecs
-      SubnetIds:
-        - !Ref Subnet1
-        - !Ref Subnet2
-      VpcEndpointType: Interface
-      VpcId: !Ref VPC
-  EcsAgentVpcEndpoint:
-    Type: AWS::EC2::VPCEndpoint
-    Properties:
-      PrivateDnsEnabled: true
-      RouteTableIds:
-        - !Ref RouteTable
-      SecurityGroupIds:
-        - !Ref EcsEndpointsSecurityGroup
-      ServiceName: !Sub com.amazonaws.${AWS::Region}.ecs-agent
-      SubnetIds:
-        - !Ref Subnet1
-        - !Ref Subnet2
-      VpcEndpointType: Interface
-      VpcId: !Ref VPC
-  EcsTelemetryVpcEndpoint:
-    Type: AWS::EC2::VPCEndpoint
-    Properties:
-      PrivateDnsEnabled: true
-      RouteTableIds:
-        - !Ref RouteTable
-      SecurityGroupIds:
-        - !Ref EcsEndpointsSecurityGroup
-      ServiceName: !Sub com.amazonaws.${AWS::Region}.ecs-telemetry
-      SubnetIds:
-        - !Ref Subnet1
-        - !Ref Subnet2
-      VpcEndpointType: Interface
-      VpcId: !Ref VPC
   EcrVpcEndpoint:
     # https://docs.aws.amazon.com/AmazonECR/latest/userguide/vpc-endpoints.html#ecr-vpc-endpoint-considerations
     Type: AWS::EC2::VPCEndpoint
