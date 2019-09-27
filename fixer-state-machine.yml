@@ -374,15 +374,7 @@ Resources:
     Type: AWS::ECS::TaskDefinition
     Properties:
       ContainerDefinitions:
-        -
-          # Command:
-          #   - "$TASK_TOKEN"
-          # EntryPoint:
-          #   - echo
-          Environment:
-            - Name: FOO
-              Value: bar
-          Essential: true
+        - Essential: true
           Image: !Ref TranscodeEcsTaskDefinitionImage
           LogConfiguration:
             LogDriver: awslogs
@@ -405,8 +397,6 @@ Resources:
         - Key: "prx:cloudformation:stack-id"
           Value: !Ref AWS::StackId
       TaskRoleArn: !GetAtt TranscodeEcsTaskIamRole.Arn
-      # Volumes:
-      #   - Volume
   # Artifact Bucket
   ArtifactBucket:
     Type: AWS::S3::Bucket
