@@ -183,9 +183,8 @@ Resources:
   Subnet1:
     Type: AWS::EC2::Subnet
     Properties:
-      VpcId: !Ref VPC
       AvailabilityZone: !Join ["", [!Ref "AWS::Region", a]]
-      CidrBlock: 10.0.1.0/24
+      CidrBlock: 10.0.0.0/17
       Tags:
         - Key: Project
           Value: Rexif
@@ -195,12 +194,12 @@ Resources:
           Value: !Ref AWS::StackName
         - Key: "prx:cloudformation:stack-id"
           Value: !Ref AWS::StackId
+      VpcId: !Ref VPC
   Subnet2:
     Type: AWS::EC2::Subnet
     Properties:
-      VpcId: !Ref VPC
       AvailabilityZone: !Join ["", [!Ref "AWS::Region", b]]
-      CidrBlock: 10.0.2.0/24
+      CidrBlock: 10.0.128.0/17
       Tags:
         - Key: Project
           Value: Rexif
@@ -210,6 +209,7 @@ Resources:
           Value: !Ref AWS::StackName
         - Key: "prx:cloudformation:stack-id"
           Value: !Ref AWS::StackId
+      VpcId: !Ref VPC
   Subnet1RouteTableAssociation:
     Type: AWS::EC2::SubnetRouteTableAssociation
     Properties:
