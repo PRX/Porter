@@ -1,0 +1,11 @@
+{
+  "name": "rexif-ci",
+  "version": "1.0.0",
+  "description": "tktktk",
+  "scripts": {
+    "test": "jest"
+  },
+  "devDependencies": {
+    "jest": "^24.9.0"
+  }
+}
