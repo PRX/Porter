@@ -28,16 +28,20 @@ const AWS = AWSXRay.captureAWS(require('aws-sdk'));
 const s3 = new AWS.S3({ apiVersion: '2006-03-01' });
 
 // Requests a file over HTTP and writes it to disk
-function httpGet(uri, file) {
+function httpGet(uri, file, redirectCount) {
   return new Promise((resolve, reject) => {
     const client = uri.toLowerCase().startsWith('https') ? https : http;
 
     client.get(uri, async (res) => {
       if (res.statusCode === 301 || res.statusCode === 302) {
         try {
-          // TODO Don't follow redirects infinitely
+          if (redirectCount > 10) {
+            reject(new Error('Too many redirects'));
+          }
+
           console.log(`Following redirect: ${res.headers.location}`);
-          await httpGet(res.headers.location, file);
+          const count = redirectCount ? (redirectCount + 1) : 1;
+          await httpGet(res.headers.location, file, count);
           resolve();
         } catch (error) {
           reject(error);
