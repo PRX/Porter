@@ -76,8 +76,17 @@ exports.filenameFromSource = filenameFromSource;
 exports.handler = async (event, context) => {
   const sourceFilename = filenameFromSource(event.Job.Source);
 
-  const artifactBucketName = process.env.ARTIFACT_BUCKET_NAME;
-  const artifactObjectKey = `${event.Execution.Id}/${context.awsRequestId}/${sourceFilename}`;
+  const artifact = {
+    BucketName: process.env.ARTIFACT_BUCKET_NAME,
+    ObjectKey: `${event.Execution.Id}/${context.awsRequestId}/${sourceFilename}`
+  }
+
+  console.log(JSON.stringify({
+    msg: 'Ingest',
+    Source: event.Job.Source,
+    Execution: event.Execution,
+    Artifact: artifact
+  }));
 
   if (event.Job.Source.Mode === 'HTTP') {
     // Downloads the HTTP resource to a file on disk in the Lambda's tmp
@@ -88,8 +97,8 @@ exports.handler = async (event, context) => {
     await httpGet(event.Job.Source.URL, localFile);
 
     await s3.upload({
-      Bucket: artifactBucketName,
-      Key: artifactObjectKey,
+      Bucket: artifact.BucketName,
+      Key: artifact.ObjectKey,
       Body: fs.createReadStream(localFilePath),
     }).promise();
 
@@ -101,12 +110,12 @@ exports.handler = async (event, context) => {
     // CopySource expects: "/sourcebucket/path/to/object.extension"
     await s3.copyObject({
       CopySource: `/${event.Job.Source.BucketName}/${event.Job.Source.ObjectKey}`,
-      Bucket: artifactBucketName,
-      Key: artifactObjectKey
+      Bucket: artifact.BucketName,
+      Key: artifact.ObjectKey
     }).promise();
   } else {
     throw new Error('Unexpected source mode');
   }
 
-  return { 'BucketName': artifactBucketName, 'ObjectKey': artifactObjectKey };
+  return artifact;
 };
