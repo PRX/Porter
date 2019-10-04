@@ -5,7 +5,6 @@
 			"URI": "s3://farski-sandbox-prx/130224.mp2"
 		},
 		"Copy": {
-			"Perform": true,
 			"Destinations": [
 				{
 					"Mode": "S3",
@@ -22,7 +21,6 @@
 			"Perform": true
 		},
 		"Transcode": {
-			"Perform": true,
 			"Encodings": [
 				{
 					"Format": "flac",

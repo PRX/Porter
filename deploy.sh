@@ -44,6 +44,7 @@ aws cloudformation deploy \
                 FfmepgLambdaLayerVersionArn=arn:aws:lambda:us-east-1:561178107736:layer:ffmepg-farski-test:1 \
                 MpckLambdaLayerVersionArn=arn:aws:lambda:us-east-1:561178107736:layer:mpck-farski-test:1 \
                 JobExecutionSnsTopicLambdaFunctionS3ObjectVersion="$JobExecutionSnsTopicLambdaFunction_S3ObjectVersion" \
+                NormalizeInputLambdaFunctionS3ObjectVersion="$NormalizeInputLambdaFunction_S3ObjectVersion" \
                 IngestLambdaFunctionS3ObjectVersion="$IngestLambdaFunction_S3ObjectVersion" \
                 InspectMediaLambdaFunctionS3ObjectVersion="$InspectMediaLambdaFunction_S3ObjectVersion" \
                 CopyLambdaFunctionS3ObjectVersion="$CopyLambdaFunction_S3ObjectVersion" \
