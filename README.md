@@ -47,7 +47,7 @@ sns.publish(
         "Copy": {
             "Destinations": [
                 {
-                    "Mode": "S3",
+                    "Mode": "AWS/S3",
                     "BucketName": "myBucket",
                     "ObjectKey": "audioFile-copy.wav"
                 }
@@ -58,7 +58,7 @@ sns.publish(
                 {
                     "Format": "flac",
                     "Destination": {
-                        "Mode": "S3",
+                        "Mode": "AWS/S3",
                         "BucketName": "myBucket",
                         "ObjectKey": "audioFile-copy.wav"
                     }
@@ -180,7 +180,7 @@ If there's a failure during the job execution in any part of the state machine, 
 
 ### Copy
 
-`Copy` tasks create copies of the job's source file at locations in S3 defined on the task. The locations are declared as `Destinations`. Currently the only supported destination mode is `S3`. Copy tasks **do not** check if an object already exists in the given location. The copy operation is done by the [copyObject()](https://docs.aws.amazon.com/AWSJavaScriptSDK/latest/AWS/S3.html#copyObject-property) method in the AWS Node SDK. A copy task can include any number of destinations.
+`Copy` tasks create copies of the job's source file at locations in S3 defined on the task. The locations are declared as `Destinations`. Currently the only supported destination mode is `AWS/S3`. Copy tasks **do not** check if an object already exists in the given location. The copy operation is done by the [copyObject()](https://docs.aws.amazon.com/AWSJavaScriptSDK/latest/AWS/S3.html#copyObject-property) method in the AWS Node SDK. A copy task can include any number of destinations.
 
 If `Job.Copy.Destinations` is not an array with at least one element, the state machine will act as though no copy tasks were included in the job.
 
@@ -191,7 +191,7 @@ Input:
     "Copy": {
         "Destinations": [
             {
-                "Mode": "S3",
+                "Mode": "AWS/S3",
                 "BucketName": "myBucket",
                 "ObjectKey": "myObject.ext"
             }
