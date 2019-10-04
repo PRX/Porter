@@ -40,6 +40,13 @@ test('bogus destinations is not performed', async () => {
   expect(result.Job.Copy.Perform).toBe(false);
 });
 
+test('bogus copy is not performed', async () => {
+  const result = await handler({ Job: { Copy: 'bogus' } });
+
+  expect(result.Job.Copy.hasOwnProperty('Perform')).toBe(true);
+  expect(result.Job.Copy.Perform).toBe(false);
+});
+
 test('copy with destinations is performed', async () => {
   const result = await handler({ Job: { Copy: { Destinations: [{}, {}] } } });
 
@@ -58,6 +65,13 @@ test('inserts transcode when not included', async () => {
 
 test('empty encodings is not performed', async () => {
   const result = await handler({ Job: { Transcode: { Encodings: [] } } });
+
+  expect(result.Job.Transcode.hasOwnProperty('Perform')).toBe(true);
+  expect(result.Job.Transcode.Perform).toBe(false);
+});
+
+test('bogus transcode is not performed', async () => {
+  const result = await handler({ Job: { Transcode: 'bogus' } });
 
   expect(result.Job.Transcode.hasOwnProperty('Perform')).toBe(true);
   expect(result.Job.Transcode.Perform).toBe(false);
