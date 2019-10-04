@@ -914,7 +914,6 @@ Resources:
                   "Comment": "(I/O {Job}/{Job}) Normalizes input data",
                   "Type": "Task",
                   "Resource": "${NormalizeInputLambdaFunctionArn}",
-                  },
                   "Next": "IngestSourceFile",
                   "Retry": [
                     {
