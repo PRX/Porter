@@ -39,7 +39,9 @@ sns.publish(
     "Job": {
         "Id": "1234567890asdfghjkl"
         "Source": {
-            "URI": "https://example.com/audioFile.wav"
+            "Mode": "AWS/S3",
+            "BucketName": "farski-sandbox-prx",
+            "ObjectKey": "130224.mp2"
         },
         "Inspect": {
             "Perform": true
@@ -97,7 +99,7 @@ Input messages are represented as JSON data.
 
 The `Job.Id` is a user-defined value, and is distinct from any execution IDs created when the job runs. The `Job.Id` is sent in all callback messages. It is required.
 
-`Source.URI` is required and points to the file that the job will process. The following protocols are supported: `http://`, `https://`, `s3://`.
+`Source.Mode` is required and indicates the protocol used to fetch the source file. When the mode is set to `S3`, `Source.BucketName` and `Source.ObjectKey` are also required. WHen the mode is set to `HTTP`, `Source.URL` is also required, which can use either an `http://` or `https://` protocol.
 
 `Inspect`, `Copy`, and `Transcode` are the various tasks that can be run during a job execution. Each task type will have its own format.
 

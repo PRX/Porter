@@ -19,6 +19,7 @@
 const path = require('path');
 const os = require('os');
 const fs = require('fs');
+const url = require('url');
 const AWSXRay = require('aws-xray-sdk');
 
 const http = AWSXRay.captureHTTPs(require('http'));
@@ -62,22 +63,29 @@ function httpGet(uri, file, redirectCount) {
   });
 }
 
-exports.handler = async (event, context) => {
-  const sourceUri = event.Job.Source.URI;
-  const sourceFilename = sourceUri.split('/').pop();
+function filenameFromSource(source) {
+  if (source.Mode === 'HTTP') {
+    const urlObj = url.parse(source.URL);
+    return urlObj.pathname.split('/').pop() || urlObj.hostname;
+  } else if (source.Mode === 'AWS/S3') {
+    return source.ObjectKey.split('/').pop();
+  }
+}
+exports.filenameFromSource = filenameFromSource;
 
-  console.log(`Creating artifact for: ${sourceUri}`);
+exports.handler = async (event, context) => {
+  const sourceFilename = filenameFromSource(event.Job.Source);
 
   const artifactBucketName = process.env.ARTIFACT_BUCKET_NAME;
   const artifactObjectKey = `${event.Execution.Id}/${context.awsRequestId}/${sourceFilename}`;
 
-  if (sourceUri.startsWith('https://') || sourceUri.startsWith('http://')) {
+  if (event.Job.Source.Mode === 'HTTP') {
     // Downloads the HTTP resource to a file on disk in the Lambda's tmp
     // directory, and then uploads that file to the S3 artifact bucket.
     const localFilePath = path.join(os.tmpdir(), sourceFilename);
 
     const localFile = fs.createWriteStream(localFilePath);
-    await httpGet(sourceUri, localFile);
+    await httpGet(event.Job.Source.URL, localFile);
 
     await s3.upload({
       Bucket: artifactBucketName,
@@ -86,18 +94,18 @@ exports.handler = async (event, context) => {
     }).promise();
 
     fs.unlinkSync(localFilePath);
-  } else if (sourceUri.startsWith('s3://')) {
+  } else if (event.Job.Source.Mode === 'AWS/S3') {
     // Copies an existing S3 object to the S3 artifact bucket.
     // https://docs.aws.amazon.com/AWSJavaScriptSDK/latest/AWS/S3.html#copyObject-property
     // https://docs.aws.amazon.com/AmazonS3/latest/API/RESTObjectCOPY.html
     // CopySource expects: "/sourcebucket/path/to/object.extension"
     await s3.copyObject({
-      CopySource: sourceUri.replace(/^s3:\//, ''),
+      CopySource: `/${event.Job.Source.BucketName}/${event.Job.Source.ObjectKey}`,
       Bucket: artifactBucketName,
       Key: artifactObjectKey
     }).promise();
   } else {
-    throw new Error('Unexpected source file protocol');
+    throw new Error('Unexpected source mode');
   }
 
   return { 'BucketName': artifactBucketName, 'ObjectKey': artifactObjectKey };

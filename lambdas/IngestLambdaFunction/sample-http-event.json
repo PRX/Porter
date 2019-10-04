@@ -1,0 +1,11 @@
+{
+  "Job": {
+    "Source": {
+			"Mode": "HTTP",
+			"URL": "https://dts.podtrac.com/redirect.mp3/dovetail.prxu.org/232/fbd26e97-dd82-48b8-9600-d8838f9f1dd4/Passenger_List_EP04_SEG_A.mp3"
+    }
+  },
+  "Execution": {
+    "Id": "x85a61ed-1111-aaaa-2222-616797212639"
+  }
+}

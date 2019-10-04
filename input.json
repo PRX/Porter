@@ -2,7 +2,9 @@
 	"Job": {
 		"Id": "1234567890asdfghjkl",
 		"Source": {
-			"URI": "s3://farski-sandbox-prx/130224.mp2"
+			"Mode": "AWS/S3",
+			"BucketName": "farski-sandbox-prx",
+			"ObjectKey": "130224.mp2"
 		},
 		"Copy": {
 			"Destinations": [
