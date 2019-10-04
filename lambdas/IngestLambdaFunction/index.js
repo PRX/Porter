@@ -100,5 +100,5 @@ exports.handler = async (event, context) => {
     throw new Error('Unexpected source file protocol');
   }
 
-  return { "BucketName": artifactBucketName, "ObjectKey": artifactObjectKey };
+  return { 'BucketName': artifactBucketName, 'ObjectKey': artifactObjectKey };
 };

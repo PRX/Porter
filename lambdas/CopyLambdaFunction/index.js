@@ -18,5 +18,5 @@ exports.handler = async (event) => {
 
   console.log(`Copied /${event.Artifact.BucketName}/${event.Artifact.ObjectKey} to /${event.Copy.BucketName}/${event.Copy.ObjectKey}`);
 
-  return { Task: "Copy", BucketName: event.Copy.BucketName, ObjectKey: event.Copy.ObjectKey };
+  return { Task: 'Copy', BucketName: event.Copy.BucketName, ObjectKey: event.Copy.ObjectKey };
 };

@@ -85,8 +85,8 @@
               fs.unlinkSync(transcodedMediaFilePath);
 
               return {
-                  "Task": "Transcode",
-                  "BucketName": event.Encoding.Destination.BucketName,
-                  "ObjectKey": event.Encoding.Destination.ObjectKey
+                  'Task': 'Transcode',
+                  'BucketName': event.Encoding.Destination.BucketName,
+                  'ObjectKey': event.Encoding.Destination.ObjectKey
               };
           };
