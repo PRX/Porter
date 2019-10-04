@@ -6,6 +6,7 @@
     "test": "jest"
   },
   "devDependencies": {
+    "aws-xray-sdk": "^2.3.6",
     "jest": "^24.9.0"
   }
 }
