@@ -22,7 +22,8 @@ exports.handler = async (event) => {
   }
 
   try {
-    if (event.Job.Copy.Destinations.length > 0) {
+    if (Array.isArray(event.Job.Copy.Destinations)
+        && event.Job.Copy.Destinations.length > 0) {
       event.Job.Copy.Perform = true;
     } else {
       event.Job.Copy = { Perform: false };
@@ -33,7 +34,8 @@ exports.handler = async (event) => {
 
   // Ensure that
   try {
-    if (event.Job.Copy.Encodings.length > 0) {
+    if (Array.isArray(event.Job.Transcode.Encodings)
+        && event.Job.Transcode.Encodings.length > 0) {
       event.Job.Transcode.Perform = true;
     } else {
       event.Job.Transcode = { Perform: false };
