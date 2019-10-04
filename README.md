@@ -67,10 +67,10 @@ sns.publish(
         },
         "Callbacks": [
             {
-                "Type": "SNS",
+                "Type": "AWS/SNS",
                 "Topic": "arn:aws:sns:us-east-2:127213743756:my-callback-topic"
             }, {
-                "Type": "SQS",
+                "Type": "AWS/SQS",
                 "Queue": "https://sqs.us-east-2.amazonaws.com/1234512355/my-callback-queue"
             }, {
                 "Type": "HTTP",
@@ -101,20 +101,7 @@ The `Job.Id` is a user-defined value, and is distinct from any execution IDs cre
 
 `Inspect`, `Copy`, and `Transcode` are the various tasks that can be run during a job execution. Each task type will have its own format.
 
-`Callbacks` is an array of endpoints to which callback messages about the job execution will be sent. Each endpoint object has a `Mode` (supported modes are `SNS`, `SQS`, and `HTTP`). Different modes will have additional required properties. (HTTP callbacks will **not** follow redirects.)
-
-The minimum valid job, which would perform no tasks, is:
-
-```
-{
-    "Job": {
-        "Id": "1234567890asdfghjkl"
-        "Source": {
-            "URI": "https://example.com/audioFile.wav"
-        }
-    }
-}
-```
+`Callbacks` is an array of endpoints to which callback messages about the job execution will be sent. Each endpoint object has a `Mode` (supported modes are `AWS/SNS`, `AWS/SQS`, and `HTTP`). Different modes will have additional required properties. (HTTP callbacks will **not** follow redirects.)
 
 ### Callback Messages
 

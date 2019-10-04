@@ -48,10 +48,10 @@
 		},
 		"Callbacks": [
 			{
-				"Typ": "SNS",
+				"Type": "AWS/SNS",
 				"Topic": "arn:aws:sns:us-east-1:561178107736:fixer-state-machine-prototype-DebugSnsTopic-12W1C4BEPSMH7"
 			}, {
-				"Type": "SQS",
+				"Type": "AWS/SQS",
 				"Queue": "https://sqs.us-east-1.amazonaws.com/561178107736/fixer-state-machine-prototype-DebugSqsQueue-1UD51Y8WGGJFR"
 			}, {
 				"Type": "HTTP",

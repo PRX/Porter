@@ -56,8 +56,8 @@ function httpRequest(event, message) {
   }));
 }
 
-// Ex. input: { "Callback": { "Type": "SNS", "Topic": "arn:aws…" }, "JobResult": { "Job": { … }, "Result": { … } } }
-// Ex. error: { "Callback": { "Type": "SNS", "Topic": "arn:aws…" }, "JobResult": { "Job": { … }, "Error": { … } } }
+// Ex. input: { "Callback": { "Type": "AWS/SNS", "Topic": "arn:aws…" }, "JobResult": { "Job": { … }, "Result": { … } } }
+// Ex. error: { "Callback": { "Type": "AWS/SNS", "Topic": "arn:aws…" }, "JobResult": { "Job": { … }, "Error": { … } } }
 // Ex. msg:   { "JobResult": { "Job": { … }, "Result": { … } } }
 // Ex. msg:   { "JobResult": { "Job": { … }, "Error": { … } } }
 exports.handler = async (event) => {
@@ -65,12 +65,12 @@ exports.handler = async (event) => {
   if (event.JobResult) { Object.assign(msg, { JobResult: event.JobResult }); }
   if (event.TaskResult) { Object.assign(msg, { TaskResult: event.TaskResult }); }
 
-  if (event.Callback.Type === 'SNS') {
+  if (event.Callback.Type === 'AWS/SNS') {
     const TopicArn = event.Callback.Topic;
     const Message = JSON.stringify(msg);
 
     await sns.publish({ Message, TopicArn }).promise();
-  } else if (event.Callback.Type === 'SQS') {
+  } else if (event.Callback.Type === 'AWS/SQS') {
     const QueueUrl = event.Callback.Queue;
     const MessageBody = JSON.stringify(msg);
 
