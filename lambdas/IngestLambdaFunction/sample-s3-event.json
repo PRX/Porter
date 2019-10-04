@@ -1,9 +1,9 @@
 {
   "Job": {
     "Source": {
-			"Mode": "AWS/S3",
-			"BucketName": "farski-sandbox-prx",
-			"ObjectKey": "130224.mp2"
+      "Mode": "AWS/S3",
+      "BucketName": "farski-sandbox-prx",
+      "ObjectKey": "130224.mp2"
     }
   },
   "Execution": {
