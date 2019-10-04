@@ -11,23 +11,23 @@ read -r -d '' input_json << EOM
     {
         "Job": {
             "Id": "1234567890asdfghjkl-$2",
-            "Source": { "URI": "s3://farski-sandbox-prx/podcast.wav" },
-            "Copy": { "Perform": false },
-            "Inspect": { "Perform": false },
+            "Source": {
+                "Mode": "AWS/S3",
+                "BucketName": "farski-sandbox-prx",
+                "ObjectKey": "podcast.wav"
+            },
             "Transcode": {
-                "Perform": true,
                 "Encodings": [
                     {
                         "Format": "mp4",
                         "Destination": {
-                            "Mode": "S3",
+                            "Mode": "AWS/S3",
                             "BucketName": "farski-sandbox-prx",
                             "ObjectKey": "rexif-output/transcode-task/$1-$2.mp4"
                         }
                     }
                 ]
-            },
-            "Callbacks": []
+            }
         }
     }
 EOM
