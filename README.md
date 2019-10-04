@@ -45,7 +45,6 @@ sns.publish(
             "Perform": true
         },
         "Copy": {
-            "Perform": true
             "Destinations": [
                 {
                     "Mode": "S3",
@@ -55,7 +54,6 @@ sns.publish(
             ]
         },
         "Transcode": {
-            "Perform": true,
             "Encodings": [
                 {
                     "Format": "flac",
@@ -101,13 +99,26 @@ The `Job.Id` is a user-defined value, and is distinct from any execution IDs cre
 
 `Source.URI` is required and points to the file that the job will process. The following protocols are supported: `http://`, `https://`, `s3://`.
 
-`Inspect`, `Copy`, and `Transcode` are the various tasks that can be run during a job execution. They must all be included in every message, even if the task is not being run. To disable a given task, set its `Perform` value to `false`. (When `Perform` is `false` for a given task, all other properties of that task are optional and ignored.) When `Perform` is `true` for a given task, there may be additional required task-specific properties.
+`Inspect`, `Copy`, and `Transcode` are the various tasks that can be run during a job execution. Each task type will have its own format.
 
 `Callbacks` is an array of endpoints to which callback messages about the job execution will be sent. Each endpoint object has a `Mode` (supported modes are `SNS`, `SQS`, and `HTTP`). Different modes will have additional required properties. (HTTP callbacks will **not** follow redirects.)
 
+The minimum valid job, which would perform no tasks, is:
+
+```
+{
+    "Job": {
+        "Id": "1234567890asdfghjkl"
+        "Source": {
+            "URI": "https://example.com/audioFile.wav"
+        }
+    }
+}
+```
+
 ### Callback Messages
 
-Callback messages are dispatched at various points throughout the execution of a job. Whenever callback messages are sent, messages are always sent to all callbacks defined in the job. If you don't need any callbacks, include an empty array in the job (ie, `"Callbacks": []`).
+Callback messages are dispatched at various points throughout the execution of a job. Whenever callback messages are sent, messages are always sent to all callbacks defined in the job. Callbacks are optional, and any value in `Job.Callbacks` other than an array will be ignored. Empty arrays are okay.
 
 Callbacks are sent as individual tasks are completed. For example, if a job includes three `Copy` destinations, a callback will be sent after each copy task completes. (Tasks are processed in parallel, so callbacks may arrive in any order). Task callbacks can be identified by the `TaskResult` key. The JSON message for a `Copy` task callback looks like this:
 
@@ -184,14 +195,13 @@ If there's a failure during the job execution in any part of the state machine, 
 
 `Copy` tasks create copies of the job's source file at locations in S3 defined on the task. The locations are declared as `Destinations`. Currently the only supported destination mode is `S3`. Copy tasks **do not** check if an object already exists in the given location. The copy operation is done by the [copyObject()](https://docs.aws.amazon.com/AWSJavaScriptSDK/latest/AWS/S3.html#copyObject-property) method in the AWS Node SDK. A copy task can include any number of destinations.
 
-The behavior when `Perform` is `true` and `Destinations` is missing or empty is undefined. Avoid doing that.
+If `Job.Copy.Destinations` is not an array with at least one element, the state machine will act as though no copy tasks were included in the job.
 
 Input:
 
 ```
 {
     "Copy": {
-        "Perform": true,
         "Destinations": [
             {
                 "Mode": "S3",
@@ -217,14 +227,13 @@ Output:
 
 `Transcode` tasks encode and otherwise manipulate the source file. These are intended for audio and video source files. The desired transcoding are declared as `Encodings`, and each encoding includes the properties of the output file, and a single destination for the output file to be sent to. A transcode task can include any number of encodings.
 
-The behavior when `Perform` is `true` and `Encodings` is missing or empty is undefined. Avoid doing that.
+If `Job.Transcode.Encodings` is not an array with at least one element, the state machine will act as though no copy tasks were included in the job.
 
 Input:
 
 ```
 {
     "Transcode": {
-        "Perform": true,
         "Encodings": [
             {
                 "Format": "flac",
