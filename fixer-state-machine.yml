@@ -703,6 +703,7 @@ Resources:
                   - "s3:ListBucketMultipartUploads"
                 Resource:
                   - "arn:aws:s3:::farski-sandbox-prx"
+                  - "arn:aws:s3:::staging-prx-feed"
               - Effect: Allow
                 Action:
                   - "s3:PutObject"
@@ -710,6 +711,7 @@ Resources:
                   - "s3:ListMultipartUploadParts"
                 Resource:
                   - "arn:aws:s3:::farski-sandbox-prx/*"
+                  - "arn:aws:s3:::staging-prx-feed/*"
       Tags:
         - Key: Project
           Value: Rexif
