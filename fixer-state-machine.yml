@@ -8,6 +8,10 @@ Parameters:
     Type: String
   OpsErrorMessagesSnsTopicArn:
     Type: String
+  TaskDestinationBucketPolicyResources:
+    Type: CommaDelimitedList
+  TaskDestinationObjectPolicyResources:
+    Type: CommaDelimitedList
   StackResourcesBucket:
     Type: String
   AwsXraySdkLambdaLayerVersionArn:
@@ -397,31 +401,31 @@ Resources:
       Description: String
       Path: "/"
       Policies:
-        # The destination of transcode operations is somewhat arbitrary
-        # TODO Figure out what this should be
+        # The destination is a set of user-defined bucket
         - PolicyName: S3PutPolicy
           PolicyDocument:
             Version: "2012-10-17"
             Statement:
-              - Effect: Allow
-                Action:
+              # Bucket-level permissions
+              - Action:
                   - "s3:ListBucketMultipartUploads"
-                Resource:
-                  - "arn:aws:s3:::farski-sandbox-prx"
-              - Effect: Allow
-                Action:
+                Effect: Allow
+                Resource: !Ref TaskDestinationBucketPolicyResources
+              # Object-level permissions
+              - Action:
                   - "s3:PutObject"
                   - "s3:AbortMultipartUpload"
                   - "s3:ListMultipartUploadParts"
-                Resource:
-                  - "arn:aws:s3:::farski-sandbox-prx/*"
+                Effect: Allow
+                Resource: !Ref TaskDestinationObjectPolicyResources
+        # Transcode operations are always copying FROM the artifact bucket
         - PolicyName: S3ArtifactBucketPolicy
           PolicyDocument:
             Version: "2012-10-17"
             Statement:
-              - Effect: Allow
-                Action:
+              - Action:
                   - "s3:GetObject"
+                Effect: Allow
                 Resource:
                   - !Sub "arn:aws:s3:::${ArtifactBucket}/*"
       Tags:
@@ -688,31 +692,28 @@ Resources:
           PolicyDocument:
             Version: "2012-10-17"
             Statement:
-              - Effect: Allow
-                Action:
+              - Action:
                   - "s3:GetObject*"
+                Effect: Allow
                 Resource:
                   - !Sub "arn:aws:s3:::${ArtifactBucket}/*"
-        # The destination of the copy operation is somewhat arbitrary
-        # TODO Figure out what this should be
+        # The destination is a set of user-defined bucket
         - PolicyName: S3PutPolicy
           PolicyDocument:
             Version: "2012-10-17"
             Statement:
-              - Effect: Allow
-                Action:
+              # Bucket-level permissions
+              - Action:
                   - "s3:ListBucketMultipartUploads"
-                Resource:
-                  - "arn:aws:s3:::farski-sandbox-prx"
-                  - "arn:aws:s3:::staging-prx-feed"
-              - Effect: Allow
-                Action:
+                Effect: Allow
+                Resource: !Ref TaskDestinationBucketPolicyResources
+              # Object-level permissions
+              - Action:
                   - "s3:PutObject"
                   - "s3:AbortMultipartUpload"
                   - "s3:ListMultipartUploadParts"
-                Resource:
-                  - "arn:aws:s3:::farski-sandbox-prx/*"
-                  - "arn:aws:s3:::staging-prx-feed/*"
+                Effect: Allow
+                Resource: !Ref TaskDestinationObjectPolicyResources
       Tags:
         - Key: Project
           Value: Rexif

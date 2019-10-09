@@ -50,5 +50,7 @@ aws cloudformation deploy \
                 CopyLambdaFunctionS3ObjectVersion="$CopyLambdaFunction_S3ObjectVersion" \
                 JobCallbackLambdaFunctionS3ObjectVersion="$JobCallbackLambdaFunction_S3ObjectVersion" \
                 TranscodeEcsTaskDefinitionImage=561178107736.dkr.ecr.us-east-1.amazonaws.com/rexif-prototype:latest \
+                TaskDestinationBucketPolicyResources=arn:aws:s3:::farski-sandbox-prx,arn:aws:s3:::staging-prx-feed \
+                TaskDestinationObjectPolicyResources=arn:aws:s3:::farski-sandbox-prx/*,arn:aws:s3:::staging-prx-feed/* \
                 OpsWarnMessagesSnsTopicArn=arn:aws:sns:us-east-1:561178107736:infrastructure-notifications-OpsWarnMessagesSnsTopic-1F2NNQY5K8YE \
                 OpsErrorMessagesSnsTopicArn=arn:aws:sns:us-east-1:561178107736:infrastructure-notifications-OpsErrorMessagesSnsTopic-A4U0VVXEKBIL
