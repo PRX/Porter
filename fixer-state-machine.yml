@@ -75,7 +75,7 @@ Resources:
       ManagedPolicyArns:
         - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
         - arn:aws:iam::aws:policy/AWSXrayWriteOnlyAccess
-      Path: "/"
+      Path: /
       Policies:
         - PolicyName: StepFunctionsPolicy
           PolicyDocument:
@@ -145,9 +145,9 @@ Resources:
           Value: Rexif
         - Key: Name
           Value: !Sub ${AWS::StackName}-VPC
-        - Key: "prx:cloudformation:stack-name"
+        - Key: prx:cloudformation:stack-name
           Value: !Ref AWS::StackName
-        - Key: "prx:cloudformation:stack-id"
+        - Key: prx:cloudformation:stack-id
           Value: !Ref AWS::StackId
   RouteTable:
     Type: AWS::EC2::RouteTable
@@ -158,9 +158,9 @@ Resources:
           Value: Rexif
         - Key: Name
           Value: !Sub ${AWS::StackName}-RouteTable
-        - Key: "prx:cloudformation:stack-name"
+        - Key: prx:cloudformation:stack-name
           Value: !Ref AWS::StackName
-        - Key: "prx:cloudformation:stack-id"
+        - Key: prx:cloudformation:stack-id
           Value: !Ref AWS::StackId
   S3VpcEndpoint:
     Type: AWS::EC2::VPCEndpoint
@@ -185,9 +185,9 @@ Resources:
           Value: Rexif
         - Key: Name
           Value: !Sub ${AWS::StackName}-EcsEndpointsSecurityGroup
-        - Key: "prx:cloudformation:stack-name"
+        - Key: prx:cloudformation:stack-name
           Value: !Ref AWS::StackName
-        - Key: "prx:cloudformation:stack-id"
+        - Key: prx:cloudformation:stack-id
           Value: !Ref AWS::StackId
   EcrVpcEndpoint:
     # https://docs.aws.amazon.com/AmazonECR/latest/userguide/vpc-endpoints.html#ecr-vpc-endpoint-considerations
@@ -228,9 +228,9 @@ Resources:
           Value: Rexif
         - Key: Name
           Value: !Sub ${AWS::StackName}-Subnet-1
-        - Key: "prx:cloudformation:stack-name"
+        - Key: prx:cloudformation:stack-name
           Value: !Ref AWS::StackName
-        - Key: "prx:cloudformation:stack-id"
+        - Key: prx:cloudformation:stack-id
           Value: !Ref AWS::StackId
       VpcId: !Ref VPC
   Subnet2:
@@ -246,9 +246,9 @@ Resources:
           Value: Rexif
         - Key: Name
           Value: !Sub ${AWS::StackName}-Subnet-2
-        - Key: "prx:cloudformation:stack-name"
+        - Key: prx:cloudformation:stack-name
           Value: !Ref AWS::StackName
-        - Key: "prx:cloudformation:stack-id"
+        - Key: prx:cloudformation:stack-id
           Value: !Ref AWS::StackId
       VpcId: !Ref VPC
   Subnet1RouteTableAssociation:
@@ -269,9 +269,9 @@ Resources:
           Value: Rexif
         - Key: Name
           Value: !Sub ${AWS::StackName}-NetworkAcl
-        - Key: "prx:cloudformation:stack-name"
+        - Key: prx:cloudformation:stack-name
           Value: !Ref AWS::StackName
-        - Key: "prx:cloudformation:stack-id"
+        - Key: prx:cloudformation:stack-id
           Value: !Ref AWS::StackId
       VpcId: !Ref VPC
   InboundTrafficNetworkAclEntry:
@@ -314,9 +314,9 @@ Resources:
           Value: Rexif
         - Key: Name
           Value: !Sub ${AWS::StackName}-DhcpOptions
-        - Key: "prx:cloudformation:stack-name"
+        - Key: prx:cloudformation:stack-name
           Value: !Ref AWS::StackName
-        - Key: "prx:cloudformation:stack-id"
+        - Key: prx:cloudformation:stack-id
           Value: !Ref AWS::StackId
   DhcpOptionsAssociation:
     Type: AWS::EC2::VPCDHCPOptionsAssociation
@@ -330,9 +330,9 @@ Resources:
       Tags:
         - Key: Project
           Value: Rexif
-        - Key: "prx:cloudformation:stack-name"
+        - Key: prx:cloudformation:stack-name
           Value: !Ref AWS::StackName
-        - Key: "prx:cloudformation:stack-id"
+        - Key: prx:cloudformation:stack-id
           Value: !Ref AWS::StackId
   # Transcode ECS Service
   TranscodeEcsTaskLogGroup:
@@ -352,7 +352,7 @@ Resources:
               Service:
                 - ecs-tasks.amazonaws.com
       Description: String
-      Path: "/"
+      Path: /
       Policies:
         # https://docs.aws.amazon.com/AmazonECS/latest/developerguide/task_execution_IAM_role.html#task-execution-ecr-conditionkeys
         # An alternative to the managed AmazonECSTaskExecutionRolePolicy, which
@@ -363,28 +363,28 @@ Resources:
             Statement:
               - Effect: Allow
                 Action:
-                  - "ecr:GetAuthorizationToken"
-                  - "logs:CreateLogStream"
-                  - "logs:PutLogEvents"
+                  - ecr:GetAuthorizationToken
+                  - logs:CreateLogStream
+                  - logs:PutLogEvents
                 Resource:
                   - "*"
               - Effect: Allow
                 Action:
-                  - "ecr:BatchCheckLayerAvailability"
-                  - "ecr:GetDownloadUrlForLayer"
-                  - "ecr:BatchGetImage"
+                  - ecr:BatchCheckLayerAvailability
+                  - ecr:GetDownloadUrlForLayer
+                  - ecr:BatchGetImage
                 Condition:
-                  "StringEquals":
-                    "aws:sourceVpce": !Ref EcrVpcEndpoint
-                    "aws:sourceVpc": !Ref VPC
+                  StringEquals:
+                    aws:sourceVpce: !Ref EcrVpcEndpoint
+                    aws:sourceVpc: !Ref VPC
                 Resource:
                   - "*"
       Tags:
         - Key: Project
           Value: Rexif
-        - Key: "prx:cloudformation:stack-name"
+        - Key: prx:cloudformation:stack-name
           Value: !Ref AWS::StackName
-        - Key: "prx:cloudformation:stack-id"
+        - Key: prx:cloudformation:stack-id
           Value: !Ref AWS::StackId
   TranscodeEcsTaskIamRole:
     Type: AWS::IAM::Role
@@ -399,7 +399,7 @@ Resources:
               Service:
                 - ecs-tasks.amazonaws.com
       Description: String
-      Path: "/"
+      Path: /
       Policies:
         # The destination is a set of user-defined bucket
         - PolicyName: S3PutPolicy
@@ -408,14 +408,14 @@ Resources:
             Statement:
               # Bucket-level permissions
               - Action:
-                  - "s3:ListBucketMultipartUploads"
+                  - s3:ListBucketMultipartUploads
                 Effect: Allow
                 Resource: !Ref TaskDestinationBucketPolicyResources
               # Object-level permissions
               - Action:
-                  - "s3:PutObject"
-                  - "s3:AbortMultipartUpload"
-                  - "s3:ListMultipartUploadParts"
+                  - s3:PutObject
+                  - s3:AbortMultipartUpload
+                  - s3:ListMultipartUploadParts
                 Effect: Allow
                 Resource: !Ref TaskDestinationObjectPolicyResources
         # Transcode operations are always copying FROM the artifact bucket
@@ -424,16 +424,16 @@ Resources:
             Version: "2012-10-17"
             Statement:
               - Action:
-                  - "s3:GetObject"
+                  - s3:GetObject
                 Effect: Allow
                 Resource:
-                  - !Sub "arn:aws:s3:::${ArtifactBucket}/*"
+                  - !Sub arn:aws:s3:::${ArtifactBucket}/*
       Tags:
         - Key: Project
           Value: Rexif
-        - Key: "prx:cloudformation:stack-name"
+        - Key: prx:cloudformation:stack-name
           Value: !Ref AWS::StackName
-        - Key: "prx:cloudformation:stack-id"
+        - Key: prx:cloudformation:stack-id
           Value: !Ref AWS::StackId
   TranscodeEcsTaskDefinition:
     Type: AWS::ECS::TaskDefinition
@@ -457,9 +457,9 @@ Resources:
       Tags:
         - Key: Project
           Value: Rexif
-        - Key: "prx:cloudformation:stack-name"
+        - Key: prx:cloudformation:stack-name
           Value: !Ref AWS::StackName
-        - Key: "prx:cloudformation:stack-id"
+        - Key: prx:cloudformation:stack-id
           Value: !Ref AWS::StackId
       TaskRoleArn: !GetAtt TranscodeEcsTaskIamRole.Arn
   # Artifact Bucket
@@ -494,7 +494,7 @@ Resources:
       ManagedPolicyArns:
         - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
         - arn:aws:iam::aws:policy/AWSXrayWriteOnlyAccess
-      Path: "/"
+      Path: /
       Tags:
         - Key: Project
           Value: Rexif
@@ -543,7 +543,7 @@ Resources:
       ManagedPolicyArns:
         - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
         - arn:aws:iam::aws:policy/AWSXrayWriteOnlyAccess
-      Path: "/"
+      Path: /
       Policies:
         # For uploading files and file parts to the artifact store
         - PolicyName: S3ArtifactUploadPolicy
@@ -552,16 +552,16 @@ Resources:
             Statement:
               - Effect: Allow
                 Action:
-                  - "s3:ListBucketMultipartUploads"
+                  - s3:ListBucketMultipartUploads
                 Resource:
-                  - !Sub "arn:aws:s3:::${ArtifactBucket}"
+                  - !Sub arn:aws:s3:::${ArtifactBucket}
               - Effect: Allow
                 Action:
-                  - "s3:PutObject"
-                  - "s3:AbortMultipartUpload"
-                  - "s3:ListMultipartUploadParts"
+                  - s3:PutObject
+                  - s3:AbortMultipartUpload
+                  - s3:ListMultipartUploadParts
                 Resource:
-                  - !Sub "arn:aws:s3:::${ArtifactBucket}/*"
+                  - !Sub arn:aws:s3:::${ArtifactBucket}/*
         # Allow GET-only access to any object in S3
         - PolicyName: S3CopySourcePolicy
           PolicyDocument:
@@ -569,7 +569,7 @@ Resources:
             Statement:
               - Effect: Allow
                 Action:
-                  - "s3:GetObject*"
+                  - s3:GetObject*
                 Resource:
                   - "*"
       Tags:
@@ -624,7 +624,7 @@ Resources:
       ManagedPolicyArns:
         - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
         - arn:aws:iam::aws:policy/AWSXrayWriteOnlyAccess
-      Path: "/"
+      Path: /
       Policies:
         - PolicyName: S3ArtifactBucketPolicy
           PolicyDocument:
@@ -632,9 +632,9 @@ Resources:
             Statement:
               - Effect: Allow
                 Action:
-                  - "s3:GetObject"
+                  - s3:GetObject
                 Resource:
-                  - !Sub "arn:aws:s3:::${ArtifactBucket}/*"
+                  - !Sub arn:aws:s3:::${ArtifactBucket}/*
       Tags:
         - Key: Project
           Value: Rexif
@@ -685,7 +685,7 @@ Resources:
       ManagedPolicyArns:
         - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
         - arn:aws:iam::aws:policy/AWSXrayWriteOnlyAccess
-      Path: "/"
+      Path: /
       Policies:
         # Copy operations are always copying FROM the artifact bucket
         - PolicyName: S3ArtifactBucketReadPolicy
@@ -693,10 +693,10 @@ Resources:
             Version: "2012-10-17"
             Statement:
               - Action:
-                  - "s3:GetObject*"
+                  - s3:GetObject*
                 Effect: Allow
                 Resource:
-                  - !Sub "arn:aws:s3:::${ArtifactBucket}/*"
+                  - !Sub arn:aws:s3:::${ArtifactBucket}/*
         # The destination is a set of user-defined bucket
         - PolicyName: S3PutPolicy
           PolicyDocument:
@@ -704,14 +704,14 @@ Resources:
             Statement:
               # Bucket-level permissions
               - Action:
-                  - "s3:ListBucketMultipartUploads"
+                  - s3:ListBucketMultipartUploads
                 Effect: Allow
                 Resource: !Ref TaskDestinationBucketPolicyResources
               # Object-level permissions
               - Action:
-                  - "s3:PutObject"
-                  - "s3:AbortMultipartUpload"
-                  - "s3:ListMultipartUploadParts"
+                  - s3:PutObject
+                  - s3:AbortMultipartUpload
+                  - s3:ListMultipartUploadParts
                 Effect: Allow
                 Resource: !Ref TaskDestinationObjectPolicyResources
       Tags:
@@ -762,7 +762,7 @@ Resources:
       ManagedPolicyArns:
         - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
         - arn:aws:iam::aws:policy/AWSXrayWriteOnlyAccess
-      Path: "/"
+      Path: /
       Policies:
         # Must be able to publish to whatever SNS topics are defined by a job
         - PolicyName: SnsPublish
@@ -781,7 +781,7 @@ Resources:
             Statement:
               - Effect: Allow
                 Action:
-                  - "sqs:SendMessage"
+                  - sqs:SendMessage
                 Resource:
                   - "*"
       Tags:
@@ -834,7 +834,7 @@ Resources:
               - sts:AssumeRole
       ManagedPolicyArns:
         - arn:aws:iam::aws:policy/AWSXrayWriteOnlyAccess
-      Path: "/"
+      Path: /
       Policies:
         - PolicyName: LambdaTaskPolicy
           PolicyDocument:
@@ -881,7 +881,7 @@ Resources:
                   - events:PutRule
                   - events:DescribeRule
                 Resource:
-                  - !Sub "arn:aws:events:${AWS::Region}:${AWS::AccountId}:rule/StepFunctionsGetEventsForECSTaskRule"
+                  - !Sub arn:aws:events:${AWS::Region}:${AWS::AccountId}:rule/StepFunctionsGetEventsForECSTaskRule
         # https://docs.aws.amazon.com/step-functions/latest/dg/ecs-iam.html
         - PolicyName: EcsSyncDynamicResourcesPolicy
           PolicyDocument:
@@ -900,7 +900,7 @@ Resources:
                   - events:PutRule
                   - events:DescribeRule
                 Resource:
-                  - !Sub "arn:aws:events:${AWS::Region}:${AWS::AccountId}:rule/StepFunctionsGetEventsForECSTaskRule"
+                  - !Sub arn:aws:events:${AWS::Region}:${AWS::AccountId}:rule/StepFunctionsGetEventsForECSTaskRule
       Tags:
         - Key: Project
           Value: Rexif
