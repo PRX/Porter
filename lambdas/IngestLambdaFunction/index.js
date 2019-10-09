@@ -36,7 +36,7 @@ function httpGet(uri, file, redirectCount) {
     client.get(uri, async (res) => {
       if (res.statusCode === 301 || res.statusCode === 302) {
         try {
-          if (redirectCount > 10) {
+          if (redirectCount > +process.env.MAX_HTTP_REDIRECTS) {
             reject(new Error('Too many redirects'));
           }
 

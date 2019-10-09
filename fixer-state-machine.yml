@@ -587,6 +587,7 @@ Resources:
       Environment:
         Variables:
           ARTIFACT_BUCKET_NAME: !Ref ArtifactBucket
+          MAX_HTTP_REDIRECTS: "10"
       Handler: index.handler
       Layers:
         - !Ref AwsXraySdkLambdaLayerVersionArn
