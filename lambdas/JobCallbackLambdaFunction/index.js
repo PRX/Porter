@@ -9,7 +9,7 @@ const https = AWSXRay.captureHTTPs(require('https'));
 const sns = new AWS.SNS({ apiVersion: '2010-03-31' });
 const sqs = new AWS.SQS({ apiVersion: '2012-11-05' });
 
-function httpRequest(event, message) {
+function httpRequest(event, message, redirectCount) {
   return (new Promise((resolve, reject) => {
     const options = url.parse(event.Callback.URL);
     options.method = event.Callback.Method;
@@ -42,6 +42,19 @@ function httpRequest(event, message) {
       res.on('end', () => {
         if (res.statusCode >= 200 && res.statusCode < 300) {
           resolve();
+        } else if (res.statusCode === 301 || res.statusCode === 302) {
+          try {
+            if (redirectCount > +process.env.MAX_HTTP_REDIRECTS) {
+              reject(new Error('Too many redirects'));
+            }
+
+            console.log(`Following redirect: ${res.headers.location}`);
+            const count = redirectCount ? (redirectCount + 1) : 1;
+            await httpRequest(res.headers.location, message, count);
+            resolve();
+          } catch (error) {
+            reject(error);
+          }
         } else {
           const error = new Error(`Error ${res.statusCode}: ${resData}`);
           reject(error);

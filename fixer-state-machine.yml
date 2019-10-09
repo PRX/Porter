@@ -799,6 +799,9 @@ Resources:
         S3ObjectVersion: !Ref JobCallbackLambdaFunctionS3ObjectVersion
       Description: >
         Sends a job or task callback message to a single endpoint
+      Environment:
+        Variables:
+          MAX_HTTP_REDIRECTS: "3"
       Handler: index.handler
       Layers:
         - !Ref AwsXraySdkLambdaLayerVersionArn
