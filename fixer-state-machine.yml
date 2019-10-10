@@ -1489,7 +1489,7 @@ Resources:
       OKActions:
         - !Ref OpsErrorMessagesSnsTopicArn
       AlarmDescription: >
-        Rexif state machine is being throttled
+        Rexif state machine experienced uncaught errors
       ComparisonOperator: GreaterThanOrEqualToThreshold
       EvaluationPeriods: 1
       MetricName: ExecutionsFailed
