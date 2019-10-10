@@ -111,6 +111,23 @@ Callback messages are dispatched at various points throughout the execution of a
 
 Each callback includes `Time` and `Timestamp` values. These represent approximately the time at which that specific callback was sent. If multiple callbacks are provided for a job, they may (and likely will) have slightly different timestamps, even though they are sent in parallel. These time values are in addition to the ones included with individual task results, and should always be later (greater than) the task-specific values.
 
+Callbacks are sent when a job has been received (after the input has been normalized). These callbacks will contain a `JobReceived` key.
+
+```
+{
+    "Time": "2012-12-21T12:34:56Z",
+    "Timestamp: 1356093296.123,
+    "JobReceived": {
+        "Job": {
+            "Id": "1234567890asdfghjkl"
+        },
+        "Execution": {
+            "Id": "arn:aws:states:us-east-1:561178107736:execution:StateMachine-cvPVX5enHWdj:221672a9-ada6-483f-a5a7-ccffd4eee8c5"
+        }
+    }
+}
+```
+
 Callbacks are sent as individual tasks are completed. For example, if a job includes three `Copy` destinations, a callback will be sent after each copy task completes. (Tasks are processed in parallel, so callbacks may arrive in any order). Task callbacks can be identified by the `TaskResult` key. The JSON message for a `Copy` task callback looks like this:
 
 ```

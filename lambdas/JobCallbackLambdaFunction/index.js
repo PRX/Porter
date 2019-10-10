@@ -77,6 +77,7 @@ exports.handler = async (event) => {
   const now = new Date;
   const msg = { Time: now.toISOString(), Timestamp: (now / 1000) };
 
+  if (event.JobReceived) { Object.assign(msg, { JobReceived: event.JobReceived }); }
   if (event.JobResult) { Object.assign(msg, { JobResult: event.JobResult }); }
   if (event.TaskResult) { Object.assign(msg, { TaskResult: event.TaskResult }); }
 

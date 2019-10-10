@@ -921,7 +921,7 @@ Resources:
                   "Comment": "(I/O {Job}/{Job}) Normalizes input data",
                   "Type": "Task",
                   "Resource": "${NormalizeInputLambdaFunctionArn}",
-                  "Next": "IngestSourceFile",
+                  "Next": "JobReceivedCallbacks",
                   "Retry": [
                     {
                       "ErrorEquals": ["States.ALL"],
@@ -937,6 +937,40 @@ Resources:
                       "Next": "JobErrorCallbacks"
                     }
                   ]
+                },
+                "JobReceivedCallbacks": {
+                  "Type": "Map",
+                  "Comment": "Sends a job received message to each callback defined in the job via an iterator",
+                  "Next": "IngestSourceFile",
+                  "InputPath": "$",
+                  "ItemsPath": "$.Job.Callbacks",
+                  "Parameters": {
+                    "Callback.$": "$$.Map.Item.Value",
+                    "JobReceived": {
+                      "Job": { "Id.$": "$.Job.Id" },
+                      "Execution": "$$.Execution.Id"
+                    }
+                  },
+                  "MaxConcurrency": 0,
+                  "Iterator": {
+                    "StartAt": "SendCallback",
+                    "States": {
+                      "SendCallback": {
+                        "Type": "Task",
+                        "Comment": "Sends a job received message for a single callback in the iterator",
+                        "Resource": "${JobCallbackLambdaFunctionArn}",
+                        "End": true,
+                        "Retry": [
+                          {
+                            "ErrorEquals": ["States.ALL"],
+                            "IntervalSeconds": 5,
+                            "MaxAttempts": 3,
+                            "BackoffRate": 2
+                          }
+                        ]
+                      }
+                    }
+                  }
                 },
                 "IngestSourceFile": {
                   "Comment": "(I/O {Job}/{Job,Artifact}) Downloads the given source file to S3",
