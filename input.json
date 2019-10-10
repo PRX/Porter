@@ -27,7 +27,7 @@
 				{
 					"Format": "flac",
 					"Destination": {
-						"Mode": "S3",
+						"Mode": "AWS/S3",
 						"BucketName": "farski-sandbox-prx",
 						"ObjectKey": "rexif-output/transcode-task/transcode.flac"
 					}
