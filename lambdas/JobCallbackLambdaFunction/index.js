@@ -74,7 +74,9 @@ function httpRequest(event, message, redirectCount) {
 // Ex. msg:   { "JobResult": { "Job": { … }, "Result": { … } } }
 // Ex. msg:   { "JobResult": { "Job": { … }, "Error": { … } } }
 exports.handler = async (event) => {
-  const msg = {};
+  const now = new Date;
+  const msg = { Time: now.toISOString(), Timestamp: (now / 1000) };
+
   if (event.JobResult) { Object.assign(msg, { JobResult: event.JobResult }); }
   if (event.TaskResult) { Object.assign(msg, { TaskResult: event.TaskResult }); }
 

@@ -109,10 +109,14 @@ The `Job.Id` is a user-defined value, and is distinct from any execution IDs cre
 
 Callback messages are dispatched at various points throughout the execution of a job. Whenever callback messages are sent, messages are always sent to all callbacks defined in the job. Callbacks are optional, and any value in `Job.Callbacks` other than an array will be ignored. Empty arrays are okay.
 
+Each callback includes `Time` and `Timestamp` values. These represent approximately the time at which that specific callback was sent. If multiple callbacks are provided for a job, they may (and likely will) have slightly different timestamps, even though they are sent in parallel. These time values are in addition to the ones included with individual task results, and should always be later (greater than) the task-specific values.
+
 Callbacks are sent as individual tasks are completed. For example, if a job includes three `Copy` destinations, a callback will be sent after each copy task completes. (Tasks are processed in parallel, so callbacks may arrive in any order). Task callbacks can be identified by the `TaskResult` key. The JSON message for a `Copy` task callback looks like this:
 
 ```
 {
+    "Time": "2012-12-21T12:34:56Z",
+    "Timestamp: 1356093296.123,
     "TaskResult": {
         "Job": {
             "Id": "1234567890asdfghjkl"
@@ -122,6 +126,8 @@ Callbacks are sent as individual tasks are completed. For example, if a job incl
         },
         "Result": {
             "Task": "Copy"
+            "Time": "2012-12-21T12:34:50Z",
+            "Timestamp: 1356093290.123,
             (Additional task-specific results)
         }
     }
@@ -134,6 +140,8 @@ Callbacks are also sent when the job completes. Job callbacks can be identified 
 
 ```
 {
+    "Time": "2012-12-21T12:34:56Z",
+    "Timestamp: 1356093296.123,
     "JobResult": {
         "Job": {
             "Id": "1234567890asdfghjkl"
@@ -186,6 +194,8 @@ If there's a failure during the job execution in any part of the state machine, 
 
 If `Job.Copy.Destinations` is not an array with at least one element, the state machine will act as though no copy tasks were included in the job.
 
+The `Time` and `Timestamp` represent approximately when the file finished being copied.
+
 Input:
 
 ```
@@ -208,7 +218,9 @@ Output:
 {
     "Task": "Copy",
     "BucketName": "myBucket",
-    "ObjectKey": "myObject.ext"
+    "ObjectKey": "myObject.ext",
+    "Time": "2012-12-21T12:34:56Z",
+    "Timestamp: 1356093296.123
 }
 ```
 
