@@ -951,11 +951,12 @@ Resources:
                       "Execution": "$$.Execution.Id"
                     }
                   },
+                  "ResultPath": "$.Void",
                   "MaxConcurrency": 0,
                   "Iterator": {
-                    "StartAt": "SendCallback",
+                    "StartAt": "SendReceivedCallback",
                     "States": {
-                      "SendCallback": {
+                      "SendReceivedCallback": {
                         "Type": "Task",
                         "Comment": "Sends a job received message for a single callback in the iterator",
                         "Resource": "${JobCallbackLambdaFunctionArn}",
