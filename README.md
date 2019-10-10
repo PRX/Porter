@@ -99,11 +99,11 @@ Input messages are represented as JSON data.
 
 The `Job.Id` is a user-defined value, and is distinct from any execution IDs created when the job runs. The `Job.Id` is sent in all callback messages. It is required.
 
-`Source.Mode` is required and indicates the protocol used to fetch the source file. When the mode is set to `S3`, `Source.BucketName` and `Source.ObjectKey` are also required. WHen the mode is set to `HTTP`, `Source.URL` is also required, which can use either an `http://` or `https://` protocol.
+`Source.Mode` is required and indicates the protocol used to fetch the source file. When the mode is set to `S3`, `Source.BucketName` and `Source.ObjectKey` are also required. When the mode is set to `HTTP`, `Source.URL` is also required, which can use either an `http://` or `https://` protocol.
 
 `Inspect`, `Copy`, and `Transcode` are the various tasks that can be run during a job execution. Each task type will have its own format.
 
-`Callbacks` is an array of endpoints to which callback messages about the job execution will be sent. Each endpoint object has a `Mode` (supported modes are `AWS/SNS`, `AWS/SQS`, and `HTTP`). Different modes will have additional required properties. (HTTP callbacks will **not** follow redirects.)
+`Callbacks` is an array of endpoints to which callback messages about the job execution will be sent. Each endpoint object has a `Type` (supported types are `AWS/SNS`, `AWS/SQS`, and `HTTP`). Different modes will have additional required properties. (HTTP callbacks will **not** follow redirects.)
 
 ### Callback Messages
 
@@ -186,6 +186,8 @@ If there's a failure during the job execution in any part of the state machine, 
 }
 ```
 
+**Example:** If you have a job with three copy destinations, and two callbacks, you would expect to get a total of six `TaskResult` and two `JobResult` messages, across off of the endpoints.
+
 ## Tasks
 
 ### Copy
@@ -194,7 +196,7 @@ If there's a failure during the job execution in any part of the state machine, 
 
 If `Job.Copy.Destinations` is not an array with at least one element, the state machine will act as though no copy tasks were included in the job.
 
-The `Time` and `Timestamp` represent approximately when the file finished being copied.
+The `Time` and `Timestamp` in the output represent approximately when the file finished being copied.
 
 Input:
 
@@ -224,7 +226,7 @@ Output:
 }
 ```
 
-### Transcode
+### Transcode (WIP)
 
 `Transcode` tasks encode and otherwise manipulate the source file. These are intended for audio and video source files. The desired transcoding are declared as `Encodings`, and each encoding includes the properties of the output file, and a single destination for the output file to be sent to. A transcode task can include any number of encodings.
 
@@ -259,7 +261,7 @@ Output:
 }
 ```
 
-### Inspect
+### Inspect (WIP)
 
 `Inspect` tasks performs an analysis of the job's source file, and returns a set of metadata. The method of analysis and resulting data are determined by the type of the source file.
 
