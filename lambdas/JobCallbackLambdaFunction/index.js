@@ -39,7 +39,7 @@ function httpRequest(event, message, redirectCount) {
       let resData = '';
       res.on('data', (chunk) => resData += chunk );
 
-      res.on('end', () => {
+      res.on('end', async () => {
         if (res.statusCode >= 200 && res.statusCode < 300) {
           resolve();
         } else if (res.statusCode === 301 || res.statusCode === 302) {
