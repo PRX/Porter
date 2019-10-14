@@ -189,6 +189,8 @@ If there's a failure during the job execution in any part of the state machine, 
 
 ```
 {
+    "Time": "2012-12-21T12:34:56Z",
+    "Timestamp: 1356093296.123,
     "JobResult": {
         "Job": {
             "Id": "1234567890asdfghjkl"
