@@ -217,6 +217,12 @@ If `Job.Copy.Destinations` is not an array with at least one element, the state 
 
 The `Time` and `Timestamp` in the output represent approximately when the file finished being copied.
 
+#### AWS/S3
+
+- Copying files larger than 5 GB is not supported by the AWS API
+- The `BucketName` and `ObjectKey` properties are required
+- Members of the optional `Parameters` object will be passed as additional parameters to the [copyObject()](https://docs.aws.amazon.com/AWSJavaScriptSDK/latest/AWS/S3.html#copyObject-property)
+
 Input:
 
 ```
@@ -227,6 +233,29 @@ Input:
                 "Mode": "AWS/S3",
                 "BucketName": "myBucket",
                 "ObjectKey": "myObject.ext"
+            }
+        ]
+    }
+}
+```
+
+Input with additional parameters:
+
+```
+{
+    "Copy": {
+        "Destinations": [
+            {
+                "Mode": "AWS/S3",
+                "BucketName": "myBucket",
+                "ObjectKey": "myObject.ext",
+                "Parameters": {
+                    "ACL": "public-read"
+                    "ContentDisposition": "attachment"
+                    "Metadata": {
+                        "MyMetadataKey": "MyMetadataValue"
+                    }
+                }
             }
         ]
     }
