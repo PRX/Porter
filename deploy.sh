@@ -49,6 +49,7 @@ aws cloudformation deploy \
                 InspectMediaLambdaFunctionS3ObjectVersion="$InspectMediaLambdaFunction_S3ObjectVersion" \
                 CopyLambdaFunctionS3ObjectVersion="$CopyLambdaFunction_S3ObjectVersion" \
                 JobCallbackLambdaFunctionS3ObjectVersion="$JobCallbackLambdaFunction_S3ObjectVersion" \
+                SourceTypeLambdaFunctionS3ObjectVersion="$SourceTypeLambdaFunction_S3ObjectVersion" \
                 TranscodeEcsTaskDefinitionImage=561178107736.dkr.ecr.us-east-1.amazonaws.com/rexif-prototype:latest \
                 TaskDestinationBucketPolicyResources=arn:aws:s3:::farski-sandbox-prx,arn:aws:s3:::staging-prx-feed \
                 TaskDestinationObjectPolicyResources=arn:aws:s3:::farski-sandbox-prx/*,arn:aws:s3:::staging-prx-feed/* \

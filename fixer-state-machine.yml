@@ -24,6 +24,8 @@ Parameters:
     Type: String
   NormalizeInputLambdaFunctionS3ObjectVersion:
     Type: String
+  SourceTypeLambdaFunctionS3ObjectVersion:
+    Type: String
   IngestLambdaFunctionS3ObjectVersion:
     Type: String
   InspectMediaLambdaFunctionS3ObjectVersion:
@@ -608,6 +610,69 @@ Resources:
       Timeout: 90
       TracingConfig:
         Mode: Active
+  # Source Type Lambda
+  SourceTypeLambdaIamRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+            - Effect: Allow
+              Principal:
+                Service:
+                  - lambda.amazonaws.com
+              Action:
+                - sts:AssumeRole
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+        - arn:aws:iam::aws:policy/AWSXrayWriteOnlyAccess
+      Path: /
+      Policies:
+        - PolicyName: S3ArtifactBucketPolicy
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Effect: Allow
+                Action:
+                  - s3:GetObject
+                Resource:
+                  - !Sub arn:aws:s3:::${ArtifactBucket}/*
+      Tags:
+        - Key: Project
+          Value: Rexif
+        - Key: prx:cloudformation:stack-name
+          Value: !Ref AWS::StackName
+        - Key: prx:cloudformation:stack-id
+          Value: !Ref AWS::StackId
+  SourceTypeLambdaFunction:
+    Type: AWS::Lambda::Function
+    Properties:
+      Code:
+        S3Bucket: !Ref StackResourcesBucket
+        S3Key: !Sub ${AWS::StackName}/lambdas/SourceTypeLambdaFunction.zip
+        S3ObjectVersion: !Ref SourceTypeLambdaFunctionS3ObjectVersion
+      Description: >
+        Detect the file type of the source fiel
+      Environment:
+        Variables:
+          ARTIFACT_BUCKET_NAME: !Ref ArtifactBucket
+          MAX_HTTP_REDIRECTS: "10"
+      Handler: index.handler
+      Layers:
+        - !Ref AwsXraySdkLambdaLayerVersionArn
+      MemorySize: 512
+      Role: !GetAtt SourceTypeLambdaIamRole.Arn
+      Runtime: nodejs10.x
+      Tags:
+        - Key: Project
+          Value: Rexif
+        - Key: prx:cloudformation:stack-name
+          Value: !Ref AWS::StackName
+        - Key: prx:cloudformation:stack-id
+          Value: !Ref AWS::StackId
+      Timeout: 16
+      TracingConfig:
+        Mode: Active
   # Inspect Lambda
   InspectMediaLambdaIamRole:
     Type: AWS::IAM::Role
@@ -846,6 +911,7 @@ Resources:
                 Resource:
                   - !GetAtt NormalizeInputLambdaFunction.Arn
                   - !GetAtt IngestLambdaFunction.Arn
+                  - !GetAtt SourceTypeLambdaFunction.Arn
                   - !GetAtt CopyLambdaFunction.Arn
                   - !GetAtt InspectMediaLambdaFunction.Arn
                   - !GetAtt JobCallbackLambdaFunction.Arn
@@ -940,7 +1006,7 @@ Resources:
                 },
                 "JobReceivedCallbacks": {
                   "Type": "Map",
-                  "Comment": "Sends a job received message to each callback defined in the job via an iterator",
+                  "Comment": "(I/O {Job}/{Job}) Sends a job received message to each callback defined in the job via an iterator",
                   "Next": "IngestSourceFile",
                   "InputPath": "$",
                   "ItemsPath": "$.Job.Callbacks",
@@ -987,6 +1053,38 @@ Resources:
                     }
                   },
                   "ResultPath": "$.Artifact",
+                  "Next": "SourceTypeDetection",
+                  "Retry": [
+                    {
+                      "ErrorEquals": ["States.ALL"],
+                      "IntervalSeconds": 5,
+                      "MaxAttempts": 3,
+                      "BackoffRate": 2
+                    }
+                  ],
+                  "Catch": [
+                    {
+                      "ErrorEquals": ["States.ALL"],
+                      "ResultPath": "$.Error",
+                      "Next": "JobErrorCallbacks"
+                    }
+                  ]
+                },
+                "SourceTypeDetection": {
+                  "Comment": "(I/O {Job,Artifact}/{Job,Artifact}) Detects the file type of the source file artifact",
+                  "Type": "Task",
+                  "Resource": "${SourceTypeLambdaFunctionArn}",
+                  "InputPath": "$",
+                  "Parameters": {
+                    "Job": {
+                      "Source.$": "$.Job.Source"
+                    },
+                    "Execution": {
+                      "Id.$": "$$.Execution.Id"
+                    },
+                    "Artifact.$": "$.Artifact"
+                  },
+                  "ResultPath": "$.Artifact.Descriptor",
                   "Next": "JobTasks",
                   "Retry": [
                     {
@@ -1413,6 +1511,7 @@ Resources:
             }
           - NormalizeInputLambdaFunctionArn: !GetAtt NormalizeInputLambdaFunction.Arn
             IngestLambdaFunctionArn: !GetAtt IngestLambdaFunction.Arn
+            SourceTypeLambdaFunctionArn: !GetAtt SourceTypeLambdaFunction.Arn
             CopyLambdaFunctionArn: !GetAtt CopyLambdaFunction.Arn
             InspectMediaLambdaFunctionArn: !GetAtt InspectMediaLambdaFunction.Arn
             JobCallbackLambdaFunctionArn: !GetAtt JobCallbackLambdaFunction.Arn
