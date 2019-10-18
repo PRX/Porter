@@ -16,7 +16,7 @@ phases:
 #       - "docker-compose -f docker-compose-ci.yml run lambdas test"
 #       - "docker-compose -f docker-compose-ci.yml run step_functions test"
 #       - "docker-compose -f docker-compose-ci.yml run containers test"
-#   post_build:
-#     commands:
-#       - 'curl -sO "https://raw.githubusercontent.com/PRX/Infrastructure/master/ci/utility/post_build_2.sh" && chmod +x post_build.sh && bash ./post_build.sh'
-#  
+  post_build:
+    commands:
+      - 'curl -sO "https://raw.githubusercontent.com/PRX/Infrastructure/master/ci/utility/post_build_2.sh" && chmod +x post_build.sh && bash ./post_build.sh'
+ 
