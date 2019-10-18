@@ -1,4 +1,7 @@
 FROM amazonlinux:latest
+
+LABEL org.prx.app="yes"
+
 RUN yum -y install aws-cli
 RUN yum -y install wget
 RUN yum -y install tar
