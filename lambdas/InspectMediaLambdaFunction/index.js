@@ -113,10 +113,10 @@ exports.handler = async (event, context) => {
 
   fs.unlinkSync(artifactFileTmpPath);
 
-  const inspection = { size: ffprobe.format.size };
+  const inspection = { Size: ffprobe.format.size };
 
-  Object.assign(inspection, { audio: audioInspection(ffprobe, mpck) });
-  Object.assign(inspection, { video: videoInspection(ffprobe, mpck) });
+  Object.assign(inspection, { Audio: audioInspection(ffprobe, mpck) });
+  Object.assign(inspection, { Video: videoInspection(ffprobe, mpck) });
   Object.assign(inspection, event.Artifact.Descriptor);
 
   return { Task: 'Inspect', Inspection: inspection };
