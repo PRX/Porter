@@ -47,7 +47,7 @@ Resources:
     Properties:
       Tags:
         - Key: Project
-          Value: Rexif
+          Value: Porter
         - Key: prx:cloudformation:stack-name
           Value: !Ref AWS::StackName
         - Key: prx:cloudformation:stack-id
@@ -90,7 +90,7 @@ Resources:
                   - !Ref StateMachine
       Tags:
         - Key: Project
-          Value: Rexif
+          Value: Porter
         - Key: prx:cloudformation:stack-name
           Value: !Ref AWS::StackName
         - Key: prx:cloudformation:stack-id
@@ -115,7 +115,7 @@ Resources:
       Runtime: nodejs10.x
       Tags:
         - Key: Project
-          Value: Rexif
+          Value: Porter
         - Key: prx:cloudformation:stack-name
           Value: !Ref AWS::StackName
         - Key: prx:cloudformation:stack-id
@@ -144,7 +144,7 @@ Resources:
       InstanceTenancy: default
       Tags:
         - Key: Project
-          Value: Rexif
+          Value: Porter
         - Key: Name
           Value: !Sub ${AWS::StackName}-VPC
         - Key: prx:cloudformation:stack-name
@@ -157,7 +157,7 @@ Resources:
       VpcId: !Ref VPC
       Tags:
         - Key: Project
-          Value: Rexif
+          Value: Porter
         - Key: Name
           Value: !Sub ${AWS::StackName}-RouteTable
         - Key: prx:cloudformation:stack-name
@@ -184,7 +184,7 @@ Resources:
           ToPort: 443
       Tags:
         - Key: Project
-          Value: Rexif
+          Value: Porter
         - Key: Name
           Value: !Sub ${AWS::StackName}-EcsEndpointsSecurityGroup
         - Key: prx:cloudformation:stack-name
@@ -227,7 +227,7 @@ Resources:
       CidrBlock: 10.0.0.0/17
       Tags:
         - Key: Project
-          Value: Rexif
+          Value: Porter
         - Key: Name
           Value: !Sub ${AWS::StackName}-Subnet-1
         - Key: prx:cloudformation:stack-name
@@ -245,7 +245,7 @@ Resources:
       CidrBlock: 10.0.128.0/17
       Tags:
         - Key: Project
-          Value: Rexif
+          Value: Porter
         - Key: Name
           Value: !Sub ${AWS::StackName}-Subnet-2
         - Key: prx:cloudformation:stack-name
@@ -268,7 +268,7 @@ Resources:
     Properties:
       Tags:
         - Key: Project
-          Value: Rexif
+          Value: Porter
         - Key: Name
           Value: !Sub ${AWS::StackName}-NetworkAcl
         - Key: prx:cloudformation:stack-name
@@ -313,7 +313,7 @@ Resources:
         - AmazonProvidedDNS
       Tags:
         - Key: Project
-          Value: Rexif
+          Value: Porter
         - Key: Name
           Value: !Sub ${AWS::StackName}-DhcpOptions
         - Key: prx:cloudformation:stack-name
@@ -331,7 +331,7 @@ Resources:
     Properties:
       Tags:
         - Key: Project
-          Value: Rexif
+          Value: Porter
         - Key: prx:cloudformation:stack-name
           Value: !Ref AWS::StackName
         - Key: prx:cloudformation:stack-id
@@ -383,7 +383,7 @@ Resources:
                   - "*"
       Tags:
         - Key: Project
-          Value: Rexif
+          Value: Porter
         - Key: prx:cloudformation:stack-name
           Value: !Ref AWS::StackName
         - Key: prx:cloudformation:stack-id
@@ -432,7 +432,7 @@ Resources:
                   - !Sub arn:aws:s3:::${ArtifactBucket}/*
       Tags:
         - Key: Project
-          Value: Rexif
+          Value: Porter
         - Key: prx:cloudformation:stack-name
           Value: !Ref AWS::StackName
         - Key: prx:cloudformation:stack-id
@@ -458,7 +458,7 @@ Resources:
         - FARGATE
       Tags:
         - Key: Project
-          Value: Rexif
+          Value: Porter
         - Key: prx:cloudformation:stack-name
           Value: !Ref AWS::StackName
         - Key: prx:cloudformation:stack-id
@@ -475,7 +475,7 @@ Resources:
             Status: Enabled
       Tags:
         - Key: Project
-          Value: Rexif
+          Value: Porter
         - Key: prx:cloudformation:stack-name
           Value: !Ref AWS::StackName
         - Key: prx:cloudformation:stack-id
@@ -499,7 +499,7 @@ Resources:
       Path: /
       Tags:
         - Key: Project
-          Value: Rexif
+          Value: Porter
         - Key: prx:cloudformation:stack-name
           Value: !Ref AWS::StackName
         - Key: prx:cloudformation:stack-id
@@ -512,7 +512,7 @@ Resources:
         S3Key: !Sub ${AWS::StackName}/lambdas/NormalizeInputLambdaFunction.zip
         S3ObjectVersion: !Ref NormalizeInputLambdaFunctionS3ObjectVersion
       Description: >
-        Normalizes rexif job input
+        Normalizes Porter job input
       Handler: index.handler
       Layers:
         - !Ref AwsXraySdkLambdaLayerVersionArn
@@ -521,7 +521,7 @@ Resources:
       Runtime: nodejs10.x
       Tags:
         - Key: Project
-          Value: Rexif
+          Value: Porter
         - Key: prx:cloudformation:stack-name
           Value: !Ref AWS::StackName
         - Key: prx:cloudformation:stack-id
@@ -576,7 +576,7 @@ Resources:
                   - "*"
       Tags:
         - Key: Project
-          Value: Rexif
+          Value: Porter
         - Key: prx:cloudformation:stack-name
           Value: !Ref AWS::StackName
         - Key: prx:cloudformation:stack-id
@@ -602,7 +602,7 @@ Resources:
       Runtime: nodejs10.x
       Tags:
         - Key: Project
-          Value: Rexif
+          Value: Porter
         - Key: prx:cloudformation:stack-name
           Value: !Ref AWS::StackName
         - Key: prx:cloudformation:stack-id
@@ -639,7 +639,7 @@ Resources:
                   - !Sub arn:aws:s3:::${ArtifactBucket}/*
       Tags:
         - Key: Project
-          Value: Rexif
+          Value: Porter
         - Key: prx:cloudformation:stack-name
           Value: !Ref AWS::StackName
         - Key: prx:cloudformation:stack-id
@@ -665,7 +665,7 @@ Resources:
       Runtime: nodejs10.x
       Tags:
         - Key: Project
-          Value: Rexif
+          Value: Porter
         - Key: prx:cloudformation:stack-name
           Value: !Ref AWS::StackName
         - Key: prx:cloudformation:stack-id
@@ -702,7 +702,7 @@ Resources:
                   - !Sub arn:aws:s3:::${ArtifactBucket}/*
       Tags:
         - Key: Project
-          Value: Rexif
+          Value: Porter
         - Key: prx:cloudformation:stack-name
           Value: !Ref AWS::StackName
         - Key: prx:cloudformation:stack-id
@@ -726,7 +726,7 @@ Resources:
       Runtime: nodejs10.x
       Tags:
         - Key: Project
-          Value: Rexif
+          Value: Porter
         - Key: prx:cloudformation:stack-name
           Value: !Ref AWS::StackName
         - Key: prx:cloudformation:stack-id
@@ -781,7 +781,7 @@ Resources:
                 Resource: !Ref TaskDestinationObjectPolicyResources
       Tags:
         - Key: Project
-          Value: Rexif
+          Value: Porter
         - Key: prx:cloudformation:stack-name
           Value: !Ref AWS::StackName
         - Key: prx:cloudformation:stack-id
@@ -803,7 +803,7 @@ Resources:
       Runtime: nodejs10.x
       Tags:
         - Key: Project
-          Value: Rexif
+          Value: Porter
         - Key: prx:cloudformation:stack-name
           Value: !Ref AWS::StackName
         - Key: prx:cloudformation:stack-id
@@ -851,7 +851,7 @@ Resources:
                   - "*"
       Tags:
         - Key: Project
-          Value: Rexif
+          Value: Porter
         - Key: prx:cloudformation:stack-name
           Value: !Ref AWS::StackName
         - Key: prx:cloudformation:stack-id
@@ -876,7 +876,7 @@ Resources:
       Runtime: nodejs10.x
       Tags:
         - Key: Project
-          Value: Rexif
+          Value: Porter
         - Key: prx:cloudformation:stack-name
           Value: !Ref AWS::StackName
         - Key: prx:cloudformation:stack-id
@@ -969,7 +969,7 @@ Resources:
                   - !Sub arn:aws:events:${AWS::Region}:${AWS::AccountId}:rule/StepFunctionsGetEventsForECSTaskRule
       Tags:
         - Key: Project
-          Value: Rexif
+          Value: Porter
         - Key: prx:cloudformation:stack-name
           Value: !Ref AWS::StackName
         - Key: prx:cloudformation:stack-id
@@ -1513,7 +1513,7 @@ Resources:
       RoleArn: !GetAtt StateMachineIamRole.Arn
       Tags:
         - Key: Project
-          Value: Rexif
+          Value: Porter
         - Key: prx:cloudformation:stack-name
           Value: !Ref AWS::StackName
         - Key: prx:cloudformation:stack-id
@@ -1522,7 +1522,7 @@ Resources:
     Type: AWS::CloudWatch::Alarm
     Properties:
       ActionsEnabled: true
-      AlarmName: "[Rexif][States] Experiencing time outs"
+      AlarmName: "[Porter][States] Experiencing time outs"
       AlarmActions:
         - !Ref OpsWarnMessagesSnsTopicArn
       InsufficientDataActions:
@@ -1530,7 +1530,7 @@ Resources:
       OKActions:
         - !Ref OpsWarnMessagesSnsTopicArn
       AlarmDescription: >
-        Rexif state machine has experienced execution time outs
+        Porter state machine has experienced execution time outs
       ComparisonOperator: GreaterThanOrEqualToThreshold
       EvaluationPeriods: 1
       MetricName: ExecutionsTimedOut
@@ -1546,7 +1546,7 @@ Resources:
     Type: AWS::CloudWatch::Alarm
     Properties:
       ActionsEnabled: true
-      AlarmName: "[Rexif][States] Events being throttled"
+      AlarmName: "[Porter][States] Events being throttled"
       AlarmActions:
         - !Ref OpsWarnMessagesSnsTopicArn
       InsufficientDataActions:
@@ -1554,7 +1554,7 @@ Resources:
       OKActions:
         - !Ref OpsWarnMessagesSnsTopicArn
       AlarmDescription: >
-        Rexif state machine is being throttled
+        Porter state machine is being throttled
       ComparisonOperator: GreaterThanOrEqualToThreshold
       EvaluationPeriods: 1
       MetricName: ExecutionThrottled
@@ -1570,7 +1570,7 @@ Resources:
     Type: AWS::CloudWatch::Alarm
     Properties:
       ActionsEnabled: true
-      AlarmName: "[Rexif][States] Experiencing failures"
+      AlarmName: "[Porter][States] Experiencing failures"
       AlarmActions:
         - !Ref OpsErrorMessagesSnsTopicArn
       InsufficientDataActions:
@@ -1578,7 +1578,7 @@ Resources:
       OKActions:
         - !Ref OpsErrorMessagesSnsTopicArn
       AlarmDescription: >
-        Rexif state machine experienced uncaught errors
+        Porter state machine experienced uncaught errors
       ComparisonOperator: GreaterThanOrEqualToThreshold
       EvaluationPeriods: 1
       MetricName: ExecutionsFailed

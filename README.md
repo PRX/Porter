@@ -1,14 +1,14 @@
-# Rexif
+# Porter
 
 tktktk
 
 ## Messaging I/O
 
-Rexif receives messages to start jobs, and sends messages while jobs are running, and when jobs complete or fail.
+Porter receives messages to start jobs, and sends messages while jobs are running, and when jobs complete or fail.
 
 ### Starting a Job
 
-When you want to start a job, a message must be sent to Rexif. This can be done either directly through the [AWS Step Functions API](https://docs.aws.amazon.com/step-functions/latest/apireference/Welcome.html), or by way of an SNS topic that is created along side the state machine when the CloudFormation stack is launched.
+When you want to start a job, a message must be sent to Porter. This can be done either directly through the [AWS Step Functions API](https://docs.aws.amazon.com/step-functions/latest/apireference/Welcome.html), or by way of an SNS topic that is created along side the state machine when the CloudFormation stack is launched.
 
 **API Example**
 

@@ -23,7 +23,7 @@ read -r -d '' input_json << EOM
                         "Destination": {
                             "Mode": "AWS/S3",
                             "BucketName": "farski-sandbox-prx",
-                            "ObjectKey": "rexif-output/transcode-task/$1-$2.mp4"
+                            "ObjectKey": "porter-output/transcode-task/$1-$2.mp4"
                         }
                     }
                 ]

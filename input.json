@@ -11,11 +11,11 @@
 				{
 					"Mode": "AWS/S3",
 					"BucketName": "farski-sandbox-prx",
-					"ObjectKey": "rexif-output/copy-task/copy1.mp3"
+					"ObjectKey": "porter-output/copy-task/copy1.mp3"
 				}, {
 					"Mode": "AWS/S3",
 					"BucketName": "farski-sandbox-prx",
-					"ObjectKey": "rexif-output/copy-task/some/deep/prefix/path/copy2.mp3"
+					"ObjectKey": "porter-output/copy-task/some/deep/prefix/path/copy2.mp3"
 				}
 			]
 		},
@@ -29,21 +29,21 @@
 					"Destination": {
 						"Mode": "AWS/S3",
 						"BucketName": "farski-sandbox-prx",
-						"ObjectKey": "rexif-output/transcode-task/transcode.flac"
+						"ObjectKey": "porter-output/transcode-task/transcode.flac"
 					}
 				}, {
 					"Format": "wav",
 					"Destination": {
 						"Mode": "AWS/S3",
 						"BucketName": "farski-sandbox-prx",
-						"ObjectKey": "rexif-output/transcode-task/transcode.wav"
+						"ObjectKey": "porter-output/transcode-task/transcode.wav"
 					}
 				}, {
 					"Format": "mp3",
 					"Destination": {
 						"Mode": "AWS/S3",
 						"BucketName": "farski-sandbox-prx",
-						"ObjectKey": "rexif-output/transcode-task/transcode.mp3"
+						"ObjectKey": "porter-output/transcode-task/transcode.mp3"
 					}
 				}
 			]
