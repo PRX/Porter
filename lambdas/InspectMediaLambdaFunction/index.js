@@ -56,21 +56,21 @@ function audioInspection(ffprobe, mpck) {
 
   if (stream) {
     Object.assign(inspection, {
-      duration:  Math.round(stream.duration * 1000),
-      format:    stream.codec_name,
-      bitrate:   stream.bit_rate,
-      frequency: stream.sample_rate,
-      channels:  stream.channels,
-      layout:    stream.channel_layout
+      Duration:  Math.round(stream.duration * 1000),
+      Format:    stream.codec_name,
+      Bitrate:   stream.bit_rate,
+      Frequency: stream.sample_rate,
+      Channels:  stream.channels,
+      Layout:    stream.channel_layout
     });
   }
 
   if (stream.codec_name === 'mp3') {
     Object.assign(inspection, {
       // TODO This is bad
-      layer: (mpck.match(/layer (.+)/) ? mpck.match(/layer (.+)/)[1].trim() : null),
-      samples: (mpck.match(/samples (.+)/) ? mpck.match(/samples (.+)/)[1].trim() : null),
-      frames: (mpck.match(/frames (.+)/) ? mpck.match(/frames (.+)/)[1].trim() : null)
+      Layer: (mpck.match(/layer (.+)/) ? mpck.match(/layer (.+)/)[1].trim() : null),
+      Samples: (mpck.match(/samples (.+)/) ? mpck.match(/samples (.+)/)[1].trim() : null),
+      Frames: (mpck.match(/frames (.+)/) ? mpck.match(/frames (.+)/)[1].trim() : null)
     });
   }
 
