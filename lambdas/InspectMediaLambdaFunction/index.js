@@ -82,13 +82,13 @@ function videoInspection(ffprobe, mpck) {
 
   if (stream) {
     return {
-      duration:  Math.round(stream.duration * 1000),
-      format:    stream.codec_name,
-      bitrate:   stream.bit_rate,
-      width:     stream.width,
-      height:    stream.height,
-      aspect:    stream.display_aspect_ratio,
-      framerate: stream.r_frame_rate
+      Duration:  Math.round(stream.duration * 1000),
+      Format:    stream.codec_name,
+      Bitrate:   stream.bit_rate,
+      Width:     stream.width,
+      Height:    stream.height,
+      Aspect:    stream.display_aspect_ratio,
+      Framerate: stream.r_frame_rate
     };
   }
 }
