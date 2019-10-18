@@ -117,6 +117,7 @@ exports.handler = async (event, context) => {
 
   Object.assign(inspection, { audio: audioInspection(ffprobe, mpck) });
   Object.assign(inspection, { video: videoInspection(ffprobe, mpck) });
+  Object.assign(inspection, event.Artifact.Descriptor);
 
   return { Task: 'Inspect', Inspection: inspection };
 };
