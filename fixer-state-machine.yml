@@ -1076,12 +1076,6 @@ Resources:
                   "Resource": "${SourceTypeLambdaFunctionArn}",
                   "InputPath": "$",
                   "Parameters": {
-                    "Job": {
-                      "Source.$": "$.Job.Source"
-                    },
-                    "Execution": {
-                      "Id.$": "$$.Execution.Id"
-                    },
                     "Artifact.$": "$.Artifact"
                   },
                   "ResultPath": "$.Artifact.Descriptor",
