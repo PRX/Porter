@@ -205,13 +205,13 @@ If there's a failure during the job execution in any part of the state machine, 
 }
 ```
 
-**Example:** If you have a job with three copy destinations, and two callbacks, you would expect to get a total of six `TaskResult` and two `JobResult` messages, across off of the endpoints.
+**Example:** If you have a job with three copy destinations, and two callbacks, you would expect to get a total of six `TaskResult` and two `JobResult` messages, across all of the endpoints.
 
 ## Tasks
 
 ### Copy
 
-`Copy` tasks create copies of the job's source file at locations in S3 defined on the task. The locations are declared as `Destinations`. Currently the only supported destination mode is `AWS/S3`. Copy tasks **do not** check if an object already exists in the given location. The copy operation is done by the [copyObject()](https://docs.aws.amazon.com/AWSJavaScriptSDK/latest/AWS/S3.html#copyObject-property) method in the AWS Node SDK. A copy task can include any number of destinations.
+`Copy` tasks create copies of the job's source file at one or more `Destinations` defined on the task. Currently the only supported destination mode is `AWS/S3`. Copy tasks **do not** check if an object already exists in the given location. A copy task can include any number of destinations.
 
 If `Job.Copy.Destinations` is not an array with at least one element, the state machine will act as though no copy tasks were included in the job.
 
@@ -219,9 +219,13 @@ The `Time` and `Timestamp` in the output represent approximately when the file f
 
 #### AWS/S3
 
-- Copying files larger than 5 GB is not supported by the AWS API
-- The `BucketName` and `ObjectKey` properties are required
-- Members of the optional `Parameters` object will be passed as additional parameters to the [copyObject()](https://docs.aws.amazon.com/AWSJavaScriptSDK/latest/AWS/S3.html#copyObject-property)
+ S3 copy operations are done by the [copyObject()](https://docs.aws.amazon.com/AWSJavaScriptSDK/latest/AWS/S3.html#copyObject-property) method in the AWS Node SDK. Copying files larger than 5 GB is not supported by the AWS API.
+
+The `BucketName` and `ObjectKey` properties are required.
+
+The default behavior is to preserve all metadata except for the ACL, which is set to private. To set new metadata on the copy, use the optional `Parameters` property on the destination. `MetadataDirective` must be set to `REPLACE` for the operation to honor the new metadate. The contents of `Parameters` are passed directly to the [copyObject()](https://docs.aws.amazon.com/AWSJavaScriptSDK/latest/AWS/S3.html#copyObject-property) method.
+
+If you set the optional `ContentType` property to `REPLACE`, the content type of the newly created copy will be set to a [heuristically-determined](https://www.npmjs.com/package/file-type) value. This would replace the content type copied from the source object, if such a value existed. If the content type could not be determined heuristically, this property has no effect. Setting `ContentType` to `REPLACE` will also set `MetadataDirective` to `REPLACE`. If a `ContentType` value is explicitly defined in `Parameters` that value will take precedence.
 
 Input:
 
@@ -249,12 +253,14 @@ Input with additional parameters:
                 "Mode": "AWS/S3",
                 "BucketName": "myBucket",
                 "ObjectKey": "myObject.ext",
+                "ContentType": "REPLACE",
                 "Parameters": {
                     "ACL": "public-read"
                     "ContentDisposition": "attachment"
                     "Metadata": {
                         "MyMetadataKey": "MyMetadataValue"
-                    }
+                    },
+                    "MetadataDirective": "REPLACE"
                 }
             }
         ]
