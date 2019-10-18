@@ -774,7 +774,7 @@ Resources:
                 Resource: !Ref TaskDestinationBucketPolicyResources
               # Object-level permissions
               - Action:
-                  - s3:PutObject
+                  - s3:PutObject*
                   - s3:AbortMultipartUpload
                   - s3:ListMultipartUploadParts
                 Effect: Allow
