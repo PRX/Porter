@@ -6,9 +6,10 @@ env:
     # PRX_ECR_
     # AWS_REGION: "us-east-1"
 phases:
-  build:
+  install:
     runtime-versions:
         docker: 18
+  build:
     commands:
       - "cd $(ls -d */|head -n 1)"
 #       - "docker-compose -f docker-compose-ci.yml build"
