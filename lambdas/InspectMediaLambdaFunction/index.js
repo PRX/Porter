@@ -68,9 +68,9 @@ function audioInspection(ffprobe, mpck) {
   if (stream.codec_name === 'mp3') {
     Object.assign(inspection, {
       // TODO This is bad
-      layer: (mpck.match(/layer (.+)/) ? mpck.match(/layer (.+)/)[1] : null),
-      samples: (mpck.match(/samples (.+)/) ? mpck.match(/samples (.+)/)[1] : null),
-      frames: (mpck.match(/frames (.+)/) ? mpck.match(/frames (.+)/)[1] : null)
+      layer: (mpck.match(/layer (.+)/) ? mpck.match(/layer (.+)/)[1].trim() : null),
+      samples: (mpck.match(/samples (.+)/) ? mpck.match(/samples (.+)/)[1].trim() : null),
+      frames: (mpck.match(/frames (.+)/) ? mpck.match(/frames (.+)/)[1].trim() : null)
     });
   }
 
