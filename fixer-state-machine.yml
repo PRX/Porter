@@ -1045,12 +1045,8 @@ Resources:
                   "Resource": "${IngestLambdaFunctionArn}",
                   "InputPath": "$",
                   "Parameters": {
-                    "Job": {
-                      "Source.$": "$.Job.Source"
-                    },
-                    "Execution": {
-                      "Id.$": "$$.Execution.Id"
-                    }
+                    "Job": { "Source.$": "$.Job.Source" },
+                    "Execution": { "Id.$": "$$.Execution.Id" }
                   },
                   "ResultPath": "$.Artifact",
                   "Next": "SourceTypeDetection",
