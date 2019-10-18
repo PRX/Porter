@@ -103,7 +103,7 @@ The `Job.Id` is a user-defined value, and is distinct from any execution IDs cre
 
 `Inspect`, `Copy`, and `Transcode` are the various tasks that can be run during a job execution. Each task type will have its own format.
 
-`Callbacks` is an array of endpoints to which callback messages about the job execution will be sent. Each endpoint object has a `Type` (supported types are `AWS/SNS`, `AWS/SQS`, and `HTTP`). Different modes will have additional required properties. (HTTP callbacks will **not** follow redirects.)
+`Callbacks` is an array of endpoints to which callback messages about the job execution will be sent. Each endpoint object has a `Type` (supported types are `AWS/SNS`, `AWS/SQS`, and `HTTP`). Different modes will have additional required properties.
 
 ### Callback Messages
 
