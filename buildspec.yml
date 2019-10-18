@@ -2,21 +2,13 @@ version: 0.2
 env:
   variables:
     PRX_ECR_REGION: "us-east-1"
-    # PRX_ECR_REPOSITORY: "porter"
-    # PRX_ECR_
-    # AWS_REGION: "us-east-1"
 phases:
   install:
     runtime-versions:
-        docker: 18
+      docker: 18
   build:
     commands:
       - "cd $(ls -d */|head -n 1)"
-#       - "docker-compose -f docker-compose-ci.yml build"
-#       - "docker-compose -f docker-compose-ci.yml run lambdas test"
-#       - "docker-compose -f docker-compose-ci.yml run step_functions test"
-#       - "docker-compose -f docker-compose-ci.yml run containers test"
   post_build:
     commands:
-      - 'curl -sO "https://raw.githubusercontent.com/PRX/Infrastructure/master/ci/utility/post_build_2.sh" && chmod +x post_build.sh && bash ./post_build.sh'
- 
+      - 'curl -sO "https://raw.githubusercontent.com/PRX/Infrastructure/master/ci/utility/post_build.sh" && chmod +x post_build.sh && bash ./post_build.sh'
