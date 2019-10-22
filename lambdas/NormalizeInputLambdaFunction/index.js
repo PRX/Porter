@@ -8,11 +8,15 @@
 // The input to this function is the original input to the execution of the
 // state machine, and the input path MUST be that entire input (i.e., "$").
 //
-// The function return the input, plus any required values that were missing.
+// The function returns the input, plus any required values that were missing.
 //
 // The result path and output path MUST both be "$".
 
 exports.handler = async (event) => {
+  console.log(JSON.stringify({ msg: 'Unmodified input', event: event }));
+
+  // The Inspect task has no other options, so if it's expected to run it
+  // would explicitly set Perform to true. Anything else is forced to false
   try {
     if (typeof event.Job.Inspect.Perform !== 'boolean') {
       event.Job.Inspect = { Perform: false };
@@ -21,6 +25,8 @@ exports.handler = async (event) => {
     event.Job.Inspect = { Perform: false };
   }
 
+  // The Copy task expects an array of Destinations that isn't empty. Anything
+  // else results in the Copy task being disabled (Perform = false)
   try {
     if (Array.isArray(event.Job.Copy.Destinations)
         && event.Job.Copy.Destinations.length > 0) {
@@ -32,7 +38,8 @@ exports.handler = async (event) => {
     event.Job.Copy = { Perform: false };
   }
 
-  // Ensure that
+  // The Transcode task expects an array of Destinations that isn't empty.
+  // Anything else results in the Transcode task being disabled (Perform = false)
   try {
     if (Array.isArray(event.Job.Transcode.Encodings)
         && event.Job.Transcode.Encodings.length > 0) {
@@ -48,6 +55,8 @@ exports.handler = async (event) => {
   if (!event.Job.hasOwnProperty('Callbacks') || !Array.isArray(event.Job.Callbacks)) {
     event.Job.Callbacks = [];
   }
+
+  console.log(JSON.stringify({ msg: 'Normalized input', event: event }));
 
   return event;
 }
