@@ -9,7 +9,11 @@ const s3 = new aws.S3();
 
 function spawn(command, argsarray, envOptions) {
   return new Promise((resolve, reject) => {
-    console.log('executing', command, argsarray.join(' '));
+    console.log(JSON.stringify({
+      msg: 'Spawning child process',
+      command: command,
+      arguments: argsarray
+    }));
 
     const childProc = childProcess.spawn(command, argsarray, envOptions || { env: process.env, cwd: process.cwd() });
     const resultBuffers = [];
@@ -18,8 +22,6 @@ function spawn(command, argsarray, envOptions) {
     childProc.stderr.on('data', buffer => console.error(buffer.toString()));
 
     childProc.on('exit', (code, signal) => {
-      console.log(`${command} completed with ${code}:${signal}`);
-
       if (code || signal) {
         reject(`${command} failed with ${code || signal}`);
       } else {
@@ -41,7 +43,6 @@ function s3GetObject(bucket, fileKey, filePath) {
     file.on('error', reject);
 
     file.on('finish', function () {
-        console.log('downloaded', bucket, fileKey);
         resolve(filePath);
     });
 
@@ -98,18 +99,48 @@ function videoInspection(ffprobe, mpck) {
 exports.handler = async (event, context) => {
   const artifactFileTmpPath = path.join(os.tmpdir(), context.awsRequestId);
 
-  console.log(`Getting ${event.Artifact.BucketName}/${event.Artifact.ObjectKey} to ${artifactFileTmpPath}`);
-  await s3GetObject(event.Artifact.BucketName, event.Artifact.ObjectKey, artifactFileTmpPath);
-  console.log(`Got ${event.Artifact.BucketName}/${event.Artifact.ObjectKey} to ${artifactFileTmpPath}`);
+  console.log(JSON.stringify({ msg: 'State input', input: event }));
 
+  console.log(JSON.stringify({
+    msg: 'Fetching artifact from S3',
+    s3: `${event.Artifact.BucketName}/${event.Artifact.ObjectKey}`,
+    fs: artifactFileTmpPath
+  }));
+
+  const _s3start = process.hrtime();
+  await s3GetObject(event.Artifact.BucketName, event.Artifact.ObjectKey, artifactFileTmpPath);
+
+  const _s3end = process.hrtime(_s3start);
+  console.log(JSON.stringify({
+    msg: 'Fetching artifact from S3',
+    duration: `${_s3end[0]} s ${_s3end[1] / 1000000} ms`
+  }));
+
+  const _ffstart = process.hrtime();
   const json = await spawn('/opt/bin/ffprobe',
                       ['-v', 'error', '-show_streams', '-show_format', '-i', artifactFileTmpPath, '-print_format', 'json'],
                       { env: process.env, cwd: os.tmpdir() });
   const ffprobe = JSON.parse(json);
 
+  const _ffend = process.hrtime(_ffstart);
+  console.log(JSON.stringify({
+    msg: 'Finished ffprobe',
+    duration: `${_ffend[0]} s ${_ffend[1] / 1000000} ms`,
+    data: ffprobe
+  }));
+
+  const _mpstart = process.hrtime();
   const mpck = await spawn('/opt/bin/mpck',
                       ['-v', artifactFileTmpPath],
                       { env: process.env, cwd: os.tmpdir() });
+
+  const _mpend = process.hrtime(_mpstart);
+  console.log(JSON.stringify({
+    msg: 'Finished mpck',
+    duration: `${_mpend[0]} s ${_mpend[1] / 1000000} ms`,
+    data: mpck
+  }));
+
 
   fs.unlinkSync(artifactFileTmpPath);
 
