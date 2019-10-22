@@ -48,7 +48,12 @@ function httpRequest(event, message, redirectCount) {
               reject(new Error('Too many redirects'));
             }
 
-            console.log(`Following redirect: ${res.headers.location}`);
+            console.log(JSON.stringify({
+              msg: `Following HTTP redirect`,
+              location: res.headers.location,
+              count: redirectCount
+            }));
+
             const count = redirectCount ? (redirectCount + 1) : 1;
             await httpRequest(res.headers.location, message, count);
             resolve();
@@ -74,6 +79,8 @@ function httpRequest(event, message, redirectCount) {
 // Ex. msg:   { "JobResult": { "Job": { … }, "Result": { … } } }
 // Ex. msg:   { "JobResult": { "Job": { … }, "Error": { … } } }
 exports.handler = async (event) => {
+  console.log(JSON.stringify({ msg: 'State input', input: event }));
+
   const now = new Date;
   const msg = { Time: now.toISOString(), Timestamp: (now / 1000) };
 
