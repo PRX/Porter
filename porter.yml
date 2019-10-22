@@ -1,4 +1,4 @@
-# etc/sample-step-functions.yml
+# porter.yml
 AWSTemplateFormatVersion: "2010-09-09"
 Description: >
   Creates a Step Function state machine for processing user created content, as

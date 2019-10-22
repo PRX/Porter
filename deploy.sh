@@ -35,7 +35,7 @@ cd ..
 aws cloudformation deploy \
         --region us-east-1 \
         --s3-bucket cf-templates-1r2sjvlu82hbi-us-east-1 \
-        --template-file ./fixer-state-machine.yml \
+        --template-file ./porter.yml \
         --stack-name "$CLOUDFORMATION_STACK_NAME" \
         --capabilities CAPABILITY_IAM \
         --parameter-overrides \
