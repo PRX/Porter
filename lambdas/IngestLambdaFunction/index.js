@@ -40,7 +40,12 @@ function httpGet(uri, file, redirectCount) {
             reject(new Error('Too many redirects'));
           }
 
-          console.log(`Following redirect: ${res.headers.location}`);
+          console.log(JSON.stringify({
+            msg: `Following HTTP redirect`,
+            location: res.headers.location,
+            count: redirectCount
+          }));
+
           const count = redirectCount ? (redirectCount + 1) : 1;
           await httpGet(res.headers.location, file, count);
           resolve();
@@ -48,7 +53,6 @@ function httpGet(uri, file, redirectCount) {
           reject(error);
         }
       } else if (res.statusCode >= 200 && res.statusCode < 300) {
-        console.log('Successful HTTP 2XX response');
         file.on('finish', () => file.close(() => resolve()));
         file.on('error', (error) => {
           fs.unlinkSync(file);
@@ -74,6 +78,8 @@ function filenameFromSource(source) {
 exports.filenameFromSource = filenameFromSource;
 
 exports.handler = async (event, context) => {
+  console.log(JSON.stringify({ msg: 'State input', input: event }));
+
   const sourceFilename = filenameFromSource(event.Job.Source);
 
   const artifact = {
@@ -81,26 +87,34 @@ exports.handler = async (event, context) => {
     ObjectKey: `${event.Execution.Id}/${context.awsRequestId}/${sourceFilename}`
   }
 
-  console.log(JSON.stringify({
-    msg: 'Ingest',
-    Source: event.Job.Source,
-    Execution: event.Execution,
-    Artifact: artifact
-  }));
-
   if (event.Job.Source.Mode === 'HTTP') {
     // Downloads the HTTP resource to a file on disk in the Lambda's tmp
     // directory, and then uploads that file to the S3 artifact bucket.
     const localFilePath = path.join(os.tmpdir(), sourceFilename);
 
     const localFile = fs.createWriteStream(localFilePath);
+
+    const _httpstart = process.hrtime();
     await httpGet(event.Job.Source.URL, localFile);
 
+    const _httpend = process.hrtime(_httpstart);
+    console.log(JSON.stringify({
+      msg: 'Finished HTTP request',
+      duration: `${_httpend[0]} s ${_httpend[1] / 1000000} ms`,
+    }));
+
+    const _s3start = process.hrtime();
     await s3.upload({
       Bucket: artifact.BucketName,
       Key: artifact.ObjectKey,
       Body: fs.createReadStream(localFilePath),
     }).promise();
+
+    const _s3end = process.hrtime(_s3start);
+    console.log(JSON.stringify({
+      msg: 'Finished S3 upload',
+      duration: `${_h_s3endttpend[0]} s ${_s3end[1] / 1000000} ms`,
+    }));
 
     fs.unlinkSync(localFilePath);
   } else if (event.Job.Source.Mode === 'AWS/S3') {
@@ -108,11 +122,20 @@ exports.handler = async (event, context) => {
     // https://docs.aws.amazon.com/AWSJavaScriptSDK/latest/AWS/S3.html#copyObject-property
     // https://docs.aws.amazon.com/AmazonS3/latest/API/RESTObjectCOPY.html
     // CopySource expects: "/sourcebucket/path/to/object.extension"
+    const _start = process.hrtime();
+
     await s3.copyObject({
       CopySource: `/${event.Job.Source.BucketName}/${event.Job.Source.ObjectKey}`,
       Bucket: artifact.BucketName,
       Key: artifact.ObjectKey
     }).promise();
+
+    const _end = process.hrtime(_start);
+
+    console.log(JSON.stringify({
+      msg: 'Finished S3 Copy',
+      duration: `${_end[0]} s ${_end[1] / 1000000} ms`,
+    }));
   } else {
     throw new Error('Unexpected source mode');
   }
