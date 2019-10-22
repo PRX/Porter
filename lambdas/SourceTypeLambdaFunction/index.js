@@ -1,3 +1,6 @@
+// Using the file-type NPM module, this attempts to identify MIME type of the
+// state machine source artifact.
+
 const fileType = require('file-type');
 const AWSXRay = require('aws-xray-sdk');
 
@@ -6,6 +9,8 @@ const AWS = AWSXRay.captureAWS(require('aws-sdk'));
 const s3 = new AWS.S3({ apiVersion: '2006-03-01' });
 
 exports.handler = async (event) => {
+  console.log(JSON.stringify({ msg: 'State input', input: event }));
+
   const s3stream = s3.getObject({
     Bucket: event.Artifact.BucketName,
     Key: event.Artifact.ObjectKey,
@@ -19,6 +24,8 @@ exports.handler = async (event) => {
   const result = ftStream.fileType;
 
   if (!result) { return {}; }
+
+  console.log(JSON.stringify({ msg: 'Result', result: result }));
 
   return {
     Extension: result.ext,
