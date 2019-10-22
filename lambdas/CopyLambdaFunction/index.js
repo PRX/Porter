@@ -8,6 +8,12 @@ const s3 = new AWS.S3({ apiVersion: '2006-03-01' });
 // https://docs.aws.amazon.com/AmazonS3/latest/API/RESTObjectCOPY.html
 // CopySource expects: "/sourcebucket/path/to/object.extension"
 async function awsS3copyObject(event) {
+  console.log(JSON.stringify({
+    msg: 'S3 Copy',
+    source: `${event.Artifact.BucketName}/${event.Artifact.ObjectKey}`,
+    destination: `${event.Copy.BucketName}/${event.Copy.ObjectKey}`
+  }));
+
   const params = {
     CopySource: `/${event.Artifact.BucketName}/${event.Artifact.ObjectKey}`,
     Bucket: event.Copy.BucketName,
@@ -35,12 +41,19 @@ async function awsS3copyObject(event) {
     Object.assign(params, event.Copy.Parameters);
   }
 
+  const _start = process.hrtime();
   await s3.copyObject(params).promise();
+  const _end = process.hrtime(_start);
 
-  console.log(`Copied /${event.Artifact.BucketName}/${event.Artifact.ObjectKey} to /${event.Copy.BucketName}/${event.Copy.ObjectKey}`);
+  console.log(JSON.stringify({
+    msg: 'Finished S3 Copy',
+    duration: `${_end[0]} s ${_end[1] / 1000000} ms`,
+  }));
 }
 
 exports.handler = async (event) => {
+  console.log(JSON.stringify({ msg: 'State input', input: event }));
+
   if (event.Copy.Mode === 'AWS/S3') {
     // TODO Detect if the source file is > 5 GB and do a multipart upload to
     // create the copy
