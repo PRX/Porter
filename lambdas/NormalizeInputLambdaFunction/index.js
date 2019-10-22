@@ -38,7 +38,7 @@ exports.handler = async (event) => {
     event.Job.Copy = { Perform: false };
   }
 
-  // The Transcode task expects an array of Destinations that isn't empty.
+  // The Transcode task expects an array of Encodings that isn't empty.
   // Anything else results in the Transcode task being disabled (Perform = false)
   try {
     if (Array.isArray(event.Job.Transcode.Encodings)
