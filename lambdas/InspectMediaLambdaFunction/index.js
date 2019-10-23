@@ -112,7 +112,7 @@ exports.handler = async (event, context) => {
 
   const _s3end = process.hrtime(_s3start);
   console.log(JSON.stringify({
-    msg: 'Fetching artifact from S3',
+    msg: 'Fetched artifact from S3',
     duration: `${_s3end[0]} s ${_s3end[1] / 1000000} ms`
   }));
 
