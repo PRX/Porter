@@ -974,6 +974,7 @@ Resources:
                   - !GetAtt IngestLambdaFunction.Arn
                   - !GetAtt SourceTypeLambdaFunction.Arn
                   - !GetAtt CopyLambdaFunction.Arn
+                  - !GetAtt ImageTransformLambdaFunction.Arn
                   - !GetAtt InspectMediaLambdaFunction.Arn
                   - !GetAtt JobCallbackLambdaFunction.Arn
         - PolicyName: PassRoleToEcsPolicy
