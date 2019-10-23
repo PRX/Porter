@@ -32,6 +32,8 @@ Parameters:
     Type: String
   CopyLambdaFunctionS3ObjectVersion:
     Type: String
+  ImageTransformLambdaFunctionS3ObjectVersion:
+    Type: String
   JobCallbackLambdaFunctionS3ObjectVersion:
     Type: String
   TranscodeEcsTaskDefinitionImage:
@@ -793,6 +795,83 @@ Resources:
       Timeout: 32
       TracingConfig:
         Mode: Active
+  # Image Manipulation Lambda
+  ImageTransformLambdaIamRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+            - Effect: Allow
+              Principal:
+                Service:
+                  - lambda.amazonaws.com
+              Action:
+                - sts:AssumeRole
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+        - arn:aws:iam::aws:policy/AWSXrayWriteOnlyAccess
+      Path: /
+      Policies:
+        # Image operations are always fetching from the artifact bucket
+        - PolicyName: S3ArtifactBucketReadPolicy
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Action:
+                  - s3:GetObject*
+                Effect: Allow
+                Resource:
+                  - !Sub arn:aws:s3:::${ArtifactBucket}/*
+        # The destination is a set of user-defined bucket
+        - PolicyName: S3PutPolicy
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              # Bucket-level permissions
+              - Action:
+                  - s3:ListBucketMultipartUploads
+                Effect: Allow
+                Resource: !Ref TaskDestinationBucketPolicyResources
+              # Object-level permissions
+              - Action:
+                  - s3:PutObject*
+                  - s3:AbortMultipartUpload
+                  - s3:ListMultipartUploadParts
+                Effect: Allow
+                Resource: !Ref TaskDestinationObjectPolicyResources
+      Tags:
+        - Key: Project
+          Value: Porter
+        - Key: prx:cloudformation:stack-name
+          Value: !Ref AWS::StackName
+        - Key: prx:cloudformation:stack-id
+          Value: !Ref AWS::StackId
+  ImageTransformLambdaFunction:
+    Type: AWS::Lambda::Function
+    Properties:
+      Code:
+        S3Bucket: !Ref StackResourcesBucket
+        S3Key: !Sub ${AWS::StackName}/lambdas/ImageTransformLambdaFunction.zip
+        S3ObjectVersion: !Ref ImageTransformLambdaFunctionS3ObjectVersion
+      Description: >
+        Performans image manipulation operations on a source file
+      Handler: index.handler
+      Layers:
+        - !Ref AwsXraySdkLambdaLayerVersionArn
+      MemorySize: 1024
+      Role: !GetAtt ImageTransformLambdaIamRole.Arn
+      Runtime: nodejs10.x
+      Tags:
+        - Key: Project
+          Value: Porter
+        - Key: prx:cloudformation:stack-name
+          Value: !Ref AWS::StackName
+        - Key: prx:cloudformation:stack-id
+          Value: !Ref AWS::StackId
+      Timeout: 16
+      TracingConfig:
+        Mode: Active
   # Callback Lambda
   JobCallbackLambdaIamRole:
     Type: AWS::IAM::Role
@@ -1260,6 +1339,104 @@ Resources:
                         }
                       }
                     }, {
+                      "StartAt": "ImageBranch",
+                      "States": {
+                        "ImageBranch": {
+                          "Type": "Choice",
+                          "Comment": "(I/O {Job,Artifact}/{Job,Artifact}) Determines if the Image operation was included in the job",
+                          "Choices": [
+                            { "Variable": "$.Job.Image.Perform", "BooleanEquals": true, "Next": "ImageAll" },
+                            { "Variable": "$.Job.Image.Perform", "BooleanEquals": false, "Next": "SkipImage"}
+                          ]
+                        },
+                        "SkipImage": {
+                          "Type": "Pass",
+                          "Comment": "(I/O {Job,Artifact}/{TaskResult})",
+                          "End": true,
+                          "ResultPath": "$",
+                          "Result": {
+                            "TaskResult": {
+                              "Task": "Null"
+                            }
+                          }
+                        },
+                        "ImageAll": {
+                          "Type": "Map",
+                          "Comment": "(I/O {Job,Artifact}/[{Job,Artifact,Transform,TaskResult,Void}])",
+                          "End": true,
+                          "InputPath": "$",
+                          "ItemsPath": "$.Job.Image.Transforms",
+                          "Parameters": {
+                            "Transform.$": "$$.Map.Item.Value",
+                            "Job": {
+                              "Id.$": "$.Job.Id",
+                              "Callbacks.$": "$.Job.Callbacks"
+                            },
+                            "Artifact.$": "$.Artifact"
+                          },
+                          "MaxConcurrency": 0,
+                          "Iterator": {
+                            "StartAt": "ImageEach",
+                            "States": {
+                              "ImageEach": {
+                                "Type": "Task",
+                                "Comment": "(I/O {Job,Artifact,Copy}/{Job,Artifact,Copy,TaskResult})",
+                                "Resource": "${ImageTransformLambdaFunctionArn}",
+                                "InputPath": "$",
+                                "ResultPath": "$.TaskResult",
+                                "Next": "ImageCallbacks",
+                                "Retry": [
+                                  {
+                                    "ErrorEquals": ["States.ALL"],
+                                    "IntervalSeconds": 5,
+                                    "MaxAttempts": 3,
+                                    "BackoffRate": 2
+                                  }
+                                ]
+                              },
+                              "ImageCallbacks": {
+                                "Type": "Map",
+                                "Comment": "(I/O {Job,Artifact,Transform,TaskResult}/{Job,Artifact,Transform,TaskResult,Void})",
+                                "End": true,
+                                "InputPath": "$",
+                                "ItemsPath": "$.Job.Callbacks",
+                                "Parameters": {
+                                  "Callback.$": "$$.Map.Item.Value",
+                                  "TaskResult": {
+                                    "Job.$": "$.Job",
+                                    "Execution": "$$.Execution.Id",
+                                    "Result.$": "$.TaskResult"
+                                  }
+                                },
+                                "ResultPath": "$.Void",
+                                "MaxConcurrency": 0,
+                                "Iterator": {
+                                  "StartAt": "SendImageCallback",
+                                  "States": {
+                                    "SendImageCallback": {
+                                      "Type": "Task",
+                                      "Comment": "(I/O {TaskResult,Callback}/id)",
+                                      "Resource": "${JobCallbackLambdaFunctionArn}",
+                                      "ResultPath": "$.Void",
+                                      "OutputPath": "$.TaskResult.Job.Id",
+                                      "End": true,
+                                      "Retry": [
+                                        {
+                                          "ErrorEquals": ["States.ALL"],
+                                          "IntervalSeconds": 5,
+                                          "MaxAttempts": 3,
+                                          "BackoffRate": 2
+                                        }
+                                      ]
+                                    }
+                                  }
+                                }
+                              }
+                            }
+                          }
+                        }
+                      }
+                    }, {
                       "StartAt": "FargateTranscodeBranch",
                       "States": {
                         "FargateTranscodeBranch": {
@@ -1485,6 +1662,7 @@ Resources:
             IngestLambdaFunctionArn: !GetAtt IngestLambdaFunction.Arn
             SourceTypeLambdaFunctionArn: !GetAtt SourceTypeLambdaFunction.Arn
             CopyLambdaFunctionArn: !GetAtt CopyLambdaFunction.Arn
+            ImageTransformLambdaFunctionArn: !GetAtt ImageTransformLambdaFunction.Arn
             InspectMediaLambdaFunctionArn: !GetAtt InspectMediaLambdaFunction.Arn
             JobCallbackLambdaFunctionArn: !GetAtt JobCallbackLambdaFunction.Arn
             EcsClusterArn: !GetAtt EcsCluster.Arn

@@ -46,6 +46,7 @@ aws cloudformation deploy \
                 JobExecutionSnsTopicLambdaFunctionS3ObjectVersion="$JobExecutionSnsTopicLambdaFunction_S3ObjectVersion" \
                 NormalizeInputLambdaFunctionS3ObjectVersion="$NormalizeInputLambdaFunction_S3ObjectVersion" \
                 IngestLambdaFunctionS3ObjectVersion="$IngestLambdaFunction_S3ObjectVersion" \
+                ImageTransformLambdaFunctionS3ObjectVersion="$ImageTransformLambdaFunction_S3ObjectVersion" \
                 InspectMediaLambdaFunctionS3ObjectVersion="$InspectMediaLambdaFunction_S3ObjectVersion" \
                 CopyLambdaFunctionS3ObjectVersion="$CopyLambdaFunction_S3ObjectVersion" \
                 JobCallbackLambdaFunctionS3ObjectVersion="$JobCallbackLambdaFunction_S3ObjectVersion" \
