@@ -280,6 +280,41 @@ Output:
 }
 ```
 
+### Image Transform
+
+`Image` tasks perform image manipulations on the source file. These are intended for static image files (eg, jpeg, png, webp, gif, svg. Currently the only supported destination mode is `AWS/S3`.
+
+Resize supports the following parameters: `Fit`, `Height`, `Position`, and `Width`. These follow the same rules as [sharp's](http://sharp.pixelplumbing.com/en/stable/api-resize/#parameters) parameters. The `Resize` property is optional; if excluded the task will not attempt to resize the image. All child properties of the `Resize` object are optional.
+
+`Format` indicates the desired output format. Supported formats are: `jpeg`, `png`, `webp`, `tiff`, `heif`, and `raw`. the `Format` property is optional; if excluded the output format will be inferred from the file extension of the destination object.
+
+If `Job.Image.Transforms` is not an array with at least one element, the state machine will act as though no copy tasks were included in the job.
+
+Input:
+
+```
+{
+    "Image": {
+        "Transforms": [
+            {
+                "Format": "png",
+                "Resize": {
+                    "Fit": "cover",
+                    "Height": 300,
+                    "Position": "centre"
+                    "Width": 300
+                }
+                "Destination": {
+                    "Mode": "AWS/S3",
+                    "BucketName": "myBucket",
+                    "ObjectKey": "myObject.png"
+                }
+            }
+        ]
+    }
+}
+```
+
 ### Transcode (WIP)
 
 `Transcode` tasks encode and otherwise manipulate the source file. These are intended for audio and video source files. The desired transcoding are declared as `Encodings`, and each encoding includes the properties of the output file, and a single destination for the output file to be sent to. A transcode task can include any number of encodings. Currently the only supported destination mode is `AWS/S3`.

@@ -51,6 +51,19 @@ exports.handler = async (event) => {
     event.Job.Transcode = { Perform: false };
   }
 
+  // The Image task expects an array of Transforms that isn't empty.
+  // Anything else results in the Image task being disabled (Perform = false)
+  try {
+    if (Array.isArray(event.Job.Image.Transforms)
+        && event.Job.Image.Transforms.length > 0) {
+      event.Job.Image.Perform = true;
+    } else {
+      event.Job.Image = { Perform: false };
+    }
+  } catch (error) {
+    event.Job.Image = { Perform: false };
+  }
+
   // Set Job.Callbacks to an empty array, unless it's already an array.
   if (!event.Job.hasOwnProperty('Callbacks') || !Array.isArray(event.Job.Callbacks)) {
     event.Job.Callbacks = [];
