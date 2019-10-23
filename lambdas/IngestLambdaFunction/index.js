@@ -113,7 +113,7 @@ exports.handler = async (event, context) => {
     const _s3end = process.hrtime(_s3start);
     console.log(JSON.stringify({
       msg: 'Finished S3 upload',
-      duration: `${_h_s3endttpend[0]} s ${_s3end[1] / 1000000} ms`,
+      duration: `${_s3end[0]} s ${_s3end[1] / 1000000} ms`,
     }));
 
     fs.unlinkSync(localFilePath);
