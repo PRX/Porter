@@ -303,7 +303,7 @@ Input:
                     "Height": 300,
                     "Position": "centre"
                     "Width": 300
-                }
+                },
                 "Destination": {
                     "Mode": "AWS/S3",
                     "BucketName": "myBucket",
