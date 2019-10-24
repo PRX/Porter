@@ -147,7 +147,7 @@ function runsharp(artifactFileTmpPath) {
     sharp(artifactFileTmpPath)
       .metadata()
       .then(metadata => resolve(metadata))
-      .catch(e => reject(e));
+      .catch(e => resolve());
   });
 }
 
@@ -176,7 +176,7 @@ exports.handler = async (event, context) => {
 
   const artifactFileTmpPath = path.join(os.tmpdir(), context.awsRequestId);
 
-  fetchArtifact(event, artifactFileTmpPath);
+  await fetchArtifact(event, artifactFileTmpPath);
 
   const ffprobe = await runffprobe(artifactFileTmpPath);
   const mpck = await runmpck(artifactFileTmpPath);
