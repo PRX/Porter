@@ -43,30 +43,35 @@ sns.publish(
             "BucketName": "farski-sandbox-prx",
             "ObjectKey": "130224.mp2"
         },
-        "Inspect": {
-            "Perform": true
-        },
-        "Copy": {
-            "Destinations": [
-                {
+        "Tasks": [
+            {
+                "Type": "Inspect"
+            }, {
+                "Type": "Copy",
+                "Destination": {
                     "Mode": "AWS/S3",
                     "BucketName": "myBucket",
                     "ObjectKey": "audioFile-copy.wav"
                 }
-            ]
-        },
-        "Transcode": {
-            "Encodings": [
-                {
+            },  {
+                "Type": "Image",
+                "Destination": {
+                    "Mode": "AWS/S3",
+                    "BucketName": "myBucket",
+                    "ObjectKey": "imageFile.png"
+                }
+            }, {
+                "Type": "Transcode",
+                "Encoding": {
                     "Format": "flac",
                     "Destination": {
                         "Mode": "AWS/S3",
                         "BucketName": "myBucket",
-                        "ObjectKey": "audioFile-copy.wav"
+                        "ObjectKey": "audioFile.flac"
                     }
                 }
-            ]
-        },
+            }
+        ],
         "Callbacks": [
             {
                 "Type": "AWS/SNS",
@@ -101,7 +106,7 @@ The `Job.Id` is a user-defined value, and is distinct from any execution IDs cre
 
 `Source.Mode` is required and indicates the protocol used to fetch the source file. When the mode is set to `S3`, `Source.BucketName` and `Source.ObjectKey` are also required. When the mode is set to `HTTP`, `Source.URL` is also required, which can use either an `http://` or `https://` protocol.
 
-`Inspect`, `Copy`, and `Transcode` are the various tasks that can be run during a job execution. Each task type will have its own format.
+`Tasks` is an array of individual operations the state machine should perform. Every member of the array should be an object with a `Type` property. Valid types are: `Inspect`, `Copy`, `Image`, `Transcode`. Tasks with invalid types are ignored. The other properties of any given task are determined by their type (see below).
 
 `Callbacks` is an array of endpoints to which callback messages about the job execution will be sent. Each endpoint object has a `Type` (supported types are `AWS/SNS`, `AWS/SQS`, and `HTTP`). Different modes will have additional required properties.
 
@@ -211,9 +216,7 @@ If there's a failure during the job execution in any part of the state machine, 
 
 ### Copy
 
-`Copy` tasks create copies of the job's source file at one or more `Destinations` defined on the task. Currently the only supported destination mode is `AWS/S3`. Copy tasks **do not** check if an object already exists in the given location. A copy task can include any number of destinations.
-
-If `Job.Copy.Destinations` is not an array with at least one element, the state machine will act as though no copy tasks were included in the job.
+`Copy` tasks create copies of the job's source file. Each copy task creates one copy, but a job can include any number of copy tasks. Each copy task defines a `Destination`. Currently the only supported destination mode is `AWS/S3`. Copy tasks **do not** check if an object already exists in the given location. A copy task can include any number of destinations.
 
 The `Time` and `Timestamp` in the output represent approximately when the file finished being copied.
 
@@ -231,15 +234,10 @@ Input:
 
 ```
 {
-    "Copy": {
-        "Destinations": [
-            {
-                "Mode": "AWS/S3",
-                "BucketName": "myBucket",
-                "ObjectKey": "myObject.ext"
-            }
-        ]
-    }
+    "Type": "Copy",
+    "Mode": "AWS/S3",
+    "BucketName": "myBucket",
+    "ObjectKey": "myObject.ext"
 }
 ```
 
@@ -247,23 +245,18 @@ Input with additional parameters:
 
 ```
 {
-    "Copy": {
-        "Destinations": [
-            {
-                "Mode": "AWS/S3",
-                "BucketName": "myBucket",
-                "ObjectKey": "myObject.ext",
-                "ContentType": "REPLACE",
-                "Parameters": {
-                    "ACL": "public-read"
-                    "ContentDisposition": "attachment"
-                    "Metadata": {
-                        "MyMetadataKey": "MyMetadataValue"
-                    },
-                    "MetadataDirective": "REPLACE"
-                }
-            }
-        ]
+    "Type": "Copy",
+    "Mode": "AWS/S3",
+    "BucketName": "myBucket",
+    "ObjectKey": "myObject.ext"
+    "ContentType": "REPLACE",
+    "Parameters": {
+        "ACL": "public-read"
+        "ContentDisposition": "attachment"
+        "Metadata": {
+            "MyMetadataKey": "MyMetadataValue"
+        },
+        "MetadataDirective": "REPLACE"
     }
 }
 ```
@@ -282,7 +275,7 @@ Output:
 
 ### Image Transform
 
-`Image` tasks perform image manipulations on the source file. These are intended for static image files (eg, jpeg, png, webp, gif, svg. Currently the only supported destination mode is `AWS/S3`.
+`Image` tasks perform image manipulations on the source file. These are intended for static image files (eg, jpeg, png, webp, gif, svg. Currently the only supported destination mode is `AWS/S3`. A job can include any number of image tasks; each will perform the operation against the original state of the source file.
 
 Resize supports the following parameters: `Fit`, `Height`, `Position`, and `Width`. These follow the same rules as [sharp's](http://sharp.pixelplumbing.com/en/stable/api-resize/#parameters) parameters. The `Resize` property is optional; if excluded the task will not attempt to resize the image. All child properties of the `Resize` object are optional.
 
@@ -290,30 +283,23 @@ Resize supports the following parameters: `Fit`, `Height`, `Position`, and `Widt
 
 By default all image metadata (EXIF, XMP, IPTC, etc) is stripped away during processing. If you set `Metadata` to `PRESERVE`, metadata from the input file will be included in the output file. This property is optional, and other values have no effect.
 
-If `Job.Image.Transforms` is not an array with at least one element, the state machine will act as though no copy tasks were included in the job.
-
 Input:
 
 ```
 {
-    "Image": {
-        "Transforms": [
-            {
-                "Format": "png",
-                "Metadata": "PRESERVE",
-                "Resize": {
-                    "Fit": "cover",
-                    "Height": 300,
-                    "Position": "centre"
-                    "Width": 300
-                },
-                "Destination": {
-                    "Mode": "AWS/S3",
-                    "BucketName": "myBucket",
-                    "ObjectKey": "myObject.png"
-                }
-            }
-        ]
+    "Type": "Image",
+    "Format": "png",
+    "Metadata": "PRESERVE",
+    "Resize": {
+        "Fit": "cover",
+        "Height": 300,
+        "Position": "centre"
+        "Width": 300
+    },
+    "Destination": {
+        "Mode": "AWS/S3",
+        "BucketName": "myBucket",
+        "ObjectKey": "myObject.png"
     }
 }
 ```
@@ -342,17 +328,12 @@ Input:
 
 ```
 {
-    "Transcode": {
-        "Encodings": [
-            {
-                "Format": "flac",
-                "Destination": {
-                    "Mode": "AWS/S3",
-                    "BucketName": "myBucket",
-                    "ObjectKey": "myObject.flac"
-                }
-            }
-        ]
+    "Type": "Transcode",
+    "Format": "flac",
+    "Destination": {
+        "Mode": "AWS/S3",
+        "BucketName": "myBucket",
+        "ObjectKey": "myObject.flac"
     }
 }
 ```
@@ -375,9 +356,7 @@ Input:
 
 ```
 {
-    "Inspect": {
-        "Perform": true
-    }
+    "Type": "Inspect"
 }
 ```
 

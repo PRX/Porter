@@ -11,20 +11,20 @@ async function awsS3copyObject(event) {
   console.log(JSON.stringify({
     msg: 'S3 Copy',
     source: `${event.Artifact.BucketName}/${event.Artifact.ObjectKey}`,
-    destination: `${event.Copy.BucketName}/${event.Copy.ObjectKey}`
+    destination: `${event.Task.BucketName}/${event.Task.ObjectKey}`
   }));
 
   const params = {
     CopySource: `/${event.Artifact.BucketName}/${event.Artifact.ObjectKey}`,
-    Bucket: event.Copy.BucketName,
-    Key: event.Copy.ObjectKey
+    Bucket: event.Task.BucketName,
+    Key: event.Task.ObjectKey
   };
 
 
   // When the optional `ContentType` property is set to `REPLACE`, if a MIME is
   // included with the artifact, that should be used as the copy's content type
-  if (event.Copy.hasOwnProperty('ContentType')
-      && event.Copy.ContentType === 'REPLACE'
+  if (event.Task.hasOwnProperty('ContentType')
+      && event.Task.ContentType === 'REPLACE'
       && event.Artifact.hasOwnProperty('Descriptor')
       && event.Artifact.Descriptor.hasOwnProperty('MIME')) {
     params.MetadataDirective = 'REPLACE';
@@ -33,12 +33,12 @@ async function awsS3copyObject(event) {
 
   // Assign all members of Parameters to params. Remove the properties required
   // for the Copy operation, so there is no collision
-  if (event.Copy.hasOwnProperty('Parameters')) {
-    delete event.Copy.Parameters.CopySource;
-    delete event.Copy.Parameters.Bucket;
-    delete event.Copy.Parameters.Key;
+  if (event.Task.hasOwnProperty('Parameters')) {
+    delete event.Task.Parameters.CopySource;
+    delete event.Task.Parameters.Bucket;
+    delete event.Task.Parameters.Key;
 
-    Object.assign(params, event.Copy.Parameters);
+    Object.assign(params, event.Task.Parameters);
   }
 
   const _start = process.hrtime();
@@ -54,7 +54,7 @@ async function awsS3copyObject(event) {
 exports.handler = async (event) => {
   console.log(JSON.stringify({ msg: 'State input', input: event }));
 
-  if (event.Copy.Mode === 'AWS/S3') {
+  if (event.Task.Mode === 'AWS/S3') {
     // TODO Detect if the source file is > 5 GB and do a multipart upload to
     // create the copy
     await awsS3copyObject(event);
@@ -66,9 +66,9 @@ exports.handler = async (event) => {
 
   return {
     Task: 'Copy',
-    Mode: event.Copy.Mode,
-    BucketName: event.Copy.BucketName,
-    ObjectKey: event.Copy.ObjectKey,
+    Mode: event.Task.Mode,
+    BucketName: event.Task.BucketName,
+    ObjectKey: event.Task.ObjectKey,
     Time: now.toISOString(),
     Timestamp: (now / 1000)
   };

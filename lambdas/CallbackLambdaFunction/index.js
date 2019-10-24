@@ -74,19 +74,15 @@ function httpRequest(event, message, redirectCount) {
   }));
 }
 
-// Ex. input: { "Callback": { "Type": "AWS/SNS", "Topic": "arn:aws…" }, "JobResult": { "Job": { … }, "Result": { … } } }
-// Ex. error: { "Callback": { "Type": "AWS/SNS", "Topic": "arn:aws…" }, "JobResult": { "Job": { … }, "Error": { … } } }
-// Ex. msg:   { "JobResult": { "Job": { … }, "Result": { … } } }
-// Ex. msg:   { "JobResult": { "Job": { … }, "Error": { … } } }
 exports.handler = async (event) => {
   console.log(JSON.stringify({ msg: 'State input', input: event }));
 
   const now = new Date;
   const msg = { Time: now.toISOString(), Timestamp: (now / 1000) };
 
-  if (event.JobReceived) { Object.assign(msg, { JobReceived: event.JobReceived }); }
-  if (event.JobResult) { Object.assign(msg, { JobResult: event.JobResult }); }
-  if (event.TaskResult) { Object.assign(msg, { TaskResult: event.TaskResult }); }
+  if (event.Message) { Object.assign(msg, event.Message); }
+
+  console.log(JSON.stringify({ msg: 'Callback message body', body: msg }));
 
   if (event.Callback.Type === 'AWS/SNS') {
     const TopicArn = event.Callback.Topic;

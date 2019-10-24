@@ -14,20 +14,20 @@ function transform(inputFile, outputFile, event) {
 
       process = sharp(inputFile);
 
-      if (event.Transform.hasOwnProperty('Resize')) {
+      if (event.Task.hasOwnProperty('Resize')) {
         process = process.resize({
-          width: event.Transform.Resize.Width,
-          height: event.Transform.Resize.Height,
-          position: event.Transform.Resize.Position || 'centre',
-          fit: event.Transform.Resize.Fit || 'cover'
+          width: event.Task.Resize.Width,
+          height: event.Task.Resize.Height,
+          position: event.Task.Resize.Position || 'centre',
+          fit: event.Task.Resize.Fit || 'cover'
         });
       }
 
-      if (event.Transform.hasOwnProperty('Format')) {
-        process = process.toFormat(event.Transform.Format);
+      if (event.Task.hasOwnProperty('Format')) {
+        process = process.toFormat(event.Task.Format);
       }
 
-      if (event.Transform.hasOwnProperty('Metadata') && event.Transform.Metadata === 'PRESERVE') {
+      if (event.Task.hasOwnProperty('Metadata') && event.Task.Metadata === 'PRESERVE') {
         process = process.withMetadata();
       }
 
@@ -102,8 +102,8 @@ exports.handler = async (event, context) => {
   // Upload the resulting file to the destination in S3
   const _uploadStart = process.hrtime();
   await s3.upload({
-    Bucket: event.Transform.Destination.BucketName,
-    Key: event.Transform.Destination.ObjectKey,
+    Bucket: event.Task.Destination.BucketName,
+    Key: event.Task.Destination.ObjectKey,
     Body: fs.createReadStream(imageFileTmpPath),
   }).promise();
 
@@ -120,8 +120,8 @@ exports.handler = async (event, context) => {
 
   return {
     Task: 'Image',
-    BucketName: event.Transform.Destination.BucketName,
-    ObjectKey: event.Transform.Destination.ObjectKey,
+    BucketName: event.Task.Destination.BucketName,
+    ObjectKey: event.Task.Destination.ObjectKey,
     Time: now.toISOString(),
     Timestamp: (now / 1000)
   };

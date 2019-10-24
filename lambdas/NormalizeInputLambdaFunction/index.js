@@ -15,53 +15,9 @@
 exports.handler = async (event) => {
   console.log(JSON.stringify({ msg: 'Unmodified input', event: event }));
 
-  // The Inspect task has no other options, so if it's expected to run it
-  // would explicitly set Perform to true. Anything else is forced to false
-  try {
-    if (typeof event.Job.Inspect.Perform !== 'boolean') {
-      event.Job.Inspect = { Perform: false };
-    }
-  } catch (error) {
-    event.Job.Inspect = { Perform: false };
-  }
-
-  // The Copy task expects an array of Destinations that isn't empty. Anything
-  // else results in the Copy task being disabled (Perform = false)
-  try {
-    if (Array.isArray(event.Job.Copy.Destinations)
-        && event.Job.Copy.Destinations.length > 0) {
-      event.Job.Copy.Perform = true;
-    } else {
-      event.Job.Copy = { Perform: false };
-    }
-  } catch (error) {
-    event.Job.Copy = { Perform: false };
-  }
-
-  // The Transcode task expects an array of Encodings that isn't empty.
-  // Anything else results in the Transcode task being disabled (Perform = false)
-  try {
-    if (Array.isArray(event.Job.Transcode.Encodings)
-        && event.Job.Transcode.Encodings.length > 0) {
-      event.Job.Transcode.Perform = true;
-    } else {
-      event.Job.Transcode = { Perform: false };
-    }
-  } catch (error) {
-    event.Job.Transcode = { Perform: false };
-  }
-
-  // The Image task expects an array of Transforms that isn't empty.
-  // Anything else results in the Image task being disabled (Perform = false)
-  try {
-    if (Array.isArray(event.Job.Image.Transforms)
-        && event.Job.Image.Transforms.length > 0) {
-      event.Job.Image.Perform = true;
-    } else {
-      event.Job.Image = { Perform: false };
-    }
-  } catch (error) {
-    event.Job.Image = { Perform: false };
+  // Set Job.Callbacks to an empty array, unless it's already an array.
+  if (!event.Job.hasOwnProperty('Tasks') || !Array.isArray(event.Job.Tasks)) {
+    event.Job.Tasks = [];
   }
 
   // Set Job.Callbacks to an empty array, unless it's already an array.
