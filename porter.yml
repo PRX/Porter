@@ -20,6 +20,10 @@ Parameters:
     Type: String
   MpckLambdaLayerVersionArn:
     Type: String
+  NpmSharpLambdaLayerVersionArn:
+    Type: String
+  NpmFileTypeLambdaLayerVersionArn:
+    Type: String
   JobExecutionSnsTopicLambdaFunctionS3ObjectVersion:
     Type: String
   NormalizeInputLambdaFunctionS3ObjectVersion:
@@ -644,6 +648,7 @@ Resources:
       Handler: index.handler
       Layers:
         - !Ref AwsXraySdkLambdaLayerVersionArn
+        - !Ref NpmFileTypeLambdaLayerVersionArn
       MemorySize: 256
       Role: !GetAtt SourceTypeLambdaIamRole.Arn
       Runtime: nodejs10.x
@@ -705,6 +710,7 @@ Resources:
         - !Ref AwsXraySdkLambdaLayerVersionArn
         - !Ref FfmepgLambdaLayerVersionArn
         - !Ref MpckLambdaLayerVersionArn
+        - !Ref NpmSharpLambdaLayerVersionArn
       MemorySize: 512
       Role: !GetAtt InspectMediaLambdaIamRole.Arn
       Runtime: nodejs10.x
@@ -859,6 +865,7 @@ Resources:
       Handler: index.handler
       Layers:
         - !Ref AwsXraySdkLambdaLayerVersionArn
+        - !Ref NpmSharpLambdaLayerVersionArn
       MemorySize: 1024
       Role: !GetAtt ImageTransformLambdaIamRole.Arn
       Runtime: nodejs10.x
