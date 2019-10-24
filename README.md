@@ -286,7 +286,7 @@ Output:
 
 Resize supports the following parameters: `Fit`, `Height`, `Position`, and `Width`. These follow the same rules as [sharp's](http://sharp.pixelplumbing.com/en/stable/api-resize/#parameters) parameters. The `Resize` property is optional; if excluded the task will not attempt to resize the image. All child properties of the `Resize` object are optional.
 
-`Format` indicates the desired output format. Supported formats are: `jpeg`, `png`, `webp`, `tiff`, `heif`, and `raw`. the `Format` property is optional; if excluded the output format will be inferred from the file extension of the destination object.
+`Format` indicates the desired output format. Supported formats are: `jpeg`, `png`, `webp`, and `tiff`. The `Format` property is optional; if excluded the output format will be inferred from the file extension of the destination object.
 
 If `Job.Image.Transforms` is not an array with at least one element, the state machine will act as though no copy tasks were included in the job.
 
@@ -312,6 +312,18 @@ Input:
             }
         ]
     }
+}
+```
+
+Output:
+
+```
+{
+    "Task": "Image",
+    "BucketName": "myBucket",
+    "ObjectKey": "myObject.ext",
+    "Time": "2012-12-21T12:34:56Z",
+    "Timestamp: 1356093296.123
 }
 ```
 
