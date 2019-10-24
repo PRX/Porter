@@ -43,6 +43,8 @@ aws cloudformation deploy \
                 AwsXraySdkLambdaLayerVersionArn=arn:aws:lambda:us-east-1:561178107736:layer:aws-xray:2 \
                 FfmepgLambdaLayerVersionArn=arn:aws:lambda:us-east-1:561178107736:layer:ffmepg-farski-test:1 \
                 MpckLambdaLayerVersionArn=arn:aws:lambda:us-east-1:561178107736:layer:mpck-farski-test:1 \
+                NpmSharpLambdaLayerVersionArn=arn:aws:lambda:us-east-1:561178107736:layer:npm-sharp:1 \
+                NpmFileTypeLambdaLayerVersionArn=arn:aws:lambda:us-east-1:561178107736:layer:npm-file-type:1 \
                 JobExecutionSnsTopicLambdaFunctionS3ObjectVersion="$JobExecutionSnsTopicLambdaFunction_S3ObjectVersion" \
                 NormalizeInputLambdaFunctionS3ObjectVersion="$NormalizeInputLambdaFunction_S3ObjectVersion" \
                 IngestLambdaFunctionS3ObjectVersion="$IngestLambdaFunction_S3ObjectVersion" \
