@@ -14,19 +14,10 @@ read -r -d '' input_json << EOM
             "Source": {
                 "Mode": "AWS/S3",
                 "BucketName": "farski-sandbox-prx",
-                "ObjectKey": "podcast.wav"
+                "ObjectKey": "podcast.mp3"
             },
-            "Transcode": {
-                "Encodings": [
-                    {
-                        "Format": "mp4",
-                        "Destination": {
-                            "Mode": "AWS/S3",
-                            "BucketName": "farski-sandbox-prx",
-                            "ObjectKey": "porter-output/transcode-task/$1-$2.mp4"
-                        }
-                    }
-                ]
+            "Inspect": {
+                "Perform": true
             }
         }
     }
@@ -41,7 +32,7 @@ start_execution() {
 }
 
 i="0"
-while [ $i -lt 1 ]
+while [ $i -lt 20 ]
 do
     start_execution "$i"
     i=$[$i+1]
