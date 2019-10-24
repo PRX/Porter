@@ -48,27 +48,21 @@ sns.publish(
                 "Type": "Inspect"
             }, {
                 "Type": "Copy",
-                "Destination": {
-                    "Mode": "AWS/S3",
-                    "BucketName": "myBucket",
-                    "ObjectKey": "audioFile-copy.wav"
-                }
+                "Mode": "AWS/S3",
+                "BucketName": "myBucket",
+                "ObjectKey": "audioFile-copy.wav"
             },  {
                 "Type": "Image",
+                "Mode": "AWS/S3",
+                "BucketName": "myBucket",
+                "ObjectKey": "imageFile.png"
+            }, {
+                "Type": "Transcode",
+                "Format": "flac",
                 "Destination": {
                     "Mode": "AWS/S3",
                     "BucketName": "myBucket",
-                    "ObjectKey": "imageFile.png"
-                }
-            }, {
-                "Type": "Transcode",
-                "Encoding": {
-                    "Format": "flac",
-                    "Destination": {
-                        "Mode": "AWS/S3",
-                        "BucketName": "myBucket",
-                        "ObjectKey": "audioFile.flac"
-                    }
+                    "ObjectKey": "audioFile.flac"
                 }
             }
         ],
