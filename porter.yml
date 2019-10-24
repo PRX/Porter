@@ -1207,7 +1207,15 @@ Resources:
                             "Artifact.$": "$.Artifact"
                           },
                           "ResultPath": "$.TaskResult",
-                          "Next": "InspectCallbacks"
+                          "Next": "InspectCallbacks",
+                          "Retry": [
+                            {
+                              "ErrorEquals": ["States.ALL"],
+                              "IntervalSeconds": 5,
+                              "MaxAttempts": 3,
+                              "BackoffRate": 2
+                            }
+                          ]
                         },
                         "InspectCallbacks": {
                           "Type": "Map",
