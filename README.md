@@ -288,6 +288,8 @@ Resize supports the following parameters: `Fit`, `Height`, `Position`, and `Widt
 
 `Format` indicates the desired output format. Supported formats are: `jpeg`, `png`, `webp`, and `tiff`. The `Format` property is optional; if excluded the output format will be inferred from the file extension of the destination object.
 
+By default all image metadata (EXIF, XMP, IPTC, etc) is stripped away during processing. If you set `Metadata` to `PRESERVE`, metadata from the input file will be included in the output file. This property is optional, and other values have no effect.
+
 If `Job.Image.Transforms` is not an array with at least one element, the state machine will act as though no copy tasks were included in the job.
 
 Input:
@@ -298,6 +300,7 @@ Input:
         "Transforms": [
             {
                 "Format": "png",
+                "Metadata": "PRESERVE",
                 "Resize": {
                     "Fit": "cover",
                     "Height": 300,

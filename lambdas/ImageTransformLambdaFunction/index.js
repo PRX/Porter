@@ -27,6 +27,10 @@ function transform(inputFile, outputFile, event) {
         process = process.toFormat(event.Transform.Format);
       }
 
+      if (event.Transform.hasOwnProperty('Metadata') && event.Transform.Metadata === 'PRESERVE') {
+        process = process.withMetadata();
+      }
+
       process.toFile(outputFile, (error, info) => {
         if (error) {
           reject(error);
