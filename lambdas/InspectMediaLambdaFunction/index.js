@@ -2,6 +2,7 @@ const childProcess = require('child_process');
 const path = require('path');
 const os = require('os');
 const fs = require('fs');
+const sharp = require('sharp');
 const awsxray = require('aws-xray-sdk');
 const aws = awsxray.captureAWS(require('aws-sdk'));
 
@@ -66,7 +67,7 @@ function audioInspection(ffprobe, mpck) {
     });
   }
 
-  if (stream.codec_name === 'mp3') {
+  if (stream && stream.codec_name === 'mp3' && mpck) {
     Object.assign(inspection, {
       // TODO This is bad
       Layer: (mpck.match(/layer (.+)/) ? mpck.match(/layer (.+)/)[1].trim() : null),
@@ -94,13 +95,63 @@ function videoInspection(ffprobe, mpck) {
   }
 }
 
-// Ex. input:  { "Artifact": { "BucketName": "SourceBucket", "ObjectKey": "Abc.wav" }, "Encoding": { "Format": "flac" } }
-// Ex. output: { "Task",: "Transcode", "Format": "flac", "BucketName": "ResultBucket", "ObjectKey": "Xyz.flac" }
-exports.handler = async (event, context) => {
-  const artifactFileTmpPath = path.join(os.tmpdir(), context.awsRequestId);
+function imageInspection(sharp) {
+  if (sharp) {
+    return {
+      Width: sharp.width,
+      Height: sharp.height,
+      Format: sharp.format
+    };
+  }
+}
 
-  console.log(JSON.stringify({ msg: 'State input', input: event }));
+async function runffprobe(artifactFileTmpPath) {
+  const _start = process.hrtime();
+  const json = await spawn('/opt/bin/ffprobe',
+                      ['-v', 'error', '-show_streams', '-show_format', '-i', artifactFileTmpPath, '-print_format', 'json'],
+                      { env: process.env, cwd: os.tmpdir() });
+  const ffprobe = JSON.parse(json);
 
+  const _end = process.hrtime(_start);
+  console.log(JSON.stringify({
+    msg: 'Finished ffprobe',
+    duration: `${_end[0]} s ${_end[1] / 1000000} ms`,
+    data: ffprobe
+  }));
+
+  return ffprobe;
+}
+
+async function runmpck(artifactFileTmpPath) {
+  const _start = process.hrtime();
+  let mpck;
+
+  try {
+    mpck = await spawn('/opt/bin/mpck',
+                      ['-v', artifactFileTmpPath],
+                      { env: process.env, cwd: os.tmpdir() });
+  } catch (error) {}
+
+  const _end = process.hrtime(_start);
+  console.log(JSON.stringify({
+    msg: 'Finished mpck',
+    duration: `${_end[0]} s ${_end[1] / 1000000} ms`,
+    data: mpck
+  }));
+
+  return mpck;
+}
+
+function runsharp(artifactFileTmpPath) {
+  return new Promise(function (resolve, reject) {
+    sharp(artifactFileTmpPath)
+      .metadata()
+      .then(metadata => resolve(metadata))
+      .catch(e => reject(e));
+  });
+}
+
+async function fetchArtifact(event, artifactFileTmpPath) {
   console.log(JSON.stringify({
     msg: 'Fetching artifact from S3',
     s3: `${event.Artifact.BucketName}/${event.Artifact.ObjectKey}`,
@@ -116,38 +167,29 @@ exports.handler = async (event, context) => {
     duration: `${_s3end[0]} s ${_s3end[1] / 1000000} ms`
   }));
 
-  const _ffstart = process.hrtime();
-  const json = await spawn('/opt/bin/ffprobe',
-                      ['-v', 'error', '-show_streams', '-show_format', '-i', artifactFileTmpPath, '-print_format', 'json'],
-                      { env: process.env, cwd: os.tmpdir() });
-  const ffprobe = JSON.parse(json);
+}
 
-  const _ffend = process.hrtime(_ffstart);
-  console.log(JSON.stringify({
-    msg: 'Finished ffprobe',
-    duration: `${_ffend[0]} s ${_ffend[1] / 1000000} ms`,
-    data: ffprobe
-  }));
+// Ex. input:  { "Artifact": { "BucketName": "SourceBucket", "ObjectKey": "Abc.wav" }, "Encoding": { "Format": "flac" } }
+// Ex. output: { "Task",: "Transcode", "Format": "flac", "BucketName": "ResultBucket", "ObjectKey": "Xyz.flac" }
+exports.handler = async (event, context) => {
+  console.log(JSON.stringify({ msg: 'State input', input: event }));
 
-  const _mpstart = process.hrtime();
-  const mpck = await spawn('/opt/bin/mpck',
-                      ['-v', artifactFileTmpPath],
-                      { env: process.env, cwd: os.tmpdir() });
+  const artifactFileTmpPath = path.join(os.tmpdir(), context.awsRequestId);
 
-  const _mpend = process.hrtime(_mpstart);
-  console.log(JSON.stringify({
-    msg: 'Finished mpck',
-    duration: `${_mpend[0]} s ${_mpend[1] / 1000000} ms`,
-    data: mpck
-  }));
+  fetchArtifact(event, artifactFileTmpPath);
 
+  const ffprobe = await runffprobe(artifactFileTmpPath);
+  const mpck = await runmpck(artifactFileTmpPath);
+  const sharp = await runsharp(artifactFileTmpPath);
+
+  const stat = fs.statSync(artifactFileTmpPath);
+  const inspection = { Size: stat.size };
 
   fs.unlinkSync(artifactFileTmpPath);
 
-  const inspection = { Size: ffprobe.format.size };
-
   Object.assign(inspection, { Audio: audioInspection(ffprobe, mpck) });
   Object.assign(inspection, { Video: videoInspection(ffprobe, mpck) });
+  Object.assign(inspection, { Image: imageInspection(sharp) });
   Object.assign(inspection, event.Artifact.Descriptor);
 
   return { Task: 'Inspect', Inspection: inspection };
