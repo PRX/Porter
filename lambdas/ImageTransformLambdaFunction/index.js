@@ -1,4 +1,6 @@
 const sharp = require('sharp');
+const path = require('path');
+const os = require('os');
 const fs = require('fs');
 const awsxray = require('aws-xray-sdk');
 const aws = awsxray.captureAWS(require('aws-sdk'));
@@ -22,7 +24,7 @@ function transform(inputFile, outputFile, event) {
       }
 
       if (event.Transform.hasOwnProperty('Format')) {
-        process = process.toFormat(event.Transform.toFormat);
+        process = process.toFormat(event.Transform.Format);
       }
 
       process.toFile(outputFile, (error, info) => {
@@ -85,19 +87,19 @@ exports.handler = async (event, context) => {
 
   const imageFileTmpPath = path.join(os.tmpdir(), context.awsRequestId, 'output');
 
-  transform(artifactFileTmpPath, imageFileTmpPath, event);
+  await transform(artifactFileTmpPath, imageFileTmpPath, event);
 
   const _sharpEnd = process.hrtime(_sharpStart);
   console.log(JSON.stringify({
     msg: 'Finished image processing',
-    duration: `${_sharpEnd[0]} s ${_s3e_sharpEndnd[1] / 1000000} ms`
+    duration: `${_sharpEnd[0]} s ${_sharpEnd[1] / 1000000} ms`
   }));
 
   // Upload the resulting file to the destination in S3
   const _uploadStart = process.hrtime();
   await s3.upload({
-    Bucket: event.Transform.BucketName,
-    Key: event.Transform.ObjectKey,
+    Bucket: event.Transform.Destination.BucketName,
+    Key: event.Transform.Destination.ObjectKey,
     Body: fs.createReadStream(imageFileTmpPath),
   }).promise();
 
@@ -107,5 +109,16 @@ exports.handler = async (event, context) => {
     duration: `${_uploadEnd[0]} s ${_uploadEnd[1] / 1000000} ms`,
   }));
 
-  fs.rmdirSync(path.join(os.tmpdir(), context.awsRequestId))
+  fs.unlinkSync(artifactFileTmpPath);
+  fs.unlinkSync(imageFileTmpPath);
+
+  const now = new Date;
+
+  return {
+    Task: 'Image',
+    BucketName: event.Transform.Destination.BucketName,
+    ObjectKey: event.Transform.Destination.ObjectKey,
+    Time: now.toISOString(),
+    Timestamp: (now / 1000)
+  };
 };
