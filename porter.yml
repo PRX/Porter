@@ -1207,7 +1207,13 @@ Resources:
                         "ItemsPath": "$.Callbacks",
                         "Parameters": {
                           "Callback.$": "$$.Map.Item.Value",
-                          "Execution": { "Id.$": "$$.Execution.Id" }
+                          "Message": {
+                            "TaskResult": {
+                              "Job": { "Id.$": "$.Job.Id" },
+                              "Execution": { "Id.$": "$$.Execution.Id" },
+                              "Result.$": "$.TaskResult"
+                            }
+                          }
                         },
                         "ResultPath": "$.Void",
                         "OutputPath": "$.TaskResult",
