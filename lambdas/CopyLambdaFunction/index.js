@@ -20,7 +20,6 @@ async function awsS3copyObject(event) {
     Key: event.Task.ObjectKey
   };
 
-
   // When the optional `ContentType` property is set to `REPLACE`, if a MIME is
   // included with the artifact, that should be used as the copy's content type
   if (event.Task.hasOwnProperty('ContentType')
