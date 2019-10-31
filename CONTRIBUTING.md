@@ -118,7 +118,7 @@ After a task has completed, callbacks are sent. This follows the same pattern as
 
 #### Job Callbacks
 
-As with the previous callbacks, this follows a similar iterator pattern. Each job callback contains a complete set of tasks results for all tasks that were run by the job. The results that are included in the callback message are filtered from the entire list of results using the [JsonPath](https://github.com/json-path/JsonPath) query: `$.[?(@.Task && @.Task != 'Null')]`. This removes any null task results, which result from unknown task types being included in a job.
+As with the previous callbacks, this follows a similar iterator pattern. Each job callback contains a complete set of tasks results for all tasks that were run by the job. The results that are included in the callback message are filtered from the entire list of results using the [JsonPath](https://github.com/json-path/JsonPath) query: `$.TaskResults.[?(@.Task && @.Task != 'Null')]`. This removes any null task results, which result from unknown task types being included in a job.
 
 This state is the true end of the state machine, and the output is not specifically defined.
 
