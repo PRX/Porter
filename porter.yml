@@ -16,7 +16,7 @@ Parameters:
     Type: String
   AwsXraySdkLambdaLayerVersionArn:
     Type: String
-  FfmepgLambdaLayerVersionArn:
+  FfmpegLambdaLayerVersionArn:
     Type: String
   MpckLambdaLayerVersionArn:
     Type: String
@@ -708,7 +708,7 @@ Resources:
       Handler: index.handler
       Layers:
         - !Ref AwsXraySdkLambdaLayerVersionArn
-        - !Ref FfmepgLambdaLayerVersionArn
+        - !Ref FfmpegLambdaLayerVersionArn
         - !Ref MpckLambdaLayerVersionArn
         - !Ref NpmSharpLambdaLayerVersionArn
       MemorySize: 512

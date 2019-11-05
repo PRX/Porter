@@ -44,7 +44,7 @@ aws cloudformation deploy \
         --parameter-overrides \
                 StackResourcesBucket="$STACK_RESOURCES_BUCKET" \
                 AwsXraySdkLambdaLayerVersionArn=arn:aws:lambda:us-east-1:561178107736:layer:aws-xray:2 \
-                FfmepgLambdaLayerVersionArn=arn:aws:lambda:us-east-1:561178107736:layer:bin-ffmpeg:1 \
+                FfmpegLambdaLayerVersionArn=arn:aws:lambda:us-east-1:561178107736:layer:bin-ffmpeg:1 \
                 MpckLambdaLayerVersionArn=arn:aws:lambda:us-east-1:561178107736:layer:bin-mpck:1 \
                 NpmSharpLambdaLayerVersionArn=arn:aws:lambda:us-east-1:561178107736:layer:npm-sharp:1 \
                 NpmFileTypeLambdaLayerVersionArn=arn:aws:lambda:us-east-1:561178107736:layer:npm-file-type:1 \
