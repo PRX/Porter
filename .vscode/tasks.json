@@ -4,9 +4,14 @@
   "version": "2.0.0",
   "tasks": [
     {
-      "label": "Deploy",
+      "label": "Deploy:staging",
       "type": "shell",
-      "command": "./deploy.sh",
+      "command": "./deploy.sh stag",
+      "problemMatcher": []
+    }, {
+      "label": "Deploy:production",
+      "type": "shell",
+      "command": "./deploy.sh prod",
       "problemMatcher": []
     }, {
       "label": "Transcode ECR Push",
