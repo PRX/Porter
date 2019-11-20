@@ -21,7 +21,7 @@ exports.handler = async (event) => {
   }
 
   // Make sure all Transcode tasks have all three FFmpeg options
-  event.Job.Tasks.array.forEach((task) => {
+  event.Job.Tasks.forEach((task) => {
     if (task.Type !== 'Transcode') { return; }
 
     if (!task.hasOwnProperty('FFmpeg')) { task.FFmpeg = {}; }
