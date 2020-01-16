@@ -3,16 +3,11 @@
   // for the documentation about the tasks.json format
   "version": "2.0.0",
   "tasks": [
-    {
-      "label": "Deploy:staging",
-      "type": "shell",
-      "command": "./deploy.sh stag",
-      "problemMatcher": []
-    }, {
-      "label": "Deploy:production",
-      "type": "shell",
-      "command": "./deploy.sh prod",
-      "problemMatcher": []
+		{
+			"label": "SAM:Deploy",
+			"type": "shell",
+			"command": "export AWS_PROFILE=prx_legacy && sam deploy --template-file porter.yml",
+			"problemMatcher": []
     }, {
       "label": "Transcode ECR Push",
       "type": "shell",

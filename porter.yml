@@ -1,6 +1,7 @@
 # porter.yml
 AWSTemplateFormatVersion: "2010-09-09"
-Description: >
+Transform: AWS::Serverless-2016-10-31
+Description: >-
   Creates a Step Function state machine for processing user created content, as
   well as some supporting resources
 Parameters:
@@ -12,8 +13,6 @@ Parameters:
     Type: CommaDelimitedList
   TaskDestinationObjectPolicyResources:
     Type: CommaDelimitedList
-  StackResourcesBucket:
-    Type: String
   AwsXraySdkLambdaLayerVersionArn:
     Type: String
   FfmpegLambdaLayerVersionArn:
@@ -23,22 +22,6 @@ Parameters:
   NpmSharpLambdaLayerVersionArn:
     Type: String
   NpmFileTypeLambdaLayerVersionArn:
-    Type: String
-  JobExecutionSnsTopicLambdaFunctionS3ObjectVersion:
-    Type: String
-  NormalizeInputLambdaFunctionS3ObjectVersion:
-    Type: String
-  SourceTypeLambdaFunctionS3ObjectVersion:
-    Type: String
-  IngestLambdaFunctionS3ObjectVersion:
-    Type: String
-  InspectMediaLambdaFunctionS3ObjectVersion:
-    Type: String
-  CopyLambdaFunctionS3ObjectVersion:
-    Type: String
-  ImageTransformLambdaFunctionS3ObjectVersion:
-    Type: String
-  CallbackLambdaFunctionS3ObjectVersion:
     Type: String
   TranscodeEcsTaskDefinitionImage:
     Type: String
@@ -84,13 +67,10 @@ Resources:
         - Key: prx:cloudformation:stack-id
           Value: !Ref AWS::StackId
   JobExecutionSnsTopicLambdaFunction:
-    Type: AWS::Lambda::Function
+    Type: AWS::Serverless::Function
     Properties:
-      Code:
-        S3Bucket: !Ref StackResourcesBucket
-        S3Key: !Sub ${AWS::StackName}/lambdas/JobExecutionSnsTopicLambdaFunction.zip
-        S3ObjectVersion: !Ref JobExecutionSnsTopicLambdaFunctionS3ObjectVersion
-      Description: >
+      CodeUri: lambdas/JobExecutionSnsTopicLambdaFunction/
+      Description: >-
         Relays SNS messages sent to a subscribed topic to a State Machine
       Environment:
         Variables:
@@ -100,14 +80,11 @@ Resources:
         - !Ref AwsXraySdkLambdaLayerVersionArn
       MemorySize: 128
       Role: !GetAtt JobExecutionSnsTopicLambdaIamRole.Arn
-      Runtime: nodejs10.x
+      Runtime: nodejs12.x
       Tags:
-        - Key: Project
-          Value: Porter
-        - Key: prx:cloudformation:stack-name
-          Value: !Ref AWS::StackName
-        - Key: prx:cloudformation:stack-id
-          Value: !Ref AWS::StackId
+        Project: Porter
+        prx:cloudformation:stack-name: !Ref AWS::StackName
+        prx:cloudformation:stack-id: !Ref AWS::StackId
       Timeout: 8
   JobExecutionSnsTopicLambdaPermission:
     Type: AWS::Lambda::Permission
@@ -493,30 +470,23 @@ Resources:
         - Key: prx:cloudformation:stack-id
           Value: !Ref AWS::StackId
   NormalizeInputLambdaFunction:
-    Type: AWS::Lambda::Function
+    Type: AWS::Serverless::Function
     Properties:
-      Code:
-        S3Bucket: !Ref StackResourcesBucket
-        S3Key: !Sub ${AWS::StackName}/lambdas/NormalizeInputLambdaFunction.zip
-        S3ObjectVersion: !Ref NormalizeInputLambdaFunctionS3ObjectVersion
-      Description: >
+      CodeUri: lambdas/NormalizeInputLambdaFunction/
+      Description: >-
         Normalizes Porter job input
       Handler: index.handler
       Layers:
         - !Ref AwsXraySdkLambdaLayerVersionArn
       MemorySize: 128
       Role: !GetAtt NormalizeInputLambdaIamRole.Arn
-      Runtime: nodejs10.x
+      Runtime: nodejs12.x
       Tags:
-        - Key: Project
-          Value: Porter
-        - Key: prx:cloudformation:stack-name
-          Value: !Ref AWS::StackName
-        - Key: prx:cloudformation:stack-id
-          Value: !Ref AWS::StackId
+        Project: Porter
+        prx:cloudformation:stack-name: !Ref AWS::StackName
+        prx:cloudformation:stack-id: !Ref AWS::StackId
       Timeout: 4
-      TracingConfig:
-        Mode: Active
+      Tracing: Active
   # Ingest Lambda
   IngestLambdaIamRole:
     Type: AWS::IAM::Role
@@ -570,13 +540,10 @@ Resources:
         - Key: prx:cloudformation:stack-id
           Value: !Ref AWS::StackId
   IngestLambdaFunction:
-    Type: AWS::Lambda::Function
+    Type: AWS::Serverless::Function
     Properties:
-      Code:
-        S3Bucket: !Ref StackResourcesBucket
-        S3Key: !Sub ${AWS::StackName}/lambdas/IngestLambdaFunction.zip
-        S3ObjectVersion: !Ref IngestLambdaFunctionS3ObjectVersion
-      Description: >
+      CodeUri: lambdas/IngestLambdaFunction/
+      Description: >-
         Ingests a source file to a predefined S3 artifact bucket
       Environment:
         Variables:
@@ -587,17 +554,13 @@ Resources:
         - !Ref AwsXraySdkLambdaLayerVersionArn
       MemorySize: 512
       Role: !GetAtt IngestLambdaIamRole.Arn
-      Runtime: nodejs10.x
+      Runtime: nodejs12.x
       Tags:
-        - Key: Project
-          Value: Porter
-        - Key: prx:cloudformation:stack-name
-          Value: !Ref AWS::StackName
-        - Key: prx:cloudformation:stack-id
-          Value: !Ref AWS::StackId
+        Project: Porter
+        prx:cloudformation:stack-name: !Ref AWS::StackName
+        prx:cloudformation:stack-id: !Ref AWS::StackId
       Timeout: 90
-      TracingConfig:
-        Mode: Active
+      Tracing: Active
   # Source Type Lambda
   SourceTypeLambdaIamRole:
     Type: AWS::IAM::Role
@@ -633,13 +596,10 @@ Resources:
         - Key: prx:cloudformation:stack-id
           Value: !Ref AWS::StackId
   SourceTypeLambdaFunction:
-    Type: AWS::Lambda::Function
+    Type: AWS::Serverless::Function
     Properties:
-      Code:
-        S3Bucket: !Ref StackResourcesBucket
-        S3Key: !Sub ${AWS::StackName}/lambdas/SourceTypeLambdaFunction.zip
-        S3ObjectVersion: !Ref SourceTypeLambdaFunctionS3ObjectVersion
-      Description: >
+      CodeUri: lambdas/SourceTypeLambdaFunction/
+      Description: >-
         Detect the file type of the source fiel
       Environment:
         Variables:
@@ -651,17 +611,13 @@ Resources:
         - !Ref NpmFileTypeLambdaLayerVersionArn
       MemorySize: 256
       Role: !GetAtt SourceTypeLambdaIamRole.Arn
-      Runtime: nodejs10.x
+      Runtime: nodejs12.x
       Tags:
-        - Key: Project
-          Value: Porter
-        - Key: prx:cloudformation:stack-name
-          Value: !Ref AWS::StackName
-        - Key: prx:cloudformation:stack-id
-          Value: !Ref AWS::StackId
+        Project: Porter
+        prx:cloudformation:stack-name: !Ref AWS::StackName
+        prx:cloudformation:stack-id: !Ref AWS::StackId
       Timeout: 8
-      TracingConfig:
-        Mode: Active
+      Tracing: Active
   # Inspect Lambda
   InspectMediaLambdaIamRole:
     Type: AWS::IAM::Role
@@ -697,13 +653,10 @@ Resources:
         - Key: prx:cloudformation:stack-id
           Value: !Ref AWS::StackId
   InspectMediaLambdaFunction:
-    Type: AWS::Lambda::Function
+    Type: AWS::Serverless::Function
     Properties:
-      Code:
-        S3Bucket: !Ref StackResourcesBucket
-        S3Key: !Sub ${AWS::StackName}/lambdas/InspectMediaLambdaFunction.zip
-        S3ObjectVersion: !Ref InspectMediaLambdaFunctionS3ObjectVersion
-      Description: >
+      CodeUri: lambdas/InspectMediaLambdaFunction/
+      Description: >-
         Inspects (ffprobe, etc) the source file
       Handler: index.handler
       Layers:
@@ -713,17 +666,13 @@ Resources:
         - !Ref NpmSharpLambdaLayerVersionArn
       MemorySize: 512
       Role: !GetAtt InspectMediaLambdaIamRole.Arn
-      Runtime: nodejs10.x
+      Runtime: nodejs12.x
       Tags:
-        - Key: Project
-          Value: Porter
-        - Key: prx:cloudformation:stack-name
-          Value: !Ref AWS::StackName
-        - Key: prx:cloudformation:stack-id
-          Value: !Ref AWS::StackId
+        Project: Porter
+        prx:cloudformation:stack-name: !Ref AWS::StackName
+        prx:cloudformation:stack-id: !Ref AWS::StackId
       Timeout: 64
-      TracingConfig:
-        Mode: Active
+      Tracing: Active
   # Copy Lambda
   CopyLambdaIamRole:
     Type: AWS::IAM::Role
@@ -777,30 +726,23 @@ Resources:
         - Key: prx:cloudformation:stack-id
           Value: !Ref AWS::StackId
   CopyLambdaFunction:
-    Type: AWS::Lambda::Function
+    Type: AWS::Serverless::Function
     Properties:
-      Code:
-        S3Bucket: !Ref StackResourcesBucket
-        S3Key: !Sub ${AWS::StackName}/lambdas/CopyLambdaFunction.zip
-        S3ObjectVersion: !Ref CopyLambdaFunctionS3ObjectVersion
-      Description: >
+      CodeUri: lambdas/CopyLambdaFunction/
+      Description: >-
         Copies an object in S3 to another location in S3
       Handler: index.handler
       Layers:
         - !Ref AwsXraySdkLambdaLayerVersionArn
       MemorySize: 512
       Role: !GetAtt CopyLambdaIamRole.Arn
-      Runtime: nodejs10.x
+      Runtime: nodejs12.x
       Tags:
-        - Key: Project
-          Value: Porter
-        - Key: prx:cloudformation:stack-name
-          Value: !Ref AWS::StackName
-        - Key: prx:cloudformation:stack-id
-          Value: !Ref AWS::StackId
+        Project: Porter
+        prx:cloudformation:stack-name: !Ref AWS::StackName
+        prx:cloudformation:stack-id: !Ref AWS::StackId
       Timeout: 32
-      TracingConfig:
-        Mode: Active
+      Tracing: Active
   # Image Manipulation Lambda
   ImageTransformLambdaIamRole:
     Type: AWS::IAM::Role
@@ -854,13 +796,10 @@ Resources:
         - Key: prx:cloudformation:stack-id
           Value: !Ref AWS::StackId
   ImageTransformLambdaFunction:
-    Type: AWS::Lambda::Function
+    Type: AWS::Serverless::Function
     Properties:
-      Code:
-        S3Bucket: !Ref StackResourcesBucket
-        S3Key: !Sub ${AWS::StackName}/lambdas/ImageTransformLambdaFunction.zip
-        S3ObjectVersion: !Ref ImageTransformLambdaFunctionS3ObjectVersion
-      Description: >
+      CodeUri: lambdas/ImageTransformLambdaFunction/
+      Description: >-
         Performans image manipulation operations on a source file
       Handler: index.handler
       Layers:
@@ -868,17 +807,13 @@ Resources:
         - !Ref NpmSharpLambdaLayerVersionArn
       MemorySize: 1024
       Role: !GetAtt ImageTransformLambdaIamRole.Arn
-      Runtime: nodejs10.x
+      Runtime: nodejs12.x
       Tags:
-        - Key: Project
-          Value: Porter
-        - Key: prx:cloudformation:stack-name
-          Value: !Ref AWS::StackName
-        - Key: prx:cloudformation:stack-id
-          Value: !Ref AWS::StackId
+        Project: Porter
+        prx:cloudformation:stack-name: !Ref AWS::StackName
+        prx:cloudformation:stack-id: !Ref AWS::StackId
       Timeout: 16
-      TracingConfig:
-        Mode: Active
+      Tracing: Active
   # Callback Lambda
   CallbackLambdaIamRole:
     Type: AWS::IAM::Role
@@ -925,13 +860,10 @@ Resources:
         - Key: prx:cloudformation:stack-id
           Value: !Ref AWS::StackId
   CallbackLambdaFunction:
-    Type: AWS::Lambda::Function
+    Type: AWS::Serverless::Function
     Properties:
-      Code:
-        S3Bucket: !Ref StackResourcesBucket
-        S3Key: !Sub ${AWS::StackName}/lambdas/CallbackLambdaFunction.zip
-        S3ObjectVersion: !Ref CallbackLambdaFunctionS3ObjectVersion
-      Description: >
+      CodeUri: lambdas/CallbackLambdaFunction/
+      Description: >-
         Sends a job or task callback message to a single endpoint
       Environment:
         Variables:
@@ -941,17 +873,13 @@ Resources:
         - !Ref AwsXraySdkLambdaLayerVersionArn
       MemorySize: 128
       Role: !GetAtt CallbackLambdaIamRole.Arn
-      Runtime: nodejs10.x
+      Runtime: nodejs12.x
       Tags:
-        - Key: Project
-          Value: Porter
-        - Key: prx:cloudformation:stack-name
-          Value: !Ref AWS::StackName
-        - Key: prx:cloudformation:stack-id
-          Value: !Ref AWS::StackId
+        Project: Porter
+        prx:cloudformation:stack-name: !Ref AWS::StackName
+        prx:cloudformation:stack-id: !Ref AWS::StackId
       Timeout: 4
-      TracingConfig:
-        Mode: Active
+      Tracing: Active
   # Step Functions
   StateMachineIamRole:
     Type: AWS::IAM::Role
