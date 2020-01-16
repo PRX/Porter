@@ -6,7 +6,7 @@
 		{
 			"label": "SAM:Deploy",
 			"type": "shell",
-			"command": "export AWS_PROFILE=prx_legacy && sam deploy --template-file porter.yml",
+			"command": "export AWS_PROFILE=prx_legacy && sam deploy",
 			"problemMatcher": []
     }, {
       "label": "Transcode ECR Push",
