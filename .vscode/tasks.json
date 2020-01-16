@@ -2,11 +2,23 @@
   // See https://go.microsoft.com/fwlink/?LinkId=733558
   // for the documentation about the tasks.json format
   "version": "2.0.0",
+	"inputs": [
+		{
+			"type": "pickString",
+			"id": "appEnv",
+			"description": "Which application environment do you want to deploy?",
+			"options": [
+				"stag",
+				"prod"
+			],
+			"default": "stag"
+		},
+	],
   "tasks": [
 		{
 			"label": "SAM:Deploy",
 			"type": "shell",
-			"command": "export AWS_PROFILE=prx_legacy && sam deploy",
+			"command": "export AWS_PROFILE=prx_legacy && cp samconfig.${input:appEnv}.toml samconfig.toml && sam deploy && rm samconfig.toml",
 			"problemMatcher": []
     }, {
       "label": "Transcode ECR Push",
