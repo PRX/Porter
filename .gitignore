@@ -4,3 +4,6 @@ node_modules
 .env
 .env.stag
 .env.prod
+samconfig.toml
+samconfig.stag.toml
+samconfig.prod.toml
