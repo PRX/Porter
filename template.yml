@@ -4,7 +4,14 @@ Transform: AWS::Serverless-2016-10-31
 Description: >-
   Creates a Step Function state machine for processing user created content, as
   well as some supporting resources
+Conditions:
+  CreateProductionResources: !Equals [!Ref EnvironmentType, Production]
 Parameters:
+  EnvironmentType:
+    Type: String
+    AllowedValues:
+      - Staging
+      - Production
   OpsWarnMessagesSnsTopicArn:
     Type: String
   OpsErrorMessagesSnsTopicArn:
@@ -99,6 +106,31 @@ Resources:
       Endpoint: !GetAtt JobExecutionSnsTopicLambdaFunction.Arn
       Protocol: lambda
       TopicArn: !Ref JobExecutionSnsTopic
+  JobExecutionSnsTopicLambdaErrorAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Condition: CreateProductionResources
+    Properties:
+      ActionsEnabled: true
+      AlarmName: "[Porter][Execute][Lambda] Elevated error volume"
+      AlarmActions:
+        - !Ref OpsErrorMessagesSnsTopicArn
+      InsufficientDataActions:
+        - !Ref OpsErrorMessagesSnsTopicArn
+      OKActions:
+        - !Ref OpsErrorMessagesSnsTopicArn
+      AlarmDescription: >-
+        Job execution function has encountered an invocation error
+      ComparisonOperator: GreaterThanThreshold
+      EvaluationPeriods: 1
+      MetricName: Errors
+      Namespace: AWS/Lambda
+      Period: 60
+      Statistic: Sum
+      Threshold: 1
+      TreatMissingData: notBreaching
+      Dimensions:
+        - Name: FunctionName
+          Value: !Ref JobExecutionSnsTopicLambdaFunction
   # VPC
   VPC:
     Type: AWS::EC2::VPC
@@ -487,6 +519,31 @@ Resources:
         prx:cloudformation:stack-id: !Ref AWS::StackId
       Timeout: 4
       Tracing: Active
+  NormalizeInputLambdaErrorAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Condition: CreateProductionResources
+    Properties:
+      ActionsEnabled: true
+      AlarmName: "[Porter][Normalize][Lambda] Elevated error volume"
+      AlarmActions:
+        - !Ref OpsErrorMessagesSnsTopicArn
+      InsufficientDataActions:
+        - !Ref OpsErrorMessagesSnsTopicArn
+      OKActions:
+        - !Ref OpsErrorMessagesSnsTopicArn
+      AlarmDescription: >-
+        Normalize function has encountered an invocation error
+      ComparisonOperator: GreaterThanThreshold
+      EvaluationPeriods: 1
+      MetricName: LambdaFunctionsFailed
+      Namespace: AWS/States
+      Period: 60
+      Statistic: Sum
+      Threshold: 1
+      TreatMissingData: notBreaching
+      Dimensions:
+        - Name: FunctionName
+          Value: !Ref NormalizeInputLambdaFunction
   # Ingest Lambda
   IngestLambdaIamRole:
     Type: AWS::IAM::Role
@@ -561,6 +618,31 @@ Resources:
         prx:cloudformation:stack-id: !Ref AWS::StackId
       Timeout: 90
       Tracing: Active
+  IngestLambdaErrorAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Condition: CreateProductionResources
+    Properties:
+      ActionsEnabled: true
+      AlarmName: "[Porter][Ingest][Lambda] Elevated error volume"
+      AlarmActions:
+        - !Ref OpsErrorMessagesSnsTopicArn
+      InsufficientDataActions:
+        - !Ref OpsErrorMessagesSnsTopicArn
+      OKActions:
+        - !Ref OpsErrorMessagesSnsTopicArn
+      AlarmDescription: >-
+        Ingest function has encountered an invocation error
+      ComparisonOperator: GreaterThanThreshold
+      EvaluationPeriods: 1
+      MetricName: LambdaFunctionsFailed
+      Namespace: AWS/States
+      Period: 60
+      Statistic: Sum
+      Threshold: 1
+      TreatMissingData: notBreaching
+      Dimensions:
+        - Name: FunctionName
+          Value: !Ref IngestLambdaFunction
   # Source Type Lambda
   SourceTypeLambdaIamRole:
     Type: AWS::IAM::Role
@@ -618,6 +700,31 @@ Resources:
         prx:cloudformation:stack-id: !Ref AWS::StackId
       Timeout: 8
       Tracing: Active
+  SourceTypeLambdaErrorAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Condition: CreateProductionResources
+    Properties:
+      ActionsEnabled: true
+      AlarmName: "[Porter][Type][Lambda] Elevated error volume"
+      AlarmActions:
+        - !Ref OpsErrorMessagesSnsTopicArn
+      InsufficientDataActions:
+        - !Ref OpsErrorMessagesSnsTopicArn
+      OKActions:
+        - !Ref OpsErrorMessagesSnsTopicArn
+      AlarmDescription: >-
+        Source type function has encountered an invocation error
+      ComparisonOperator: GreaterThanThreshold
+      EvaluationPeriods: 1
+      MetricName: LambdaFunctionsFailed
+      Namespace: AWS/States
+      Period: 60
+      Statistic: Sum
+      Threshold: 1
+      TreatMissingData: notBreaching
+      Dimensions:
+        - Name: FunctionName
+          Value: !Ref SourceTypeLambdaFunction
   # Inspect Lambda
   InspectMediaLambdaIamRole:
     Type: AWS::IAM::Role
@@ -673,6 +780,31 @@ Resources:
         prx:cloudformation:stack-id: !Ref AWS::StackId
       Timeout: 64
       Tracing: Active
+  InspectMediaLambdaErrorAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Condition: CreateProductionResources
+    Properties:
+      ActionsEnabled: true
+      AlarmName: "[Porter][Inspect][Lambda] Elevated error volume"
+      AlarmActions:
+        - !Ref OpsErrorMessagesSnsTopicArn
+      InsufficientDataActions:
+        - !Ref OpsErrorMessagesSnsTopicArn
+      OKActions:
+        - !Ref OpsErrorMessagesSnsTopicArn
+      AlarmDescription: >-
+        Inspect media function has encountered an invocation error
+      ComparisonOperator: GreaterThanThreshold
+      EvaluationPeriods: 1
+      MetricName: LambdaFunctionsFailed
+      Namespace: AWS/States
+      Period: 60
+      Statistic: Sum
+      Threshold: 1
+      TreatMissingData: notBreaching
+      Dimensions:
+        - Name: FunctionName
+          Value: !Ref InspectMediaLambdaFunction
   # Copy Lambda
   CopyLambdaIamRole:
     Type: AWS::IAM::Role
@@ -743,6 +875,31 @@ Resources:
         prx:cloudformation:stack-id: !Ref AWS::StackId
       Timeout: 32
       Tracing: Active
+  CopyLambdaErrorAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Condition: CreateProductionResources
+    Properties:
+      ActionsEnabled: true
+      AlarmName: "[Porter][Copy][Lambda] Elevated error volume"
+      AlarmActions:
+        - !Ref OpsErrorMessagesSnsTopicArn
+      InsufficientDataActions:
+        - !Ref OpsErrorMessagesSnsTopicArn
+      OKActions:
+        - !Ref OpsErrorMessagesSnsTopicArn
+      AlarmDescription: >-
+        Copy function has encountered an invocation error
+      ComparisonOperator: GreaterThanThreshold
+      EvaluationPeriods: 1
+      MetricName: LambdaFunctionsFailed
+      Namespace: AWS/States
+      Period: 60
+      Statistic: Sum
+      Threshold: 1
+      TreatMissingData: notBreaching
+      Dimensions:
+        - Name: FunctionName
+          Value: !Ref CopyLambdaFunction
   # Image Manipulation Lambda
   ImageTransformLambdaIamRole:
     Type: AWS::IAM::Role
@@ -814,6 +971,31 @@ Resources:
         prx:cloudformation:stack-id: !Ref AWS::StackId
       Timeout: 16
       Tracing: Active
+  ImageTransformLambdaErrorAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Condition: CreateProductionResources
+    Properties:
+      ActionsEnabled: true
+      AlarmName: "[Porter][Image][Lambda] Elevated error volume"
+      AlarmActions:
+        - !Ref OpsErrorMessagesSnsTopicArn
+      InsufficientDataActions:
+        - !Ref OpsErrorMessagesSnsTopicArn
+      OKActions:
+        - !Ref OpsErrorMessagesSnsTopicArn
+      AlarmDescription: >-
+        Image transform function has encountered an invocation error
+      ComparisonOperator: GreaterThanThreshold
+      EvaluationPeriods: 1
+      MetricName: LambdaFunctionsFailed
+      Namespace: AWS/States
+      Period: 60
+      Statistic: Sum
+      Threshold: 1
+      TreatMissingData: notBreaching
+      Dimensions:
+        - Name: FunctionName
+          Value: !Ref ImageTransformLambdaFunction
   # Callback Lambda
   CallbackLambdaIamRole:
     Type: AWS::IAM::Role
@@ -880,6 +1062,31 @@ Resources:
         prx:cloudformation:stack-id: !Ref AWS::StackId
       Timeout: 4
       Tracing: Active
+  CallbackLambdaErrorAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Condition: CreateProductionResources
+    Properties:
+      ActionsEnabled: true
+      AlarmName: "[Porter][Callback][Lambda] Elevated error volume"
+      AlarmActions:
+        - !Ref OpsErrorMessagesSnsTopicArn
+      InsufficientDataActions:
+        - !Ref OpsErrorMessagesSnsTopicArn
+      OKActions:
+        - !Ref OpsErrorMessagesSnsTopicArn
+      AlarmDescription: >-
+        Callback function has encountered an invocation error
+      ComparisonOperator: GreaterThanThreshold
+      EvaluationPeriods: 1
+      MetricName: LambdaFunctionsFailed
+      Namespace: AWS/States
+      Period: 60
+      Statistic: Sum
+      Threshold: 1
+      TreatMissingData: notBreaching
+      Dimensions:
+        - Name: FunctionName
+          Value: !Ref CallbackLambdaFunction
   # Step Functions
   StateMachineIamRole:
     Type: AWS::IAM::Role
@@ -1429,7 +1636,7 @@ Resources:
         - !Ref OpsWarnMessagesSnsTopicArn
       OKActions:
         - !Ref OpsWarnMessagesSnsTopicArn
-      AlarmDescription: >
+      AlarmDescription: >-
         Porter state machine has experienced execution time outs
       ComparisonOperator: GreaterThanOrEqualToThreshold
       EvaluationPeriods: 1
@@ -1453,7 +1660,7 @@ Resources:
         - !Ref OpsWarnMessagesSnsTopicArn
       OKActions:
         - !Ref OpsWarnMessagesSnsTopicArn
-      AlarmDescription: >
+      AlarmDescription: >-
         Porter state machine is being throttled
       ComparisonOperator: GreaterThanOrEqualToThreshold
       EvaluationPeriods: 1
@@ -1477,7 +1684,7 @@ Resources:
         - !Ref OpsErrorMessagesSnsTopicArn
       OKActions:
         - !Ref OpsErrorMessagesSnsTopicArn
-      AlarmDescription: >
+      AlarmDescription: >-
         Porter state machine experienced uncaught errors
       ComparisonOperator: GreaterThanOrEqualToThreshold
       EvaluationPeriods: 1
