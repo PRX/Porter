@@ -1458,6 +1458,15 @@ Resources:
                                     "Name": "STATE_MACHINE_DESTINATION_FORMAT",
                                     "Value.$": "$.Task.Format"
                                   }, {
+                                    "Name": "STATE_MACHINE_FFMPEG_GLOBAL_OPTIONS",
+                                    "Value.$": "$.Task.FFmpeg.GlobalOptions"
+                                  }, {
+                                    "Name": "STATE_MACHINE_FFMPEG_INPUT_FILE_OPTIONS",
+                                    "Value.$": "$.Task.FFmpeg.InputFileOptions"
+                                  }, {
+                                    "Name": "STATE_MACHINE_FFMPEG_OUTPUT_FILE_OPTIONS",
+                                    "Value.$": "$.Task.FFmpeg.OutputFileOptions"
+                                  }, {
                                     "Name": "STATE_MACHINE_JOB_ID",
                                     "Value.$": "$.Job.Id"
                                   }

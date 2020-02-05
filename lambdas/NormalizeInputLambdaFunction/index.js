@@ -15,10 +15,20 @@
 exports.handler = async (event) => {
   console.log(JSON.stringify({ msg: 'Unmodified input', event: event }));
 
-  // Set Job.Callbacks to an empty array, unless it's already an array.
+  // Set Job.Tasks to an empty array, unless it's already an array.
   if (!event.Job.hasOwnProperty('Tasks') || !Array.isArray(event.Job.Tasks)) {
     event.Job.Tasks = [];
   }
+
+  // Make sure all Transcode tasks have all three FFmpeg options
+  event.Job.Tasks.forEach((task) => {
+    if (task.Type !== 'Transcode') { return; }
+
+    if (!task.hasOwnProperty('FFmpeg')) { task.FFmpeg = {}; }
+    if (!task.FFmpeg.hasOwnProperty('GlobalOptions')) { task.FFmpeg.GlobalOptions = ''; }
+    if (!task.FFmpeg.hasOwnProperty('InputFileOptions')) { task.FFmpeg.InputFileOptions = ''; }
+    if (!task.FFmpeg.hasOwnProperty('OutputFileOptions')) { task.FFmpeg.OutputFileOptions = ''; }
+  });
 
   // Set Job.Callbacks to an empty array, unless it's already an array.
   if (!event.Job.hasOwnProperty('Callbacks') || !Array.isArray(event.Job.Callbacks)) {

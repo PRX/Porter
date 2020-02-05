@@ -312,11 +312,11 @@ Output:
 
 ### Transcode (WIP)
 
-`Transcode` tasks encode and otherwise manipulate the source file. These are intended for audio and video source files. The desired transcoding are declared as `Encodings`, and each encoding includes the properties of the output file, and a single destination for the output file to be sent to. A transcode task can include any number of encodings. Currently the only supported destination mode is `AWS/S3`.
+`Transcode` tasks encode and otherwise manipulate the source file. These are intended for audio and video source files, though could operate on any file formats supported by FFmpeg. A job can include any number of transcode tasks; each will perform the operation against the original state of the source file. Currently the only supported destination mode is `AWS/S3`.
 
-The `Format` is used to explicitly set the output format of the encoding operation; it is not implictly determined by the file extension. The available formats are indicted [in this list](https://johnvansickle.com/ffmpeg/release-readme.txt) with an `E`.
+A `Format` is required, and is used to explicitly set the output format of the encoding operation; it is not implictly determined by the file extension. The available formats are indicted [in this list](https://johnvansickle.com/ffmpeg/release-readme.txt) with an `E`.
 
-If `Job.Transcode.Encodings` is not an array with at least one element, the state machine will act as though no copy tasks were included in the job.
+The `FFmpeg` property is optional. When included, the `GlobalOptions`, `InputFileOptions`, and `OutputFileOptions` properties are also optional. The task constructs a call to FFmpeg that looks like `ffmpeg [global opts] [input file opts] -i input [output file opts] -f [format] output`.
 
 Input:
 
@@ -324,6 +324,11 @@ Input:
 {
     "Type": "Transcode",
     "Format": "flac",
+    "FFmpeg": {
+        "GlobalOptions": "-loglevel info",
+        "InputFileOptions": "-t 500",
+        "OutputFileOptions": "-metadata title=some_title"
+    }
     "Destination": {
         "Mode": "AWS/S3",
         "BucketName": "myBucket",
