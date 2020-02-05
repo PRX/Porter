@@ -7,6 +7,7 @@ const s3 = new AWS.S3({ apiVersion: '2006-03-01' });
 // https://docs.aws.amazon.com/AWSJavaScriptSDK/latest/AWS/S3.html#copyObject-property
 // https://docs.aws.amazon.com/AmazonS3/latest/API/RESTObjectCOPY.html
 // CopySource expects: "/sourcebucket/path/to/object.extension"
+// CopySource expects "/sourcebucket/path/to/object.extension" to be URI-encoded
 async function awsS3copyObject(event) {
   console.log(JSON.stringify({
     msg: 'S3 Copy',
@@ -15,7 +16,7 @@ async function awsS3copyObject(event) {
   }));
 
   const params = {
-    CopySource: `/${event.Artifact.BucketName}/${event.Artifact.ObjectKey}`,
+    CopySource: encodeURI(`/${event.Artifact.BucketName}/${event.Artifact.ObjectKey}`),
     Bucket: event.Task.BucketName,
     Key: event.Task.ObjectKey
   };
