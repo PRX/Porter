@@ -20,13 +20,11 @@ function httpRequest(event, message, redirectCount) {
       body = JSON.stringify(message);
     } else if (event.Callback['Content-Type'] === 'application/x-www-form-urlencoded') {
       body = querystring.encode(message);
-    } else {
-      reject(new Error('Unknown HTTP Content-Type'));
-    }
-
-    if (event.Callback.Method === 'GET') {
+    } else if (event.Callback.Method === 'GET') {
       // TODO This will clobber an existing query string
       options.search = `${event.Callback.Name}=${querystring.encode(message)}`;
+    } else {
+      reject(new Error('Unknown HTTP Content-Type'));
     }
 
     options.headers['Content-Type'] = event.Callback['Content-Type'];
