@@ -993,6 +993,73 @@ Resources:
       Dimensions:
         - Name: FunctionName
           Value: !Ref CopyLambdaFunction
+  # Transcode Output Lambda
+  TranscodeTaskOutputLambdaIamRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+            - Effect: Allow
+              Principal:
+                Service:
+                  - lambda.amazonaws.com
+              Action:
+                - sts:AssumeRole
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+        - arn:aws:iam::aws:policy/AWSXrayWriteOnlyAccess
+      Path: /
+      Tags:
+        - Key: Project
+          Value: Porter
+        - Key: prx:cloudformation:stack-name
+          Value: !Ref AWS::StackName
+        - Key: prx:cloudformation:stack-id
+          Value: !Ref AWS::StackId
+  TranscodeTaskOutputLambdaFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: lambdas/TranscodeTaskOutputLambdaFunction/
+      Description: >-
+        Formats the output of a transcode task result
+      Handler: index.handler
+      Layers:
+        - !Ref AwsXraySdkLambdaLayerVersionArn
+      MemorySize: 128
+      Role: !GetAtt TranscodeTaskOutputLambdaIamRole.Arn
+      Runtime: nodejs12.x
+      Tags:
+        Project: Porter
+        prx:cloudformation:stack-name: !Ref AWS::StackName
+        prx:cloudformation:stack-id: !Ref AWS::StackId
+      Timeout: 4
+      Tracing: Active
+  TranscodeTaskOutputLambdaErrorAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Condition: CreateProductionResources
+    Properties:
+      ActionsEnabled: true
+      AlarmName: "[Porter][Transcode][Lambda] Elevated error volume"
+      AlarmActions:
+        - !Ref OpsErrorMessagesSnsTopicArn
+      InsufficientDataActions:
+        - !Ref OpsErrorMessagesSnsTopicArn
+      OKActions:
+        - !Ref OpsErrorMessagesSnsTopicArn
+      AlarmDescription: >-
+        Transcode output format function has encountered an invocation error
+      ComparisonOperator: GreaterThanThreshold
+      EvaluationPeriods: 1
+      MetricName: LambdaFunctionsFailed
+      Namespace: AWS/States
+      Period: 60
+      Statistic: Sum
+      Threshold: 1
+      TreatMissingData: notBreaching
+      Dimensions:
+        - Name: FunctionName
+          Value: !Ref CopyLambdaFunction
   # Image Manipulation Lambda
   ImageTransformLambdaIamRole:
     Type: AWS::IAM::Role
@@ -1359,6 +1426,7 @@ Resources:
                   - !GetAtt TranscriptionJobStartLambdaFunction.Arn
                   - !GetAtt TranscriptionJobResultsLambdaFunction.Arn
                   - !GetAtt CallbackLambdaFunction.Arn
+                  - !GetAtt TranscodeTaskOutputLambdaFunction.Arn
         - PolicyName: PassRoleToEcsPolicy
           PolicyDocument:
             Version: "2012-10-17"
@@ -1730,6 +1798,27 @@ Resources:
                         },
                         "ResultPath": "$.TaskResult",
                         "OutputPath": "$",
+                        "Next": "FormatTranscodeTaskOuput",
+                        "Retry": [
+                          {
+                            "ErrorEquals": ["States.ALL"],
+                            "IntervalSeconds": 5,
+                            "MaxAttempts": 3,
+                            "BackoffRate": 2
+                          }
+                        ]
+                      },
+                      "FormatTranscodeTaskOuput": {
+                        "Type": "Task",
+                        "Comment": "Formats the output of a transcode task",
+                        "Resource": "${TranscodeTaskOutputLambdaFunctionArn}",
+                        "InputPath": "$",
+                        "Parameters": {
+                          "Job": { "Id.$": "$.Job.Id" },
+                          "Task.$": "$.Task"
+                        },
+                        "ResultPath": "$.TaskResult",
+                        "OutputPath": "$",
                         "Next": "SendTaskCallbacks",
                         "Retry": [
                           {
@@ -1916,6 +2005,7 @@ Resources:
             TranscriptionJobResultsLambdaFunctionArn: !GetAtt TranscriptionJobResultsLambdaFunction.Arn
             EcsClusterArn: !GetAtt EcsCluster.Arn
             TranscodeEcsTaskDefinitionArn: !Ref TranscodeEcsTaskDefinition
+            TranscodeTaskOutputLambdaFunctionArn: !GetAtt TranscodeTaskOutputLambdaFunction.Arn
             VpcSubnet1: !Ref Subnet1
             VpcSubnet2: !Ref Subnet2
             TranscodeContainerName: !Sub ${AWS::StackName}-transcode-container
