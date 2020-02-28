@@ -99,14 +99,14 @@ The output of the Lambda function is added to the `Artifact` object under the `D
 
 This is another `Map` state, which iterates over every element of the `Job.Tasks` array.
 
-The `Parameters` for each iteration are constructed to provide all the information needed to execute each task. That includes: the job ID, the execution ID, the artifact, the current value of the iterator (i.e., a task), and all the callback endpoints defined on the job.
+The `Parameters` for each iteration are constructed to provide all the information needed to execute each task. That includes: the job ID, the execution ID, the artifact, the current value of the iterator (i.e., a task), the current index of the iterator, and all the callback endpoints defined on the job.
 
 The result of the iterator (an array of each task's results) is assigned to `$.TaskResults`.
 
 #### Map
 
 - `InputPath`: `$`, `{ Job: { … }, Artifact: { … } }`
-- `Parameters`: `{ Job, Execution, Artifact, Task, Callbacks }`
+- `Parameters`: `{ Job, Execution, Artifact, Index, Task, Callbacks }`
 - `ResultPath`: `$.TaskResults`, `{ Job: { … }, Artifact: { … }, TaskResults: [ … ] }`
 - `OutputPath`: `$`, `{ Job: { … }, Artifact: { … }, TaskResults: [ … ] }`
 
