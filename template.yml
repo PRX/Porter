@@ -194,6 +194,31 @@ Resources:
         prx:cloudformation:stack-name: !Ref AWS::StackName
         prx:cloudformation:stack-id: !Ref AWS::StackId
       Timeout: 4
+  TranscriptionJobStateChangeLambdaErrorAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Condition: CreateProductionResources
+    Properties:
+      ActionsEnabled: true
+      AlarmName: "[Porter][Callback][Lambda] Elevated error volume"
+      AlarmActions:
+        - !Ref OpsErrorMessagesSnsTopicArn
+      InsufficientDataActions:
+        - !Ref OpsErrorMessagesSnsTopicArn
+      OKActions:
+        - !Ref OpsErrorMessagesSnsTopicArn
+      AlarmDescription: >-
+        Trascription job start function has encountered an invocation error
+      ComparisonOperator: GreaterThanThreshold
+      EvaluationPeriods: 1
+      MetricName: LambdaFunctionsFailed
+      Namespace: AWS/States
+      Period: 60
+      Statistic: Sum
+      Threshold: 0
+      TreatMissingData: notBreaching
+      Dimensions:
+        - Name: FunctionName
+          Value: !Ref TranscriptionJobStateChangeLambdaFunction
   TranscriptionJobEventsRuleLambdaPermission:
     Type: AWS::Lambda::Permission
     Properties:
@@ -1223,6 +1248,31 @@ Resources:
         prx:cloudformation:stack-id: !Ref AWS::StackId
       Timeout: 4
       Tracing: Active
+  TranscriptionJobStartLambdaErrorAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Condition: CreateProductionResources
+    Properties:
+      ActionsEnabled: true
+      AlarmName: "[Porter][Callback][Lambda] Elevated error volume"
+      AlarmActions:
+        - !Ref OpsErrorMessagesSnsTopicArn
+      InsufficientDataActions:
+        - !Ref OpsErrorMessagesSnsTopicArn
+      OKActions:
+        - !Ref OpsErrorMessagesSnsTopicArn
+      AlarmDescription: >-
+        Trascription job start function has encountered an invocation error
+      ComparisonOperator: GreaterThanThreshold
+      EvaluationPeriods: 1
+      MetricName: LambdaFunctionsFailed
+      Namespace: AWS/States
+      Period: 60
+      Statistic: Sum
+      Threshold: 0
+      TreatMissingData: notBreaching
+      Dimensions:
+        - Name: FunctionName
+          Value: !Ref TranscriptionJobStartLambdaIamRole
   # Transcribe Job Results Lambda
   TranscriptionJobResultsLambdaIamRole:
     Type: AWS::IAM::Role
@@ -1301,6 +1351,31 @@ Resources:
         prx:cloudformation:stack-id: !Ref AWS::StackId
       Timeout: 8
       Tracing: Active
+  TranscriptionJobResultsLambdaErrorAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Condition: CreateProductionResources
+    Properties:
+      ActionsEnabled: true
+      AlarmName: "[Porter][Callback][Lambda] Elevated error volume"
+      AlarmActions:
+        - !Ref OpsErrorMessagesSnsTopicArn
+      InsufficientDataActions:
+        - !Ref OpsErrorMessagesSnsTopicArn
+      OKActions:
+        - !Ref OpsErrorMessagesSnsTopicArn
+      AlarmDescription: >-
+        Trascription job results function has encountered an invocation error
+      ComparisonOperator: GreaterThanThreshold
+      EvaluationPeriods: 1
+      MetricName: LambdaFunctionsFailed
+      Namespace: AWS/States
+      Period: 60
+      Statistic: Sum
+      Threshold: 0
+      TreatMissingData: notBreaching
+      Dimensions:
+        - Name: FunctionName
+          Value: !Ref TranscriptionJobResultsLambdaIamRole
   # Callback Lambda
   CallbackLambdaIamRole:
     Type: AWS::IAM::Role
