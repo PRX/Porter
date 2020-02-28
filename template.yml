@@ -128,7 +128,7 @@ Resources:
       Namespace: AWS/Lambda
       Period: 60
       Statistic: Sum
-      Threshold: 1
+      Threshold: 0
       TreatMissingData: notBreaching
       Dimensions:
         - Name: FunctionName
@@ -657,7 +657,7 @@ Resources:
       Namespace: AWS/States
       Period: 60
       Statistic: Sum
-      Threshold: 1
+      Threshold: 0
       TreatMissingData: notBreaching
       Dimensions:
         - Name: FunctionName
@@ -756,7 +756,7 @@ Resources:
       Namespace: AWS/States
       Period: 60
       Statistic: Sum
-      Threshold: 1
+      Threshold: 0
       TreatMissingData: notBreaching
       Dimensions:
         - Name: FunctionName
@@ -838,7 +838,7 @@ Resources:
       Namespace: AWS/States
       Period: 60
       Statistic: Sum
-      Threshold: 1
+      Threshold: 0
       TreatMissingData: notBreaching
       Dimensions:
         - Name: FunctionName
@@ -918,7 +918,7 @@ Resources:
       Namespace: AWS/States
       Period: 60
       Statistic: Sum
-      Threshold: 1
+      Threshold: 0
       TreatMissingData: notBreaching
       Dimensions:
         - Name: FunctionName
@@ -1013,7 +1013,7 @@ Resources:
       Namespace: AWS/States
       Period: 60
       Statistic: Sum
-      Threshold: 1
+      Threshold: 0
       TreatMissingData: notBreaching
       Dimensions:
         - Name: FunctionName
@@ -1080,7 +1080,7 @@ Resources:
       Namespace: AWS/States
       Period: 60
       Statistic: Sum
-      Threshold: 1
+      Threshold: 0
       TreatMissingData: notBreaching
       Dimensions:
         - Name: FunctionName
@@ -1176,7 +1176,7 @@ Resources:
       Namespace: AWS/States
       Period: 60
       Statistic: Sum
-      Threshold: 1
+      Threshold: 0
       TreatMissingData: notBreaching
       Dimensions:
         - Name: FunctionName
@@ -1462,7 +1462,7 @@ Resources:
       Namespace: AWS/States
       Period: 60
       Statistic: Sum
-      Threshold: 1
+      Threshold: 0
       TreatMissingData: notBreaching
       Dimensions:
         - Name: FunctionName
@@ -2111,7 +2111,7 @@ Resources:
       Namespace: AWS/States
       Period: 60
       Statistic: Sum
-      Threshold: 1
+      Threshold: 0
       TreatMissingData: notBreaching
       Dimensions:
         - Name: StateMachineArn
@@ -2135,7 +2135,7 @@ Resources:
       Namespace: AWS/States
       Period: 60
       Statistic: Sum
-      Threshold: 1
+      Threshold: 0
       TreatMissingData: notBreaching
       Dimensions:
         - Name: StateMachineArn
@@ -2159,7 +2159,7 @@ Resources:
       Namespace: AWS/States
       Period: 60
       Statistic: Sum
-      Threshold: 1
+      Threshold: 0
       TreatMissingData: notBreaching
       Dimensions:
         - Name: StateMachineArn
