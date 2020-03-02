@@ -199,7 +199,7 @@ Resources:
     Condition: CreateProductionResources
     Properties:
       ActionsEnabled: true
-      AlarmName: "[Porter][Callback][Lambda] Elevated error volume"
+      AlarmName: "[Porter][Transcribe Change][Lambda] Elevated error volume"
       AlarmActions:
         - !Ref OpsErrorMessagesSnsTopicArn
       InsufficientDataActions:
@@ -1253,7 +1253,7 @@ Resources:
     Condition: CreateProductionResources
     Properties:
       ActionsEnabled: true
-      AlarmName: "[Porter][Callback][Lambda] Elevated error volume"
+      AlarmName: "[Porter][Transcribe Start][Lambda] Elevated error volume"
       AlarmActions:
         - !Ref OpsErrorMessagesSnsTopicArn
       InsufficientDataActions:
@@ -1356,7 +1356,7 @@ Resources:
     Condition: CreateProductionResources
     Properties:
       ActionsEnabled: true
-      AlarmName: "[Porter][Callback][Lambda] Elevated error volume"
+      AlarmName: "[Porter][Transcribe Result][Lambda] Elevated error volume"
       AlarmActions:
         - !Ref OpsErrorMessagesSnsTopicArn
       InsufficientDataActions:
@@ -1514,7 +1514,7 @@ Resources:
     Condition: CreateProductionResources
     Properties:
       ActionsEnabled: true
-      AlarmName: "[Porter][Normalize][Lambda] Elevated error volume"
+      AlarmName: "[Porter][Normalize Out][Lambda] Elevated error volume"
       AlarmActions:
         - !Ref OpsErrorMessagesSnsTopicArn
       InsufficientDataActions:
