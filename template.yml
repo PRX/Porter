@@ -12,6 +12,8 @@ Parameters:
     AllowedValues:
       - Staging
       - Production
+  TranscodeJobNamePrefix:
+    Type: String
   OpsWarnMessagesSnsTopicArn:
     Type: String
   OpsErrorMessagesSnsTopicArn:
@@ -126,11 +128,127 @@ Resources:
       Namespace: AWS/Lambda
       Period: 60
       Statistic: Sum
-      Threshold: 1
+      Threshold: 0
       TreatMissingData: notBreaching
       Dimensions:
         - Name: FunctionName
           Value: !Ref JobExecutionSnsTopicLambdaFunction
+  # Transcode Job Watcher
+  # Transcode tasks are submitted async, but the state machine will wait for a
+  # task token to be sent back as part of a SendTaskSuccess or SendTaskFailure
+  # call. The job watcher function is triggered by changes to transcribe jobs,
+  # and sends the appropriate task result based on the result of the job, at
+  # which point the execution of the state machine will proceed.
+  TranscriptionJobStateChangeLambdaIamRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+                - lambda.amazonaws.com
+            Action:
+              - sts:AssumeRole
+      Path: "/"
+      Policies:
+        - PolicyName: S3ArtifactBucketPolicy
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Effect: Allow
+                Action:
+                  - s3:GetObject
+                Resource:
+                  - !Sub arn:aws:s3:::${ArtifactBucket}/*
+        - PolicyName: StepFunctions
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Effect: Allow
+                Action:
+                  - states:SendTaskFailure
+                  - states:SendTaskSuccess
+                Resource:
+                  - !Ref StateMachine
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+  TranscriptionJobStateChangeLambdaFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: lambdas/TranscriptionJobStateChangeLambdaFunction/
+      Description: Handles transcription job state change events
+      Environment:
+        Variables:
+          ARTIFACT_BUCKET_NAME: !Ref ArtifactBucket
+          TRANSCODE_JOB_NAME_PREFIX: !Ref TranscodeJobNamePrefix
+      Handler: index.handler
+      Layers:
+        - !Ref AwsXraySdkLambdaLayerVersionArn
+      MemorySize: 128
+      Role: !GetAtt TranscriptionJobStateChangeLambdaIamRole.Arn
+      Runtime: nodejs12.x
+      Tags:
+        Project: Porter
+        prx:cloudformation:stack-name: !Ref AWS::StackName
+        prx:cloudformation:stack-id: !Ref AWS::StackId
+      Timeout: 4
+  TranscriptionJobStateChangeLambdaErrorAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Condition: CreateProductionResources
+    Properties:
+      ActionsEnabled: true
+      AlarmName: "[Porter][Callback][Lambda] Elevated error volume"
+      AlarmActions:
+        - !Ref OpsErrorMessagesSnsTopicArn
+      InsufficientDataActions:
+        - !Ref OpsErrorMessagesSnsTopicArn
+      OKActions:
+        - !Ref OpsErrorMessagesSnsTopicArn
+      AlarmDescription: >-
+        Trascription job start function has encountered an invocation error
+      ComparisonOperator: GreaterThanThreshold
+      EvaluationPeriods: 1
+      MetricName: LambdaFunctionsFailed
+      Namespace: AWS/States
+      Period: 60
+      Statistic: Sum
+      Threshold: 0
+      TreatMissingData: notBreaching
+      Dimensions:
+        - Name: FunctionName
+          Value: !Ref TranscriptionJobStateChangeLambdaFunction
+  TranscriptionJobEventsRuleLambdaPermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      Action: lambda:InvokeFunction
+      FunctionName: !GetAtt TranscriptionJobStateChangeLambdaFunction.Arn
+      Principal: events.amazonaws.com
+      SourceArn: !GetAtt TranscriptionJobEventsRule.Arn
+  TranscriptionJobEventsRule:
+    Type: AWS::Events::Rule
+    Properties:
+      Description: Monitors Amazon Transcribe for job state changes
+      EventPattern: |
+        {
+          "source": [
+            "aws.transcribe"
+          ],
+          "detail-type": [
+            "Transcribe Job State Change"
+          ],
+          "detail": {
+            "TranscriptionJobStatus": [
+              "COMPLETED",
+              "FAILED"
+            ]
+          }
+        }
+      State: ENABLED
+      Targets:
+        - Arn: !GetAtt TranscriptionJobStateChangeLambdaFunction.Arn
+          Id: !Sub ${AWS::StackName}.Transcribe.JobState
   # VPC
   VPC:
     Type: AWS::EC2::VPC
@@ -539,7 +657,7 @@ Resources:
       Namespace: AWS/States
       Period: 60
       Statistic: Sum
-      Threshold: 1
+      Threshold: 0
       TreatMissingData: notBreaching
       Dimensions:
         - Name: FunctionName
@@ -638,7 +756,7 @@ Resources:
       Namespace: AWS/States
       Period: 60
       Statistic: Sum
-      Threshold: 1
+      Threshold: 0
       TreatMissingData: notBreaching
       Dimensions:
         - Name: FunctionName
@@ -720,7 +838,7 @@ Resources:
       Namespace: AWS/States
       Period: 60
       Statistic: Sum
-      Threshold: 1
+      Threshold: 0
       TreatMissingData: notBreaching
       Dimensions:
         - Name: FunctionName
@@ -800,7 +918,7 @@ Resources:
       Namespace: AWS/States
       Period: 60
       Statistic: Sum
-      Threshold: 1
+      Threshold: 0
       TreatMissingData: notBreaching
       Dimensions:
         - Name: FunctionName
@@ -895,7 +1013,7 @@ Resources:
       Namespace: AWS/States
       Period: 60
       Statistic: Sum
-      Threshold: 1
+      Threshold: 0
       TreatMissingData: notBreaching
       Dimensions:
         - Name: FunctionName
@@ -962,7 +1080,7 @@ Resources:
       Namespace: AWS/States
       Period: 60
       Statistic: Sum
-      Threshold: 1
+      Threshold: 0
       TreatMissingData: notBreaching
       Dimensions:
         - Name: FunctionName
@@ -1058,11 +1176,206 @@ Resources:
       Namespace: AWS/States
       Period: 60
       Statistic: Sum
-      Threshold: 1
+      Threshold: 0
       TreatMissingData: notBreaching
       Dimensions:
         - Name: FunctionName
           Value: !Ref ImageTransformLambdaFunction
+  # Transcribe Start Lambda
+  TranscriptionJobStartLambdaIamRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+            - Effect: Allow
+              Principal:
+                Service:
+                  - lambda.amazonaws.com
+              Action:
+                - sts:AssumeRole
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+        - arn:aws:iam::aws:policy/AWSXrayWriteOnlyAccess
+      Path: /
+      Policies:
+        - PolicyName: ArtifactBucketWriteAccess
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Effect: Allow
+                Action:
+                  - s3:Get*
+                  - s3:Put*
+                Resource:
+                  - !Sub ${ArtifactBucket.Arn}/*
+        - PolicyName: TranscribeJobStartPolicy
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Action:
+                  - transcribe:GetTranscriptionJob
+                  - transcribe:StartTranscriptionJob
+                Effect: Allow
+                Resource:
+                  - "*"
+      Tags:
+        - Key: Project
+          Value: Porter
+        - Key: prx:cloudformation:stack-name
+          Value: !Ref AWS::StackName
+        - Key: prx:cloudformation:stack-id
+          Value: !Ref AWS::StackId
+  TranscriptionJobStartLambdaFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: lambdas/TranscriptionJobStartLambdaFunction/
+      Description: >-
+        Starts a transcription job for an artifact file
+      Environment:
+        Variables:
+          ARTIFACT_BUCKET_NAME: !Ref ArtifactBucket
+          TRANSCODE_JOB_NAME_PREFIX: !Ref TranscodeJobNamePrefix
+      Handler: index.handler
+      Layers:
+        - !Ref AwsXraySdkLambdaLayerVersionArn
+      MemorySize: 128
+      Role: !GetAtt TranscriptionJobStartLambdaIamRole.Arn
+      Runtime: nodejs12.x
+      Tags:
+        Project: Porter
+        prx:cloudformation:stack-name: !Ref AWS::StackName
+        prx:cloudformation:stack-id: !Ref AWS::StackId
+      Timeout: 4
+      Tracing: Active
+  TranscriptionJobStartLambdaErrorAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Condition: CreateProductionResources
+    Properties:
+      ActionsEnabled: true
+      AlarmName: "[Porter][Callback][Lambda] Elevated error volume"
+      AlarmActions:
+        - !Ref OpsErrorMessagesSnsTopicArn
+      InsufficientDataActions:
+        - !Ref OpsErrorMessagesSnsTopicArn
+      OKActions:
+        - !Ref OpsErrorMessagesSnsTopicArn
+      AlarmDescription: >-
+        Trascription job start function has encountered an invocation error
+      ComparisonOperator: GreaterThanThreshold
+      EvaluationPeriods: 1
+      MetricName: LambdaFunctionsFailed
+      Namespace: AWS/States
+      Period: 60
+      Statistic: Sum
+      Threshold: 0
+      TreatMissingData: notBreaching
+      Dimensions:
+        - Name: FunctionName
+          Value: !Ref TranscriptionJobStartLambdaIamRole
+  # Transcribe Job Results Lambda
+  TranscriptionJobResultsLambdaIamRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+            - Effect: Allow
+              Principal:
+                Service:
+                  - lambda.amazonaws.com
+              Action:
+                - sts:AssumeRole
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+        - arn:aws:iam::aws:policy/AWSXrayWriteOnlyAccess
+      Path: /
+      Policies:
+        - PolicyName: TranscribeJobReadPolicy
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Action:
+                  - transcribe:GetTranscriptionJob
+                Effect: Allow
+                Resource:
+                  - "*"
+        - PolicyName: ArtifactBucketReadAccess
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Effect: Allow
+                Action:
+                  - s3:Get*
+                Resource:
+                  - !Sub ${ArtifactBucket.Arn}/*
+        # The destination is a set of user-defined bucket
+        - PolicyName: S3DestinationPutPolicy
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              # Bucket-level permissions
+              - Action:
+                  - s3:ListBucketMultipartUploads
+                Effect: Allow
+                Resource: !Ref TaskDestinationBucketPolicyResources
+              # Object-level permissions
+              - Action:
+                  - s3:PutObject*
+                  - s3:AbortMultipartUpload
+                  - s3:ListMultipartUploadParts
+                Effect: Allow
+                Resource: !Ref TaskDestinationObjectPolicyResources
+      Tags:
+        - Key: Project
+          Value: Porter
+        - Key: prx:cloudformation:stack-name
+          Value: !Ref AWS::StackName
+        - Key: prx:cloudformation:stack-id
+          Value: !Ref AWS::StackId
+  TranscriptionJobResultsLambdaFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: lambdas/TranscriptionJobResultsLambdaFunction/
+      Description: >-
+        Gets the results of a transcribe job and generates task state output
+      Handler: index.handler
+      Layers:
+        - !Ref AwsXraySdkLambdaLayerVersionArn
+      MemorySize: 512
+      Role: !GetAtt TranscriptionJobResultsLambdaIamRole.Arn
+      Runtime: nodejs12.x
+      Tags:
+        Project: Porter
+        prx:cloudformation:stack-name: !Ref AWS::StackName
+        prx:cloudformation:stack-id: !Ref AWS::StackId
+      Timeout: 8
+      Tracing: Active
+  TranscriptionJobResultsLambdaErrorAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Condition: CreateProductionResources
+    Properties:
+      ActionsEnabled: true
+      AlarmName: "[Porter][Callback][Lambda] Elevated error volume"
+      AlarmActions:
+        - !Ref OpsErrorMessagesSnsTopicArn
+      InsufficientDataActions:
+        - !Ref OpsErrorMessagesSnsTopicArn
+      OKActions:
+        - !Ref OpsErrorMessagesSnsTopicArn
+      AlarmDescription: >-
+        Trascription job results function has encountered an invocation error
+      ComparisonOperator: GreaterThanThreshold
+      EvaluationPeriods: 1
+      MetricName: LambdaFunctionsFailed
+      Namespace: AWS/States
+      Period: 60
+      Statistic: Sum
+      Threshold: 0
+      TreatMissingData: notBreaching
+      Dimensions:
+        - Name: FunctionName
+          Value: !Ref TranscriptionJobResultsLambdaIamRole
   # Callback Lambda
   CallbackLambdaIamRole:
     Type: AWS::IAM::Role
@@ -1149,11 +1462,78 @@ Resources:
       Namespace: AWS/States
       Period: 60
       Statistic: Sum
-      Threshold: 1
+      Threshold: 0
       TreatMissingData: notBreaching
       Dimensions:
         - Name: FunctionName
           Value: !Ref CallbackLambdaFunction
+  # Normalize Output Lambda
+  NormalizeOutputLambdaIamRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+            - Effect: Allow
+              Principal:
+                Service:
+                  - lambda.amazonaws.com
+              Action:
+                - sts:AssumeRole
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+        - arn:aws:iam::aws:policy/AWSXrayWriteOnlyAccess
+      Path: /
+      Tags:
+        - Key: Project
+          Value: Porter
+        - Key: prx:cloudformation:stack-name
+          Value: !Ref AWS::StackName
+        - Key: prx:cloudformation:stack-id
+          Value: !Ref AWS::StackId
+  NormalizeOutputLambdaFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: lambdas/NormalizeOutputLambdaFunction/
+      Description: >-
+        Normalizes Porter job output
+      Handler: index.handler
+      Layers:
+        - !Ref AwsXraySdkLambdaLayerVersionArn
+      MemorySize: 128
+      Role: !GetAtt NormalizeOutputLambdaIamRole.Arn
+      Runtime: nodejs12.x
+      Tags:
+        Project: Porter
+        prx:cloudformation:stack-name: !Ref AWS::StackName
+        prx:cloudformation:stack-id: !Ref AWS::StackId
+      Timeout: 4
+      Tracing: Active
+  NormalizeOutputLambdaErrorAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Condition: CreateProductionResources
+    Properties:
+      ActionsEnabled: true
+      AlarmName: "[Porter][Normalize][Lambda] Elevated error volume"
+      AlarmActions:
+        - !Ref OpsErrorMessagesSnsTopicArn
+      InsufficientDataActions:
+        - !Ref OpsErrorMessagesSnsTopicArn
+      OKActions:
+        - !Ref OpsErrorMessagesSnsTopicArn
+      AlarmDescription: >-
+        Normalize function has encountered an invocation error
+      ComparisonOperator: GreaterThanThreshold
+      EvaluationPeriods: 1
+      MetricName: LambdaFunctionsFailed
+      Namespace: AWS/States
+      Period: 60
+      Statistic: Sum
+      Threshold: 0
+      TreatMissingData: notBreaching
+      Dimensions:
+        - Name: FunctionName
+          Value: !Ref NormalizeOutputLambdaFunction
   # Step Functions
   StateMachineIamRole:
     Type: AWS::IAM::Role
@@ -1185,8 +1565,11 @@ Resources:
                   - !GetAtt CopyLambdaFunction.Arn
                   - !GetAtt ImageTransformLambdaFunction.Arn
                   - !GetAtt InspectMediaLambdaFunction.Arn
+                  - !GetAtt TranscriptionJobStartLambdaFunction.Arn
+                  - !GetAtt TranscriptionJobResultsLambdaFunction.Arn
                   - !GetAtt CallbackLambdaFunction.Arn
                   - !GetAtt TranscodeTaskOutputLambdaFunction.Arn
+                  - !GetAtt NormalizeOutputLambdaFunction.Arn
         - PolicyName: PassRoleToEcsPolicy
           PolicyDocument:
             Version: "2012-10-17"
@@ -1382,6 +1765,7 @@ Resources:
                     "Job": { "Id.$": "$.Job.Id" },
                     "Execution": { "Id.$": "$$.Execution.Id" },
                     "Artifact.$": "$.Artifact",
+                    "Index.$": "$$.Map.Item.Index",
                     "Task.$": "$$.Map.Item.Value",
                     "Callbacks.$": "$.Job.Callbacks"
                   },
@@ -1400,7 +1784,8 @@ Resources:
                           { "Variable": "$.Task.Type", "StringEquals": "Inspect", "Next": "ExecuteInspectTask" },
                           { "Variable": "$.Task.Type", "StringEquals": "Copy", "Next": "ExecuteCopyTask" },
                           { "Variable": "$.Task.Type", "StringEquals": "Transcode", "Next": "ExecuteTranscodeTask" },
-                          { "Variable": "$.Task.Type", "StringEquals": "Image", "Next": "ExecuteImageTask" }
+                          { "Variable": "$.Task.Type", "StringEquals": "Image", "Next": "ExecuteImageTask" },
+                          { "Variable": "$.Task.Type", "StringEquals": "Transcribe", "Next": "ExecuteTranscribeTask" }
                         ]
                       },
                       "SendTaskCallbacks": {
@@ -1608,6 +1993,55 @@ Resources:
                             "BackoffRate": 2
                           }
                         ]
+                      },
+                      "ExecuteTranscribeTask": {
+                        "Type": "Task",
+                        "Comment": "Transcribes audio from artifacts",
+                        "Resource": "arn:${AWS::Partition}:states:::lambda:invoke.waitForTaskToken",
+                        "InputPath": "$",
+                        "Parameters": {
+                          "FunctionName": "${TranscriptionJobStartLambdaFunctionArn}",
+                          "Payload": {
+                            "Job": { "Id.$": "$.Job.Id" },
+                            "Execution": { "Id.$": "$$.Execution.Id" },
+                            "Artifact.$": "$.Artifact",
+                            "Task.$": "$.Task",
+                            "MapIteratorIndex.$": "$.Index",
+                            "TaskToken.$": "$$.Task.Token"
+                          }
+                        },
+                        "ResultPath": "$.TranscriptionJob",
+                        "OutputPath": "$",
+                        "Next": "TranscribeTaskOutput",
+                        "Retry": [
+                          {
+                            "ErrorEquals": ["States.ALL"],
+                            "IntervalSeconds": 5,
+                            "MaxAttempts": 3,
+                            "BackoffRate": 2
+                          }
+                        ]
+                      },
+                      "TranscribeTaskOutput": {
+                        "Type": "Task",
+                        "Comment": "Formats the output of a transcribe task",
+                        "Resource": "${TranscriptionJobResultsLambdaFunctionArn}",
+                        "InputPath": "$",
+                        "Parameters": {
+                          "Task.$": "$.Task",
+                          "TranscriptionJob.$": "$.TranscriptionJob"
+                        },
+                        "ResultPath": "$.TaskResult",
+                        "OutputPath": "$",
+                        "Next": "SendTaskCallbacks",
+                        "Retry": [
+                          {
+                            "ErrorEquals": ["States.ALL"],
+                            "IntervalSeconds": 5,
+                            "MaxAttempts": 3,
+                            "BackoffRate": 2
+                          }
+                        ]
                       }
                     }
                   },
@@ -1634,9 +2068,9 @@ Resources:
                       }
                     }
                   },
-                  "ResultPath": "$",
+                  "ResultPath": "$.Void",
                   "OutputPath": "$",
-                  "End": true,
+                  "Next": "NormalizeOutput",
                   "MaxConcurrency": 0,
                   "Iterator": {
                     "StartAt": "SendJobCompleteCallback",
@@ -1660,6 +2094,24 @@ Resources:
                       }
                     }
                   }
+                },
+                "NormalizeOutput": {
+                  "Comment": "Normalizes output data",
+                  "Type": "Task",
+                  "InputPath": "$",
+                  "Parameters": {
+                    "Message": {
+                      "JobResult": {
+                        "Job": { "Id.$": "$.Job.Id" },
+                        "Execution": { "Id.$": "$$.Execution.Id" },
+                        "Result.$": "$.TaskResults.[?(@.Task && @.Task != 'Null')]"
+                      }
+                    }
+                  },
+                  "Resource": "${NormalizeOutputLambdaFunctionArn}",
+                  "ResultPath": "$",
+                  "OutputPath": "$",
+                  "End": true
                 },
                 "SendJobErrorCallbacks": {
                   "Type": "Map",
@@ -1704,12 +2156,15 @@ Resources:
               }
             }
           - NormalizeInputLambdaFunctionArn: !GetAtt NormalizeInputLambdaFunction.Arn
+            NormalizeOutputLambdaFunctionArn: !GetAtt NormalizeOutputLambdaFunction.Arn
             IngestLambdaFunctionArn: !GetAtt IngestLambdaFunction.Arn
             SourceTypeLambdaFunctionArn: !GetAtt SourceTypeLambdaFunction.Arn
             CopyLambdaFunctionArn: !GetAtt CopyLambdaFunction.Arn
             ImageTransformLambdaFunctionArn: !GetAtt ImageTransformLambdaFunction.Arn
             InspectMediaLambdaFunctionArn: !GetAtt InspectMediaLambdaFunction.Arn
             CallbackLambdaFunctionArn: !GetAtt CallbackLambdaFunction.Arn
+            TranscriptionJobStartLambdaFunctionArn: !GetAtt TranscriptionJobStartLambdaFunction.Arn
+            TranscriptionJobResultsLambdaFunctionArn: !GetAtt TranscriptionJobResultsLambdaFunction.Arn
             EcsClusterArn: !GetAtt EcsCluster.Arn
             TranscodeEcsTaskDefinitionArn: !Ref TranscodeEcsTaskDefinition
             TranscodeTaskOutputLambdaFunctionArn: !GetAtt TranscodeTaskOutputLambdaFunction.Arn
@@ -1737,13 +2192,13 @@ Resources:
         - !Ref OpsWarnMessagesSnsTopicArn
       AlarmDescription: >-
         Porter state machine has experienced execution time outs
-      ComparisonOperator: GreaterThanOrEqualToThreshold
+      ComparisonOperator: GreaterThanThreshold
       EvaluationPeriods: 1
       MetricName: ExecutionsTimedOut
       Namespace: AWS/States
       Period: 60
       Statistic: Sum
-      Threshold: 1
+      Threshold: 0
       TreatMissingData: notBreaching
       Dimensions:
         - Name: StateMachineArn
@@ -1761,13 +2216,13 @@ Resources:
         - !Ref OpsWarnMessagesSnsTopicArn
       AlarmDescription: >-
         Porter state machine is being throttled
-      ComparisonOperator: GreaterThanOrEqualToThreshold
+      ComparisonOperator: GreaterThanThreshold
       EvaluationPeriods: 1
       MetricName: ExecutionThrottled
       Namespace: AWS/States
       Period: 60
       Statistic: Sum
-      Threshold: 1
+      Threshold: 0
       TreatMissingData: notBreaching
       Dimensions:
         - Name: StateMachineArn
@@ -1785,13 +2240,13 @@ Resources:
         - !Ref OpsErrorMessagesSnsTopicArn
       AlarmDescription: >-
         Porter state machine experienced uncaught errors
-      ComparisonOperator: GreaterThanOrEqualToThreshold
+      ComparisonOperator: GreaterThanThreshold
       EvaluationPeriods: 1
       MetricName: ExecutionsFailed
       Namespace: AWS/States
       Period: 60
       Statistic: Sum
-      Threshold: 1
+      Threshold: 0
       TreatMissingData: notBreaching
       Dimensions:
         - Name: StateMachineArn

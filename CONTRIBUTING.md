@@ -99,14 +99,14 @@ The output of the Lambda function is added to the `Artifact` object under the `D
 
 This is another `Map` state, which iterates over every element of the `Job.Tasks` array.
 
-The `Parameters` for each iteration are constructed to provide all the information needed to execute each task. That includes: the job ID, the execution ID, the artifact, the current value of the iterator (i.e., a task), and all the callback endpoints defined on the job.
+The `Parameters` for each iteration are constructed to provide all the information needed to execute each task. That includes: the job ID, the execution ID, the artifact, the current value of the iterator (i.e., a task), the current index of the iterator, and all the callback endpoints defined on the job.
 
 The result of the iterator (an array of each task's results) is assigned to `$.TaskResults`.
 
 #### Map
 
 - `InputPath`: `$`, `{ Job: { … }, Artifact: { … } }`
-- `Parameters`: `{ Job, Execution, Artifact, Task, Callbacks }`
+- `Parameters`: `{ Job, Execution, Artifact, Index, Task, Callbacks }`
 - `ResultPath`: `$.TaskResults`, `{ Job: { … }, Artifact: { … }, TaskResults: [ … ] }`
 - `OutputPath`: `$`, `{ Job: { … }, Artifact: { … }, TaskResults: [ … ] }`
 
@@ -118,14 +118,28 @@ Each task-speicfic state creates a set of parameters determined by the needs of 
 
 After a task has completed, callbacks are sent. This follows the same pattern as described above, thus the callback iterator exists within the task iterator. The result of the callback iterator is mapped to `$.Void`, and the `OutputPath` is set to `$.TaskResult`. The effect of this is that even though the callbacks are at the end of the chain, and final output of the entire `Maps` state of tasks is all the individual task results, and only those results.
 
-#### Job Callbacks
+### Job Callbacks
 
 As with the previous callbacks, this follows a similar iterator pattern. Each job callback contains a complete set of tasks results for all tasks that were run by the job. The results that are included in the callback message are filtered from the entire list of results using the [JsonPath](https://github.com/json-path/JsonPath) query: `$.TaskResults.[?(@.Task && @.Task != 'Null')]`. This removes any null task results, which result from unknown task types being included in a job.
 
-This state is the true end of the state machine, and the output is not specifically defined.
+The output of this state should pass along the input. It may contain additional data from the individual callback executions, but because callbacks are optional, those values may not exist.
 
 - `InputPath`: `$`, `{ Job: { … }, Artifact: { … }, TaskResults: [ … ] }`
 - `Parameters`: `{ Callback: { … }, Message: { … } }`
+- `OutputPath`: `$`, `{ Job: { … }, Artifact: { … }, TaskResults: [ … ], Void: [ … ] } }`
+
+### Output Normalization
+
+After callbacks have been sent, there's a final step that normalizes the output of the state machine. The resulting value is intended to match the message sent as part of each job callback.
+
+As with the timestamps included in all callbacks, the timestamps in the state machine output represent the time that the output was generated, not the time that any other specific aspect of the state machine occurred. I.e., even if a given execution only has a single callback, the timestamps in the callback message and the execution output will almost certainly be different.
+
+- `InputPath`: `$`, `{ Job: { … }, Artifact: { … }, TaskResults: [ … ] } }`
+- `Parameters`: `{ Message: { … } }`
+- `ResultPath`: `$`, `{ Time, Timestamp, JobResult }`
+- `OutputPath`: `$`, `{ Time, Timestamp, JobResult }`
+
+This state is the true end of the state machine.
 
 ## Adding Task Types
 
