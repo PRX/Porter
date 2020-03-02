@@ -100,7 +100,7 @@ The `Job.Id` is a user-defined value, and is distinct from any execution IDs cre
 
 `Source.Mode` is required and indicates the protocol used to fetch the source file. When the mode is set to `S3`, `Source.BucketName` and `Source.ObjectKey` are also required. When the mode is set to `HTTP`, `Source.URL` is also required, which can use either an `http://` or `https://` protocol.
 
-`Tasks` is an array of individual operations the state machine should perform. Every member of the array should be an object with a `Type` property. Valid types are: `Inspect`, `Copy`, `Image`, `Transcode`. Tasks with invalid types are ignored. The other properties of any given task are determined by their type (see below).
+`Tasks` is an array of individual operations the state machine should perform. Every member of the array should be an object with a `Type` property. Valid types are: `Inspect`, `Copy`, `Image`, `Transcode`, `Transcribe`. Tasks with invalid types are ignored. The other properties of any given task are determined by their type (see below).
 
 `Callbacks` is an array of endpoints to which callback messages about the job execution will be sent. Each endpoint object has a `Type` (supported types are `AWS/SNS`, `AWS/SQS`, and `HTTP`). Different modes will have additional required properties. `HTTP` callbacks using methods like `POST` or `PUT` require a `Content-Type`. Possible values are `application/json` and `application/x-www-form-urlencoded`.
 
