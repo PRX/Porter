@@ -2153,7 +2153,7 @@ Resources:
         - !Ref OpsErrorMessagesSnsTopicArn
       AlarmDescription: >-
         Porter state machine experienced uncaught errors
-      ComparisonOperator: GreaterThanOrEqualToThreshold
+      ComparisonOperator: GreaterThanThreshold
       EvaluationPeriods: 1
       MetricName: ExecutionsFailed
       Namespace: AWS/States
