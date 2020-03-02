@@ -1467,6 +1467,73 @@ Resources:
       Dimensions:
         - Name: FunctionName
           Value: !Ref CallbackLambdaFunction
+  # Normalize Output Lambda
+  NormalizeOutputLambdaIamRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+            - Effect: Allow
+              Principal:
+                Service:
+                  - lambda.amazonaws.com
+              Action:
+                - sts:AssumeRole
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+        - arn:aws:iam::aws:policy/AWSXrayWriteOnlyAccess
+      Path: /
+      Tags:
+        - Key: Project
+          Value: Porter
+        - Key: prx:cloudformation:stack-name
+          Value: !Ref AWS::StackName
+        - Key: prx:cloudformation:stack-id
+          Value: !Ref AWS::StackId
+  NormalizeOutputLambdaFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: lambdas/NormalizeOutputLambdaFunction/
+      Description: >-
+        Normalizes Porter job output
+      Handler: index.handler
+      Layers:
+        - !Ref AwsXraySdkLambdaLayerVersionArn
+      MemorySize: 128
+      Role: !GetAtt NormalizeOutputLambdaIamRole.Arn
+      Runtime: nodejs12.x
+      Tags:
+        Project: Porter
+        prx:cloudformation:stack-name: !Ref AWS::StackName
+        prx:cloudformation:stack-id: !Ref AWS::StackId
+      Timeout: 4
+      Tracing: Active
+  NormalizeOutputLambdaErrorAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Condition: CreateProductionResources
+    Properties:
+      ActionsEnabled: true
+      AlarmName: "[Porter][Normalize][Lambda] Elevated error volume"
+      AlarmActions:
+        - !Ref OpsErrorMessagesSnsTopicArn
+      InsufficientDataActions:
+        - !Ref OpsErrorMessagesSnsTopicArn
+      OKActions:
+        - !Ref OpsErrorMessagesSnsTopicArn
+      AlarmDescription: >-
+        Normalize function has encountered an invocation error
+      ComparisonOperator: GreaterThanThreshold
+      EvaluationPeriods: 1
+      MetricName: LambdaFunctionsFailed
+      Namespace: AWS/States
+      Period: 60
+      Statistic: Sum
+      Threshold: 0
+      TreatMissingData: notBreaching
+      Dimensions:
+        - Name: FunctionName
+          Value: !Ref NormalizeOutputLambdaFunction
   # Step Functions
   StateMachineIamRole:
     Type: AWS::IAM::Role
@@ -1502,6 +1569,7 @@ Resources:
                   - !GetAtt TranscriptionJobResultsLambdaFunction.Arn
                   - !GetAtt CallbackLambdaFunction.Arn
                   - !GetAtt TranscodeTaskOutputLambdaFunction.Arn
+                  - !GetAtt NormalizeOutputLambdaFunction.Arn
         - PolicyName: PassRoleToEcsPolicy
           PolicyDocument:
             Version: "2012-10-17"
@@ -2000,9 +2068,9 @@ Resources:
                       }
                     }
                   },
-                  "ResultPath": "$",
+                  "ResultPath": "$.Void",
                   "OutputPath": "$",
-                  "End": true,
+                  "Next": "NormalizeOutput",
                   "MaxConcurrency": 0,
                   "Iterator": {
                     "StartAt": "SendJobCompleteCallback",
@@ -2026,6 +2094,24 @@ Resources:
                       }
                     }
                   }
+                },
+                "NormalizeOutput": {
+                  "Comment": "Normalizes output data",
+                  "Type": "Task",
+                  "InputPath": "$",
+                  "Parameters": {
+                    "Message": {
+                      "JobResult": {
+                        "Job": { "Id.$": "$.Job.Id" },
+                        "Execution": { "Id.$": "$$.Execution.Id" },
+                        "Result.$": "$.TaskResults.[?(@.Task && @.Task != 'Null')]"
+                      }
+                    }
+                  },
+                  "Resource": "${NormalizeOutputLambdaFunctionArn}",
+                  "ResultPath": "$",
+                  "OutputPath": "$",
+                  "End": true
                 },
                 "SendJobErrorCallbacks": {
                   "Type": "Map",
@@ -2070,6 +2156,7 @@ Resources:
               }
             }
           - NormalizeInputLambdaFunctionArn: !GetAtt NormalizeInputLambdaFunction.Arn
+            NormalizeOutputLambdaFunctionArn: !GetAtt NormalizeOutputLambdaFunction.Arn
             IngestLambdaFunctionArn: !GetAtt IngestLambdaFunction.Arn
             SourceTypeLambdaFunctionArn: !GetAtt SourceTypeLambdaFunction.Arn
             CopyLambdaFunctionArn: !GetAtt CopyLambdaFunction.Arn
