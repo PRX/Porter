@@ -2105,7 +2105,7 @@ Resources:
         - !Ref OpsWarnMessagesSnsTopicArn
       AlarmDescription: >-
         Porter state machine has experienced execution time outs
-      ComparisonOperator: GreaterThanOrEqualToThreshold
+      ComparisonOperator: GreaterThanThreshold
       EvaluationPeriods: 1
       MetricName: ExecutionsTimedOut
       Namespace: AWS/States
@@ -2129,7 +2129,7 @@ Resources:
         - !Ref OpsWarnMessagesSnsTopicArn
       AlarmDescription: >-
         Porter state machine is being throttled
-      ComparisonOperator: GreaterThanOrEqualToThreshold
+      ComparisonOperator: GreaterThanThreshold
       EvaluationPeriods: 1
       MetricName: ExecutionThrottled
       Namespace: AWS/States
