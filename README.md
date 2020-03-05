@@ -114,7 +114,7 @@ The `Job.Id` is a user-defined value, and is distinct from any execution IDs cre
 - `[ObjectPrefix][Execution ID]/job_result.json`
 - `[ObjectPrefix][Execution ID]/task_result.[index].json`
 
-The `ObjectPrefix` property is required, but it can be an empty string, which will result in no prefix being added. An example of a prefix would be `porter_results/`, though the trailing slash is also not required. The `index` value in a task result's file name matches the index of that task from the original job (zero-based numbering).
+The `ObjectPrefix` property is required, but it can be an empty string, which will result in no prefix being added. An example of a prefix would be `porter_results/`, though the trailing slash is also not required. The `index` value in a task result's file name matches the index of that task from the original job (zero-based numbering). The `Execution ID` is only the final segment of the execution ID ARN.
 
 
 ### Callback Messages
