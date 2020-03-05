@@ -1765,7 +1765,7 @@ Resources:
                     "Job": { "Id.$": "$.Job.Id" },
                     "Execution": { "Id.$": "$$.Execution.Id" },
                     "Artifact.$": "$.Artifact",
-                    "Index.$": "$$.Map.Item.Index",
+                    "TaskIndex.$": "$$.Map.Item.Index",
                     "Task.$": "$$.Map.Item.Value",
                     "Callbacks.$": "$.Job.Callbacks"
                   },
@@ -2006,7 +2006,7 @@ Resources:
                             "Execution": { "Id.$": "$$.Execution.Id" },
                             "Artifact.$": "$.Artifact",
                             "Task.$": "$.Task",
-                            "MapIteratorIndex.$": "$.Index",
+                            "TaskIteratorIndex.$": "$.TaskIndex",
                             "TaskToken.$": "$$.Task.Token"
                           }
                         },

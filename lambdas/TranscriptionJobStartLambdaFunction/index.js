@@ -33,7 +33,7 @@ exports.handler = async (event) => {
 
   // Should be unique, even if an execution includes multiple transcribe jobs
   const prefix = process.env.TRANSCODE_JOB_NAME_PREFIX;
-  const transcriptionJobName = `${prefix}${event.Execution.Id.split(':').pop()}-${event.MapIteratorIndex}`;
+  const transcriptionJobName = `${prefix}${event.Execution.Id.split(':').pop()}-${event.TaskIteratorIndex}`;
 
   // Write the task token provided by the state machine context to S3
   await s3.putObject({
