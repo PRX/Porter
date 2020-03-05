@@ -33,13 +33,18 @@ function httpGet(uri, file, redirectCount) {
   return new Promise((resolve, reject) => {
     const client = uri.toLowerCase().startsWith('https') ? https : http;
 
-    const opts = {
+    const q = new URL(uri);
+
+    const options = {
+      host: q.host,
+      port: q.port,
+      path: `${q.pathname || ''}${q.search || ''}`,
       headers: {
         'User-Agent': 'PRX-Porterbot/1.0 (+https://github.com/PRX/Porter)'
       }
     };
 
-    client.get(uri, opts, async (res) => {
+    client.get(options, async (res) => {
       if (res.statusCode === 301 || res.statusCode === 302) {
         try {
           if (redirectCount > +process.env.MAX_HTTP_REDIRECTS) {
@@ -91,7 +96,7 @@ exports.handler = async (event, context) => {
   const artifact = {
     BucketName: process.env.ARTIFACT_BUCKET_NAME,
     ObjectKey: `${event.Execution.Id}/${context.awsRequestId}/${sourceFilename}`
-  }
+  };
 
   if (event.Job.Source.Mode === 'HTTP') {
     // Downloads the HTTP resource to a file on disk in the Lambda's tmp
