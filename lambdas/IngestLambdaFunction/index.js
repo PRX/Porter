@@ -33,7 +33,13 @@ function httpGet(uri, file, redirectCount) {
   return new Promise((resolve, reject) => {
     const client = uri.toLowerCase().startsWith('https') ? https : http;
 
-    client.get(uri, async (res) => {
+    const opts = {
+      headers: {
+        'User-Agent': 'PRX-Porterbot/1.0 (+https://github.com/PRX/Porter)'
+      }
+    };
+
+    client.get(uri, opts, async (res) => {
       if (res.statusCode === 301 || res.statusCode === 302) {
         try {
           if (redirectCount > +process.env.MAX_HTTP_REDIRECTS) {
