@@ -1414,6 +1414,23 @@ Resources:
                   - sqs:SendMessage
                 Resource:
                   - "*"
+        # The destination is a set of user-defined bucket
+        - PolicyName: S3PutPolicy
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              # Bucket-level permissions
+              - Action:
+                  - s3:ListBucketMultipartUploads
+                Effect: Allow
+                Resource: !Ref TaskDestinationBucketPolicyResources
+              # Object-level permissions
+              - Action:
+                  - s3:PutObject*
+                  - s3:AbortMultipartUpload
+                  - s3:ListMultipartUploadParts
+                Effect: Allow
+                Resource: !Ref TaskDestinationObjectPolicyResources
       Tags:
         - Key: Project
           Value: Porter
