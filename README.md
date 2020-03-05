@@ -74,6 +74,10 @@ sns.publish(
                 "Type": "AWS/SQS",
                 "Queue": "https://sqs.us-east-2.amazonaws.com/1234512355/my-callback-queue"
             }, {
+                "Type": "AWS/S3",
+                "BucketName": "myBucket",
+                "ObjectPrefix": "myCallbackResults/"
+            }, {
                 "Type": "HTTP",
                 "URL": "https://example.com/callbacks/jobs"
                 "Method": "POST",
@@ -102,7 +106,16 @@ The `Job.Id` is a user-defined value, and is distinct from any execution IDs cre
 
 `Tasks` is an array of individual operations the state machine should perform. Every member of the array should be an object with a `Type` property. Valid types are: `Inspect`, `Copy`, `Image`, `Transcode`, `Transcribe`. Tasks with invalid types are ignored. The other properties of any given task are determined by their type (see below).
 
-`Callbacks` is an array of endpoints to which callback messages about the job execution will be sent. Each endpoint object has a `Type` (supported types are `AWS/SNS`, `AWS/SQS`, and `HTTP`). Different modes will have additional required properties. `HTTP` callbacks using methods like `POST` or `PUT` require a `Content-Type`. Possible values are `application/json` and `application/x-www-form-urlencoded`.
+`Callbacks` is an array of endpoints to which callback messages about the job execution will be sent. Each endpoint object has a `Type` (supported types are `AWS/SNS`, `AWS/SQS`, `AWS/S3`, and `HTTP`). Different modes will have additional required properties. `HTTP` callbacks using methods like `POST` or `PUT` require a `Content-Type`. Possible values are `application/json` and `application/x-www-form-urlencoded`.
+
+`AWS/S3` callbacks require both the `BucketName` and `ObjectPrefix` properties. Each callback result will be written to S3 individually (i.e., one file for each task result, and one file for the job result). The object name will be one of the following:
+
+- `[ObjectPrefix][Execution ID]/job_received.json`
+- `[ObjectPrefix][Execution ID]/job_result.json`
+- `[ObjectPrefix][Execution ID]/task_result.[index].json`
+
+The `ObjectPrefix` property is required, but it can be an empty string, which will result in no prefix being added. An example of a prefix would be `porter_results/`, though the trailing slash is also not required. The `index` value in a task result's file name matches the index of that task from the original job (zero-based numbering).
+
 
 ### Callback Messages
 

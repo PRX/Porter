@@ -1812,6 +1812,7 @@ Resources:
                         "ItemsPath": "$.Callbacks",
                         "Parameters": {
                           "Callback.$": "$$.Map.Item.Value",
+                          "TaskIteratorIndex.$": "$.TaskIndex",
                           "Message": {
                             "TaskResult": {
                               "Job": { "Id.$": "$.Job.Id" },

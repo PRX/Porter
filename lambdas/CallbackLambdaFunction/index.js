@@ -6,6 +6,7 @@ const AWS = AWSXRay.captureAWS(require('aws-sdk'));
 const http = AWSXRay.captureHTTPs(require('http'));
 const https = AWSXRay.captureHTTPs(require('https'));
 
+const s3 = new AWS.S3({ apiVersion: '2006-03-01' });
 const sns = new AWS.SNS({ apiVersion: '2010-03-31' });
 const sqs = new AWS.SQS({ apiVersion: '2012-11-05' });
 
@@ -72,6 +73,31 @@ function httpRequest(event, message, redirectCount) {
   }));
 }
 
+async function s3Put(event, message) {
+  let key;
+  let id;
+
+  if (message.JobReceived) {
+    id = message.JobReceived.Execution.Id.split(':').pop();
+    key = '/job_received.json';
+  } else if (message.TaskResult) {
+    id = message.TaskResult.Execution.Id.split(':').pop();
+    key = `/task_result.${event.TaskIteratorIndex}.json`;
+  } else if (message.JobResult) {
+    id = message.JobResult.Execution.Id.split(':').pop();
+    key = '/job_result.json';
+  } else {
+    id = message.JobResult.Execution.Id.split(':').pop();
+    key = `/unknown_${+(new Date)}.json`;
+  }
+
+  await s3.putObject({
+    Bucket: event.Callback.BucketName,
+    Key: [event.Callback.ObjectPrefix, id, key].join(''),
+    Body: JSON.stringify(message),
+  }).promise();
+}
+
 exports.handler = async (event) => {
   console.log(JSON.stringify({ msg: 'State input', input: event }));
 
@@ -92,6 +118,8 @@ exports.handler = async (event) => {
     const MessageBody = JSON.stringify(msg);
 
     await sqs.sendMessage({ QueueUrl, MessageBody }).promise();
+  } else if (event.Callback.Type === 'AWS/S3') {
+    await s3Put(event, msg);
   }  else if (event.Callback.Type === 'HTTP') {
     await httpRequest(event, msg);
   }
