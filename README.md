@@ -1,6 +1,16 @@
 # Porter
 
-tktktk
+Porter is a general-purpose file processing system. It is designed to work asynchronously – jobs are sent to Porter from other applications, and the results can be returned to the applications via callbacks. It supports a variety of tasks that can be run on the files included in each job. Some are generic tasks (such as copying a file to a new location), and some are specific to certiain file types (such as resizing an image, or transcoding an audio file).
+
+Porter is built on top of [AWS Step Functions](https://aws.amazon.com/step-functions/), as well a number of other AWS services. Each job that is sent to Porter for processing corresponds to a state machine [execution](https://docs.aws.amazon.com/step-functions/latest/dg/concepts-state-machine-executions.html) of the Step Function. Each Porter job represent one (and only one) input file, which is considered the job's *source file*. Every task that the job definition includes is run against that original source file in parallel.
+
+The system is design to be highly scalable, both in terms of the number of jobs that can be processes, as well as the number of tasks an individual job can include. Many of the states that the Step Function orchestrates are built on [AWS Lambda](https://aws.amazon.com/lambda/) and [AWS Fargate](https://aws.amazon.com/fargate/), which are serverless compute platforms and support that scalability. As such, there are no prioritization options or explicit queueing controls available. It can be assumed that jobs being to execute as soon as they are received by Porter.
+
+Porter utilizes the robust [error handling](https://docs.aws.amazon.com/step-functions/latest/dg/concepts-error-handling.html) and retry logic that Step Functions offer to ensure that tasks are resilient to transient service issues. In cases where a job execution is not able to complete all its tasks, Porter sends callbacks to indicate the failure, and the application must decide how to attempt to retry the work.
+
+Job executions within Porter are not intended to be inspected directly or in real time by other applications. An application that's submitting jobs should be designed to track the state of its jobs based on the callback messages that has or has not receieved. Callback messages are sent at various points during a job execution, which is explained in more detail below.
+
+Many input and output methods are supported to allow flexibility with other applications. For example, source files can come from HTTP or S3 endpoints, and callback messages can be sent via HTTP, [SNS](https://aws.amazon.com/sns/), [SQS](https://aws.amazon.com/sqs/). The list of support source and destination methods will grow over time; see below for a more complete list of methods that each aspect of the job execution support.
 
 ## Messaging I/O
 
