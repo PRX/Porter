@@ -10,7 +10,7 @@ Porter utilizes the robust [error handling](https://docs.aws.amazon.com/step-fun
 
 Job executions within Porter are not intended to be inspected directly or in real time by other applications. An application that's submitting jobs should be designed to track the state of its jobs based on the callback messages that has or has not receieved. Callback messages are sent at various points during a job execution, which is explained in more detail below.
 
-Many input and output methods are supported to allow flexibility with other applications. For example, source files can come from HTTP or S3 endpoints, and callback messages can be sent via HTTP, [SNS](https://aws.amazon.com/sns/), [SQS](https://aws.amazon.com/sqs/). The list of support source and destination methods will grow over time; see below for a more complete list of methods that each aspect of the job execution support.
+Many input and output methods are supported to allow flexibility with other applications. For example, source files can come from HTTP or S3 endpoints, and callback messages can be sent via HTTP, [SNS](https://aws.amazon.com/sns/), and [SQS](https://aws.amazon.com/sqs/). The list of support source and destination methods will grow over time; see below for a more complete list of methods that each aspect of the job execution support.
 
 ## Messaging I/O
 
