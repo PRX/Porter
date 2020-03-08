@@ -220,7 +220,7 @@ If there's a failure during the job execution in any part of the state machine, 
 
 ### Copy
 
-`Copy` tasks create copies of the job's source file. Each copy task creates one copy, but a job can include any number of copy tasks. Each copy task defines a `Destination`. Currently the only supported destination mode is `AWS/S3`. Copy tasks **do not** check if an object already exists in the given location. A copy task can include any number of destinations.
+`Copy` tasks create copies of the job's source file. Each copy task creates one copy, but a job can include any number of copy tasks. Each copy task defines a `Destination`. Currently the only supported destination mode is `AWS/S3`. Copy tasks **do not** check if an object already exists in the given location.
 
 The `Time` and `Timestamp` in the output represent approximately when the file finished being copied.
 
