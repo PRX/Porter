@@ -35,6 +35,63 @@ Parameters:
   TranscodeEcsTaskDefinitionImage:
     Type: String
 Resources:
+  # Managed IAM Policies
+  ArtifactBucketReadOnlyAccessPolicy:
+    Type: AWS::IAM::ManagedPolicy
+    Properties:
+      Description: >-
+        Provides read-only access to the artifact bucket for a particular
+        Porter deployment
+      PolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Action:
+              - s3:GetObject*
+            Effect: Allow
+            Resource:
+              - !Sub arn:aws:s3:::${ArtifactBucket}/*
+  ArtifactBucketWriteAccessPolicy:
+    Type: AWS::IAM::ManagedPolicy
+    Properties:
+      Description: >-
+        Provides limitedS S3 list and write access to the artifact bucket for a
+        particular Porter deployment
+      PolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Action:
+              - s3:ListBucketMultipartUploads
+            Resource:
+              - !Sub arn:aws:s3:::${ArtifactBucket}
+          - Effect: Allow
+            Action:
+              - s3:PutObject
+              - s3:AbortMultipartUpload
+              - s3:ListMultipartUploadParts
+            Resource:
+              - !Sub arn:aws:s3:::${ArtifactBucket}/*
+  DestinationBucketsWriteAccessPolicy:
+    Type: AWS::IAM::ManagedPolicy
+    Properties:
+      Description: >-
+        Provides limited S3 list and write access to user-defined task
+        destination resources for a particular Porter deployment
+      PolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          # Bucket-level permissions
+          - Action:
+              - s3:ListBucketMultipartUploads
+            Effect: Allow
+            Resource: !Ref TaskDestinationBucketPolicyResources
+          # Object-level permissions
+          - Action:
+              - s3:PutObject*
+              - s3:AbortMultipartUpload
+              - s3:ListMultipartUploadParts
+            Effect: Allow
+            Resource: !Ref TaskDestinationObjectPolicyResources
   # SNS
   ## Messages sent to this topic will be handled by a Lambda function which
   ## executes the Step Functions state machine. The `input` to the state machine
@@ -57,7 +114,6 @@ Resources:
       ManagedPolicyArns:
         - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
         - arn:aws:iam::aws:policy/AWSXrayWriteOnlyAccess
-      Path: /
       Policies:
         - PolicyName: StepFunctionsPolicy
           PolicyDocument:
@@ -151,17 +207,11 @@ Resources:
                 - lambda.amazonaws.com
             Action:
               - sts:AssumeRole
-      Path: "/"
+      ManagedPolicyArns:
+        - !Ref ArtifactBucketReadOnlyAccessPolicy
+        - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+        - arn:aws:iam::aws:policy/AWSXrayWriteOnlyAccess
       Policies:
-        - PolicyName: S3ArtifactBucketPolicy
-          PolicyDocument:
-            Version: "2012-10-17"
-            Statement:
-              - Effect: Allow
-                Action:
-                  - s3:GetObject
-                Resource:
-                  - !Sub arn:aws:s3:::${ArtifactBucket}/*
         - PolicyName: StepFunctions
           PolicyDocument:
             Version: "2012-10-17"
@@ -172,8 +222,6 @@ Resources:
                   - states:SendTaskSuccess
                 Resource:
                   - !Ref StateMachine
-      ManagedPolicyArns:
-        - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
   TranscriptionJobStateChangeLambdaFunction:
     Type: AWS::Serverless::Function
     Properties:
@@ -469,7 +517,6 @@ Resources:
               Service:
                 - ecs-tasks.amazonaws.com
       Description: String
-      Path: /
       Policies:
         # https://docs.aws.amazon.com/AmazonECS/latest/developerguide/task_execution_IAM_role.html#task-execution-ecr-conditionkeys
         # An alternative to the managed AmazonECSTaskExecutionRolePolicy, which
@@ -515,36 +562,11 @@ Resources:
             Principal:
               Service:
                 - ecs-tasks.amazonaws.com
-      Description: String
-      Path: /
-      Policies:
-        # The destination is a set of user-defined bucket
-        - PolicyName: S3PutPolicy
-          PolicyDocument:
-            Version: "2012-10-17"
-            Statement:
-              # Bucket-level permissions
-              - Action:
-                  - s3:ListBucketMultipartUploads
-                Effect: Allow
-                Resource: !Ref TaskDestinationBucketPolicyResources
-              # Object-level permissions
-              - Action:
-                  - s3:PutObject
-                  - s3:AbortMultipartUpload
-                  - s3:ListMultipartUploadParts
-                Effect: Allow
-                Resource: !Ref TaskDestinationObjectPolicyResources
-        # Transcode operations are always copying FROM the artifact bucket
-        - PolicyName: S3ArtifactBucketPolicy
-          PolicyDocument:
-            Version: "2012-10-17"
-            Statement:
-              - Action:
-                  - s3:GetObject
-                Effect: Allow
-                Resource:
-                  - !Sub arn:aws:s3:::${ArtifactBucket}/*
+      ManagedPolicyArns:
+        # Transcode operations are always pulling FROM the artifact bucket
+        - !Ref ArtifactBucketReadOnlyAccessPolicy
+        # The destination is a set of user-defined buckets
+        - !Ref DestinationBucketsWriteAccessPolicy
       Tags:
         - Key: Project
           Value: Porter
@@ -611,7 +633,6 @@ Resources:
       ManagedPolicyArns:
         - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
         - arn:aws:iam::aws:policy/AWSXrayWriteOnlyAccess
-      Path: /
       Tags:
         - Key: Project
           Value: Porter
@@ -676,27 +697,11 @@ Resources:
               Action:
                 - sts:AssumeRole
       ManagedPolicyArns:
+        # For uploading files and file parts to the artifact store
+        - !Ref ArtifactBucketWriteAccessPolicy
         - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
         - arn:aws:iam::aws:policy/AWSXrayWriteOnlyAccess
-      Path: /
       Policies:
-        # For uploading files and file parts to the artifact store
-        - PolicyName: S3ArtifactUploadPolicy
-          PolicyDocument:
-            Version: "2012-10-17"
-            Statement:
-              - Effect: Allow
-                Action:
-                  - s3:ListBucketMultipartUploads
-                Resource:
-                  - !Sub arn:aws:s3:::${ArtifactBucket}
-              - Effect: Allow
-                Action:
-                  - s3:PutObject
-                  - s3:AbortMultipartUpload
-                  - s3:ListMultipartUploadParts
-                Resource:
-                  - !Sub arn:aws:s3:::${ArtifactBucket}/*
         # Allow GET-only access to any object in S3
         - PolicyName: S3CopySourcePolicy
           PolicyDocument:
@@ -775,19 +780,9 @@ Resources:
               Action:
                 - sts:AssumeRole
       ManagedPolicyArns:
+        - !Ref ArtifactBucketReadOnlyAccessPolicy
         - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
         - arn:aws:iam::aws:policy/AWSXrayWriteOnlyAccess
-      Path: /
-      Policies:
-        - PolicyName: S3ArtifactBucketPolicy
-          PolicyDocument:
-            Version: "2012-10-17"
-            Statement:
-              - Effect: Allow
-                Action:
-                  - s3:GetObject
-                Resource:
-                  - !Sub arn:aws:s3:::${ArtifactBucket}/*
       Tags:
         - Key: Project
           Value: Porter
@@ -857,19 +852,9 @@ Resources:
               Action:
                 - sts:AssumeRole
       ManagedPolicyArns:
+        - !Ref ArtifactBucketReadOnlyAccessPolicy
         - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
         - arn:aws:iam::aws:policy/AWSXrayWriteOnlyAccess
-      Path: /
-      Policies:
-        - PolicyName: S3ArtifactBucketPolicy
-          PolicyDocument:
-            Version: "2012-10-17"
-            Statement:
-              - Effect: Allow
-                Action:
-                  - s3:GetObject
-                Resource:
-                  - !Sub arn:aws:s3:::${ArtifactBucket}/*
       Tags:
         - Key: Project
           Value: Porter
@@ -937,37 +922,12 @@ Resources:
               Action:
                 - sts:AssumeRole
       ManagedPolicyArns:
+        # Copy operations are always copying FROM the artifact bucket
+        - !Ref ArtifactBucketReadOnlyAccessPolicy
+        # The destination is a set of user-defined buckets
+        - !Ref DestinationBucketsWriteAccessPolicy
         - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
         - arn:aws:iam::aws:policy/AWSXrayWriteOnlyAccess
-      Path: /
-      Policies:
-        # Copy operations are always copying FROM the artifact bucket
-        - PolicyName: S3ArtifactBucketReadPolicy
-          PolicyDocument:
-            Version: "2012-10-17"
-            Statement:
-              - Action:
-                  - s3:GetObject*
-                Effect: Allow
-                Resource:
-                  - !Sub arn:aws:s3:::${ArtifactBucket}/*
-        # The destination is a set of user-defined bucket
-        - PolicyName: S3PutPolicy
-          PolicyDocument:
-            Version: "2012-10-17"
-            Statement:
-              # Bucket-level permissions
-              - Action:
-                  - s3:ListBucketMultipartUploads
-                Effect: Allow
-                Resource: !Ref TaskDestinationBucketPolicyResources
-              # Object-level permissions
-              - Action:
-                  - s3:PutObject*
-                  - s3:AbortMultipartUpload
-                  - s3:ListMultipartUploadParts
-                Effect: Allow
-                Resource: !Ref TaskDestinationObjectPolicyResources
       Tags:
         - Key: Project
           Value: Porter
@@ -1034,7 +994,6 @@ Resources:
       ManagedPolicyArns:
         - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
         - arn:aws:iam::aws:policy/AWSXrayWriteOnlyAccess
-      Path: /
       Tags:
         - Key: Project
           Value: Porter
@@ -1099,37 +1058,12 @@ Resources:
               Action:
                 - sts:AssumeRole
       ManagedPolicyArns:
+        # Image operations are always fetching from the artifact bucket
+        - !Ref ArtifactBucketReadOnlyAccessPolicy
+        # The destination is a set of user-defined buckets
+        - !Ref DestinationBucketsWriteAccessPolicy
         - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
         - arn:aws:iam::aws:policy/AWSXrayWriteOnlyAccess
-      Path: /
-      Policies:
-        # Image operations are always fetching from the artifact bucket
-        - PolicyName: S3ArtifactBucketReadPolicy
-          PolicyDocument:
-            Version: "2012-10-17"
-            Statement:
-              - Action:
-                  - s3:GetObject*
-                Effect: Allow
-                Resource:
-                  - !Sub arn:aws:s3:::${ArtifactBucket}/*
-        # The destination is a set of user-defined bucket
-        - PolicyName: S3PutPolicy
-          PolicyDocument:
-            Version: "2012-10-17"
-            Statement:
-              # Bucket-level permissions
-              - Action:
-                  - s3:ListBucketMultipartUploads
-                Effect: Allow
-                Resource: !Ref TaskDestinationBucketPolicyResources
-              # Object-level permissions
-              - Action:
-                  - s3:PutObject*
-                  - s3:AbortMultipartUpload
-                  - s3:ListMultipartUploadParts
-                Effect: Allow
-                Resource: !Ref TaskDestinationObjectPolicyResources
       Tags:
         - Key: Project
           Value: Porter
@@ -1195,20 +1129,24 @@ Resources:
               Action:
                 - sts:AssumeRole
       ManagedPolicyArns:
+        - !Ref ArtifactBucketReadOnlyAccessPolicy
+        # For uploading files and file parts to the artifact store
+        - !Ref ArtifactBucketWriteAccessPolicy
         - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
         - arn:aws:iam::aws:policy/AWSXrayWriteOnlyAccess
-      Path: /
       Policies:
-        - PolicyName: ArtifactBucketWriteAccess
-          PolicyDocument:
-            Version: "2012-10-17"
-            Statement:
-              - Effect: Allow
-                Action:
-                  - s3:Get*
-                  - s3:Put*
-                Resource:
-                  - !Sub ${ArtifactBucket.Arn}/*
+        # TODO Need to make sure the ArtifactBucketWriteAccessPolicy policy
+        # is enough for Transcribe to work
+        # - PolicyName: ArtifactBucketWriteAccess
+        #   PolicyDocument:
+        #     Version: "2012-10-17"
+        #     Statement:
+        #       - Effect: Allow
+        #         Action:
+        #           - s3:Get*
+        #           - s3:Put*
+        #         Resource:
+        #           - !Sub ${ArtifactBucket.Arn}/*
         - PolicyName: TranscribeJobStartPolicy
           PolicyDocument:
             Version: "2012-10-17"
@@ -1287,9 +1225,12 @@ Resources:
               Action:
                 - sts:AssumeRole
       ManagedPolicyArns:
+        # Copy operations are always copying FROM the artifact bucket
+        - !Ref ArtifactBucketReadOnlyAccessPolicy
+        # The destination is a set of user-defined buckets
+        - !Ref DestinationBucketsWriteAccessPolicy
         - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
         - arn:aws:iam::aws:policy/AWSXrayWriteOnlyAccess
-      Path: /
       Policies:
         - PolicyName: TranscribeJobReadPolicy
           PolicyDocument:
@@ -1300,32 +1241,6 @@ Resources:
                 Effect: Allow
                 Resource:
                   - "*"
-        - PolicyName: ArtifactBucketReadAccess
-          PolicyDocument:
-            Version: "2012-10-17"
-            Statement:
-              - Effect: Allow
-                Action:
-                  - s3:Get*
-                Resource:
-                  - !Sub ${ArtifactBucket.Arn}/*
-        # The destination is a set of user-defined bucket
-        - PolicyName: S3DestinationPutPolicy
-          PolicyDocument:
-            Version: "2012-10-17"
-            Statement:
-              # Bucket-level permissions
-              - Action:
-                  - s3:ListBucketMultipartUploads
-                Effect: Allow
-                Resource: !Ref TaskDestinationBucketPolicyResources
-              # Object-level permissions
-              - Action:
-                  - s3:PutObject*
-                  - s3:AbortMultipartUpload
-                  - s3:ListMultipartUploadParts
-                Effect: Allow
-                Resource: !Ref TaskDestinationObjectPolicyResources
       Tags:
         - Key: Project
           Value: Porter
@@ -1392,7 +1307,6 @@ Resources:
       ManagedPolicyArns:
         - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
         - arn:aws:iam::aws:policy/AWSXrayWriteOnlyAccess
-      Path: /
       Policies:
         # Must be able to publish to whatever SNS topics are defined by a job
         - PolicyName: SnsPublish
@@ -1483,7 +1397,6 @@ Resources:
       ManagedPolicyArns:
         - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
         - arn:aws:iam::aws:policy/AWSXrayWriteOnlyAccess
-      Path: /
       Tags:
         - Key: Project
           Value: Porter
@@ -1549,7 +1462,6 @@ Resources:
               - sts:AssumeRole
       ManagedPolicyArns:
         - arn:aws:iam::aws:policy/AWSXrayWriteOnlyAccess
-      Path: /
       Policies:
         - PolicyName: LambdaTaskPolicy
           PolicyDocument:
