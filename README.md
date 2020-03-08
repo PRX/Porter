@@ -12,6 +12,12 @@ Job executions within Porter are not intended to be inspected directly or in rea
 
 Many input and output methods are supported to allow flexibility with other applications. For example, source files can come from HTTP or S3 endpoints, and callback messages can be sent via HTTP, [SNS](https://aws.amazon.com/sns/), and [SQS](https://aws.amazon.com/sqs/). The list of supported source and destination methods will grow over time; see below for a more complete list of methods that each aspect of the job execution support.
 
+## Destination Permissions
+
+Several tasks types produce new files, and [Amazon S3](https://aws.amazon.com/s3/) is a supported destination. When a task includes S3 as a destination, the Porter Step Function executing the task must have permission to write to the designated location in the given S3 bucket. There are two stack parameters that determine which destinations Porter will be able to write to.
+
+Any S3 destinations included in job tasks **must be defined in both stack parameters** in order to work. The first parameter, `TaskDestinationBucketPolicyResources`, is used with bucket-level IAM policies, and must only include top-level bucket ARNs (e.g., `arn:aws:s3:::myBucket`). The other parameter, `TaskDestinationObjectPolicyResources`, is used with object-level IAM policies, and provides wildcard access _within_ those buckets (e.g., `arn:aws:s3:::myBucket/*` or `arn:aws:s3:::myBucket/only/this/prefix/*`).
+
 ## Messaging I/O
 
 Porter receives messages to start jobs, and sends messages while jobs are running, and when jobs complete or fail.
