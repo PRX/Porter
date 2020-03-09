@@ -22,6 +22,14 @@ The job input format should generally avoid using input formats specific to part
 
 When a state fails, in general the desired outcome is that the error gets caught by the state machine and a callback is sent with notifying the user of the issue. By catching errors, it is no longer possible to detect or count task errors by looking for state machine execution failures. Instead the resources themselves (Lambdas functions, etc) must be monitored.
 
+### S3 Access Permissions
+
+There are two common reasons that a given state's resource (like a Lambda function or Fargate task) would need access to S3: reading from the artifact bucket, and writing new files to the destination buckets. There are two managed IAM policies available within the CloudFormation stack that provide those two levels of access: `ArtifactBucketReadOnlyAccessPolicy` and `DestinationBucketsWriteAccessPolicy`. You can include them in the list of `ManagedPolicyArns` for IAM roles you create for your stack resources.
+
+The `DestinationBucketsWriteAccessPolicy` provides write access to a set of resources that is defined when the Porter CloudFormation stack is launched. Those resources are defined in the stack's parameters. It takes two parameters because the policy includes both bucket-level permissions (e.g., `arn:aws:s3:::myBucket`) and object-level permissions (e.g., `arn:aws:s3:::myBucket/*`), and there's no good way to generate the wildcard versions from a list of non-wildcard values.
+
+There's also `ArtifactBucketWriteAccessPolicy`, which provides write access to the artifact bucket. The artifact bucket is primarily used to store the source file for a task execution, but if you have a task that needs to persist metadata somewhere for the duration of an execution (such as to pass a value between decoupled services, or to store a large file that requires further processing), the artifact bucket can be used for those needs as well. Take care to make sure anything you're writing to the artifact bucket can't interfer with another execution's data. Common practice is to prefix any objects you create with the state machine execution ID. Objects in the artifact bucket expire very quickly, so it should never be used as the final destination for any critical data.
+
 ## Internal Messaging
 
 How data is passed between the various states of the Step Function is key to building a reliable state machine, and understanding the flow of data in invaluable when developing this project. The following is a detailed look at the lifecycle of inputs and outputs of the state machine internals. The code examples are meant to demonstrate important structural aspects, and are not necessarily 100% accurate.
