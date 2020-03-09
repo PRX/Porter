@@ -24,7 +24,7 @@ When a state fails, in general the desired outcome is that the error gets caught
 
 ### S3 Access Permissions
 
-There are two common reasons that a given state's resource (like a Lambda function or Fargate task) would need access to S3: reading from the artifact bucket, and writing new files to the destination buckets. There are two managed IAM policies available within the CloudFormation stack that provide those two levels off access: `ArtifactBucketReadOnlyAccessPolicy` and `DestinationBucketsWriteAccessPolicy`. You can include them in the list of `ManagedPolicyArns` for IAM roles you create for your stack resources.
+There are two common reasons that a given state's resource (like a Lambda function or Fargate task) would need access to S3: reading from the artifact bucket, and writing new files to the destination buckets. There are two managed IAM policies available within the CloudFormation stack that provide those two levels of access: `ArtifactBucketReadOnlyAccessPolicy` and `DestinationBucketsWriteAccessPolicy`. You can include them in the list of `ManagedPolicyArns` for IAM roles you create for your stack resources.
 
 The `DestinationBucketsWriteAccessPolicy` provides write access to a set of resources that is defined when the Porter CloudFormation stack is launched. Those resources are defined in the stack's parameters. It takes two parameters because the policy includes both bucket-level permissions (e.g., `arn:aws:s3:::myBucket`) and object-level permissions (e.g., `arn:aws:s3:::myBucket/*`), and there's no good way to generate the wildcard versions from a list of non-wildcard values.
 
