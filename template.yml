@@ -1414,6 +1414,23 @@ Resources:
                   - sqs:SendMessage
                 Resource:
                   - "*"
+        # The destination is a set of user-defined bucket
+        - PolicyName: S3PutPolicy
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              # Bucket-level permissions
+              - Action:
+                  - s3:ListBucketMultipartUploads
+                Effect: Allow
+                Resource: !Ref TaskDestinationBucketPolicyResources
+              # Object-level permissions
+              - Action:
+                  - s3:PutObject*
+                  - s3:AbortMultipartUpload
+                  - s3:ListMultipartUploadParts
+                Effect: Allow
+                Resource: !Ref TaskDestinationObjectPolicyResources
       Tags:
         - Key: Project
           Value: Porter
@@ -1765,7 +1782,7 @@ Resources:
                     "Job": { "Id.$": "$.Job.Id" },
                     "Execution": { "Id.$": "$$.Execution.Id" },
                     "Artifact.$": "$.Artifact",
-                    "Index.$": "$$.Map.Item.Index",
+                    "TaskIndex.$": "$$.Map.Item.Index",
                     "Task.$": "$$.Map.Item.Value",
                     "Callbacks.$": "$.Job.Callbacks"
                   },
@@ -1795,6 +1812,7 @@ Resources:
                         "ItemsPath": "$.Callbacks",
                         "Parameters": {
                           "Callback.$": "$$.Map.Item.Value",
+                          "TaskIteratorIndex.$": "$.TaskIndex",
                           "Message": {
                             "TaskResult": {
                               "Job": { "Id.$": "$.Job.Id" },
@@ -2006,7 +2024,7 @@ Resources:
                             "Execution": { "Id.$": "$$.Execution.Id" },
                             "Artifact.$": "$.Artifact",
                             "Task.$": "$.Task",
-                            "MapIteratorIndex.$": "$.Index",
+                            "TaskIteratorIndex.$": "$.TaskIndex",
                             "TaskToken.$": "$$.Task.Token"
                           }
                         },
