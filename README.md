@@ -46,10 +46,6 @@ The following is an example of the bucket policy used for granting Porter access
 }
 ```
 
-
-
-the Porter Step Function executing the task must have permission to write to the designated location in the given S3 bucket. There are two stack parameters that determine which destinations Porter will be able to write to.
-
 Any S3 destinations included in job tasks **must be defined in both stack parameters** in order to work. The first parameter, `TaskDestinationBucketPolicyResources`, is used with bucket-level IAM policies, and must only include top-level bucket ARNs (e.g., `arn:aws:s3:::myBucket`). The other parameter, `TaskDestinationObjectPolicyResources`, is used with object-level IAM policies, and provides wildcard access _within_ those buckets (e.g., `arn:aws:s3:::myBucket/*` or `arn:aws:s3:::myBucket/only/this/prefix/*`).
 
 ## Messaging I/O
