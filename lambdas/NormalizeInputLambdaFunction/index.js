@@ -23,8 +23,8 @@ exports.handler = async (event) => {
   // Make sure all Transcode tasks have all three FFmpeg options
   event.Job.Tasks.forEach((task) => {
     // The state machine definition expects each task to have a Type property,
-    // all fails without the error being caught if it's missing. This forces
-    // the execution to error in a way that can be caught and handled as
+    // and fails without the error being caught if it's missing. This forces
+    // the execution to error out in a way that can be caught and handled as
     // expected. (Choice states don't support Catch)
     if (!task.hasOwnProperty('Type')) { throw new Error('Job included a task without a Type'); }
 
