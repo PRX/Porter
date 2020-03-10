@@ -2,7 +2,7 @@ const AWSXRay = require('aws-xray-sdk');
 
 const AWS = AWSXRay.captureAWS(require('aws-sdk'));
 
-const s3 = new AWS.S3({ apiVersion: '2006-03-01' });
+const sts = new AWS.STS({apiVersion: '2011-06-15'});
 
 // https://docs.aws.amazon.com/AWSJavaScriptSDK/latest/AWS/S3.html#copyObject-property
 // https://docs.aws.amazon.com/AmazonS3/latest/API/RESTObjectCOPY.html
@@ -14,6 +14,18 @@ async function awsS3copyObject(event) {
     source: `${event.Artifact.BucketName}/${event.Artifact.ObjectKey}`,
     destination: `${event.Task.BucketName}/${event.Task.ObjectKey}`
   }));
+
+  const role = await sts.assumeRole({
+    RoleArn: process.env.S3_DESTINATION_WRITER_ROLE,
+    RoleSessionName: 'porter_copy_task',
+  }).promise();
+
+  const s3 = new AWS.S3({
+    apiVersion: '2006-03-01',
+    accessKeyId: role.Credentials.AccessKeyId,
+    secretAccessKey: role.Credentials.SecretAccessKey,
+    sessionToken: role.Credentials.SessionToken,
+  });
 
   const params = {
     CopySource: encodeURI(`/${event.Artifact.BucketName}/${event.Artifact.ObjectKey}`),

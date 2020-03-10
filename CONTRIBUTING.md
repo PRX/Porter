@@ -24,9 +24,17 @@ When a state fails, in general the desired outcome is that the error gets caught
 
 ### S3 Access Permissions
 
-There are two common reasons that a given state's resource (like a Lambda function or Fargate task) would need access to S3: reading from the artifact bucket, and writing new files to the destination buckets. There are two managed IAM policies available within the CloudFormation stack that provide those two levels of access: `ArtifactBucketReadOnlyAccessPolicy` and `DestinationBucketsWriteAccessPolicy`. You can include them in the list of `ManagedPolicyArns` for IAM roles you create for your stack resources.
+There are two common reasons that a given state's resource (like a Lambda function or Fargate task) would need access to S3: reading from the artifact bucket, and writing new files to the destination buckets.
 
-The `DestinationBucketsWriteAccessPolicy` provides write access to a set of resources that is defined when the Porter CloudFormation stack is launched. Those resources are defined in the stack's parameters. It takes two parameters because the policy includes both bucket-level permissions (e.g., `arn:aws:s3:::myBucket`) and object-level permissions (e.g., `arn:aws:s3:::myBucket/*`), and there's no good way to generate the wildcard versions from a list of non-wildcard values.
+In the case of reading from the artifact bucket, there is a managed IAM policy that provides the necessary permissions: `ArtifactBucketReadOnlyAccessPolicy`. You can include this in the list of `ManagedPolicyArns` for IAM roles you create for your stack resources.
+
+Permissions for writing files to destination buckets is handled **by the buckets themselves**, through bucket policies (see the README for more information). The bucket policies will grant access to a specific IAM role that Porter publishes. Thus, any S3 operations against destination buckets must always use credentials for that IAM role. Any state resources (Lambda functions, Fargate tasks, etc), must request temporary credentials for that role, and use those credentials to sign any S3 requests to the destination buckets.
+
+To recap, when adding new tasks or states to Porter's CloudFormation template:
+
+1. Create an execution role for a given Lambda function/Fargate Task/etc. This would have policies needed for the task to execute *excluding* writing files to S3 destination buckets (e.g., publishing SNS messages, getting files from S3, writing files to the S3 artifact bucket, etc)
+2. Ensure that that execution role is included as a principal in the `S3DestinationWriterRole` trust policy. This allows the execution role to assume the `S3DestinationWriterRole` role.
+3. Design the task so that it assumes the `S3DestinationWriterRole` role, and uses the temporary credentials generated to sign any S3 requests to the destination buckets. (Note: A task may deal with other S3 buckets, so you may end up with multiple S3 service objects, which have different permissions.)
 
 There's also `ArtifactBucketWriteAccessPolicy`, which provides write access to the artifact bucket. The artifact bucket is primarily used to store the source file for a task execution, but if you have a task that needs to persist metadata somewhere for the duration of an execution (such as to pass a value between decoupled services, or to store a large file that requires further processing), the artifact bucket can be used for those needs as well. Take care to make sure anything you're writing to the artifact bucket can't interfer with another execution's data. Common practice is to prefix any objects you create with the state machine execution ID. Objects in the artifact bucket expire very quickly, so it should never be used as the final destination for any critical data.
 

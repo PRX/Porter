@@ -14,7 +14,7 @@ const AWS = AWSXRay.captureAWS(require('aws-sdk'));
 
 const url = require('url');
 
-const s3 = new AWS.S3({ apiVersion: '2006-03-01' });
+const sts = new AWS.STS({apiVersion: '2011-06-15'});
 const transcribe = new AWS.TranscribeService({ apiVersion: '2017-10-26' });
 
 // https://docs.aws.amazon.com/AWSJavaScriptSDK/latest/AWS/S3.html#copyObject-property
@@ -31,6 +31,18 @@ async function awsS3copyObject(event, transcriptionJob) {
     source: s3path,
     destination: `${event.Task.Destination.BucketName}/${event.Task.Destination.ObjectKey}`
   }));
+
+  const role = await sts.assumeRole({
+    RoleArn: process.env.S3_DESTINATION_WRITER_ROLE,
+    RoleSessionName: 'porter_transcribe_task',
+  }).promise();
+
+  const s3 = new AWS.S3({
+    apiVersion: '2006-03-01',
+    accessKeyId: role.Credentials.AccessKeyId,
+    secretAccessKey: role.Credentials.SecretAccessKey,
+    sessionToken: role.Credentials.SessionToken,
+  });
 
   const params = {
     CopySource: encodeURI(s3path),
