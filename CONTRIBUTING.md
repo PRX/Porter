@@ -142,6 +142,7 @@ The job serializer is an iterator that comes into play if a job includes an `Ser
 
 - `InputPath`: `$`, `{ Job: { … }, Artifact: { … }, TaskResults: [ … ] }`
 - `Parameters`: `{ Execution: { … }, ExecutionTrace: [ … ], SerializedJob: { … } }`
+- `ResultPath`: `$.Void`,  `{ Job: { … }, Artifact: { … }, TaskResults: [ … ], Void: [ … ] } }`
 - `OutputPath`: `$`, `{ Job: { … }, Artifact: { … }, TaskResults: [ … ], Void: [ … ] } }`
 
 ### Output Normalization
