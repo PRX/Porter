@@ -1565,9 +1565,9 @@ Resources:
                   "Retry": [
                     {
                       "ErrorEquals": ["States.ALL"],
-                      "IntervalSeconds": 5,
-                      "MaxAttempts": 3,
-                      "BackoffRate": 2
+                      "IntervalSeconds": 1,
+                      "MaxAttempts": 2,
+                      "BackoffRate": 1
                     }
                   ],
                   "Catch": [
