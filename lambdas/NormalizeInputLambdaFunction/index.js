@@ -35,6 +35,16 @@ exports.handler = async (event) => {
     event.Job.Callbacks = [];
   }
 
+  // Set Job.SerializedJobs to an empty array, unless it's already an array.
+  if (!event.Job.hasOwnProperty('SerializedJobs') || !Array.isArray(event.Job.SerializedJobs)) {
+    event.Job.SerializedJobs = [];
+  }
+
+  // Set Job.ExecutionTrace to an empty array, unless it's already an array.
+  if (!event.Job.hasOwnProperty('ExecutionTrace') || !Array.isArray(event.Job.ExecutionTrace)) {
+    event.Job.ExecutionTrace = [];
+  }
+
   console.log(JSON.stringify({ msg: 'Normalized input', event: event }));
 
   return event;

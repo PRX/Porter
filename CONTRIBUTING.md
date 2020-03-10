@@ -136,6 +136,14 @@ The output of this state should pass along the input. It may contain additional 
 - `Parameters`: `{ Callback: { … }, Message: { … } }`
 - `OutputPath`: `$`, `{ Job: { … }, Artifact: { … }, TaskResults: [ … ], Void: [ … ] } }`
 
+### Job Serializer
+
+The job serializer is an iterator that comes into play if a job includes an `SerializedJobs`. It has no impact on the other aspects of the state machine execution, has no meaningful output, and only deals with the `SerializedJobs` that was originally defined on the input job message.
+
+- `InputPath`: `$`, `{ Job: { … }, Artifact: { … }, TaskResults: [ … ] }`
+- `Parameters`: `{ Execution: { … }, ExecutionTrace: [ … ], SerializedJob: { … } }`
+- `OutputPath`: `$`, `{ Job: { … }, Artifact: { … }, TaskResults: [ … ], Void: [ … ] } }`
+
 ### Output Normalization
 
 After callbacks have been sent, there's a final step that normalizes the output of the state machine. The resulting value is intended to match the message sent as part of each job callback.
