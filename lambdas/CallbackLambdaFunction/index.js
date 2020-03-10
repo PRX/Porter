@@ -6,9 +6,9 @@ const AWS = AWSXRay.captureAWS(require('aws-sdk'));
 const http = AWSXRay.captureHTTPs(require('http'));
 const https = AWSXRay.captureHTTPs(require('https'));
 
-const s3 = new AWS.S3({ apiVersion: '2006-03-01' });
 const sns = new AWS.SNS({ apiVersion: '2010-03-31' });
 const sqs = new AWS.SQS({ apiVersion: '2012-11-05' });
+const sts = new AWS.STS({apiVersion: '2011-06-15'});
 
 function httpRequest(event, message, redirectCount) {
   return (new Promise((resolve, reject) => {
@@ -90,6 +90,18 @@ async function s3Put(event, message) {
     id = message.JobResult.Execution.Id.split(':').pop();
     key = `/unknown_${+(new Date)}.json`;
   }
+
+  const role = await sts.assumeRole({
+    RoleArn: process.env.S3_DESTINATION_WRITER_ROLE,
+    RoleSessionName: 'porter_s3_callback',
+  }).promise();
+
+  const s3 = new AWS.S3({
+    apiVersion: '2006-03-01',
+    accessKeyId: role.Credentials.AccessKeyId,
+    secretAccessKey: role.Credentials.SecretAccessKey,
+    sessionToken: role.Credentials.SessionToken,
+  });
 
   await s3.putObject({
     Bucket: event.Callback.BucketName,

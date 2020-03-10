@@ -3,9 +3,10 @@ const path = require('path');
 const os = require('os');
 const fs = require('fs');
 const awsxray = require('aws-xray-sdk');
-const aws = awsxray.captureAWS(require('aws-sdk'));
+const AWS = awsxray.captureAWS(require('aws-sdk'));
 
-const s3 = new aws.S3();
+const s3 = new AWS.S3({ apiVersion: '2006-03-01' });
+const sts = new AWS.STS({apiVersion: '2011-06-15'});
 
 function transform(inputFile, outputFile, event) {
   return new Promise((resolve, reject) => {
@@ -99,9 +100,21 @@ exports.handler = async (event, context) => {
     duration: `${_sharpEnd[0]} s ${_sharpEnd[1] / 1000000} ms`
   }));
 
+  const role = await sts.assumeRole({
+    RoleArn: process.env.S3_DESTINATION_WRITER_ROLE,
+    RoleSessionName: 'porter_image_task',
+  }).promise();
+
+  const s3writer = new AWS.S3({
+    apiVersion: '2006-03-01',
+    accessKeyId: role.Credentials.AccessKeyId,
+    secretAccessKey: role.Credentials.SecretAccessKey,
+    sessionToken: role.Credentials.SessionToken,
+  });
+
   // Upload the resulting file to the destination in S3
   const _uploadStart = process.hrtime();
-  await s3.upload({
+  await s3writer.upload({
     Bucket: event.Task.Destination.BucketName,
     Key: event.Task.Destination.ObjectKey,
     Body: fs.createReadStream(imageFileTmpPath),

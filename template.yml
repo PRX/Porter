@@ -18,10 +18,6 @@ Parameters:
     Type: String
   OpsErrorMessagesSnsTopicArn:
     Type: String
-  TaskDestinationBucketPolicyResources:
-    Type: CommaDelimitedList
-  TaskDestinationObjectPolicyResources:
-    Type: CommaDelimitedList
   AwsXraySdkLambdaLayerVersionArn:
     Type: String
   FfmpegLambdaLayerVersionArn:
@@ -71,27 +67,33 @@ Resources:
               - s3:ListMultipartUploadParts
             Resource:
               - !Sub arn:aws:s3:::${ArtifactBucket}/*
-  DestinationBucketsWriteAccessPolicy:
-    Type: AWS::IAM::ManagedPolicy
+  # General-Purpose IAM Roles
+  S3DestinationWriterRole:
+    Type: AWS::IAM::Role
     Properties:
-      Description: >-
-        Provides limited S3 list and write access to user-defined task
-        destination resources for a particular Porter deployment
-      PolicyDocument:
+      AssumeRolePolicyDocument:
         Version: "2012-10-17"
         Statement:
-          # Bucket-level permissions
-          - Action:
-              - s3:ListBucketMultipartUploads
-            Effect: Allow
-            Resource: !Ref TaskDestinationBucketPolicyResources
-          # Object-level permissions
-          - Action:
-              - s3:PutObject*
-              - s3:AbortMultipartUpload
-              - s3:ListMultipartUploadParts
-            Effect: Allow
-            Resource: !Ref TaskDestinationObjectPolicyResources
+            - Action:
+                - sts:AssumeRole
+              Effect: Allow
+              Principal:
+                AWS:
+                  - !GetAtt CopyLambdaIamRole.Arn
+                  - !GetAtt ImageTransformLambdaIamRole.Arn
+                  - !GetAtt TranscriptionJobResultsLambdaIamRole.Arn
+                  - !GetAtt CallbackLambdaIamRole.Arn
+                  - !GetAtt TranscodeEcsTaskIamRole.Arn
+      ManagedPolicyArns:
+        # Calls to s3.copyObject need read access to the artifact bucket
+        - !Ref ArtifactBucketReadOnlyAccessPolicy
+      Tags:
+        - Key: Project
+          Value: Porter
+        - Key: prx:cloudformation:stack-name
+          Value: !Ref AWS::StackName
+        - Key: prx:cloudformation:stack-id
+          Value: !Ref AWS::StackId
   # SNS
   ## Messages sent to this topic will be handled by a Lambda function which
   ## executes the Step Functions state machine. The `input` to the state machine
@@ -565,8 +567,6 @@ Resources:
       ManagedPolicyArns:
         # Transcode operations are always pulling FROM the artifact bucket
         - !Ref ArtifactBucketReadOnlyAccessPolicy
-        # The destination is a set of user-defined buckets
-        - !Ref DestinationBucketsWriteAccessPolicy
       Tags:
         - Key: Project
           Value: Porter
@@ -924,8 +924,6 @@ Resources:
       ManagedPolicyArns:
         # Copy operations are always copying FROM the artifact bucket
         - !Ref ArtifactBucketReadOnlyAccessPolicy
-        # The destination is a set of user-defined buckets
-        - !Ref DestinationBucketsWriteAccessPolicy
         - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
         - arn:aws:iam::aws:policy/AWSXrayWriteOnlyAccess
       Tags:
@@ -941,6 +939,9 @@ Resources:
       CodeUri: lambdas/CopyLambdaFunction/
       Description: >-
         Copies an object in S3 to another location in S3
+      Environment:
+        Variables:
+          S3_DESTINATION_WRITER_ROLE: !GetAtt S3DestinationWriterRole.Arn
       Handler: index.handler
       Layers:
         - !Ref AwsXraySdkLambdaLayerVersionArn
@@ -1060,8 +1061,6 @@ Resources:
       ManagedPolicyArns:
         # Image operations are always fetching from the artifact bucket
         - !Ref ArtifactBucketReadOnlyAccessPolicy
-        # The destination is a set of user-defined buckets
-        - !Ref DestinationBucketsWriteAccessPolicy
         - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
         - arn:aws:iam::aws:policy/AWSXrayWriteOnlyAccess
       Tags:
@@ -1077,6 +1076,9 @@ Resources:
       CodeUri: lambdas/ImageTransformLambdaFunction/
       Description: >-
         Performans image manipulation operations on a source file
+      Environment:
+        Variables:
+          S3_DESTINATION_WRITER_ROLE: !GetAtt S3DestinationWriterRole.Arn
       Handler: index.handler
       Layers:
         - !Ref AwsXraySdkLambdaLayerVersionArn
@@ -1227,8 +1229,6 @@ Resources:
       ManagedPolicyArns:
         # Copy operations are always copying FROM the artifact bucket
         - !Ref ArtifactBucketReadOnlyAccessPolicy
-        # The destination is a set of user-defined buckets
-        - !Ref DestinationBucketsWriteAccessPolicy
         - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
         - arn:aws:iam::aws:policy/AWSXrayWriteOnlyAccess
       Policies:
@@ -1254,6 +1254,9 @@ Resources:
       CodeUri: lambdas/TranscriptionJobResultsLambdaFunction/
       Description: >-
         Gets the results of a transcribe job and generates task state output
+      Environment:
+        Variables:
+          S3_DESTINATION_WRITER_ROLE: !GetAtt S3DestinationWriterRole.Arn
       Handler: index.handler
       Layers:
         - !Ref AwsXraySdkLambdaLayerVersionArn
@@ -1328,23 +1331,6 @@ Resources:
                   - sqs:SendMessage
                 Resource:
                   - "*"
-        # The destination is a set of user-defined bucket
-        - PolicyName: S3PutPolicy
-          PolicyDocument:
-            Version: "2012-10-17"
-            Statement:
-              # Bucket-level permissions
-              - Action:
-                  - s3:ListBucketMultipartUploads
-                Effect: Allow
-                Resource: !Ref TaskDestinationBucketPolicyResources
-              # Object-level permissions
-              - Action:
-                  - s3:PutObject*
-                  - s3:AbortMultipartUpload
-                  - s3:ListMultipartUploadParts
-                Effect: Allow
-                Resource: !Ref TaskDestinationObjectPolicyResources
       Tags:
         - Key: Project
           Value: Porter
@@ -1361,6 +1347,7 @@ Resources:
       Environment:
         Variables:
           MAX_HTTP_REDIRECTS: "3"
+          S3_DESTINATION_WRITER_ROLE: !GetAtt S3DestinationWriterRole.Arn
       Handler: index.handler
       Layers:
         - !Ref AwsXraySdkLambdaLayerVersionArn
@@ -1852,6 +1839,9 @@ Resources:
                                   }, {
                                     "Name": "STATE_MACHINE_JOB_ID",
                                     "Value.$": "$.Job.Id"
+                                  }, {
+                                    "Name": "STATE_MACHINE_S3_DESTINATION_WRITER_ROLE",
+                                    "Value": "${S3DestinationWriterRoleArn}"
                                   }
                                 ],
                                 "Name": "${TranscodeContainerName}"
@@ -2101,6 +2091,7 @@ Resources:
             VpcSubnet1: !Ref Subnet1
             VpcSubnet2: !Ref Subnet2
             TranscodeContainerName: !Sub ${AWS::StackName}-transcode-container
+            S3DestinationWriterRoleArn: !GetAtt S3DestinationWriterRole.Arn
       RoleArn: !GetAtt StateMachineIamRole.Arn
       Tags:
         - Key: Project
@@ -2184,3 +2175,5 @@ Resources:
 Outputs:
   JobExecutionSnsTopicArn:
     Value: !Ref JobExecutionSnsTopic
+  S3DestinationWriterRoleArn:
+    Value: !GetAtt S3DestinationWriterRole.Arn
