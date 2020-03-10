@@ -34,8 +34,6 @@ Permissions for writing files to destination buckets is handled **by the buckets
 2. Ensure that that execution role is included as a principal in the `S3DestinationWriterRole` trust policy. This allows the execution role to assume the `S3DestinationWriterRole` role.
 3. Design the task so that it assumes the `S3DestinationWriterRole` role, and uses the temporary credentials generated to sign any S3 requests to the destination buckets. (Note: A task may deal with other S3 buckets, so you may end up with multiple S3 service objects, which have different permissions.
 
-)
-
 There's also `ArtifactBucketWriteAccessPolicy`, which provides write access to the artifact bucket. The artifact bucket is primarily used to store the source file for a task execution, but if you have a task that needs to persist metadata somewhere for the duration of an execution (such as to pass a value between decoupled services, or to store a large file that requires further processing), the artifact bucket can be used for those needs as well. Take care to make sure anything you're writing to the artifact bucket can't interfer with another execution's data. Common practice is to prefix any objects you create with the state machine execution ID. Objects in the artifact bucket expire very quickly, so it should never be used as the final destination for any critical data.
 
 ## Internal Messaging
