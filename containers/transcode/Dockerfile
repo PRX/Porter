@@ -6,6 +6,7 @@ RUN yum -y install aws-cli
 RUN yum -y install wget
 RUN yum -y install tar
 RUN yum -y install xz
+RUN yum install -y jq
 
 ENV APP_HOME /transcode
 RUN mkdir -p $APP_HOME
