@@ -1855,6 +1855,9 @@ Resources:
                                   }, {
                                     "Name": "STATE_MACHINE_S3_DESTINATION_WRITER_ROLE",
                                     "Value": "${S3DestinationWriterRoleArn}"
+                                  }, {
+                                    "Name": "STATE_MACHINE_AWS_REGION",
+                                    "Value": "${AwsRegion}"
                                   }
                                 ],
                                 "Name": "${TranscodeContainerName}"
@@ -2105,6 +2108,7 @@ Resources:
             VpcSubnet2: !Ref Subnet2
             TranscodeContainerName: !Sub ${AWS::StackName}-transcode-container
             S3DestinationWriterRoleArn: !GetAtt S3DestinationWriterRole.Arn
+            AwsRegion: !Ref AWS::Region
       RoleArn: !GetAtt StateMachineIamRole.Arn
       Tags:
         - Key: Project
