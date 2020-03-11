@@ -382,6 +382,19 @@ Resources:
         - !Ref Subnet2
       VpcEndpointType: Interface
       VpcId: !Ref VPC
+  StsVpcEndpoint:
+    # https://docs.aws.amazon.com/IAM/latest/UserGuide/id_credentials_sts_vpce.html
+    Type: AWS::EC2::VPCEndpoint
+    Properties:
+      PrivateDnsEnabled: true
+      SecurityGroupIds:
+        - !Ref AwsServiceInterfaceEndpointsSecurityGroup
+      ServiceName: !Sub com.amazonaws.${AWS::Region}.sts
+      SubnetIds:
+        - !Ref Subnet1
+        - !Ref Subnet2
+      VpcEndpointType: Interface
+      VpcId: !Ref VPC
   Subnet1:
     Type: AWS::EC2::Subnet
     Properties:
