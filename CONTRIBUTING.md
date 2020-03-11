@@ -22,6 +22,8 @@ The job input format should generally avoid using input formats specific to part
 
 When a state fails, in general the desired outcome is that the error gets caught by the state machine and a callback is sent with notifying the user of the issue. By catching errors, it is no longer possible to detect or count task errors by looking for state machine execution failures. Instead the resources themselves (Lambdas functions, etc) must be monitored.
 
+Fargate tasks (like Transcode) run in a VPC that does not have internet access. Access to AWS APIs is provided by [VPC endpoints](https://docs.aws.amazon.com/vpc/latest/userguide/vpc-endpoints.html). If you have a Fargate task running in the VPC that needs access to a new AWS API, you'll have to add a new endpoint for it.
+
 ### S3 Access Permissions
 
 There are two common reasons that a given state's resource (like a Lambda function or Fargate task) would need access to S3: reading from the artifact bucket, and writing new files to the destination buckets.
