@@ -1,6 +1,6 @@
 {
     "Job": {
-        "Id": "1234567890asdfghjkl",
+        "Id": "porter-sample-image",
         "Source": {
             "Mode": "HTTP",
             "URL": "https://f.prxu.org/232/images/e0f8153a-a39d-4288-a8cf-cd920552c295/image.png"
@@ -12,8 +12,8 @@
                 "Type": "Image",
                 "Destination": {
                     "Mode": "AWS/S3",
-                    "BucketName": "farski-sandbox-prx",
-                    "ObjectKey": "myObject.jpg"
+                    "BucketName": "prx-porter-sandbox",
+                    "ObjectKey": "dev/sample/image/image.jpg"
                 }
             }
         ]

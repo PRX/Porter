@@ -1,16 +1,20 @@
 {
     "Job": {
-        "Id": "1234567890asdfghjkl",
+        "Id": "porter-sample-audio-inspect",
         "Source": {
             "Mode": "HTTP",
             "URL": "https://dts.podtrac.com/redirect.mp3/dovetail.prxu.org/232/fbd26e97-dd82-48b8-9600-d8838f9f1dd4/Passenger_List_EP04_SEG_A.mp3"
         },
+        "Tasks": [
+            {
+                "Type": "Inspect"
+            }
+        ],
         "Callbacks": [
             {
-                "Type": "HTTP",
-                "URL": "https://example.com/callbacks/jobs",
-                "Method": "POST",
-                "Content-Type": "application/x-www-form-urlencoded"
+                "Type": "AWS/S3",
+                "BucketName": "prx-porter-sandbox",
+                "ObjectPrefix": "dev/sample/audio-inspect/"
             }
         ]
     }
