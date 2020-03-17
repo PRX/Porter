@@ -1398,6 +1398,85 @@ Resources:
       Dimensions:
         - Name: FunctionName
           Value: !Ref CallbackLambdaFunction
+  # Job Serializer Lambda
+  JobSerializerLambdaIamRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+            - Effect: Allow
+              Principal:
+                Service:
+                  - lambda.amazonaws.com
+              Action:
+                - sts:AssumeRole
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+        - arn:aws:iam::aws:policy/AWSXrayWriteOnlyAccess
+      Policies:
+        - PolicyName: SnsPublishJobExecutionPolicy
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Effect: Allow
+                Action:
+                  - sns:Publish
+                Resource:
+                  - !Ref JobExecutionSnsTopic
+      Tags:
+        - Key: Project
+          Value: Porter
+        - Key: prx:cloudformation:stack-name
+          Value: !Ref AWS::StackName
+        - Key: prx:cloudformation:stack-id
+          Value: !Ref AWS::StackId
+  JobSerializerLambdaFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: lambdas/JobSerializerLambdaFunction/
+      Description: >-
+        Serialized Porter jobs
+      Environment:
+        Variables:
+          JOB_EXECUTION_SNS_TOPIC_ARN: !Ref JobExecutionSnsTopic
+      Handler: index.handler
+      Layers:
+        - !Ref AwsXraySdkLambdaLayerVersionArn
+      MemorySize: 128
+      Role: !GetAtt JobSerializerLambdaIamRole.Arn
+      Runtime: nodejs12.x
+      Tags:
+        Project: Porter
+        prx:cloudformation:stack-name: !Ref AWS::StackName
+        prx:cloudformation:stack-id: !Ref AWS::StackId
+      Timeout: 4
+      Tracing: Active
+  JobSerializerLambdaErrorAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Condition: CreateProductionResources
+    Properties:
+      ActionsEnabled: true
+      AlarmName: "[Porter][Serialize][Lambda] Elevated error volume"
+      AlarmActions:
+        - !Ref OpsErrorMessagesSnsTopicArn
+      InsufficientDataActions:
+        - !Ref OpsErrorMessagesSnsTopicArn
+      OKActions:
+        - !Ref OpsErrorMessagesSnsTopicArn
+      AlarmDescription: >-
+        Job serializer function has encountered an invocation error
+      ComparisonOperator: GreaterThanThreshold
+      EvaluationPeriods: 1
+      MetricName: LambdaFunctionsFailed
+      Namespace: AWS/States
+      Period: 60
+      Statistic: Sum
+      Threshold: 0
+      TreatMissingData: notBreaching
+      Dimensions:
+        - Name: FunctionName
+          Value: !Ref JobSerializerLambdaFunction
   # Normalize Output Lambda
   NormalizeOutputLambdaIamRole:
     Type: AWS::IAM::Role
@@ -1499,6 +1578,7 @@ Resources:
                   - !GetAtt CallbackLambdaFunction.Arn
                   - !GetAtt TranscodeTaskOutputLambdaFunction.Arn
                   - !GetAtt NormalizeOutputLambdaFunction.Arn
+                  - !GetAtt JobSerializerLambdaFunction.Arn
         - PolicyName: PassRoleToEcsPolicy
           PolicyDocument:
             Version: "2012-10-17"
@@ -2006,7 +2086,7 @@ Resources:
                   },
                   "ResultPath": "$.Void",
                   "OutputPath": "$",
-                  "Next": "NormalizeOutput",
+                  "Next": "StartSerializedJobs",
                   "MaxConcurrency": 0,
                   "Iterator": {
                     "StartAt": "SendJobCompleteCallback",
@@ -2016,6 +2096,43 @@ Resources:
                         "Comment": "Sends a callback message to a single endpoint in the iterator with a job result",
                         "InputPath": "$",
                         "Resource": "${CallbackLambdaFunctionArn}",
+                        "ResultPath": "$",
+                        "OutputPath": "$",
+                        "End": true,
+                        "Retry": [
+                          {
+                            "ErrorEquals": ["States.ALL"],
+                            "IntervalSeconds": 5,
+                            "MaxAttempts": 3,
+                            "BackoffRate": 2
+                          }
+                        ]
+                      }
+                    }
+                  }
+                },
+                "StartSerializedJobs": {
+                  "Type": "Map",
+                  "Comment": "Iterates over all serialized jobs and sends them to SNS",
+                  "InputPath": "$",
+                  "ItemsPath": "$.Job.SerializedJobs",
+                  "Parameters": {
+                    "Execution": { "Id.$": "$$.Execution.Id" },
+                    "ExecutionTrace.$": "$.Job.ExecutionTrace",
+                    "SerializedJob.$": "$$.Map.Item.Value"
+                  },
+                  "ResultPath": "$.Void",
+                  "OutputPath": "$",
+                  "Next": "NormalizeOutput",
+                  "MaxConcurrency": 0,
+                  "Iterator": {
+                    "StartAt": "StartSerializedJobExecution",
+                    "States": {
+                      "StartSerializedJobExecution": {
+                        "Type": "Task",
+                        "Comment": "Sends a serialized job to the job execution SNS topic",
+                        "InputPath": "$",
+                        "Resource": "${JobSerializerLambdaFunctionArn}",
                         "ResultPath": "$",
                         "OutputPath": "$",
                         "End": true,
@@ -2104,6 +2221,7 @@ Resources:
             EcsClusterArn: !GetAtt EcsCluster.Arn
             TranscodeEcsTaskDefinitionArn: !Ref TranscodeEcsTaskDefinition
             TranscodeTaskOutputLambdaFunctionArn: !GetAtt TranscodeTaskOutputLambdaFunction.Arn
+            JobSerializerLambdaFunctionArn: !GetAtt JobSerializerLambdaFunction.Arn
             VpcSubnet1: !Ref Subnet1
             VpcSubnet2: !Ref Subnet2
             TranscodeContainerName: !Sub ${AWS::StackName}-transcode-container

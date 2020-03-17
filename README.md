@@ -265,6 +265,59 @@ If there's a failure during the job execution in any part of the state machine, 
 
 **Example:** If you have a job with three copy destinations, and two callbacks, you would expect to get a total of six `TaskResult` and two `JobResult` messages, across all of the endpoints.
 
+## Serialized Jobs
+
+A job can include any number of additional jobs that will be started after all tasks have succeeded. This allows you to easily perform tasks on files that resulted from an initial job.
+
+As an example, you may have a job with an MP2 source file and a transcode task that produces an MP3 version of that file. You could include a serialized job which then performs a transcribe task on that resulting MP3 file.
+
+Serialized jobs are **not** called recursively as part of the initial job execution. They are simply additional jobs that have their own state machine execution, and are entirely self-contained in their definition and execution. They have their own job ID, source, callbacks, tasks, etc, even additional serialized jobs. There is no inheritance from or referencing to the initial job or its outputs. The only benefit to using serialized jobs is that Porter provides the convenience of starting the job executions for you.
+
+If a job includes any serialized jobs, they are executed after all job result callbacks have been sent. Each serialized job is sent to the SNS topic mentioned previously. As such, the serialized executions are entirely decoupled from the initial execution. It will do nothing to ensure, and have no visibility into, the progress or success of the serialized jobs. Aside from this, including serialized jobs in a job has no impact on the job itself; callbacks will not indicate in any way that a job included serialized jobs, and individual tasks will not be aware of any of the future work that is expected to occur.
+
+When constructing jobs that include serialized jobs, it is constructor's responsibility to build sequential jobs with meaningful values. If the serialized job needs to do work on the result of the initial job's task, the two job definitions must be explicitly constructed in such a way that the resulting file of the task and the source file of the serialized job align.
+
+In some cases it could be acceptable or beneficial for a job and some of its serialized jobs to share a job ID, but this would depend enitrely on how the app that sent the job works, and how it handles the callbacks.
+
+When a job is started via this method, it will include an additional parameter in the definition called `ExecutionTrace`. This is array containing the execution ID of the job that started it, as well as the ID of the job that started that job, etc (if applicable). The last element in the array is the execution ID of the job that started the job being executed.
+
+All jobs included directly as members of `SerializedJobs` are started simultaneously.
+
+```
+{
+    "Job": {
+        "Id": "1234567890asdfghjkl",
+        "Source": {
+            "Mode": "AWS/S3",
+            "BucketName": "farski-sandbox-prx",
+            "ObjectKey": "130224.mp2"
+        },
+        "SerializedJobs": [
+            {
+                "Job": {
+                    "Id": "1234567890asdfghjkl",
+                    "Source": {
+                        "Mode": "AWS/S3",
+                        "BucketName": "farski-sandbox-prx",
+                        "ObjectKey": "130224.mp2"
+                    }
+                }
+            }, {
+                "Job": {
+                    "Id": "1234567890asdfghjkl",
+                    "Source": {
+                        "Mode": "AWS/S3",
+                        "BucketName": "farski-sandbox-prx",
+                        "ObjectKey": "130224.mp2"
+                    }
+                }
+            }
+        ]
+    }
+}
+
+```
+
 ## Tasks
 
 ### Copy
