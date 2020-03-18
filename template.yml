@@ -269,8 +269,7 @@ Resources:
         SqsTrigger:
           Type: SQS
           Properties:
-            Enabled: !If [CreateSqsEventMapping, true, false
-            ]
+            Enabled: !If [CreateSqsEventMapping, true, false]
             Queue: !GetAtt JobExecutionSqsQueue.Arn
       Handler: index.handler
       Layers:
