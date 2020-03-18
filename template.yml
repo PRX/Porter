@@ -6,6 +6,7 @@ Description: >-
   well as some supporting resources
 Conditions:
   CreateProductionResources: !Equals [!Ref EnvironmentType, Production]
+  CreateSqsEventMapping: !Equals [!Ref EnableSqsJobExecution, "True"]
 Parameters:
   EnvironmentType:
     Type: String
@@ -30,6 +31,11 @@ Parameters:
     Type: String
   TranscodeEcsTaskDefinitionImage:
     Type: String
+  EnableSqsJobExecution:
+    Type: String
+    AllowedValues:
+      - "True"
+      - "False"
 Resources:
   # Managed IAM Policies
   ArtifactBucketReadOnlyAccessPolicy:
@@ -171,7 +177,7 @@ Resources:
     Condition: CreateProductionResources
     Properties:
       ActionsEnabled: true
-      AlarmName: "[Porter][Execute][Lambda] Elevated error volume"
+      AlarmName: "[Porter][SNS][Lambda] Elevated error volume"
       AlarmActions:
         - !Ref OpsErrorMessagesSnsTopicArn
       InsufficientDataActions:
@@ -191,6 +197,116 @@ Resources:
       Dimensions:
         - Name: FunctionName
           Value: !Ref JobExecutionSnsTopicLambdaFunction
+  # SQS
+  ## Messages sent to this queue will be handled by a Lambda function which
+  ## executes the Step Functions state machine. The `input` to the state machine
+  ## execution will be the body of the SQS message. The SQS message must be
+  ## valic JSON.
+  JobExecutionSqsQueue:
+    Type: AWS::SQS::Queue
+    Properties:
+      Tags:
+        - Key: Project
+          Value: Porter
+        - Key: prx:cloudformation:stack-name
+          Value: !Ref AWS::StackName
+        - Key: prx:cloudformation:stack-id
+          Value: !Ref AWS::StackId
+  JobExecutionSqsQueueLambdaIamRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+            - Effect: Allow
+              Principal:
+                Service:
+                  - lambda.amazonaws.com
+              Action:
+                - sts:AssumeRole
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+        - arn:aws:iam::aws:policy/AWSXrayWriteOnlyAccess
+      Policies:
+        - PolicyName: SqsPolicy
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Effect: Allow
+                Action:
+                  - sqs:ChangeMessageVisibility
+                  - sqs:DeleteMessage
+                  - sqs:GetQueueAttributes
+                  - sqs:ReceiveMessage
+                Resource:
+                  - !GetAtt JobExecutionSqsQueue.Arn
+        - PolicyName: StepFunctionsPolicy
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Effect: Allow
+                Action:
+                  - states:StartExecution
+                Resource:
+                  - !Ref StateMachine
+      Tags:
+        - Key: Project
+          Value: Porter
+        - Key: prx:cloudformation:stack-name
+          Value: !Ref AWS::StackName
+        - Key: prx:cloudformation:stack-id
+          Value: !Ref AWS::StackId
+  JobExecutionSqsQueueLambdaFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: lambdas/JobExecutionSqsQueueLambdaFunction/
+      Description: >-
+        Relays SQS messages sent to a subscribed queue to a State Machine
+      Environment:
+        Variables:
+          STATE_MACHINE_ARN: !Ref StateMachine
+      Events:
+        SqsTrigger:
+          Type: SQS
+          Properties:
+            Enabled: !If [CreateSqsEventMapping, true, false]
+            Queue: !GetAtt JobExecutionSqsQueue.Arn
+      Handler: index.handler
+      Layers:
+        - !Ref AwsXraySdkLambdaLayerVersionArn
+      MemorySize: 128
+      Role: !GetAtt JobExecutionSqsQueueLambdaIamRole.Arn
+      Runtime: nodejs12.x
+      Tags:
+        Project: Porter
+        prx:cloudformation:stack-name: !Ref AWS::StackName
+        prx:cloudformation:stack-id: !Ref AWS::StackId
+      Timeout: 8
+  JobExecutionSqsQueueLambdaErrorAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Condition: CreateProductionResources
+    Properties:
+      ActionsEnabled: true
+      AlarmName: "[Porter][SQS][Lambda] Elevated error volume"
+      AlarmActions:
+        - !Ref OpsErrorMessagesSnsTopicArn
+      InsufficientDataActions:
+        - !Ref OpsErrorMessagesSnsTopicArn
+      OKActions:
+        - !Ref OpsErrorMessagesSnsTopicArn
+      AlarmDescription: >-
+        Job execution function has encountered an invocation error
+      ComparisonOperator: GreaterThanThreshold
+      EvaluationPeriods: 1
+      MetricName: Errors
+      Namespace: AWS/Lambda
+      Period: 60
+      Statistic: Sum
+      Threshold: 0
+      TreatMissingData: notBreaching
+      Dimensions:
+        - Name: FunctionName
+          Value: !Ref JobExecutionSqsQueueLambdaFunction
   # Transcode Job Watcher
   # Transcode tasks are submitted async, but the state machine will wait for a
   # task token to be sent back as part of a SendTaskSuccess or SendTaskFailure
@@ -2310,5 +2426,9 @@ Resources:
 Outputs:
   JobExecutionSnsTopicArn:
     Value: !Ref JobExecutionSnsTopic
+  JobExecutionSqsQueueArn:
+    Value: !GetAtt JobExecutionSqsQueue.Arn
+  JobExecutionSqsQueueUrl:
+    Value: !Ref JobExecutionSqsQueue
   S3DestinationWriterRoleArn:
     Value: !GetAtt S3DestinationWriterRole.Arn
