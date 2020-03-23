@@ -8,7 +8,7 @@ const https = AWSXRay.captureHTTPs(require('https'));
 
 const sns = new AWS.SNS({ apiVersion: '2010-03-31' });
 const sqs = new AWS.SQS({ apiVersion: '2012-11-05' });
-const sts = new AWS.STS({apiVersion: '2011-06-15'});
+const sts = new AWS.STS({ apiVersion: '2011-06-15' });
 
 function httpRequest(event, message, redirectCount) {
   return (new Promise((resolve, reject) => {
