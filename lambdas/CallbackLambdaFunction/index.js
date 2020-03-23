@@ -9,6 +9,7 @@ const https = AWSXRay.captureHTTPs(require('https'));
 const sns = new AWS.SNS({ apiVersion: '2010-03-31' });
 const sqs = new AWS.SQS({ apiVersion: '2012-11-05' });
 const sts = new AWS.STS({ apiVersion: '2011-06-15' });
+const cloudwatch = new AWS.CloudWatch({ apiVersion: '2010-08-01' });
 
 function httpRequest(event, message, redirectCount) {
   return (new Promise((resolve, reject) => {
@@ -110,6 +111,25 @@ async function s3Put(event, message) {
   }).promise();
 }
 
+async function putErrorMetric() {
+  await cloudwatch.putMetricData({
+    Namespace: 'PRX/Porter',
+    MetricData: [
+      {
+        'MetricName': 'ErrorCallbackMessagesSent',
+        'Dimensions': [
+          {
+            'Name': 'LambdaFunctionName',
+            'Value': process.env.AWS_LAMBDA_FUNCTION_NAME
+          }
+        ],
+        'Value': 1,
+        'Unit': 'Count'
+      }
+    ]
+  }).promise();
+}
+
 exports.handler = async (event) => {
   console.log(JSON.stringify({ msg: 'State input', input: event }));
 
@@ -119,6 +139,10 @@ exports.handler = async (event) => {
   if (event.Message) { Object.assign(msg, event.Message); }
 
   console.log(JSON.stringify({ msg: 'Callback message body', body: msg }));
+
+  if (msg.hasOwnProperty('JobResult') && msg.JobResult.hasOwnProperty('Error')) {
+    await putErrorMetric();
+  }
 
   if (event.Callback.Type === 'AWS/SNS') {
     const TopicArn = event.Callback.Topic;
