@@ -383,8 +383,8 @@ Resources:
       Threshold: 0
       TreatMissingData: notBreaching
       Dimensions:
-        - Name: FunctionName
-          Value: !Ref TranscriptionJobStateChangeLambdaFunction
+        - Name: LambdaFunctionArn
+          Value: !GetAtt TranscriptionJobStateChangeLambdaFunction.Arn
   TranscriptionJobEventsRuleLambdaPermission:
     Type: AWS::Lambda::Permission
     Properties:
@@ -810,8 +810,8 @@ Resources:
       Threshold: 0
       TreatMissingData: notBreaching
       Dimensions:
-        - Name: FunctionName
-          Value: !Ref NormalizeInputLambdaFunction
+        - Name: LambdaFunctionArn
+          Value: !GetAtt NormalizeInputLambdaFunction.Arn
   # Ingest Lambda
   IngestLambdaIamRole:
     Type: AWS::IAM::Role
@@ -893,8 +893,8 @@ Resources:
       Threshold: 0
       TreatMissingData: notBreaching
       Dimensions:
-        - Name: FunctionName
-          Value: !Ref IngestLambdaFunction
+        - Name: LambdaFunctionArn
+          Value: !GetAtt IngestLambdaFunction.Arn
   # Source Type Lambda
   SourceTypeLambdaIamRole:
     Type: AWS::IAM::Role
@@ -965,8 +965,8 @@ Resources:
       Threshold: 0
       TreatMissingData: notBreaching
       Dimensions:
-        - Name: FunctionName
-          Value: !Ref SourceTypeLambdaFunction
+        - Name: LambdaFunctionArn
+          Value: !GetAtt SourceTypeLambdaFunction.Arn
   # Inspect Lambda
   InspectMediaLambdaIamRole:
     Type: AWS::IAM::Role
@@ -1035,8 +1035,8 @@ Resources:
       Threshold: 0
       TreatMissingData: notBreaching
       Dimensions:
-        - Name: FunctionName
-          Value: !Ref InspectMediaLambdaFunction
+        - Name: LambdaFunctionArn
+          Value: !GetAtt InspectMediaLambdaFunction.Arn
   # Copy Lambda
   CopyLambdaIamRole:
     Type: AWS::IAM::Role
@@ -1106,8 +1106,8 @@ Resources:
       Threshold: 0
       TreatMissingData: notBreaching
       Dimensions:
-        - Name: FunctionName
-          Value: !Ref CopyLambdaFunction
+        - Name: LambdaFunctionArn
+          Value: !GetAtt CopyLambdaFunction.Arn
   # Transcode Output Lambda
   TranscodeTaskOutputLambdaIamRole:
     Type: AWS::IAM::Role
@@ -1172,8 +1172,8 @@ Resources:
       Threshold: 0
       TreatMissingData: notBreaching
       Dimensions:
-        - Name: FunctionName
-          Value: !Ref CopyLambdaFunction
+        - Name: LambdaFunctionArn
+          Value: !GetAtt CopyLambdaFunction.Arn
   # Image Manipulation Lambda
   ImageTransformLambdaIamRole:
     Type: AWS::IAM::Role
@@ -1244,8 +1244,8 @@ Resources:
       Threshold: 0
       TreatMissingData: notBreaching
       Dimensions:
-        - Name: FunctionName
-          Value: !Ref ImageTransformLambdaFunction
+        - Name: LambdaFunctionArn
+          Value: !GetAtt ImageTransformLambdaFunction.Arn
   # Transcribe Start Lambda
   TranscriptionJobStartLambdaIamRole:
     Type: AWS::IAM::Role
@@ -1340,8 +1340,8 @@ Resources:
       Threshold: 0
       TreatMissingData: notBreaching
       Dimensions:
-        - Name: FunctionName
-          Value: !Ref TranscriptionJobStartLambdaIamRole
+        - Name: LambdaFunctionArn
+          Value: !GetAtt TranscriptionJobStartLambdaIamRole.Arn
   # Transcribe Job Results Lambda
   TranscriptionJobResultsLambdaIamRole:
     Type: AWS::IAM::Role
@@ -1421,8 +1421,8 @@ Resources:
       Threshold: 0
       TreatMissingData: notBreaching
       Dimensions:
-        - Name: FunctionName
-          Value: !Ref TranscriptionJobResultsLambdaIamRole
+        - Name: LambdaFunctionArn
+          Value: !GetAtt TranscriptionJobResultsLambdaIamRole.Arn
   # Callback Lambda
   CallbackLambdaIamRole:
     Type: AWS::IAM::Role
@@ -1512,8 +1512,8 @@ Resources:
       Threshold: 0
       TreatMissingData: notBreaching
       Dimensions:
-        - Name: FunctionName
-          Value: !Ref CallbackLambdaFunction
+        - Name: LambdaFunctionArn
+          Value: !GetAtt CallbackLambdaFunction.Arn
   # Job Serializer Lambda
   JobSerializerLambdaIamRole:
     Type: AWS::IAM::Role
@@ -1591,8 +1591,8 @@ Resources:
       Threshold: 0
       TreatMissingData: notBreaching
       Dimensions:
-        - Name: FunctionName
-          Value: !Ref JobSerializerLambdaFunction
+        - Name: LambdaFunctionArn
+          Value: !GetAtt JobSerializerLambdaFunction.Arn
   # Normalize Output Lambda
   NormalizeOutputLambdaIamRole:
     Type: AWS::IAM::Role
@@ -1657,8 +1657,8 @@ Resources:
       Threshold: 0
       TreatMissingData: notBreaching
       Dimensions:
-        - Name: FunctionName
-          Value: !Ref NormalizeOutputLambdaFunction
+        - Name: LambdaFunctionArn
+          Value: !GetAtt NormalizeOutputLambdaFunction.Arn
   # Step Functions
   StateMachineIamRole:
     Type: AWS::IAM::Role
