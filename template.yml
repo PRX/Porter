@@ -1460,6 +1460,16 @@ Resources:
                   - sqs:SendMessage
                 Resource:
                   - "*"
+        # Allow it to put CloudWatch Metrics
+        - PolicyName: PutCloudWatchMetric
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Effect: Allow
+                Action:
+                  - cloudwatch:PutMetricData
+                Resource:
+                  - "*"
       Tags:
         - Key: Project
           Value: Porter
