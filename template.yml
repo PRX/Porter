@@ -1460,6 +1460,16 @@ Resources:
                   - sqs:SendMessage
                 Resource:
                   - "*"
+        # Allow it to put CloudWatch Metrics
+        - PolicyName: PutCloudWatchMetric
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Effect: Allow
+                Action:
+                  - cloudwatch:PutMetricData
+                Resource:
+                  - "*"
       Tags:
         - Key: Project
           Value: Porter
@@ -1514,6 +1524,32 @@ Resources:
       Dimensions:
         - Name: LambdaFunctionArn
           Value: !GetAtt CallbackLambdaFunction.Arn
+  CallbackLambdaErrorMessageSentAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Condition: CreateProductionResources
+    Properties:
+      ActionsEnabled: true
+      AlarmName: "[Porter][Callback][Message] Elevated error message volume"
+      AlarmActions:
+        - !Ref OpsWarnMessagesSnsTopicArn
+      InsufficientDataActions:
+        - !Ref OpsWarnMessagesSnsTopicArn
+      OKActions:
+        - !Ref OpsWarnMessagesSnsTopicArn
+      AlarmDescription: >-
+        An error message callback was sent. The callback executed successfully,
+        but the message indicates that a state failed.
+      ComparisonOperator: GreaterThanThreshold
+      EvaluationPeriods: 1
+      MetricName: ErrorCallbackMessagesSent
+      Namespace: PRX/Porter
+      Period: 60
+      Statistic: Sum
+      Threshold: 0
+      TreatMissingData: notBreaching
+      Dimensions:
+        - Name: LambdaFunctionName
+          Value: !Ref CallbackLambdaFunction
   # Job Serializer Lambda
   JobSerializerLambdaIamRole:
     Type: AWS::IAM::Role
