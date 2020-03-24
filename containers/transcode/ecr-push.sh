@@ -1,6 +1,6 @@
 #!/bin/bash
 
-export AWS_PROFILE=prx_legacy
+export AWS_PROFILE=prx-legacy
 export AWS_DEFAULT_REGION=us-east-1
 
 $(aws ecr get-login --no-include-email --region us-east-1)

@@ -1,6 +1,6 @@
 #!/bin/bash
 
-export AWS_PROFILE=prx_legacy
+export AWS_PROFILE=prx-legacy
 export AWS_DEFAULT_REGION=us-east-1
 
 state_machine_arn="arn:aws:states:us-east-1:561178107736:stateMachine:StateMachine-cvPVX5enHWdj"
