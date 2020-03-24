@@ -18,7 +18,7 @@
 		{
 			"label": "SAM:Deploy",
 			"type": "shell",
-			"command": "export AWS_PROFILE=prx_legacy && cp samconfig.${input:appEnv}.toml samconfig.toml && sam deploy && rm samconfig.toml",
+			"command": "cp samconfig.${input:appEnv}.toml samconfig.toml && sam deploy && rm samconfig.toml",
 			"problemMatcher": []
     }, {
       "label": "Transcode ECR Push",
