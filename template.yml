@@ -2039,17 +2039,32 @@ Resources:
                                     "Name": "STATE_MACHINE_EXECUTION_ID",
                                     "Value.$": "$$.Execution.Id"
                                   }, {
+                                    "Name": "STATE_MACHINE_JOB_ID",
+                                    "Value.$": "$.Job.Id"
+                                  }, {
+                                    "Name": "STATE_MACHINE_S3_DESTINATION_WRITER_ROLE",
+                                    "Value": "${S3DestinationWriterRoleArn}"
+                                  }, {
+                                    "Name": "STATE_MACHINE_AWS_REGION",
+                                    "Value": "${AwsRegion}"
+                                  }, {
                                     "Name": "STATE_MACHINE_ARTIFACT_BUCKET_NAME",
                                     "Value.$": "$.Artifact.BucketName"
                                   }, {
                                     "Name": "STATE_MACHINE_ARTIFACT_OBJECT_KEY",
                                     "Value.$": "$.Artifact.ObjectKey"
                                   }, {
+                                    "Name": "STATE_MACHINE_DESTINATION_MODE",
+                                    "Value.$": "$.Task.Destination.Mode"
+                                  }, {
                                     "Name": "STATE_MACHINE_DESTINATION_BUCKET_NAME",
                                     "Value.$": "$.Task.Destination.BucketName"
                                   }, {
                                     "Name": "STATE_MACHINE_DESTINATION_OBJECT_KEY",
                                     "Value.$": "$.Task.Destination.ObjectKey"
+                                  }, {
+                                    "Name": "STATE_MACHINE_DESTINATION_PARAMETER_CONTENT_TYPE",
+                                    "Value.$": "$.Task.Destination.Parameters.ContentType"
                                   }, {
                                     "Name": "STATE_MACHINE_DESTINATION_FORMAT",
                                     "Value.$": "$.Task.Format"
@@ -2062,15 +2077,6 @@ Resources:
                                   }, {
                                     "Name": "STATE_MACHINE_FFMPEG_OUTPUT_FILE_OPTIONS",
                                     "Value.$": "$.Task.FFmpeg.OutputFileOptions"
-                                  }, {
-                                    "Name": "STATE_MACHINE_JOB_ID",
-                                    "Value.$": "$.Job.Id"
-                                  }, {
-                                    "Name": "STATE_MACHINE_S3_DESTINATION_WRITER_ROLE",
-                                    "Value": "${S3DestinationWriterRoleArn}"
-                                  }, {
-                                    "Name": "STATE_MACHINE_AWS_REGION",
-                                    "Value": "${AwsRegion}"
                                   }
                                 ],
                                 "Name": "${TranscodeContainerName}"
