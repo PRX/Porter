@@ -83,7 +83,7 @@ Input messages are represented as JSON data. The root JSON object must include a
             "BucketName": "myBucket",
             "ObjectKey": "myObject.jpg"
         },
-        "Tasks:" [
+        "Tasks": [
             {
                 "Type": "Inspect"
             }
@@ -133,10 +133,10 @@ Each callback includes `Time` and `Timestamp` values. These represent approximat
 
 Callbacks are sent when a job has been received (after the input has been normalized). These callbacks will contain a `JobReceived` key.
 
-```
+```json
 {
     "Time": "2012-12-21T12:34:56Z",
-    "Timestamp: 1356093296.123,
+    "Timestamp": 1356093296.123,
     "JobReceived": {
         "Job": {
             "Id": "1234567890asdfghjkl"
@@ -155,10 +155,10 @@ Callbacks are sent as individual tasks succeed or fail. For example, if a job in
 
 The JSON message for a successful `Copy` task callback looks like this:
 
-```
+```json
 {
     "Time": "2012-12-21T12:34:56Z",
-    "Timestamp: 1356093296.123,
+    "Timestamp": 1356093296.123,
     "Task": {
         "Type": "Copy",
         "Mode": "AWS/S3",
@@ -341,7 +341,7 @@ When a job is started via this method, it will include an additional parameter i
 
 All jobs included directly as members of `SerializedJobs` are started simultaneously.
 
-```
+```json
 {
     "Job": {
         "Id": "1234567890asdfghjkl",
@@ -396,7 +396,7 @@ If you set the optional `ContentType` property to `REPLACE`, the content type of
 
 Input:
 
-```
+```json
 {
     "Type": "Copy",
     "Mode": "AWS/S3",
@@ -407,16 +407,16 @@ Input:
 
 Input with additional parameters:
 
-```
+```json
 {
     "Type": "Copy",
     "Mode": "AWS/S3",
     "BucketName": "myBucket",
-    "ObjectKey": "myObject.ext"
+    "ObjectKey": "myObject.ext",
     "ContentType": "REPLACE",
     "Parameters": {
-        "ACL": "public-read"
-        "ContentDisposition": "attachment"
+        "ACL": "public-read",
+        "ContentDisposition": "attachment",
         "Metadata": {
             "MyMetadataKey": "MyMetadataValue"
         },
@@ -427,7 +427,7 @@ Input with additional parameters:
 
 Output:
 
-```
+```json
 {
     "Task": "Copy",
     "BucketName": "myBucket",
@@ -449,7 +449,7 @@ By default all image metadata (EXIF, XMP, IPTC, etc) is stripped away during pro
 
 Input:
 
-```
+```json
 {
     "Type": "Image",
     "Format": "png",
@@ -457,7 +457,7 @@ Input:
     "Resize": {
         "Fit": "cover",
         "Height": 300,
-        "Position": "centre"
+        "Position": "centre",
         "Width": 300
     },
     "Destination": {
@@ -470,7 +470,7 @@ Input:
 
 Output:
 
-```
+```json
 {
     "Task": "Image",
     "BucketName": "myBucket",
@@ -490,7 +490,7 @@ The `FFmpeg` property is optional. When included, the `GlobalOptions`, `InputFil
 
 Input:
 
-```
+```json
 {
     "Type": "Transcode",
     "Format": "flac",
@@ -509,7 +509,7 @@ Input:
 
 Output:
 
-```
+```json
 {
     "Task": "Transcode",
     "BucketName": "myBucket",
@@ -523,7 +523,7 @@ Output:
 
 Input:
 
-```
+```json
 {
     "Type": "Inspect"
 }
@@ -531,7 +531,7 @@ Input:
 
 Output:
 
-```
+```json
 {
     "Task": "Inspect",
     "Inspection": {
@@ -548,9 +548,9 @@ Additional transcribe job settings are not supported at this time.
 
 Input:
 
-```
+```json
 {
-    "Type": "Transcribe"
+    "Type": "Transcribe",
     "LanguageCode": "en-US",
     "Destination": {
         "Mode": "AWS/S3",
@@ -562,7 +562,7 @@ Input:
 
 Output:
 
-```
+```json
 {
     "Task": "Transcribe",
     "BucketName": "myBucket",
