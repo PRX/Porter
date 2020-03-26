@@ -447,6 +447,16 @@ Resize supports the following parameters: `Fit`, `Height`, `Position`, and `Widt
 
 By default all image metadata (EXIF, XMP, IPTC, etc) is stripped away during processing. If you set `Metadata` to `PRESERVE`, metadata from the input file will be included in the output file. This property is optional, and other values have no effect.
 
+#### AWS/S3
+
+ S3 image destinations are done by the [upload()](https://docs.aws.amazon.com/AWSJavaScriptSDK/latest/AWS/S3.html#upload-property) method in the AWS Node SDK.
+
+The `BucketName` and `ObjectKey` properties are required.
+
+To set metadata on the new image object, use the optional `Parameters` property on the destination. The contents of `Parameters` are passed directly to the [upload()](https://docs.aws.amazon.com/AWSJavaScriptSDK/latest/AWS/S3.html#upload-property) method.
+
+If you set the optional `ContentType` property to `REPLACE`, the content type of the newly created image will be set to a [heuristically-determined](https://www.npmjs.com/package/file-type) value from the job's source file. If the content type could not be determined heuristically, this property has no effect. If a `ContentType` value is explicitly defined in `Parameters` that value will take precedence.
+
 Input:
 
 ```json
@@ -463,7 +473,14 @@ Input:
     "Destination": {
         "Mode": "AWS/S3",
         "BucketName": "myBucket",
-        "ObjectKey": "myObject.png"
+        "ObjectKey": "myObject.png",
+        "ContentType": "REPLACE",
+        "Parameters": {
+            "ContentDisposition": "attachment",
+            "Metadata": {
+                "MyMetadataKey": "MyMetadataValue"
+            }
+        }
     }
 }
 ```
