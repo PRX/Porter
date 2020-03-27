@@ -1,0 +1,4 @@
+{
+  "note": "This will fail during the normalize input Lambda execution, because there is no event.Job",
+  "also": "It will go to send error callbacks, but there's no Job so there's no Job.Callbacks, so that won't do anything"
+}

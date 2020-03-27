@@ -53,5 +53,10 @@ exports.handler = async (event) => {
 
   console.log(JSON.stringify({ msg: 'Normalized input', event: event }));
 
+  // These values are required to exist in the state machine definition at some
+  // point, but are not guaranteed to be inserted during every execution, so
+  // we pre-create them now to be safe.
+  event.State = "DONE";
+
   return event;
 };

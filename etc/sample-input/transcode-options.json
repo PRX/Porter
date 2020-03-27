@@ -12,7 +12,10 @@
                 "Destination": {
                     "Mode": "AWS/S3",
                     "BucketName": "prx-porter-sandbox",
-                    "ObjectKey": "dev/sample/transcode-options/transcode.flac"
+                    "ObjectKey": "dev/sample/transcode-options/transcode.flac",
+                    "Parameters": {
+                        "ContentType": "audio/flac"
+                    }
                 },
                 "FFmpeg": {
                     "InputFileOptions": "-t 30",

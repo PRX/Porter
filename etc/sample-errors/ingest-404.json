@@ -1,0 +1,16 @@
+{
+    "Job": {
+        "Id": "porter-sample-ingest-404",
+        "Source": {
+            "Mode": "HTTP",
+            "URL": "https://www.prx.org/404"
+        },
+        "Callbacks": [
+            {
+                "Type": "AWS/S3",
+                "BucketName": "prx-porter-sandbox",
+                "ObjectPrefix": "dev/sample/ingest-404/"
+            }
+        ]
+    }
+}

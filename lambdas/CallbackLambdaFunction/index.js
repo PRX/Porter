@@ -140,7 +140,10 @@ exports.handler = async (event) => {
 
   console.log(JSON.stringify({ msg: 'Callback message body', body: msg }));
 
-  if (msg.hasOwnProperty('JobResult') && msg.JobResult.hasOwnProperty('Error')) {
+  const hasFailedTask = msg.hasOwnProperty('JobResult') && msg.JobResult.hasOwnProperty('FailedTasks') && msg.JobResult.FailedTasks.length;
+  const hasJobProblem = msg.JobResult.State !== 'DONE';
+
+  if (hasFailedTask || hasJobProblem) {
     await putErrorMetric();
   }
 
