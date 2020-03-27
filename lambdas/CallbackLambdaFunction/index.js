@@ -140,11 +140,16 @@ exports.handler = async (event) => {
 
   console.log(JSON.stringify({ msg: 'Callback message body', body: msg }));
 
-  const hasFailedTask = msg.hasOwnProperty('JobResult') && msg.JobResult.hasOwnProperty('FailedTasks') && msg.JobResult.FailedTasks.length;
-  const hasJobProblem = msg.JobResult.State !== 'DONE';
+  // Keep track of how many JobResult callbacks indicated any sort of job
+  // execution problem in a custom CloudWatch Metric
+  // TODO Maybe move this to its own Lambda; this is kind of a weird spot for it
+  if (msg.hasOwnProperty('JobResult')) {
+    const hasFailedTask = msg.JobResult.hasOwnProperty('FailedTasks') && msg.JobResult.FailedTasks.length;
+    const hasJobProblem = msg.JobResult.hasOwnProperty('State') && msg.JobResult.State !== 'DONE';
 
-  if (hasFailedTask || hasJobProblem) {
-    await putErrorMetric();
+    if (hasFailedTask || hasJobProblem) {
+      await putErrorMetric();
+    }
   }
 
   if (event.Callback.Type === 'AWS/SNS') {
