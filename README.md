@@ -175,7 +175,7 @@ The JSON message for a successful `Copy` task callback looks like this:
         "Result": {
             "Task": "Copy",
             "Time": "2012-12-21T12:34:50Z",
-            "Timestamp: 1356093290.123,
+            "Timestamp": 1356093290.123,
             (Additional task-specific results)
         }
     }
@@ -433,7 +433,7 @@ Output:
     "BucketName": "myBucket",
     "ObjectKey": "myObject.ext",
     "Time": "2012-12-21T12:34:56Z",
-    "Timestamp: 1356093296.123
+    "Timestamp": 1356093296.123
 }
 ```
 
@@ -493,7 +493,7 @@ Output:
     "BucketName": "myBucket",
     "ObjectKey": "myObject.ext",
     "Time": "2012-12-21T12:34:56Z",
-    "Timestamp: 1356093296.123
+    "Timestamp": 1356093296.123
 }
 ```
 
