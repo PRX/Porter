@@ -485,6 +485,19 @@ Resources:
         - !Ref Subnet2
       VpcEndpointType: Interface
       VpcId: !Ref VPC
+  CloudWatchVpcEndpoint:
+    # https://docs.aws.amazon.com/AmazonCloudWatch/latest/monitoring/cloudwatch-and-interface-VPC.html
+    Type: AWS::EC2::VPCEndpoint
+    Properties:
+      PrivateDnsEnabled: true
+      SecurityGroupIds:
+        - !Ref AwsServiceInterfaceEndpointsSecurityGroup
+      ServiceName: !Sub com.amazonaws.${AWS::Region}.monitoring
+      SubnetIds:
+        - !Ref Subnet1
+        - !Ref Subnet2
+      VpcEndpointType: Interface
+      VpcId: !Ref VPC
   CloudWatchLogsVpcEndpoint:
     # https://docs.aws.amazon.com/AmazonCloudWatch/latest/logs/cloudwatch-logs-and-interface-VPC.html
     Type: AWS::EC2::VPCEndpoint
