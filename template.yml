@@ -2036,6 +2036,9 @@ Resources:
                               {
                                 "Environment": [
                                   {
+                                    "Name": "STATE_MACHINE_NAME",
+                                    "Value.$": "$$.StateMachine.Name"
+                                  }, {
                                     "Name": "STATE_MACHINE_EXECUTION_ID",
                                     "Value.$": "$$.Execution.Id"
                                   }, {
