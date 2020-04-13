@@ -43,7 +43,7 @@ aws cloudwatch put-metric-data \
     --namespace "PRX/Porter" \
     --metric-name TranscodeDuration \
     --unit Seconds \
-    --value $duration \
+    --value "$duration" \
     --dimensions "StateMachineName=$STATE_MACHINE_NAME"
 
 # Assume a role that will have access to the S3 destination bucket, and use
