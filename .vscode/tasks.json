@@ -23,7 +23,7 @@
     }, {
       "label": "Transcode ECR Push",
       "type": "shell",
-      "command": "containers/transcode/ecr-push.sh",
+      "command": "cd containers/transcode && ./ecr-push.sh",
       "problemMatcher": []
     }, {
       "label": "Test",
