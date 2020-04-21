@@ -1198,7 +1198,7 @@ Resources:
       TreatMissingData: notBreaching
       Dimensions:
         - Name: LambdaFunctionArn
-          Value: !GetAtt CopyLambdaFunction.Arn
+          Value: !GetAtt TranscodeTaskOutputLambdaFunction.Arn
   # Image Manipulation Lambda
   ImageTransformLambdaIamRole:
     Type: AWS::IAM::Role
