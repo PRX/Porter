@@ -26,8 +26,14 @@ const transcribe = new AWS.TranscribeService({ apiVersion: '2017-10-26' });
 exports.handler = async (event) => {
   console.log(JSON.stringify({ msg: 'State input', input: event }));
 
+  // Treat mp2 files like mp3 files, and it as an mpeg, it works
+  const extension = event.Artifact.Descriptor.Extension;
+  if (extension == 'mp2') {
+    extension = 'mp3';
+  }
+
   // Only start the job if the artifact type is supported
-  if (!['mp3', 'mp4', 'wav', 'flac'].includes(event.Artifact.Descriptor.Extension)) {
+  if (!['mp3', 'mp4', 'wav', 'flac'].includes(ext)) {
     throw 'Artifact format not supported';
   }
 
@@ -51,7 +57,7 @@ exports.handler = async (event) => {
     TranscriptionJobName: transcriptionJobName,
     LanguageCode: event.Task.LanguageCode,
     // Valid Values: mp3 | mp4 | wav | flac
-    MediaFormat: event.Artifact.Descriptor.Extension,
+    MediaFormat: extension,
     OutputBucketName: event.Artifact.BucketName,
   }).promise();
 }
