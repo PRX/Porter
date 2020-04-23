@@ -34,7 +34,7 @@ exports.handler = async (event) => {
   }
 
   // Only start the job if the artifact type is supported
-  if (!['mp3', 'mp4', 'wav', 'flac'].includes(ext)) {
+  if (!['mp3', 'mp4', 'wav', 'flac'].includes(extension)) {
     throw 'Artifact format not supported';
   }
 
