@@ -26,10 +26,11 @@ const transcribe = new AWS.TranscribeService({ apiVersion: '2017-10-26' });
 exports.handler = async (event) => {
   console.log(JSON.stringify({ msg: 'State input', input: event }));
 
-  // Treat mp2 files like mp3 files, and it as an mpeg, it works
   const extension = event.Artifact.Descriptor.Extension;
-  if (extension == 'mp2') {
-    extension = 'mp3';
+
+  // Take your life in your own hands, force a format
+  if (event.Task.MediaFormat) {
+    extension = event.Task.MediaFormat;
   }
 
   // Only start the job if the artifact type is supported
