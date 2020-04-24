@@ -13,7 +13,7 @@
                 "Destination": {
                     "Mode": "AWS/S3",
                     "BucketName": "prx-porter-sandbox",
-                    "ObjectKey": "dev/sample/transcribe/transcribe-media-format.json"
+                    "ObjectKey": "dev/sample/transcribe-media-format/transcribe.json"
                 }
             }
         ]
