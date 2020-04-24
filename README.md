@@ -566,7 +566,7 @@ Output:
 
 `Transcribe` tasks use [Amazon Transcribe](https://aws.amazon.com/transcribe/) speech-to-text functionality to generate transcriptions from audio and video files. The artifact must be an mp3, mp4, wav, or flac file for transcriptions to work. The `LanguageCode` property is required. The destination property is required, and the only mode currently supported is `AWS/S3`.
 
-The `MediaFormat` is by default set based on the extension of the source file name. In some cases, you may want to override this to a different valid format by setting an `MediaFormat` property of the `Task`.
+The `MediaFormat` is by default set based on the extension of the source file name. In some cases, you may want to override this to a different valid format by setting the `MediaFormat` property of the `Task`.
 
 Additional transcribe job settings are not supported at this time.
 
