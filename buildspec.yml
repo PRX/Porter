@@ -9,13 +9,13 @@ phases:
       nodejs: 10
       python: 3.7
     commands:
+      - 'cd $(ls -d */|head -n 1)'
       - 'echo "Installing CloudFormation Linter"'
       - 'pip install cfn-lint --upgrade'
       - 'echo "Installing Prettier"'
-      - 'npm install --global prettier'
+      - 'npm install'
   build:
     commands:
-      - 'cd $(ls -d */|head -n 1)'
       - 'cfn-lint --ignore-checks W --template template.yml'
       - 'prettier --check "**/*.{js,json,yaml,yml}"'
   post_build:
