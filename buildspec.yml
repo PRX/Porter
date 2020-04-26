@@ -16,7 +16,7 @@ phases:
   build:
     commands:
       - 'cd $(ls -d */|head -n 1)'
-      - 'find . -name "*.yml" -type f ! -path "./node_modules/*" -print0 | xargs -0 -n1 cfn-lint --ignore-checks W --template'
+      - 'cfn-lint --ignore-checks W --template template.yml'
       - 'prettier --check "**.{js,json,yaml,yml}"'
   post_build:
     commands:
