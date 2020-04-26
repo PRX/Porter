@@ -1,13 +1,13 @@
 {
-    "Job": {
-        "note": "This will fail trying to send job received callbacks because the state machine definition expects a Job.Id",
-        "also": "Callback failures don't have a catch because the error callbacks would always fail for the same reason",
-        "Callbacks": [
-            {
-                "Type": "AWS/S3",
-                "BucketName": "prx-porter-sandbox",
-                "ObjectPrefix": "dev/sample/job-received-callbacks-fail/"
-            }
-        ]
-    }
+  "Job": {
+    "note": "This will fail trying to send job received callbacks because the state machine definition expects a Job.Id",
+    "also": "Callback failures don't have a catch because the error callbacks would always fail for the same reason",
+    "Callbacks": [
+      {
+        "Type": "AWS/S3",
+        "BucketName": "prx-porter-sandbox",
+        "ObjectPrefix": "dev/sample/job-received-callbacks-fail/"
+      }
+    ]
+  }
 }
