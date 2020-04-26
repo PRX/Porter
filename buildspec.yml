@@ -17,7 +17,8 @@ phases:
   build:
     commands:
       - 'cfn-lint --ignore-checks W --template template.yml'
-      - 'prettier --check "**/*.{js,json,yaml,yml}"'
+      - 'npm run prettier -- --check "**/*.{js,json,yaml,yml}"'
+      - 'npm run eslint -- "**/*.js"'
   post_build:
     commands:
       - 'curl -sO "https://raw.githubusercontent.com/PRX/Infrastructure/master/ci/utility/post_build.sh" && chmod +x post_build.sh && bash ./post_build.sh'
