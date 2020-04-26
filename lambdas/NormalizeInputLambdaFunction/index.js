@@ -26,28 +26,49 @@ exports.handler = async (event) => {
     // and fails without the error being caught if it's missing. This forces
     // the execution to error out in a way that can be caught and handled as
     // expected. (Choice states don't support Catch)
-    if (!task.hasOwnProperty('Type')) { throw new Error('Job included a task without a Type'); }
+    if (!task.hasOwnProperty('Type')) {
+      throw new Error('Job included a task without a Type');
+    }
 
-    if (task.Type !== 'Transcode') { return; }
+    if (task.Type !== 'Transcode') {
+      return;
+    }
 
-    if (!task.hasOwnProperty('FFmpeg')) { task.FFmpeg = {}; }
-    if (!task.FFmpeg.hasOwnProperty('GlobalOptions')) { task.FFmpeg.GlobalOptions = ''; }
-    if (!task.FFmpeg.hasOwnProperty('InputFileOptions')) { task.FFmpeg.InputFileOptions = ''; }
-    if (!task.FFmpeg.hasOwnProperty('OutputFileOptions')) { task.FFmpeg.OutputFileOptions = ''; }
+    if (!task.hasOwnProperty('FFmpeg')) {
+      task.FFmpeg = {};
+    }
+    if (!task.FFmpeg.hasOwnProperty('GlobalOptions')) {
+      task.FFmpeg.GlobalOptions = '';
+    }
+    if (!task.FFmpeg.hasOwnProperty('InputFileOptions')) {
+      task.FFmpeg.InputFileOptions = '';
+    }
+    if (!task.FFmpeg.hasOwnProperty('OutputFileOptions')) {
+      task.FFmpeg.OutputFileOptions = '';
+    }
   });
 
   // Set Job.Callbacks to an empty array, unless it's already an array.
-  if (!event.Job.hasOwnProperty('Callbacks') || !Array.isArray(event.Job.Callbacks)) {
+  if (
+    !event.Job.hasOwnProperty('Callbacks') ||
+    !Array.isArray(event.Job.Callbacks)
+  ) {
     event.Job.Callbacks = [];
   }
 
   // Set Job.SerializedJobs to an empty array, unless it's already an array.
-  if (!event.Job.hasOwnProperty('SerializedJobs') || !Array.isArray(event.Job.SerializedJobs)) {
+  if (
+    !event.Job.hasOwnProperty('SerializedJobs') ||
+    !Array.isArray(event.Job.SerializedJobs)
+  ) {
     event.Job.SerializedJobs = [];
   }
 
   // Set Job.ExecutionTrace to an empty array, unless it's already an array.
-  if (!event.Job.hasOwnProperty('ExecutionTrace') || !Array.isArray(event.Job.ExecutionTrace)) {
+  if (
+    !event.Job.hasOwnProperty('ExecutionTrace') ||
+    !Array.isArray(event.Job.ExecutionTrace)
+  ) {
     event.Job.ExecutionTrace = [];
   }
 
@@ -56,7 +77,7 @@ exports.handler = async (event) => {
   // These values are required to exist in the state machine definition at some
   // point, but are not guaranteed to be inserted during every execution, so
   // we pre-create them now to be safe.
-  event.State = "DONE";
+  event.State = 'DONE';
 
   return event;
 };

@@ -6,7 +6,7 @@ const awsxray = require('aws-xray-sdk');
 const AWS = awsxray.captureAWS(require('aws-sdk'));
 
 const s3 = new AWS.S3({ apiVersion: '2006-03-01' });
-const sts = new AWS.STS({apiVersion: '2011-06-15'});
+const sts = new AWS.STS({ apiVersion: '2011-06-15' });
 
 function transform(inputFile, outputFile, event) {
   return new Promise((resolve, reject) => {
@@ -20,7 +20,7 @@ function transform(inputFile, outputFile, event) {
           width: event.Task.Resize.Width,
           height: event.Task.Resize.Height,
           position: event.Task.Resize.Position || 'centre',
-          fit: event.Task.Resize.Fit || 'cover'
+          fit: event.Task.Resize.Fit || 'cover',
         });
       }
 
@@ -28,7 +28,10 @@ function transform(inputFile, outputFile, event) {
         process = process.toFormat(event.Task.Format);
       }
 
-      if (event.Task.hasOwnProperty('Metadata') && event.Task.Metadata === 'PRESERVE') {
+      if (
+        event.Task.hasOwnProperty('Metadata') &&
+        event.Task.Metadata === 'PRESERVE'
+      ) {
         process = process.withMetadata();
       }
 
@@ -48,16 +51,18 @@ function transform(inputFile, outputFile, event) {
 function s3GetObject(bucket, fileKey, filePath) {
   return new Promise(function (resolve, reject) {
     const file = fs.createWriteStream(filePath);
-    const stream = s3.getObject({
-            Bucket: bucket,
-            Key: fileKey
-        }).createReadStream();
+    const stream = s3
+      .getObject({
+        Bucket: bucket,
+        Key: fileKey,
+      })
+      .createReadStream();
 
     stream.on('error', reject);
     file.on('error', reject);
 
     file.on('finish', function () {
-        resolve(filePath);
+      resolve(filePath);
     });
 
     stream.pipe(file);
@@ -65,10 +70,12 @@ function s3GetObject(bucket, fileKey, filePath) {
 }
 
 async function s3Upload(event, imageFileTmpPath) {
-  const role = await sts.assumeRole({
-    RoleArn: process.env.S3_DESTINATION_WRITER_ROLE,
-    RoleSessionName: 'porter_image_task',
-  }).promise();
+  const role = await sts
+    .assumeRole({
+      RoleArn: process.env.S3_DESTINATION_WRITER_ROLE,
+      RoleSessionName: 'porter_image_task',
+    })
+    .promise();
 
   const s3writer = new AWS.S3({
     apiVersion: '2006-03-01',
@@ -86,10 +93,12 @@ async function s3Upload(event, imageFileTmpPath) {
   // When the optional `ContentType` property is set to `REPLACE`, if a MIME is
   // included with the artifact, that should be used as the new images's
   // content type
-  if (event.Task.Destination.hasOwnProperty('ContentType')
-      && event.Task.Destination.ContentType === 'REPLACE'
-      && event.Artifact.hasOwnProperty('Descriptor')
-      && event.Artifact.Descriptor.hasOwnProperty('MIME')) {
+  if (
+    event.Task.Destination.hasOwnProperty('ContentType') &&
+    event.Task.Destination.ContentType === 'REPLACE' &&
+    event.Artifact.hasOwnProperty('Descriptor') &&
+    event.Artifact.Descriptor.hasOwnProperty('MIME')
+  ) {
     params.ContentType = event.Artifact.Descriptor.MIME;
   }
 
@@ -108,10 +117,12 @@ async function s3Upload(event, imageFileTmpPath) {
   await s3writer.upload(params).promise();
 
   const _uploadEnd = process.hrtime(_uploadStart);
-  console.log(JSON.stringify({
-    msg: 'Finished S3 upload',
-    duration: `${_uploadEnd[0]} s ${_uploadEnd[1] / 1000000} ms`,
-  }));
+  console.log(
+    JSON.stringify({
+      msg: 'Finished S3 upload',
+      duration: `${_uploadEnd[0]} s ${_uploadEnd[1] / 1000000} ms`,
+    }),
+  );
 }
 
 exports.handler = async (event, context) => {
@@ -119,36 +130,54 @@ exports.handler = async (event, context) => {
 
   fs.mkdirSync(path.join(os.tmpdir(), context.awsRequestId));
 
-  const artifactFileTmpPath = path.join(os.tmpdir(), context.awsRequestId, 'artifact');
+  const artifactFileTmpPath = path.join(
+    os.tmpdir(),
+    context.awsRequestId,
+    'artifact',
+  );
 
   // Fetch the source file artifact from S3
-  console.log(JSON.stringify({
-    msg: 'Fetching artifact from S3',
-    s3: `${event.Artifact.BucketName}/${event.Artifact.ObjectKey}`,
-    fs: artifactFileTmpPath
-  }));
+  console.log(
+    JSON.stringify({
+      msg: 'Fetching artifact from S3',
+      s3: `${event.Artifact.BucketName}/${event.Artifact.ObjectKey}`,
+      fs: artifactFileTmpPath,
+    }),
+  );
 
   const _s3start = process.hrtime();
-  await s3GetObject(event.Artifact.BucketName, event.Artifact.ObjectKey, artifactFileTmpPath);
+  await s3GetObject(
+    event.Artifact.BucketName,
+    event.Artifact.ObjectKey,
+    artifactFileTmpPath,
+  );
 
   const _s3end = process.hrtime(_s3start);
-  console.log(JSON.stringify({
-    msg: 'Fetched artifact from S3',
-    duration: `${_s3end[0]} s ${_s3end[1] / 1000000} ms`
-  }));
+  console.log(
+    JSON.stringify({
+      msg: 'Fetched artifact from S3',
+      duration: `${_s3end[0]} s ${_s3end[1] / 1000000} ms`,
+    }),
+  );
 
   // Run the file through sharp
   const _sharpStart = process.hrtime();
 
-  const imageFileTmpPath = path.join(os.tmpdir(), context.awsRequestId, 'output');
+  const imageFileTmpPath = path.join(
+    os.tmpdir(),
+    context.awsRequestId,
+    'output',
+  );
 
   await transform(artifactFileTmpPath, imageFileTmpPath, event);
 
   const _sharpEnd = process.hrtime(_sharpStart);
-  console.log(JSON.stringify({
-    msg: 'Finished image processing',
-    duration: `${_sharpEnd[0]} s ${_sharpEnd[1] / 1000000} ms`
-  }));
+  console.log(
+    JSON.stringify({
+      msg: 'Finished image processing',
+      duration: `${_sharpEnd[0]} s ${_sharpEnd[1] / 1000000} ms`,
+    }),
+  );
 
   if (event.Task.Destination.Mode === 'AWS/S3') {
     await s3Upload(event, imageFileTmpPath);
@@ -157,13 +186,13 @@ exports.handler = async (event, context) => {
   fs.unlinkSync(artifactFileTmpPath);
   fs.unlinkSync(imageFileTmpPath);
 
-  const now = new Date;
+  const now = new Date();
 
   return {
     Task: 'Image',
     BucketName: event.Task.Destination.BucketName,
     ObjectKey: event.Task.Destination.ObjectKey,
     Time: now.toISOString(),
-    Timestamp: (now / 1000)
+    Timestamp: now / 1000,
   };
 };

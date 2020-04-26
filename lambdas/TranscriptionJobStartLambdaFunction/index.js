@@ -40,25 +40,31 @@ exports.handler = async (event) => {
 
   // Should be unique, even if an execution includes multiple transcribe jobs
   const prefix = process.env.TRANSCODE_JOB_NAME_PREFIX;
-  const transcriptionJobName = `${prefix}${event.Execution.Id.split(':').pop()}-${event.TaskIteratorIndex}`;
+  const transcriptionJobName = `${prefix}${event.Execution.Id.split(
+    ':',
+  ).pop()}-${event.TaskIteratorIndex}`;
 
   // Write the task token provided by the state machine context to S3
-  await s3.putObject({
-    Bucket: event.Artifact.BucketName,
-    Key: `${transcriptionJobName}.TaskToken`,
-    Body: event.TaskToken
-  }).promise();
+  await s3
+    .putObject({
+      Bucket: event.Artifact.BucketName,
+      Key: `${transcriptionJobName}.TaskToken`,
+      Body: event.TaskToken,
+    })
+    .promise();
 
-  await transcribe.startTranscriptionJob({
-    Media: {
-      // https://docs.aws.amazon.com/transcribe/latest/dg/API_Media.html
-      // Expects s3://<bucket-name>/<keyprefix>/<objectkey>
-      MediaFileUri: `s3://${event.Artifact.BucketName}/${event.Artifact.ObjectKey}`
-    },
-    TranscriptionJobName: transcriptionJobName,
-    LanguageCode: event.Task.LanguageCode,
-    // Valid Values: mp3 | mp4 | wav | flac
-    MediaFormat: mediaFormat,
-    OutputBucketName: event.Artifact.BucketName,
-  }).promise();
-}
+  await transcribe
+    .startTranscriptionJob({
+      Media: {
+        // https://docs.aws.amazon.com/transcribe/latest/dg/API_Media.html
+        // Expects s3://<bucket-name>/<keyprefix>/<objectkey>
+        MediaFileUri: `s3://${event.Artifact.BucketName}/${event.Artifact.ObjectKey}`,
+      },
+      TranscriptionJobName: transcriptionJobName,
+      LanguageCode: event.Task.LanguageCode,
+      // Valid Values: mp3 | mp4 | wav | flac
+      MediaFormat: mediaFormat,
+      OutputBucketName: event.Artifact.BucketName,
+    })
+    .promise();
+};

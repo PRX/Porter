@@ -11,11 +11,13 @@ const s3 = new AWS.S3({ apiVersion: '2006-03-01' });
 exports.handler = async (event) => {
   console.log(JSON.stringify({ msg: 'State input', input: event }));
 
-  const s3stream = s3.getObject({
-    Bucket: event.Artifact.BucketName,
-    Key: event.Artifact.ObjectKey,
-    Range: `bytes=0-${fileType.minimumBytes}`
-  }).createReadStream();
+  const s3stream = s3
+    .getObject({
+      Bucket: event.Artifact.BucketName,
+      Key: event.Artifact.ObjectKey,
+      Range: `bytes=0-${fileType.minimumBytes}`,
+    })
+    .createReadStream();
 
   const ftStream = await fileType.stream(s3stream);
 
@@ -23,12 +25,14 @@ exports.handler = async (event) => {
   // Returns `undefined` when there is no match.
   const result = ftStream.fileType;
 
-  if (!result) { return {}; }
+  if (!result) {
+    return {};
+  }
 
   console.log(JSON.stringify({ msg: 'Result', result: result }));
 
   return {
     Extension: result.ext,
-    MIME: result.mime
-  }
-}
+    MIME: result.mime,
+  };
+};

@@ -5,17 +5,17 @@
 exports.handler = async (event) => {
   console.log(JSON.stringify({ msg: 'State input', input: event }));
 
-  const now = new Date;
+  const now = new Date();
 
   const result = {
     Task: event.Task.Type,
     BucketName: event.Task.Destination.BucketName,
     ObjectKey: event.Task.Destination.ObjectKey,
     Time: now.toISOString(),
-    Timestamp: (now / 1000)
-  }
+    Timestamp: now / 1000,
+  };
 
   console.log(JSON.stringify({ msg: 'Result', result: result }));
 
   return result;
-}
+};

@@ -2,23 +2,27 @@ const AWSXRay = require('aws-xray-sdk');
 
 const AWS = AWSXRay.captureAWS(require('aws-sdk'));
 
-const sts = new AWS.STS({apiVersion: '2011-06-15'});
+const sts = new AWS.STS({ apiVersion: '2011-06-15' });
 
 // https://docs.aws.amazon.com/AWSJavaScriptSDK/latest/AWS/S3.html#copyObject-property
 // https://docs.aws.amazon.com/AmazonS3/latest/API/RESTObjectCOPY.html
 // CopySource expects: "/sourcebucket/path/to/object.extension"
 // CopySource expects "/sourcebucket/path/to/object.extension" to be URI-encoded
 async function awsS3copyObject(event) {
-  console.log(JSON.stringify({
-    msg: 'S3 Copy',
-    source: `${event.Artifact.BucketName}/${event.Artifact.ObjectKey}`,
-    destination: `${event.Task.BucketName}/${event.Task.ObjectKey}`
-  }));
+  console.log(
+    JSON.stringify({
+      msg: 'S3 Copy',
+      source: `${event.Artifact.BucketName}/${event.Artifact.ObjectKey}`,
+      destination: `${event.Task.BucketName}/${event.Task.ObjectKey}`,
+    }),
+  );
 
-  const role = await sts.assumeRole({
-    RoleArn: process.env.S3_DESTINATION_WRITER_ROLE,
-    RoleSessionName: 'porter_copy_task',
-  }).promise();
+  const role = await sts
+    .assumeRole({
+      RoleArn: process.env.S3_DESTINATION_WRITER_ROLE,
+      RoleSessionName: 'porter_copy_task',
+    })
+    .promise();
 
   const s3 = new AWS.S3({
     apiVersion: '2006-03-01',
@@ -28,17 +32,21 @@ async function awsS3copyObject(event) {
   });
 
   const params = {
-    CopySource: encodeURI(`/${event.Artifact.BucketName}/${event.Artifact.ObjectKey}`),
+    CopySource: encodeURI(
+      `/${event.Artifact.BucketName}/${event.Artifact.ObjectKey}`,
+    ),
     Bucket: event.Task.BucketName,
-    Key: event.Task.ObjectKey
+    Key: event.Task.ObjectKey,
   };
 
   // When the optional `ContentType` property is set to `REPLACE`, if a MIME is
   // included with the artifact, that should be used as the copy's content type
-  if (event.Task.hasOwnProperty('ContentType')
-      && event.Task.ContentType === 'REPLACE'
-      && event.Artifact.hasOwnProperty('Descriptor')
-      && event.Artifact.Descriptor.hasOwnProperty('MIME')) {
+  if (
+    event.Task.hasOwnProperty('ContentType') &&
+    event.Task.ContentType === 'REPLACE' &&
+    event.Artifact.hasOwnProperty('Descriptor') &&
+    event.Artifact.Descriptor.hasOwnProperty('MIME')
+  ) {
     params.MetadataDirective = 'REPLACE';
     params.ContentType = event.Artifact.Descriptor.MIME;
   }
@@ -57,10 +65,12 @@ async function awsS3copyObject(event) {
   await s3.copyObject(params).promise();
   const _end = process.hrtime(_start);
 
-  console.log(JSON.stringify({
-    msg: 'Finished S3 Copy',
-    duration: `${_end[0]} s ${_end[1] / 1000000} ms`,
-  }));
+  console.log(
+    JSON.stringify({
+      msg: 'Finished S3 Copy',
+      duration: `${_end[0]} s ${_end[1] / 1000000} ms`,
+    }),
+  );
 }
 
 exports.handler = async (event) => {
@@ -74,7 +84,7 @@ exports.handler = async (event) => {
     throw new Error('Unexpected copy mode');
   }
 
-  const now = new Date;
+  const now = new Date();
 
   return {
     Task: 'Copy',
@@ -82,6 +92,6 @@ exports.handler = async (event) => {
     BucketName: event.Task.BucketName,
     ObjectKey: event.Task.ObjectKey,
     Time: now.toISOString(),
-    Timestamp: (now / 1000)
+    Timestamp: now / 1000,
   };
 };

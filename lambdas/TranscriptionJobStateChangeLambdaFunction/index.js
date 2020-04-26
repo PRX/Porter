@@ -22,28 +22,38 @@ exports.handler = async (event) => {
   const transcriptionJobStatus = event.detail.TranscriptionJobStatus;
 
   // Ignore any events that don't have the prefix we're expecting for job names
-  if (!transcriptionJobName.startsWith(process.env.TRANSCODE_JOB_NAME_PREFIX)) { return; }
+  if (!transcriptionJobName.startsWith(process.env.TRANSCODE_JOB_NAME_PREFIX)) {
+    return;
+  }
 
   try {
-    const file = await s3.getObject({
-      Bucket: process.env.ARTIFACT_BUCKET_NAME,
-      Key: `${transcriptionJobName}.TaskToken`
-    }).promise();
+    const file = await s3
+      .getObject({
+        Bucket: process.env.ARTIFACT_BUCKET_NAME,
+        Key: `${transcriptionJobName}.TaskToken`,
+      })
+      .promise();
 
     const taskToken = file.Body.toString();
 
     if (transcriptionJobStatus === 'COMPLETED') {
       // The `output` parameter becomes the result value of the
       // ExecuteTranscribeTask state
-      await stepFunctions.sendTaskSuccess({
-        output: JSON.stringify({ TranscriptionJobName: transcriptionJobName }),
-        taskToken
-      }).promise();
+      await stepFunctions
+        .sendTaskSuccess({
+          output: JSON.stringify({
+            TranscriptionJobName: transcriptionJobName,
+          }),
+          taskToken,
+        })
+        .promise();
     } else {
       // TODO Add error/cause
-      await stepFunctions.sendTaskFailure({
-        taskToken
-      }).promise();
+      await stepFunctions
+        .sendTaskFailure({
+          taskToken,
+        })
+        .promise();
     }
   } catch (error) {
     // TODO
