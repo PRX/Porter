@@ -26,8 +26,15 @@ const transcribe = new AWS.TranscribeService({ apiVersion: '2017-10-26' });
 exports.handler = async (event) => {
   console.log(JSON.stringify({ msg: 'State input', input: event }));
 
-  // Only start the job if the artifact type is supported
-  if (!['mp3', 'mp4', 'wav', 'flac'].includes(event.Artifact.Descriptor.Extension)) {
+  let mediaFormat = event.Artifact.Descriptor.Extension;
+
+  // Take your life in your own hands, force a format
+  if (event.Task.MediaFormat) {
+    mediaFormat = event.Task.MediaFormat;
+  }
+
+  // Only start the job if the artifact type (or passed in MediaFormat) is supported
+  if (!['mp3', 'mp4', 'wav', 'flac'].includes(mediaFormat)) {
     throw 'Artifact format not supported';
   }
 
@@ -51,7 +58,7 @@ exports.handler = async (event) => {
     TranscriptionJobName: transcriptionJobName,
     LanguageCode: event.Task.LanguageCode,
     // Valid Values: mp3 | mp4 | wav | flac
-    MediaFormat: event.Artifact.Descriptor.Extension,
+    MediaFormat: mediaFormat,
     OutputBucketName: event.Artifact.BucketName,
   }).promise();
 }

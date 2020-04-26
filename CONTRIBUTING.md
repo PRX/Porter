@@ -8,7 +8,7 @@
 
 There are a number of shell scripts in this repo. They assume you have a profile in `~/.aws/config` called `prx-legacy`, which is configured to access the `prx-legacy` AWS account.
 
-The template is intended to deployed using the [SAM CLI](https://docs.aws.amazon.com/serverless-application-model/latest/developerguide/serverless-sam-cli-command-reference.html). You can run `sam deploy` if you already have a `samconfig.toml`, or `sam deploy -g` if you don't. Additionally, there is a VS Code task that supports deploying various environments (staging, producdtion, etc), which expects files called `samconfig.[stag|prod].toml`, and will use the correct one.
+The template is intended to deployed using the [SAM CLI](https://docs.aws.amazon.com/serverless-application-model/latest/developerguide/serverless-sam-cli-command-reference.html). You can run `sam deploy` if you already have a `samconfig.toml`, or `sam deploy -g` if you don't. Additionally, there is a VS Code task that supports deploying various environments (staging, production, etc), which expects files called `samconfig.[stag|prod].toml`, and will use the correct one.
 
 Various APIs and SDKs are inconsistent in how they refer to S3 buckets and objects. To be consistent throughout this project, they should be called `BucketName` and `ObjectKey` until they are passed to an API.
 
