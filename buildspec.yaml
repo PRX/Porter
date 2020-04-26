@@ -1,14 +1,23 @@
 version: 0.2
 env:
   variables:
-    PRX_ECR_REGION: "us-east-1"
+    PRX_ECR_REGION: 'us-east-1'
 phases:
   install:
     runtime-versions:
       docker: 18
+      nodejs: 12.x
+      python: 3.7
+    commands:
+      - 'echo "Installing CloudFormation Linter"'
+      - 'pip install cfn-lint --upgrade'
+      - 'echo "Installing Prettier"'
+      - 'npm install --global prettier'
   build:
     commands:
-      - "cd $(ls -d */|head -n 1)"
+      - 'cd $(ls -d */|head -n 1)'
+      - 'find . -name "*.yml" -type f ! -path "./node_modules/*" -mindepth 2 -print0 | xargs -0 -n1 cfn-lint --ignore-checks W --template'
+      - 'prettier --check "**.{js,json,yaml}"'
   post_build:
     commands:
       - 'curl -sO "https://raw.githubusercontent.com/PRX/Infrastructure/master/ci/utility/post_build.sh" && chmod +x post_build.sh && bash ./post_build.sh'
