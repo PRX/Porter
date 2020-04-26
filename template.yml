@@ -159,6 +159,11 @@ Resources:
         prx:cloudformation:stack-name: !Ref AWS::StackName
         prx:cloudformation:stack-id: !Ref AWS::StackId
       Timeout: 8
+  JobExecutionSnsTopicLambdaLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub /aws/lambda/${JobExecutionSnsTopicLambdaFunction}
+      RetentionInDays: 30
   JobExecutionSnsTopicLambdaPermission:
     Type: AWS::Lambda::Permission
     Properties:
@@ -282,6 +287,11 @@ Resources:
         prx:cloudformation:stack-name: !Ref AWS::StackName
         prx:cloudformation:stack-id: !Ref AWS::StackId
       Timeout: 8
+  JobExecutionSqsQueueLambdaLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub /aws/lambda/${JobExecutionSqsQueueLambdaFunction}
+      RetentionInDays: 30
   JobExecutionSqsQueueLambdaErrorAlarm:
     Type: AWS::CloudWatch::Alarm
     Condition: CreateProductionResources
@@ -360,6 +370,11 @@ Resources:
         prx:cloudformation:stack-name: !Ref AWS::StackName
         prx:cloudformation:stack-id: !Ref AWS::StackId
       Timeout: 4
+  TranscriptionJobStateChangeLambdaLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub /aws/lambda/${TranscriptionJobStateChangeLambdaFunction}
+      RetentionInDays: 30
   TranscriptionJobStateChangeLambdaErrorAlarm:
     Type: AWS::CloudWatch::Alarm
     Condition: CreateProductionResources
@@ -812,6 +827,11 @@ Resources:
         prx:cloudformation:stack-id: !Ref AWS::StackId
       Timeout: 4
       Tracing: Active
+  NormalizeInputLambdaLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub /aws/lambda/${NormalizeInputLambdaFunction}
+      RetentionInDays: 30
   NormalizeInputLambdaErrorAlarm:
     Type: AWS::CloudWatch::Alarm
     Condition: CreateProductionResources
@@ -895,6 +915,11 @@ Resources:
         prx:cloudformation:stack-id: !Ref AWS::StackId
       Timeout: 90
       Tracing: Active
+  IngestLambdaLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub /aws/lambda/${IngestLambdaFunction}
+      RetentionInDays: 30
   IngestLambdaErrorAlarm:
     Type: AWS::CloudWatch::Alarm
     Condition: CreateProductionResources
@@ -967,6 +992,11 @@ Resources:
         prx:cloudformation:stack-id: !Ref AWS::StackId
       Timeout: 8
       Tracing: Active
+  SourceTypeLambdaLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub /aws/lambda/${SourceTypeLambdaFunction}
+      RetentionInDays: 30
   SourceTypeLambdaErrorAlarm:
     Type: AWS::CloudWatch::Alarm
     Condition: CreateProductionResources
@@ -1037,6 +1067,11 @@ Resources:
         prx:cloudformation:stack-id: !Ref AWS::StackId
       Timeout: 64
       Tracing: Active
+  InspectMediaLambdaLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub /aws/lambda/${InspectMediaLambdaFunction}
+      RetentionInDays: 30
   InspectMediaLambdaErrorAlarm:
     Type: AWS::CloudWatch::Alarm
     Condition: CreateProductionResources
@@ -1108,6 +1143,11 @@ Resources:
         prx:cloudformation:stack-id: !Ref AWS::StackId
       Timeout: 32
       Tracing: Active
+  CopyLambdaLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub /aws/lambda/${CopyLambdaFunction}
+      RetentionInDays: 30
   CopyLambdaErrorAlarm:
     Type: AWS::CloudWatch::Alarm
     Condition: CreateProductionResources
@@ -1174,6 +1214,11 @@ Resources:
         prx:cloudformation:stack-id: !Ref AWS::StackId
       Timeout: 4
       Tracing: Active
+  TranscodeTaskOutputLambdaLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub /aws/lambda/${TranscodeTaskOutputLambdaFunction}
+      RetentionInDays: 30
   TranscodeTaskOutputLambdaErrorAlarm:
     Type: AWS::CloudWatch::Alarm
     Condition: CreateProductionResources
@@ -1246,6 +1291,11 @@ Resources:
         prx:cloudformation:stack-id: !Ref AWS::StackId
       Timeout: 16
       Tracing: Active
+  ImageTransformLambdaLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub /aws/lambda/${ImageTransformLambdaFunction}
+      RetentionInDays: 30
   ImageTransformLambdaErrorAlarm:
     Type: AWS::CloudWatch::Alarm
     Condition: CreateProductionResources
@@ -1342,6 +1392,11 @@ Resources:
         prx:cloudformation:stack-id: !Ref AWS::StackId
       Timeout: 4
       Tracing: Active
+  TranscriptionJobStartLambdaLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub /aws/lambda/${TranscriptionJobStartLambdaFunction}
+      RetentionInDays: 30
   TranscriptionJobStartLambdaErrorAlarm:
     Type: AWS::CloudWatch::Alarm
     Condition: CreateProductionResources
@@ -1423,6 +1478,11 @@ Resources:
         prx:cloudformation:stack-id: !Ref AWS::StackId
       Timeout: 8
       Tracing: Active
+  TranscriptionJobResultsLambdaLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub /aws/lambda/${TranscriptionJobResultsLambdaFunction}
+      RetentionInDays: 30
   TranscriptionJobResultsLambdaErrorAlarm:
     Type: AWS::CloudWatch::Alarm
     Condition: CreateProductionResources
@@ -1524,6 +1584,11 @@ Resources:
         prx:cloudformation:stack-id: !Ref AWS::StackId
       Timeout: 4
       Tracing: Active
+  CallbackLambdaLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub /aws/lambda/${CallbackLambdaFunction}
+      RetentionInDays: 30
   CallbackLambdaErrorAlarm:
     Type: AWS::CloudWatch::Alarm
     Condition: CreateProductionResources
@@ -1629,6 +1694,11 @@ Resources:
         prx:cloudformation:stack-id: !Ref AWS::StackId
       Timeout: 4
       Tracing: Active
+  JobSerializerLambdaLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub /aws/lambda/${JobSerializerLambdaFunction}
+      RetentionInDays: 30
   JobSerializerLambdaErrorAlarm:
     Type: AWS::CloudWatch::Alarm
     Condition: CreateProductionResources
@@ -1695,6 +1765,11 @@ Resources:
         prx:cloudformation:stack-id: !Ref AWS::StackId
       Timeout: 4
       Tracing: Active
+  NormalizeOutputLambdaLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub /aws/lambda/${NormalizeOutputLambdaFunction}
+      RetentionInDays: 30
   NormalizeOutputLambdaErrorAlarm:
     Type: AWS::CloudWatch::Alarm
     Condition: CreateProductionResources
