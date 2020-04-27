@@ -4,11 +4,33 @@
 
 - [AWS Step Functions Developer Guide](https://docs.aws.amazon.com/step-functions/latest/dg/welcome.html)
 
-### Misc
+## Development Environment
+
+If the IDE you use supports per-repository settings (such as with the `.vscode` directory for VS Code), you should add and check in those settings. Please ensure that the settings match those described in this document.
+
+Any code styles that this repository follows should be described in this document, and should be checked by CI.
+
+The `package-lock.json` file is not under version control. The NPM packages it tracks are only used in development, and the versions are largely irrelevant, so ignoring the lock file reduces unnecessary Git churn. The packages listed as `dependencies` are in there only to satisfy ESLint's path resolution checks.
+
+### Code Style
+
+This repository contains an [EditorConfig](https://editorconfig.org/) file that dictates some basic code styles. The repository may also contain editor- or IDE-specific settings files, which must follow the styles defined in the EditorConfig file. Any other linters or formatting tools should also follow those styles. You should ensure that your editor is setup to use the EditorConfig styles, regareless of how those settings are installed into program.
+
+For YAML, JavaScript, and JSON files your editor should be configured to _format on save_, and should use [Prettier](https://prettier.io/) as the formatter, following the settings described in `.prettierrc`.
+
+[ESLint](https://eslint.org/) is used for JavaScript files. The rules are primarily inherited from the Airbnb rules and made to work with the Prettier settings, with some minor project-specific modifications. If possible, it can be helpful to have your editor lint JavaScript files on the fly.
+
+CloudFormation templates should be run through [cfn-python-lint](https://github.com/aws-cloudformation/cfn-python-lint) and be free of linting errors. Your editor should check your files in realtime if possible; there are plugins available for many popular editors.
+
+### AWS
 
 There are a number of shell scripts in this repo. They assume you have a profile in `~/.aws/config` called `prx-legacy`, which is configured to access the `prx-legacy` AWS account.
 
+## Deploying
+
 The template is intended to deployed using the [SAM CLI](https://docs.aws.amazon.com/serverless-application-model/latest/developerguide/serverless-sam-cli-command-reference.html). You can run `sam deploy` if you already have a `samconfig.toml`, or `sam deploy -g` if you don't. Additionally, there is a VS Code task that supports deploying various environments (staging, production, etc), which expects files called `samconfig.[stag|prod].toml`, and will use the correct one.
+
+## Misc
 
 Various APIs and SDKs are inconsistent in how they refer to S3 buckets and objects. To be consistent throughout this project, they should be called `BucketName` and `ObjectKey` until they are passed to an API.
 
