@@ -13,7 +13,7 @@ function spawn(command, argsarray, envOptions) {
     console.log(
       JSON.stringify({
         msg: 'Spawning child process',
-        command: command,
+        command,
         arguments: argsarray,
       }),
     );
@@ -30,7 +30,7 @@ function spawn(command, argsarray, envOptions) {
 
     childProc.on('exit', (code, signal) => {
       if (code || signal) {
-        reject(`${command} failed with ${code || signal}`);
+        reject(new Error(`${command} failed with ${code || signal}`));
       } else {
         resolve(Buffer.concat(resultBuffers).toString().trim());
       }
@@ -39,7 +39,7 @@ function spawn(command, argsarray, envOptions) {
 }
 
 function s3GetObject(bucket, fileKey, filePath) {
-  return new Promise(function (resolve, reject) {
+  return new Promise((resolve, reject) => {
     const file = fs.createWriteStream(filePath);
     const stream = s3
       .getObject({
@@ -51,7 +51,7 @@ function s3GetObject(bucket, fileKey, filePath) {
     stream.on('error', reject);
     file.on('error', reject);
 
-    file.on('finish', function () {
+    file.on('finish', () => {
       resolve(filePath);
     });
 
@@ -93,7 +93,7 @@ function audioInspection(ffprobe, mpck) {
   return inspection;
 }
 
-function videoInspection(ffprobe, mpck) {
+function videoInspection(ffprobe) {
   const stream = ffprobe.streams.find(
     (s) => s.codec_type === 'video' && s.duration > 0 && s.bit_rate > 0,
   );
@@ -109,20 +109,24 @@ function videoInspection(ffprobe, mpck) {
       Framerate: stream.r_frame_rate,
     };
   }
+
+  return null;
 }
 
-function imageInspection(sharp) {
-  if (sharp) {
+function imageInspection(sharpData) {
+  if (sharpData) {
     return {
-      Width: sharp.width,
-      Height: sharp.height,
-      Format: sharp.format,
+      Width: sharpData.width,
+      Height: sharpData.height,
+      Format: sharpData.format,
     };
   }
+
+  return null;
 }
 
 async function runffprobe(artifactFileTmpPath) {
-  const _start = process.hrtime();
+  const start = process.hrtime();
   const json = await spawn(
     '/opt/bin/ffprobe',
     [
@@ -139,11 +143,11 @@ async function runffprobe(artifactFileTmpPath) {
   );
   const ffprobe = JSON.parse(json);
 
-  const _end = process.hrtime(_start);
+  const end = process.hrtime(start);
   console.log(
     JSON.stringify({
       msg: 'Finished ffprobe',
-      duration: `${_end[0]} s ${_end[1] / 1000000} ms`,
+      duration: `${end[0]} s ${end[1] / 1000000} ms`,
       data: ffprobe,
     }),
   );
@@ -152,7 +156,7 @@ async function runffprobe(artifactFileTmpPath) {
 }
 
 async function runmpck(artifactFileTmpPath) {
-  const _start = process.hrtime();
+  const start = process.hrtime();
   let mpck;
 
   try {
@@ -160,13 +164,16 @@ async function runmpck(artifactFileTmpPath) {
       env: process.env,
       cwd: os.tmpdir(),
     });
-  } catch (error) {}
+  } catch (error) {
+    // TODO Handle this error
+    return false;
+  }
 
-  const _end = process.hrtime(_start);
+  const end = process.hrtime(start);
   console.log(
     JSON.stringify({
       msg: 'Finished mpck',
-      duration: `${_end[0]} s ${_end[1] / 1000000} ms`,
+      duration: `${end[0]} s ${end[1] / 1000000} ms`,
       data: mpck,
     }),
   );
@@ -175,11 +182,11 @@ async function runmpck(artifactFileTmpPath) {
 }
 
 function runsharp(artifactFileTmpPath) {
-  return new Promise(function (resolve, reject) {
+  return new Promise((resolve) => {
     sharp(artifactFileTmpPath)
       .metadata()
       .then((metadata) => resolve(metadata))
-      .catch((e) => resolve());
+      .catch(() => resolve());
   });
 }
 
@@ -192,18 +199,18 @@ async function fetchArtifact(event, artifactFileTmpPath) {
     }),
   );
 
-  const _s3start = process.hrtime();
+  const s3start = process.hrtime();
   await s3GetObject(
     event.Artifact.BucketName,
     event.Artifact.ObjectKey,
     artifactFileTmpPath,
   );
 
-  const _s3end = process.hrtime(_s3start);
+  const s3end = process.hrtime(s3start);
   console.log(
     JSON.stringify({
       msg: 'Fetched artifact from S3',
-      duration: `${_s3end[0]} s ${_s3end[1] / 1000000} ms`,
+      duration: `${s3end[0]} s ${s3end[1] / 1000000} ms`,
     }),
   );
 }
@@ -219,7 +226,7 @@ exports.handler = async (event, context) => {
 
   const ffprobe = await runffprobe(artifactFileTmpPath);
   const mpck = await runmpck(artifactFileTmpPath);
-  const sharp = await runsharp(artifactFileTmpPath);
+  const sharpOut = await runsharp(artifactFileTmpPath);
 
   const stat = fs.statSync(artifactFileTmpPath);
   const inspection = { Size: stat.size };
@@ -228,7 +235,7 @@ exports.handler = async (event, context) => {
 
   Object.assign(inspection, { Audio: audioInspection(ffprobe, mpck) });
   Object.assign(inspection, { Video: videoInspection(ffprobe, mpck) });
-  Object.assign(inspection, { Image: imageInspection(sharp) });
+  Object.assign(inspection, { Image: imageInspection(sharpOut) });
   Object.assign(inspection, event.Artifact.Descriptor);
 
   return { Task: 'Inspect', Inspection: inspection };

@@ -39,7 +39,10 @@ function httpRequest(event, message, redirectCount) {
       res.setEncoding('utf8');
 
       let resData = '';
-      res.on('data', (chunk) => (resData += chunk));
+      res.on('data', (chunk) => {
+        resData += chunk;
+        return resData;
+      });
 
       res.on('end', async () => {
         if (res.statusCode >= 200 && res.statusCode < 300) {
@@ -155,12 +158,13 @@ exports.handler = async (event) => {
   // Keep track of how many JobResult callbacks indicated any sort of job
   // execution problem in a custom CloudWatch Metric
   // TODO Maybe move this to its own Lambda; this is kind of a weird spot for it
-  if (msg.hasOwnProperty('JobResult')) {
+  if (Object.prototype.hasOwnProperty.call(msg, 'JobResult')) {
     const hasFailedTask =
-      msg.JobResult.hasOwnProperty('FailedTasks') &&
+      Object.prototype.hasOwnProperty.call(msg.JobResult, 'FailedTasks') &&
       msg.JobResult.FailedTasks.length;
     const hasJobProblem =
-      msg.JobResult.hasOwnProperty('State') && msg.JobResult.State !== 'DONE';
+      Object.prototype.hasOwnProperty.call(msg.JobResult, 'State') &&
+      msg.JobResult.State !== 'DONE';
 
     if (hasFailedTask || hasJobProblem) {
       await putErrorMetric();

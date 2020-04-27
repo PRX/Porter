@@ -15,7 +15,7 @@ function transform(inputFile, outputFile, event) {
 
       process = sharp(inputFile);
 
-      if (event.Task.hasOwnProperty('Resize')) {
+      if (Object.prototype.hasOwnProperty.call(event.Task, 'Resize')) {
         process = process.resize({
           width: event.Task.Resize.Width,
           height: event.Task.Resize.Height,
@@ -24,12 +24,12 @@ function transform(inputFile, outputFile, event) {
         });
       }
 
-      if (event.Task.hasOwnProperty('Format')) {
+      if (Object.prototype.hasOwnProperty.call(event.Task, 'Format')) {
         process = process.toFormat(event.Task.Format);
       }
 
       if (
-        event.Task.hasOwnProperty('Metadata') &&
+        Object.prototype.hasOwnProperty.call(event.Task, 'Metadata') &&
         event.Task.Metadata === 'PRESERVE'
       ) {
         process = process.withMetadata();
@@ -49,7 +49,7 @@ function transform(inputFile, outputFile, event) {
 }
 
 function s3GetObject(bucket, fileKey, filePath) {
-  return new Promise(function (resolve, reject) {
+  return new Promise((resolve, reject) => {
     const file = fs.createWriteStream(filePath);
     const stream = s3
       .getObject({
@@ -61,7 +61,7 @@ function s3GetObject(bucket, fileKey, filePath) {
     stream.on('error', reject);
     file.on('error', reject);
 
-    file.on('finish', function () {
+    file.on('finish', () => {
       resolve(filePath);
     });
 
@@ -94,17 +94,22 @@ async function s3Upload(event, imageFileTmpPath) {
   // included with the artifact, that should be used as the new images's
   // content type
   if (
-    event.Task.Destination.hasOwnProperty('ContentType') &&
+    Object.prototype.hasOwnProperty.call(
+      event.Task.Destination,
+      'ContentType',
+    ) &&
     event.Task.Destination.ContentType === 'REPLACE' &&
-    event.Artifact.hasOwnProperty('Descriptor') &&
-    event.Artifact.Descriptor.hasOwnProperty('MIME')
+    Object.prototype.hasOwnProperty.call(event.Artifact, 'Descriptor') &&
+    Object.prototype.hasOwnProperty.call(event.Artifact.Descriptor, 'MIME')
   ) {
     params.ContentType = event.Artifact.Descriptor.MIME;
   }
 
   // Assign all members of Parameters to params. Remove the properties required
   // for the Copy operation, so there is no collision
-  if (event.Task.Destination.hasOwnProperty('Parameters')) {
+  if (
+    Object.prototype.hasOwnProperty.call(event.Task.Destination, 'Parameters')
+  ) {
     delete event.Task.Destination.Parameters.Bucket;
     delete event.Task.Destination.Parameters.Key;
     delete event.Task.Destination.Parameters.Body;
@@ -113,14 +118,14 @@ async function s3Upload(event, imageFileTmpPath) {
   }
 
   // Upload the resulting file to the destination in S3
-  const _uploadStart = process.hrtime();
+  const uploadStart = process.hrtime();
   await s3writer.upload(params).promise();
 
-  const _uploadEnd = process.hrtime(_uploadStart);
+  const uploadEnd = process.hrtime(uploadStart);
   console.log(
     JSON.stringify({
       msg: 'Finished S3 upload',
-      duration: `${_uploadEnd[0]} s ${_uploadEnd[1] / 1000000} ms`,
+      duration: `${uploadEnd[0]} s ${uploadEnd[1] / 1000000} ms`,
     }),
   );
 }
@@ -145,23 +150,23 @@ exports.handler = async (event, context) => {
     }),
   );
 
-  const _s3start = process.hrtime();
+  const s3start = process.hrtime();
   await s3GetObject(
     event.Artifact.BucketName,
     event.Artifact.ObjectKey,
     artifactFileTmpPath,
   );
 
-  const _s3end = process.hrtime(_s3start);
+  const s3end = process.hrtime(s3start);
   console.log(
     JSON.stringify({
       msg: 'Fetched artifact from S3',
-      duration: `${_s3end[0]} s ${_s3end[1] / 1000000} ms`,
+      duration: `${s3end[0]} s ${s3end[1] / 1000000} ms`,
     }),
   );
 
   // Run the file through sharp
-  const _sharpStart = process.hrtime();
+  const sharpStart = process.hrtime();
 
   const imageFileTmpPath = path.join(
     os.tmpdir(),
@@ -171,11 +176,11 @@ exports.handler = async (event, context) => {
 
   await transform(artifactFileTmpPath, imageFileTmpPath, event);
 
-  const _sharpEnd = process.hrtime(_sharpStart);
+  const sharpEnd = process.hrtime(sharpStart);
   console.log(
     JSON.stringify({
       msg: 'Finished image processing',
-      duration: `${_sharpEnd[0]} s ${_sharpEnd[1] / 1000000} ms`,
+      duration: `${sharpEnd[0]} s ${sharpEnd[1] / 1000000} ms`,
     }),
   );
 

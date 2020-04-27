@@ -86,9 +86,13 @@ function filenameFromSource(source) {
   if (source.Mode === 'HTTP') {
     const urlObj = url.parse(source.URL);
     return urlObj.pathname.split('/').pop() || urlObj.hostname;
-  } else if (source.Mode === 'AWS/S3') {
+  }
+
+  if (source.Mode === 'AWS/S3') {
     return source.ObjectKey.split('/').pop();
   }
+
+  return false;
 }
 exports.filenameFromSource = filenameFromSource;
 
@@ -109,18 +113,18 @@ exports.handler = async (event, context) => {
 
     const localFile = fs.createWriteStream(localFilePath);
 
-    const _httpstart = process.hrtime();
+    const httpstart = process.hrtime();
     await httpGet(event.Job.Source.URL, localFile);
 
-    const _httpend = process.hrtime(_httpstart);
+    const httpend = process.hrtime(httpstart);
     console.log(
       JSON.stringify({
         msg: 'Finished HTTP request',
-        duration: `${_httpend[0]} s ${_httpend[1] / 1000000} ms`,
+        duration: `${httpend[0]} s ${httpend[1] / 1000000} ms`,
       }),
     );
 
-    const _s3start = process.hrtime();
+    const s3start = process.hrtime();
     await s3
       .upload({
         Bucket: artifact.BucketName,
@@ -129,11 +133,11 @@ exports.handler = async (event, context) => {
       })
       .promise();
 
-    const _s3end = process.hrtime(_s3start);
+    const s3end = process.hrtime(s3start);
     console.log(
       JSON.stringify({
         msg: 'Finished S3 upload',
-        duration: `${_s3end[0]} s ${_s3end[1] / 1000000} ms`,
+        duration: `${s3end[0]} s ${s3end[1] / 1000000} ms`,
       }),
     );
 
@@ -143,7 +147,7 @@ exports.handler = async (event, context) => {
     // https://docs.aws.amazon.com/AWSJavaScriptSDK/latest/AWS/S3.html#copyObject-property
     // https://docs.aws.amazon.com/AmazonS3/latest/API/RESTObjectCOPY.html
     // CopySource expects: "/sourcebucket/path/to/object.extension"
-    const _start = process.hrtime();
+    const start = process.hrtime();
 
     await s3
       .copyObject({
@@ -153,12 +157,12 @@ exports.handler = async (event, context) => {
       })
       .promise();
 
-    const _end = process.hrtime(_start);
+    const end = process.hrtime(start);
 
     console.log(
       JSON.stringify({
         msg: 'Finished S3 Copy',
-        duration: `${_end[0]} s ${_end[1] / 1000000} ms`,
+        duration: `${end[0]} s ${end[1] / 1000000} ms`,
       }),
     );
   } else {

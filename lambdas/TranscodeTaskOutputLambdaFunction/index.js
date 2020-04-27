@@ -15,7 +15,7 @@ exports.handler = async (event) => {
     Timestamp: now / 1000,
   };
 
-  console.log(JSON.stringify({ msg: 'Result', result: result }));
+  console.log(JSON.stringify({ msg: 'Result', result }));
 
   return result;
 };

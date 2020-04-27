@@ -35,7 +35,7 @@ exports.handler = async (event) => {
 
   // Only start the job if the artifact type (or passed in MediaFormat) is supported
   if (!['mp3', 'mp4', 'wav', 'flac'].includes(mediaFormat)) {
-    throw 'Artifact format not supported';
+    throw new Error('Artifact format not supported');
   }
 
   // Should be unique, even if an execution includes multiple transcribe jobs

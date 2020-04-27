@@ -42,10 +42,10 @@ async function awsS3copyObject(event) {
   // When the optional `ContentType` property is set to `REPLACE`, if a MIME is
   // included with the artifact, that should be used as the copy's content type
   if (
-    event.Task.hasOwnProperty('ContentType') &&
+    Object.prototype.hasOwnProperty.call(event.Task, 'ContentType') &&
     event.Task.ContentType === 'REPLACE' &&
-    event.Artifact.hasOwnProperty('Descriptor') &&
-    event.Artifact.Descriptor.hasOwnProperty('MIME')
+    Object.prototype.hasOwnProperty.call(event.Artifact, 'Descriptor') &&
+    Object.prototype.hasOwnProperty.call(event.Artifact.Descriptor, 'MIME')
   ) {
     params.MetadataDirective = 'REPLACE';
     params.ContentType = event.Artifact.Descriptor.MIME;
@@ -53,7 +53,7 @@ async function awsS3copyObject(event) {
 
   // Assign all members of Parameters to params. Remove the properties required
   // for the Copy operation, so there is no collision
-  if (event.Task.hasOwnProperty('Parameters')) {
+  if (Object.prototype.hasOwnProperty.call(event.Task, 'Parameters')) {
     delete event.Task.Parameters.CopySource;
     delete event.Task.Parameters.Bucket;
     delete event.Task.Parameters.Key;
@@ -61,14 +61,14 @@ async function awsS3copyObject(event) {
     Object.assign(params, event.Task.Parameters);
   }
 
-  const _start = process.hrtime();
+  const start = process.hrtime();
   await s3.copyObject(params).promise();
-  const _end = process.hrtime(_start);
+  const end = process.hrtime(start);
 
   console.log(
     JSON.stringify({
       msg: 'Finished S3 Copy',
-      duration: `${_end[0]} s ${_end[1] / 1000000} ms`,
+      duration: `${end[0]} s ${end[1] / 1000000} ms`,
     }),
   );
 }

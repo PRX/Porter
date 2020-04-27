@@ -29,7 +29,7 @@ exports.handler = async (event) => {
     return {};
   }
 
-  console.log(JSON.stringify({ msg: 'Result', result: result }));
+  console.log(JSON.stringify({ msg: 'Result', result }));
 
   return {
     Extension: result.ext,

@@ -54,14 +54,14 @@ async function awsS3copyObject(event, transcriptionJob) {
     Key: event.Task.Destination.ObjectKey,
   };
 
-  const _start = process.hrtime();
+  const start = process.hrtime();
   await s3.copyObject(params).promise();
-  const _end = process.hrtime(_start);
+  const end = process.hrtime(start);
 
   console.log(
     JSON.stringify({
       msg: 'Finished S3 Copy',
-      duration: `${_end[0]} s ${_end[1] / 1000000} ms`,
+      duration: `${end[0]} s ${end[1] / 1000000} ms`,
     }),
   );
 }

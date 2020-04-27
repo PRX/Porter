@@ -13,10 +13,13 @@
 // The result path and output path MUST both be "$".
 
 exports.handler = async (event) => {
-  console.log(JSON.stringify({ msg: 'Unmodified input', event: event }));
+  console.log(JSON.stringify({ msg: 'Unmodified input', event }));
 
   // Set Job.Tasks to an empty array, unless it's already an array.
-  if (!event.Job.hasOwnProperty('Tasks') || !Array.isArray(event.Job.Tasks)) {
+  if (
+    !Object.prototype.hasOwnProperty.call(event.Job, 'Tasks') ||
+    !Array.isArray(event.Job.Tasks)
+  ) {
     event.Job.Tasks = [];
   }
 
@@ -26,7 +29,7 @@ exports.handler = async (event) => {
     // and fails without the error being caught if it's missing. This forces
     // the execution to error out in a way that can be caught and handled as
     // expected. (Choice states don't support Catch)
-    if (!task.hasOwnProperty('Type')) {
+    if (!Object.prototype.hasOwnProperty.call(task, 'Type')) {
       throw new Error('Job included a task without a Type');
     }
 
@@ -34,23 +37,27 @@ exports.handler = async (event) => {
       return;
     }
 
-    if (!task.hasOwnProperty('FFmpeg')) {
+    if (!Object.prototype.hasOwnProperty.call(task, 'FFmpeg')) {
       task.FFmpeg = {};
     }
-    if (!task.FFmpeg.hasOwnProperty('GlobalOptions')) {
+    if (!Object.prototype.hasOwnProperty.call(task.FFmpeg, 'GlobalOptions')) {
       task.FFmpeg.GlobalOptions = '';
     }
-    if (!task.FFmpeg.hasOwnProperty('InputFileOptions')) {
+    if (
+      !Object.prototype.hasOwnProperty.call(task.FFmpeg, 'InputFileOptions')
+    ) {
       task.FFmpeg.InputFileOptions = '';
     }
-    if (!task.FFmpeg.hasOwnProperty('OutputFileOptions')) {
+    if (
+      !Object.prototype.hasOwnProperty.call(task.FFmpeg, 'OutputFileOptions')
+    ) {
       task.FFmpeg.OutputFileOptions = '';
     }
   });
 
   // Set Job.Callbacks to an empty array, unless it's already an array.
   if (
-    !event.Job.hasOwnProperty('Callbacks') ||
+    !Object.prototype.hasOwnProperty.call(event.Job, 'Callbacks') ||
     !Array.isArray(event.Job.Callbacks)
   ) {
     event.Job.Callbacks = [];
@@ -58,7 +65,7 @@ exports.handler = async (event) => {
 
   // Set Job.SerializedJobs to an empty array, unless it's already an array.
   if (
-    !event.Job.hasOwnProperty('SerializedJobs') ||
+    !Object.prototype.hasOwnProperty.call(event.Job, 'SerializedJobs') ||
     !Array.isArray(event.Job.SerializedJobs)
   ) {
     event.Job.SerializedJobs = [];
@@ -66,13 +73,13 @@ exports.handler = async (event) => {
 
   // Set Job.ExecutionTrace to an empty array, unless it's already an array.
   if (
-    !event.Job.hasOwnProperty('ExecutionTrace') ||
+    !Object.prototype.hasOwnProperty.call(event.Job, 'ExecutionTrace') ||
     !Array.isArray(event.Job.ExecutionTrace)
   ) {
     event.Job.ExecutionTrace = [];
   }
 
-  console.log(JSON.stringify({ msg: 'Normalized input', event: event }));
+  console.log(JSON.stringify({ msg: 'Normalized input', event }));
 
   // These values are required to exist in the state machine definition at some
   // point, but are not guaranteed to be inserted during every execution, so
