@@ -40,41 +40,45 @@ function httpGet(uri, file, redirectCount) {
       port: q.port,
       path: `${q.pathname || ''}${q.search || ''}`,
       headers: {
-        'User-Agent': 'PRX-Porterbot/1.0 (+https://github.com/PRX/Porter)'
-      }
+        'User-Agent': 'PRX-Porterbot/1.0 (+https://github.com/PRX/Porter)',
+      },
     };
 
-    client.get(options, async (res) => {
-      if (res.statusCode === 301 || res.statusCode === 302) {
-        try {
-          if (redirectCount > +process.env.MAX_HTTP_REDIRECTS) {
-            reject(new Error('Too many redirects'));
+    client
+      .get(options, async (res) => {
+        if (res.statusCode === 301 || res.statusCode === 302) {
+          try {
+            if (redirectCount > +process.env.MAX_HTTP_REDIRECTS) {
+              reject(new Error('Too many redirects'));
+            }
+
+            console.log(
+              JSON.stringify({
+                msg: `Following HTTP redirect`,
+                location: res.headers.location,
+                count: redirectCount,
+              }),
+            );
+
+            const count = redirectCount ? redirectCount + 1 : 1;
+            await httpGet(res.headers.location, file, count);
+            resolve();
+          } catch (error) {
+            reject(error);
           }
+        } else if (res.statusCode >= 200 && res.statusCode < 300) {
+          file.on('finish', () => file.close(() => resolve()));
+          file.on('error', (error) => {
+            fs.unlinkSync(file);
+            reject(error);
+          });
 
-          console.log(JSON.stringify({
-            msg: `Following HTTP redirect`,
-            location: res.headers.location,
-            count: redirectCount
-          }));
-
-          const count = redirectCount ? (redirectCount + 1) : 1;
-          await httpGet(res.headers.location, file, count);
-          resolve();
-        } catch (error) {
-          reject(error);
+          res.pipe(file);
+        } else {
+          reject(new Error(`HTTP request failed with code ${res.statusCode}`));
         }
-      } else if (res.statusCode >= 200 && res.statusCode < 300) {
-        file.on('finish', () => file.close(() => resolve()));
-        file.on('error', (error) => {
-          fs.unlinkSync(file);
-          reject(error);
-        });
-
-        res.pipe(file);
-      } else {
-        reject(new Error(`HTTP request failed with code ${res.statusCode}`));
-      }
-    }).on('error', error => reject(error));
+      })
+      .on('error', (error) => reject(error));
   });
 }
 
@@ -82,9 +86,13 @@ function filenameFromSource(source) {
   if (source.Mode === 'HTTP') {
     const urlObj = url.parse(source.URL);
     return urlObj.pathname.split('/').pop() || urlObj.hostname;
-  } else if (source.Mode === 'AWS/S3') {
+  }
+
+  if (source.Mode === 'AWS/S3') {
     return source.ObjectKey.split('/').pop();
   }
+
+  return false;
 }
 exports.filenameFromSource = filenameFromSource;
 
@@ -95,7 +103,7 @@ exports.handler = async (event, context) => {
 
   const artifact = {
     BucketName: process.env.ARTIFACT_BUCKET_NAME,
-    ObjectKey: `${event.Execution.Id}/${context.awsRequestId}/${sourceFilename}`
+    ObjectKey: `${event.Execution.Id}/${context.awsRequestId}/${sourceFilename}`,
   };
 
   if (event.Job.Source.Mode === 'HTTP') {
@@ -105,27 +113,33 @@ exports.handler = async (event, context) => {
 
     const localFile = fs.createWriteStream(localFilePath);
 
-    const _httpstart = process.hrtime();
+    const httpstart = process.hrtime();
     await httpGet(event.Job.Source.URL, localFile);
 
-    const _httpend = process.hrtime(_httpstart);
-    console.log(JSON.stringify({
-      msg: 'Finished HTTP request',
-      duration: `${_httpend[0]} s ${_httpend[1] / 1000000} ms`,
-    }));
+    const httpend = process.hrtime(httpstart);
+    console.log(
+      JSON.stringify({
+        msg: 'Finished HTTP request',
+        duration: `${httpend[0]} s ${httpend[1] / 1000000} ms`,
+      }),
+    );
 
-    const _s3start = process.hrtime();
-    await s3.upload({
-      Bucket: artifact.BucketName,
-      Key: artifact.ObjectKey,
-      Body: fs.createReadStream(localFilePath),
-    }).promise();
+    const s3start = process.hrtime();
+    await s3
+      .upload({
+        Bucket: artifact.BucketName,
+        Key: artifact.ObjectKey,
+        Body: fs.createReadStream(localFilePath),
+      })
+      .promise();
 
-    const _s3end = process.hrtime(_s3start);
-    console.log(JSON.stringify({
-      msg: 'Finished S3 upload',
-      duration: `${_s3end[0]} s ${_s3end[1] / 1000000} ms`,
-    }));
+    const s3end = process.hrtime(s3start);
+    console.log(
+      JSON.stringify({
+        msg: 'Finished S3 upload',
+        duration: `${s3end[0]} s ${s3end[1] / 1000000} ms`,
+      }),
+    );
 
     fs.unlinkSync(localFilePath);
   } else if (event.Job.Source.Mode === 'AWS/S3') {
@@ -133,20 +147,24 @@ exports.handler = async (event, context) => {
     // https://docs.aws.amazon.com/AWSJavaScriptSDK/latest/AWS/S3.html#copyObject-property
     // https://docs.aws.amazon.com/AmazonS3/latest/API/RESTObjectCOPY.html
     // CopySource expects: "/sourcebucket/path/to/object.extension"
-    const _start = process.hrtime();
+    const start = process.hrtime();
 
-    await s3.copyObject({
-      CopySource: `/${event.Job.Source.BucketName}/${event.Job.Source.ObjectKey}`,
-      Bucket: artifact.BucketName,
-      Key: artifact.ObjectKey
-    }).promise();
+    await s3
+      .copyObject({
+        CopySource: `/${event.Job.Source.BucketName}/${event.Job.Source.ObjectKey}`,
+        Bucket: artifact.BucketName,
+        Key: artifact.ObjectKey,
+      })
+      .promise();
 
-    const _end = process.hrtime(_start);
+    const end = process.hrtime(start);
 
-    console.log(JSON.stringify({
-      msg: 'Finished S3 Copy',
-      duration: `${_end[0]} s ${_end[1] / 1000000} ms`,
-    }));
+    console.log(
+      JSON.stringify({
+        msg: 'Finished S3 Copy',
+        duration: `${end[0]} s ${end[1] / 1000000} ms`,
+      }),
+    );
   } else {
     throw new Error('Unexpected source mode');
   }

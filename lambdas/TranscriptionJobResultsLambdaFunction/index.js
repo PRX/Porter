@@ -14,7 +14,7 @@ const AWS = AWSXRay.captureAWS(require('aws-sdk'));
 
 const url = require('url');
 
-const sts = new AWS.STS({apiVersion: '2011-06-15'});
+const sts = new AWS.STS({ apiVersion: '2011-06-15' });
 const transcribe = new AWS.TranscribeService({ apiVersion: '2017-10-26' });
 
 // https://docs.aws.amazon.com/AWSJavaScriptSDK/latest/AWS/S3.html#copyObject-property
@@ -26,16 +26,20 @@ async function awsS3copyObject(event, transcriptionJob) {
   const fileUri = transcriptionJob.Transcript.TranscriptFileUri;
   const s3path = url.parse(fileUri).pathname;
 
-  console.log(JSON.stringify({
-    msg: 'S3 Copy',
-    source: s3path,
-    destination: `${event.Task.Destination.BucketName}/${event.Task.Destination.ObjectKey}`
-  }));
+  console.log(
+    JSON.stringify({
+      msg: 'S3 Copy',
+      source: s3path,
+      destination: `${event.Task.Destination.BucketName}/${event.Task.Destination.ObjectKey}`,
+    }),
+  );
 
-  const role = await sts.assumeRole({
-    RoleArn: process.env.S3_DESTINATION_WRITER_ROLE,
-    RoleSessionName: 'porter_transcribe_task',
-  }).promise();
+  const role = await sts
+    .assumeRole({
+      RoleArn: process.env.S3_DESTINATION_WRITER_ROLE,
+      RoleSessionName: 'porter_transcribe_task',
+    })
+    .promise();
 
   const s3 = new AWS.S3({
     apiVersion: '2006-03-01',
@@ -47,26 +51,30 @@ async function awsS3copyObject(event, transcriptionJob) {
   const params = {
     CopySource: encodeURI(s3path),
     Bucket: event.Task.Destination.BucketName,
-    Key: event.Task.Destination.ObjectKey
+    Key: event.Task.Destination.ObjectKey,
   };
 
-  const _start = process.hrtime();
+  const start = process.hrtime();
   await s3.copyObject(params).promise();
-  const _end = process.hrtime(_start);
+  const end = process.hrtime(start);
 
-  console.log(JSON.stringify({
-    msg: 'Finished S3 Copy',
-    duration: `${_end[0]} s ${_end[1] / 1000000} ms`,
-  }));
+  console.log(
+    JSON.stringify({
+      msg: 'Finished S3 Copy',
+      duration: `${end[0]} s ${end[1] / 1000000} ms`,
+    }),
+  );
 }
 
 exports.handler = async (event) => {
   console.log(JSON.stringify({ msg: 'State input', input: event }));
 
   // Get the details of the Transcribe job
-  const res = await transcribe.getTranscriptionJob({
-    TranscriptionJobName: event.TranscriptionJob.TranscriptionJobName
-  }).promise();
+  const res = await transcribe
+    .getTranscriptionJob({
+      TranscriptionJobName: event.TranscriptionJob.TranscriptionJobName,
+    })
+    .promise();
 
   const transcriptionJob = res.TranscriptionJob;
 
@@ -78,7 +86,7 @@ exports.handler = async (event) => {
     throw new Error('Unexpected destination mode');
   }
 
-  const now = new Date;
+  const now = new Date();
 
   return {
     Task: 'Transcribe',
@@ -86,6 +94,6 @@ exports.handler = async (event) => {
     BucketName: event.Task.Destination.BucketName,
     ObjectKey: event.Task.Destination.ObjectKey,
     Time: now.toISOString(),
-    Timestamp: (now / 1000)
+    Timestamp: now / 1000,
   };
-}
+};

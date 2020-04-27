@@ -22,29 +22,29 @@
 start_time=`date +%s`
 
 aws cloudwatch put-metric-data \
-    --namespace "PRX/Porter" \
-    --metric-name Transcodes \
-    --unit Count \
-    --value 1 \
-    --dimensions "StateMachineName=$STATE_MACHINE_NAME"
+  --namespace "PRX/Porter" \
+  --metric-name Transcodes \
+  --unit Count \
+  --value 1 \
+  --dimensions "StateMachineName=$STATE_MACHINE_NAME"
 
 # Get the artifact file from S3
 aws s3 cp s3://"$STATE_MACHINE_ARTIFACT_BUCKET_NAME"/"$STATE_MACHINE_ARTIFACT_OBJECT_KEY" artifact
 
 ./ffmpeg-git-20200324-amd64-static/ffmpeg \
-    $STATE_MACHINE_FFMPEG_GLOBAL_OPTIONS \
-    $STATE_MACHINE_FFMPEG_INPUT_FILE_OPTIONS -i artifact \
-    $STATE_MACHINE_FFMPEG_OUTPUT_FILE_OPTIONS -f $STATE_MACHINE_DESTINATION_FORMAT output
+  $STATE_MACHINE_FFMPEG_GLOBAL_OPTIONS \
+  $STATE_MACHINE_FFMPEG_INPUT_FILE_OPTIONS -i artifact \
+  $STATE_MACHINE_FFMPEG_OUTPUT_FILE_OPTIONS -f $STATE_MACHINE_DESTINATION_FORMAT output
 
 end_time=`date +%s`
 duration=$((end_time-start_time))
 
 aws cloudwatch put-metric-data \
-    --namespace "PRX/Porter" \
-    --metric-name TranscodeDuration \
-    --unit Seconds \
-    --value "$duration" \
-    --dimensions "StateMachineName=$STATE_MACHINE_NAME"
+  --namespace "PRX/Porter" \
+  --metric-name TranscodeDuration \
+  --unit Seconds \
+  --value "$duration" \
+  --dimensions "StateMachineName=$STATE_MACHINE_NAME"
 
 # Assume a role that will have access to the S3 destination bucket, and use
 # that roles credentials for the s3 cp call

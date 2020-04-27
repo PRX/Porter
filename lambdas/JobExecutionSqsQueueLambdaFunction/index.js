@@ -9,13 +9,17 @@ const AWS = AWSXRay.captureAWS(require('aws-sdk'));
 const stepfunctions = new AWS.StepFunctions({ apiVersion: '2016-11-23' });
 
 exports.handler = async (event) => {
-  console.log(JSON.stringify({
-    msg: 'Starting execution',
-    job: event.Records[0].body
-  }));
+  console.log(
+    JSON.stringify({
+      msg: 'Starting execution',
+      job: event.Records[0].body,
+    }),
+  );
 
-  await stepfunctions.startExecution({
-    stateMachineArn: process.env.STATE_MACHINE_ARN,
-    input: event.Records[0].body
-  }).promise();
+  await stepfunctions
+    .startExecution({
+      stateMachineArn: process.env.STATE_MACHINE_ARN,
+      input: event.Records[0].body,
+    })
+    .promise();
 };

@@ -1,21 +1,21 @@
 {
-    "Job": {
-        "Id": "porter-sample-transcribe-media-format",
-        "Source": {
-            "Mode": "HTTP",
-            "URL": "https://s3.amazonaws.com/development.mediajoint.prx.org/public/audio_files/270371/test.mp2"
-        },
-        "Tasks": [
-            {
-                "Type": "Transcribe",
-                "LanguageCode": "en-US",
-                "MediaFormat": "mp3",
-                "Destination": {
-                    "Mode": "AWS/S3",
-                    "BucketName": "prx-porter-sandbox",
-                    "ObjectKey": "dev/sample/transcribe-media-format/transcribe.json"
-                }
-            }
-        ]
-    }
+  "Job": {
+    "Id": "porter-sample-transcribe-media-format",
+    "Source": {
+      "Mode": "HTTP",
+      "URL": "https://s3.amazonaws.com/development.mediajoint.prx.org/public/audio_files/270371/test.mp2"
+    },
+    "Tasks": [
+      {
+        "Type": "Transcribe",
+        "LanguageCode": "en-US",
+        "MediaFormat": "mp3",
+        "Destination": {
+          "Mode": "AWS/S3",
+          "BucketName": "prx-porter-sandbox",
+          "ObjectKey": "dev/sample/transcribe-media-format/transcribe.json"
+        }
+      }
+    ]
+  }
 }

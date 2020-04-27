@@ -1,26 +1,26 @@
 {
-    "Job": {
-        "Id": "porter-sample-image-s3-meta",
-        "Source": {
-            "Mode": "HTTP",
-            "URL": "https://f.prxu.org/232/images/e0f8153a-a39d-4288-a8cf-cd920552c295/image.png"
-        },
-        "Tasks": [
-            {
-                "Type": "Image",
-                "Destination": {
-                    "Mode": "AWS/S3",
-                    "BucketName": "prx-porter-sandbox",
-                    "ObjectKey": "dev/sample/image-s3-meta/image.jpg",
-                    "ContentType": "REPLACE",
-                    "Parameters": {
-                        "ContentDisposition": "attachment",
-                        "Metadata": {
-                            "MyMetadataKey": "MyMetadataValue"
-                        }
-                    }
-                }
+  "Job": {
+    "Id": "porter-sample-image-s3-meta",
+    "Source": {
+      "Mode": "HTTP",
+      "URL": "https://f.prxu.org/232/images/e0f8153a-a39d-4288-a8cf-cd920552c295/image.png"
+    },
+    "Tasks": [
+      {
+        "Type": "Image",
+        "Destination": {
+          "Mode": "AWS/S3",
+          "BucketName": "prx-porter-sandbox",
+          "ObjectKey": "dev/sample/image-s3-meta/image.jpg",
+          "ContentType": "REPLACE",
+          "Parameters": {
+            "ContentDisposition": "attachment",
+            "Metadata": {
+              "MyMetadataKey": "MyMetadataValue"
             }
-        ]
-    }
+          }
+        }
+      }
+    ]
+  }
 }

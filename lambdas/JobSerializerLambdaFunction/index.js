@@ -19,12 +19,19 @@ const sns = new AWS.SNS({ apiVersion: '2010-03-31' });
 exports.handler = async (event) => {
   console.log(JSON.stringify({ msg: 'State input', input: event }));
 
-  event.SerializedJob.ExecutionTrace = [...event.ExecutionTrace, event.Execution.Id];
+  event.SerializedJob.ExecutionTrace = [
+    ...event.ExecutionTrace,
+    event.Execution.Id,
+  ];
 
-  console.log(JSON.stringify({ msg: 'Serialized Job', input: event.SerializedJob }));
+  console.log(
+    JSON.stringify({ msg: 'Serialized Job', input: event.SerializedJob }),
+  );
 
-  await sns.publish({
-    TopicArn: process.env.JOB_EXECUTION_SNS_TOPIC_ARN,
-    Message: JSON.stringify(event.SerializedJob),
-  }).promise();
+  await sns
+    .publish({
+      TopicArn: process.env.JOB_EXECUTION_SNS_TOPIC_ARN,
+      Message: JSON.stringify(event.SerializedJob),
+    })
+    .promise();
 };

@@ -12,7 +12,7 @@ const sts = new AWS.STS({ apiVersion: '2011-06-15' });
 const cloudwatch = new AWS.CloudWatch({ apiVersion: '2010-08-01' });
 
 function httpRequest(event, message, redirectCount) {
-  return (new Promise((resolve, reject) => {
+  return new Promise((resolve, reject) => {
     const options = url.parse(event.Callback.URL);
     options.method = event.Callback.Method;
     options.headers = {};
@@ -20,7 +20,9 @@ function httpRequest(event, message, redirectCount) {
     let body;
     if (event.Callback['Content-Type'] === 'application/json') {
       body = JSON.stringify(message);
-    } else if (event.Callback['Content-Type'] === 'application/x-www-form-urlencoded') {
+    } else if (
+      event.Callback['Content-Type'] === 'application/x-www-form-urlencoded'
+    ) {
       body = querystring.encode(message);
     } else if (event.Callback.Method === 'GET') {
       // TODO This will clobber an existing query string
@@ -37,7 +39,10 @@ function httpRequest(event, message, redirectCount) {
       res.setEncoding('utf8');
 
       let resData = '';
-      res.on('data', (chunk) => resData += chunk );
+      res.on('data', (chunk) => {
+        resData += chunk;
+        return resData;
+      });
 
       res.on('end', async () => {
         if (res.statusCode >= 200 && res.statusCode < 300) {
@@ -48,13 +53,15 @@ function httpRequest(event, message, redirectCount) {
               reject(new Error('Too many redirects'));
             }
 
-            console.log(JSON.stringify({
-              msg: `Following HTTP redirect`,
-              location: res.headers.location,
-              count: redirectCount
-            }));
+            console.log(
+              JSON.stringify({
+                msg: `Following HTTP redirect`,
+                location: res.headers.location,
+                count: redirectCount,
+              }),
+            );
 
-            const count = redirectCount ? (redirectCount + 1) : 1;
+            const count = redirectCount ? redirectCount + 1 : 1;
             await httpRequest(res.headers.location, message, count);
             resolve();
           } catch (error) {
@@ -67,11 +74,11 @@ function httpRequest(event, message, redirectCount) {
       });
     });
 
-    req.on('error', error => reject(error));
+    req.on('error', (error) => reject(error));
 
     req.write(body);
     req.end();
-  }));
+  });
 }
 
 async function s3Put(event, message) {
@@ -89,13 +96,15 @@ async function s3Put(event, message) {
     key = '/job_result.json';
   } else {
     id = message.JobResult.Execution.Id.split(':').pop();
-    key = `/unknown_${+(new Date)}.json`;
+    key = `/unknown_${+new Date()}.json`;
   }
 
-  const role = await sts.assumeRole({
-    RoleArn: process.env.S3_DESTINATION_WRITER_ROLE,
-    RoleSessionName: 'porter_s3_callback',
-  }).promise();
+  const role = await sts
+    .assumeRole({
+      RoleArn: process.env.S3_DESTINATION_WRITER_ROLE,
+      RoleSessionName: 'porter_s3_callback',
+    })
+    .promise();
 
   const s3 = new AWS.S3({
     apiVersion: '2006-03-01',
@@ -104,48 +113,58 @@ async function s3Put(event, message) {
     sessionToken: role.Credentials.SessionToken,
   });
 
-  await s3.putObject({
-    Bucket: event.Callback.BucketName,
-    Key: [event.Callback.ObjectPrefix, id, key].join(''),
-    Body: JSON.stringify(message),
-  }).promise();
+  await s3
+    .putObject({
+      Bucket: event.Callback.BucketName,
+      Key: [event.Callback.ObjectPrefix, id, key].join(''),
+      Body: JSON.stringify(message),
+    })
+    .promise();
 }
 
 async function putErrorMetric() {
-  await cloudwatch.putMetricData({
-    Namespace: 'PRX/Porter',
-    MetricData: [
-      {
-        'MetricName': 'ErrorCallbackMessagesSent',
-        'Dimensions': [
-          {
-            'Name': 'LambdaFunctionName',
-            'Value': process.env.AWS_LAMBDA_FUNCTION_NAME
-          }
-        ],
-        'Value': 1,
-        'Unit': 'Count'
-      }
-    ]
-  }).promise();
+  await cloudwatch
+    .putMetricData({
+      Namespace: 'PRX/Porter',
+      MetricData: [
+        {
+          MetricName: 'ErrorCallbackMessagesSent',
+          Dimensions: [
+            {
+              Name: 'LambdaFunctionName',
+              Value: process.env.AWS_LAMBDA_FUNCTION_NAME,
+            },
+          ],
+          Value: 1,
+          Unit: 'Count',
+        },
+      ],
+    })
+    .promise();
 }
 
 exports.handler = async (event) => {
   console.log(JSON.stringify({ msg: 'State input', input: event }));
 
-  const now = new Date;
-  const msg = { Time: now.toISOString(), Timestamp: (now / 1000) };
+  const now = new Date();
+  const msg = { Time: now.toISOString(), Timestamp: now / 1000 };
 
-  if (event.Message) { Object.assign(msg, event.Message); }
+  if (event.Message) {
+    Object.assign(msg, event.Message);
+  }
 
   console.log(JSON.stringify({ msg: 'Callback message body', body: msg }));
 
   // Keep track of how many JobResult callbacks indicated any sort of job
   // execution problem in a custom CloudWatch Metric
   // TODO Maybe move this to its own Lambda; this is kind of a weird spot for it
-  if (msg.hasOwnProperty('JobResult')) {
-    const hasFailedTask = msg.JobResult.hasOwnProperty('FailedTasks') && msg.JobResult.FailedTasks.length;
-    const hasJobProblem = msg.JobResult.hasOwnProperty('State') && msg.JobResult.State !== 'DONE';
+  if (Object.prototype.hasOwnProperty.call(msg, 'JobResult')) {
+    const hasFailedTask =
+      Object.prototype.hasOwnProperty.call(msg.JobResult, 'FailedTasks') &&
+      msg.JobResult.FailedTasks.length;
+    const hasJobProblem =
+      Object.prototype.hasOwnProperty.call(msg.JobResult, 'State') &&
+      msg.JobResult.State !== 'DONE';
 
     if (hasFailedTask || hasJobProblem) {
       await putErrorMetric();
@@ -164,7 +183,7 @@ exports.handler = async (event) => {
     await sqs.sendMessage({ QueueUrl, MessageBody }).promise();
   } else if (event.Callback.Type === 'AWS/S3') {
     await s3Put(event, msg);
-  }  else if (event.Callback.Type === 'HTTP') {
+  } else if (event.Callback.Type === 'HTTP') {
     await httpRequest(event, msg);
   }
 };

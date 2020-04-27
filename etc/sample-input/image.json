@@ -1,21 +1,22 @@
 {
-    "Job": {
-        "Id": "porter-sample-image",
-        "Source": {
-            "Mode": "HTTP",
-            "URL": "https://f.prxu.org/232/images/e0f8153a-a39d-4288-a8cf-cd920552c295/image.png"
-        },
-        "Tasks": [
-            {
-                "Type": "Inspect"
-            }, {
-                "Type": "Image",
-                "Destination": {
-                    "Mode": "AWS/S3",
-                    "BucketName": "prx-porter-sandbox",
-                    "ObjectKey": "dev/sample/image/image.jpg"
-                }
-            }
-        ]
-    }
+  "Job": {
+    "Id": "porter-sample-image",
+    "Source": {
+      "Mode": "HTTP",
+      "URL": "https://f.prxu.org/232/images/e0f8153a-a39d-4288-a8cf-cd920552c295/image.png"
+    },
+    "Tasks": [
+      {
+        "Type": "Inspect"
+      },
+      {
+        "Type": "Image",
+        "Destination": {
+          "Mode": "AWS/S3",
+          "BucketName": "prx-porter-sandbox",
+          "ObjectKey": "dev/sample/image/image.jpg"
+        }
+      }
+    ]
+  }
 }

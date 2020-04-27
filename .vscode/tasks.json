@@ -2,35 +2,35 @@
   // See https://go.microsoft.com/fwlink/?LinkId=733558
   // for the documentation about the tasks.json format
   "version": "2.0.0",
-	"inputs": [
-		{
-			"type": "pickString",
-			"id": "appEnv",
-			"description": "Which application environment do you want to deploy?",
-			"options": [
-				"stag",
-				"prod"
-			],
-			"default": "stag"
-		},
-	],
+  "inputs": [
+    {
+      "type": "pickString",
+      "id": "appEnv",
+      "description": "Which application environment do you want to deploy?",
+      "options": ["stag", "prod"],
+      "default": "stag"
+    }
+  ],
   "tasks": [
-		{
-			"label": "SAM:Deploy",
-			"type": "shell",
-			"command": "cp samconfig.${input:appEnv}.toml samconfig.toml && sam deploy && rm samconfig.toml",
-			"problemMatcher": []
-    }, {
+    {
+      "label": "SAM:Deploy",
+      "type": "shell",
+      "command": "cp samconfig.${input:appEnv}.toml samconfig.toml && sam deploy && rm samconfig.toml",
+      "problemMatcher": []
+    },
+    {
       "label": "Transcode ECR Push",
       "type": "shell",
       "command": "cd containers/transcode && ./ecr-push.sh",
       "problemMatcher": []
-    }, {
+    },
+    {
       "label": "Test",
       "type": "shell",
       "command": "docker-compose -f docker-compose-ci.yml build && docker-compose -f docker-compose-ci.yml run lambdas && docker-compose -f docker-compose-ci.yml run step_functions",
       "problemMatcher": []
-    }, {
+    },
+    {
       "label": "Test:Lambdas",
       "type": "shell",
       "command": "docker-compose -f docker-compose-ci.yml build lambdas && docker-compose -f docker-compose-ci.yml run lambdas",

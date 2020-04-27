@@ -1,42 +1,48 @@
 {
-    "Job": {
-        "Id": "porter-sample-audio-all",
-        "Source": {
-            "Mode": "HTTP",
-            "URL": "https://dts.podtrac.com/redirect.mp3/dovetail.prxu.org/232/2005da8d-34e6-4b1b-bb0b-d9f34a6e8f77/PL_PREVIEW_V1_COMING_SEP_JOHN_NEW_VERSION_PREMIERES_SUBSCRIBE_NOW_1_.mp3"
-        },
-        "Tasks": [
-            {
-                "Type": "Copy",
-                "Mode": "AWS/S3",
-                "BucketName": "prx-porter-sandbox",
-                "ObjectKey": "dev/sample/audio-all/copy.mp3"
-            }, {
-                "Type": "Inspect"
-            }, {
-                "Type": "Transcode",
-                "Format": "flac",
-                "Destination": {
-                    "Mode": "AWS/S3",
-                    "BucketName": "prx-porter-sandbox",
-                    "ObjectKey": "dev/sample/audio-all/transcode.flac"
-                }
-            }, {
-                "Type": "Transcribe",
-                "LanguageCode": "en-US",
-                "Destination": {
-                    "Mode": "AWS/S3",
-                    "BucketName": "prx-porter-sandbox",
-                    "ObjectKey": "dev/sample/audio-all/transcribe.json"
-                }
-            }
-        ],
-        "Callbacks": [
-            {
-                "Type": "AWS/S3",
-                "BucketName": "prx-porter-sandbox",
-                "ObjectPrefix": "dev/sample/audio-all/"
-            }
-        ]
-    }
+  "Job": {
+    "Id": "porter-sample-audio-all",
+    "Source": {
+      "Mode": "HTTP",
+      "URL": "https://dts.podtrac.com/redirect.mp3/dovetail.prxu.org/232/2005da8d-34e6-4b1b-bb0b-d9f34a6e8f77/PL_PREVIEW_V1_COMING_SEP_JOHN_NEW_VERSION_PREMIERES_SUBSCRIBE_NOW_1_.mp3"
+    },
+    "Tasks": [
+      {
+        "Type": "Copy",
+        "Mode": "AWS/S3",
+        "BucketName": "prx-porter-sandbox",
+        "ObjectKey": "dev/sample/audio-all/copy.mp3"
+      },
+      {
+        "Type": "Inspect"
+      },
+      {
+        "Type": "Transcode",
+        "Format": "flac",
+        "Destination": {
+          "Mode": "AWS/S3",
+          "BucketName": "prx-porter-sandbox",
+          "ObjectKey": "dev/sample/audio-all/transcode.flac",
+          "Parameters": {
+            "ContentType": "audio/flac"
+          }
+        }
+      },
+      {
+        "Type": "Transcribe",
+        "LanguageCode": "en-US",
+        "Destination": {
+          "Mode": "AWS/S3",
+          "BucketName": "prx-porter-sandbox",
+          "ObjectKey": "dev/sample/audio-all/transcribe.json"
+        }
+      }
+    ],
+    "Callbacks": [
+      {
+        "Type": "AWS/S3",
+        "BucketName": "prx-porter-sandbox",
+        "ObjectPrefix": "dev/sample/audio-all/"
+      }
+    ]
+  }
 }
