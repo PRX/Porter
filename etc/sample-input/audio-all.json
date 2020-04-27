@@ -21,7 +21,10 @@
         "Destination": {
           "Mode": "AWS/S3",
           "BucketName": "prx-porter-sandbox",
-          "ObjectKey": "dev/sample/audio-all/transcode.flac"
+          "ObjectKey": "dev/sample/audio-all/transcode.flac",
+          "Parameters": {
+            "ContentType": "audio/flac"
+          }
         }
       },
       {
