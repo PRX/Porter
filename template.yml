@@ -93,6 +93,21 @@ Resources:
       ManagedPolicyArns:
         # Calls to s3.copyObject need read access to the artifact bucket
         - !Ref ArtifactBucketReadOnlyAccessPolicy
+      Policies:
+        # For cross-account S3 buckets, the IAM role needs the same
+        # permissions that the bucket policy grans to this role
+        - PolicyName: S3DestinationWritePolicy
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - s3:ListBucketMultipartUploads
+                  - s3:PutObject*
+                  - s3:AbortMultipartUpload
+                  - s3:ListMultipartUploadParts
+                Resource:
+                  - '*'
       Tags:
         - Key: Project
           Value: Porter
