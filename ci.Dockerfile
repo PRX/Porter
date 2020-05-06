@@ -5,9 +5,6 @@ ENV HOME=$APP_HOME
 RUN mkdir -p $APP_HOME
 WORKDIR $APP_HOME
 
-ADD ./package.json ./
 RUN npm install
-
-ADD . ./
 
 ENTRYPOINT [ "npm", "run" ]
