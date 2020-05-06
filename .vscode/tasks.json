@@ -13,6 +13,12 @@
   ],
   "tasks": [
     {
+      "label": "CI:Build & Test",
+      "type": "shell",
+      "command": "docker-compose build && docker-compose run ci",
+      "problemMatcher": []
+    },
+    {
       "label": "SAM:Deploy",
       "type": "shell",
       "command": "cp samconfig.${input:appEnv}.toml samconfig.toml && sam deploy && rm samconfig.toml",
