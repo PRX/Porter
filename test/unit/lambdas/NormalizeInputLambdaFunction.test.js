@@ -1,7 +1,7 @@
 const handler = require('../../../lambdas/NormalizeInputLambdaFunction/index')
   .handler;
 
-test('inserts Tasks array when not incldued', async () => {
+test('inserts Tasks array when not included', async () => {
   const result = await handler({ Job: {} });
   expect(Object.prototype.hasOwnProperty.call(result.Job, 'Tasks')).toBe(true);
   expect(result.Job.Tasks).toEqual([]);
@@ -50,7 +50,7 @@ test('Adds FFmpeg properties', async () => {
   ).toBe(true);
 });
 
-test('inserts Callbacks array when not incldued', async () => {
+test('inserts Callbacks array when not included', async () => {
   const result = await handler({ Job: {} });
   expect(Object.prototype.hasOwnProperty.call(result.Job, 'Callbacks')).toBe(
     true,
@@ -74,7 +74,7 @@ test('maintains proper Callbacks array', async () => {
   expect(result.Job.Callbacks).toEqual([{ Foo: 'bar' }]);
 });
 
-test('inserts SerializedJobs array when not incldued', async () => {
+test('inserts SerializedJobs array when not included', async () => {
   const result = await handler({ Job: {} });
   expect(
     Object.prototype.hasOwnProperty.call(result.Job, 'SerializedJobs'),
@@ -98,7 +98,7 @@ test('maintains proper SerializedJobs array', async () => {
   expect(result.Job.SerializedJobs).toEqual([{ Foo: 'bar' }]);
 });
 
-test('inserts ExecutionTrace array when not incldued', async () => {
+test('inserts ExecutionTrace array when not included', async () => {
   const result = await handler({ Job: {} });
   expect(
     Object.prototype.hasOwnProperty.call(result.Job, 'ExecutionTrace'),
