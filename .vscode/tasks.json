@@ -29,18 +29,6 @@
       "type": "shell",
       "command": "cd containers/transcode && ./ecr-push.sh",
       "problemMatcher": []
-    },
-    {
-      "label": "Test",
-      "type": "shell",
-      "command": "docker-compose -f docker-compose-ci.yml build && docker-compose -f docker-compose-ci.yml run lambdas && docker-compose -f docker-compose-ci.yml run step_functions",
-      "problemMatcher": []
-    },
-    {
-      "label": "Test:Lambdas",
-      "type": "shell",
-      "command": "docker-compose -f docker-compose-ci.yml build lambdas && docker-compose -f docker-compose-ci.yml run lambdas",
-      "problemMatcher": []
     }
   ]
 }
