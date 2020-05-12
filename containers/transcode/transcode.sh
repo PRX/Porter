@@ -19,6 +19,7 @@
 
 start_time=`date +%s`
 
+# Count the transcode in CloudWatch Metrics
 aws cloudwatch put-metric-data \
   --namespace "PRX/Porter" \
   --metric-name Transcodes \
@@ -29,6 +30,7 @@ aws cloudwatch put-metric-data \
 # Get the artifact file from S3
 aws s3 cp s3://"$STATE_MACHINE_ARTIFACT_BUCKET_NAME"/"$STATE_MACHINE_ARTIFACT_OBJECT_KEY" artifact
 
+# Execute the transcode
 ./ffmpeg-git-20200324-amd64-static/ffmpeg \
   $STATE_MACHINE_FFMPEG_GLOBAL_OPTIONS \
   $STATE_MACHINE_FFMPEG_INPUT_FILE_OPTIONS -i artifact \
@@ -37,6 +39,7 @@ aws s3 cp s3://"$STATE_MACHINE_ARTIFACT_BUCKET_NAME"/"$STATE_MACHINE_ARTIFACT_OB
 end_time=`date +%s`
 duration=$((end_time-start_time))
 
+# Record transcode duration in CloudWatch Metrics
 aws cloudwatch put-metric-data \
   --namespace "PRX/Porter" \
   --metric-name TranscodeDuration \
@@ -48,12 +51,13 @@ destination_mode=`echo "$STATE_MACHINE_DESTINATION_JSON" | jq '.Mode'`
 
 if [[ "$destination_mode" == "AWS/S3" ]]; then
   # Assume a role that will have access to the S3 destination bucket, and use
-  # that roles credentials for the s3 cp call
+  # that roles credentials for the `s3 cp` call
   role=$(aws sts assume-role --region "$STATE_MACHINE_AWS_REGION" --endpoint-url "https://sts.$STATE_MACHINE_AWS_REGION.amazonaws.com" --role-arn "$STATE_MACHINE_S3_DESTINATION_WRITER_ROLE" --role-session-name porter_transcode_task)
   export AWS_ACCESS_KEY_ID=$(echo $role | jq -r .Credentials.AccessKeyId)
   export AWS_SECRET_ACCESS_KEY=$(echo $role | jq -r .Credentials.SecretAccessKey)
   export AWS_SESSION_TOKEN=$(echo $role | jq -r .Credentials.SessionToken)
 
+  # Construct additional options to pass
   opts=""
 
   if [ $(echo $STATE_MACHINE_DESTINATION_JSON | jq '.Parameters.ACL') != "null" ]; then
