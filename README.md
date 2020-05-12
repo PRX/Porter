@@ -505,7 +505,7 @@ A `Format` is required, and is used to explicitly set the output format of the e
 
 The `FFmpeg` property is optional. When included, the `GlobalOptions`, `InputFileOptions`, and `OutputFileOptions` properties are also optional. The task constructs a call to FFmpeg that looks like `ffmpeg [global opts] [input file opts] -i input [output file opts] -f [format] output`.
 
-For `AWS/S3` destinations, currently the only parameter supported is `ContentType` and it is required.
+For `AWS/S3` destinations, the following parameters are supported and optional: `ACL`, `CacheControl`, `ContentDisposition`, `ContentEncoding`, `ContentLanguage`, `ContentType`.
 
 Input:
 
