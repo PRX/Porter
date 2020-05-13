@@ -46,6 +46,7 @@ cloudwatch.put_metric_data(
 )
 
 # Get the artifact file from S3
+print('Downloading artifact')
 s3.meta.client.download_file(
     os.environ['STATE_MACHINE_ARTIFACT_BUCKET_NAME'],
     os.environ['STATE_MACHINE_ARTIFACT_OBJECT_KEY'],
@@ -53,6 +54,7 @@ s3.meta.client.download_file(
 )
 
 # Execute the transcode
+print('Calling FFmpeg')
 os.system(' '.join([
     "./ffmpeg-git-20200504-amd64-static/ffmpeg",
     os.environ['STATE_MACHINE_FFMPEG_GLOBAL_OPTIONS'],
@@ -115,6 +117,7 @@ if destination['Mode'] == 'AWS/S3':
         s3_parameters = destination['Parameters']
 
     # Upload the encoded file to the S3
+    print('Writing output to S3 destination')
     s3_writer.meta.client.upload_file(
         'output',
         os.environ['STATE_MACHINE_DESTINATION_BUCKET_NAME'],
