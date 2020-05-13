@@ -25,8 +25,7 @@ import time
 cloudwatch = boto3.client('cloudwatch')
 s3 = boto3.resource('s3')
 
-start_time = time.time
-()
+start_time = time.time()
 
 # Count the transcode in CloudWatch Metrics
 cloudwatch.put_metric_data(
