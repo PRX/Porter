@@ -90,6 +90,8 @@ if [[ "$destination_mode" == "AWS/S3" ]]; then
     opts+=" --content-type $content_type"
   fi
 
+  echo "$opts"
+
   aws s3 cp \
     output \
     s3://"$STATE_MACHINE_DESTINATION_BUCKET_NAME"/"$STATE_MACHINE_DESTINATION_OBJECT_KEY" \
