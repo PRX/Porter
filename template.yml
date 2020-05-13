@@ -2269,9 +2269,6 @@ Resources:
                                     "Name": "STATE_MACHINE_DESTINATION_OBJECT_KEY",
                                     "Value.$": "$.Task.Destination.ObjectKey"
                                   }, {
-                                    "Name": "STATE_MACHINE_DESTINATION_PARAMETER_CONTENT_TYPE",
-                                    "Value.$": "$.Task.Destination.Parameters.ContentType"
-                                  }, {
                                     "Name": "STATE_MACHINE_DESTINATION_FORMAT",
                                     "Value.$": "$.Task.Format"
                                   }, {
