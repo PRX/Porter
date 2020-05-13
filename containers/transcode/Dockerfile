@@ -7,12 +7,12 @@ RUN yum update -y \
     && yum clean all
 RUN pip install boto3
 
-RUN wget https://johnvansickle.com/ffmpeg/builds/ffmpeg-git-amd64-static.tar.xz
-RUN tar xvf ffmpeg-git-amd64-static.tar.xz
-
 ENV APP_HOME /transcode
 RUN mkdir -p $APP_HOME
 WORKDIR $APP_HOME
+
+RUN wget https://johnvansickle.com/ffmpeg/builds/ffmpeg-git-amd64-static.tar.xz
+RUN tar xvf ffmpeg-git-amd64-static.tar.xz
 
 ADD transcode.py ./
 RUN chmod +x ./transcode.py
