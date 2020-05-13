@@ -505,7 +505,7 @@ A `Format` is required, and is used to explicitly set the output format of the e
 
 The `FFmpeg` property is optional. When included, each of `GlobalOptions`, `InputFileOptions`, and `OutputFileOptions` properties are also optional. The task constructs a call to FFmpeg that looks like `ffmpeg [global opts] [input file opts] -i input [output file opts] -f [format] output`.
 
-For `AWS/S3` destinations, the contents of `Parameters` are passed directly to the [upload_file()](https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/s3.html#S3.Client.upload_file) method as `ExtraArgs`.
+For `AWS/S3` destinations, the contents of `Parameters` are passed directly to the [upload_file()](https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/s3.html#S3.Client.upload_file) method as `ExtraArgs`. S3 will default the `content-type` to `binary/octet-stream`, so you may generally want to define that parameter.
 
 Input:
 
