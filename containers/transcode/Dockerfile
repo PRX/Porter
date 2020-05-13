@@ -2,11 +2,9 @@ FROM amazonlinux:latest
 
 LABEL org.prx.app="yes"
 
-RUN yum -y install aws-cli
-RUN yum -y install wget
-RUN yum -y install tar
-RUN yum -y install xz
-RUN yum install -y jq
+RUN yum update -y \
+    && yum install -y aws-cli jq tar wget xz \
+    && yum clean all
 
 ENV APP_HOME /transcode
 RUN mkdir -p $APP_HOME
