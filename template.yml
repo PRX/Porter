@@ -1188,6 +1188,78 @@ Resources:
       Dimensions:
         - Name: LambdaFunctionArn
           Value: !GetAtt CopyLambdaFunction.Arn
+  # Transcode Input Lambda
+  TranscodeTaskInputLambdaIamRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+                - lambda.amazonaws.com
+            Action:
+              - sts:AssumeRole
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+        - arn:aws:iam::aws:policy/AWSXrayWriteOnlyAccess
+      Tags:
+        - Key: Project
+          Value: Porter
+        - Key: prx:cloudformation:stack-name
+          Value: !Ref AWS::StackName
+        - Key: prx:cloudformation:stack-id
+          Value: !Ref AWS::StackId
+  TranscodeTaskInputLambdaFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: lambdas/TranscodeTaskInputLambdaFunction/
+      Description: >-
+        Prepares state input for the transcode task by converting some data to
+        JSON strings
+      Handler: index.handler
+      Layers:
+        - !Ref AwsXraySdkLambdaLayerVersionArn
+      MemorySize: 128
+      Role: !GetAtt TranscodeTaskInputLambdaIamRole.Arn
+      Runtime: nodejs12.x
+      Tags:
+        Project: Porter
+        prx:cloudformation:stack-name: !Ref AWS::StackName
+        prx:cloudformation:stack-id: !Ref AWS::StackId
+      Timeout: 4
+      Tracing: Active
+  TranscodeTaskInputLambdaLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub /aws/lambda/${TranscodeTaskInputLambdaFunction}
+      RetentionInDays: 30
+  TranscodeTaskInputLambdaErrorAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Condition: CreateProductionResources
+    Properties:
+      ActionsEnabled: true
+      AlarmName: '[Porter][Transcode Input][Lambda] Elevated error volume'
+      AlarmActions:
+        - !Ref OpsErrorMessagesSnsTopicArn
+      InsufficientDataActions:
+        - !Ref OpsErrorMessagesSnsTopicArn
+      OKActions:
+        - !Ref OpsErrorMessagesSnsTopicArn
+      AlarmDescription: >-
+        Transcode input format function has encountered an invocation error
+      ComparisonOperator: GreaterThanThreshold
+      EvaluationPeriods: 1
+      MetricName: LambdaFunctionsFailed
+      Namespace: AWS/States
+      Period: 60
+      Statistic: Sum
+      Threshold: 0
+      TreatMissingData: notBreaching
+      Dimensions:
+        - Name: LambdaFunctionArn
+          Value: !GetAtt TranscodeTaskInputLambdaFunction.Arn
   # Transcode Output Lambda
   TranscodeTaskOutputLambdaIamRole:
     Type: AWS::IAM::Role
@@ -1843,6 +1915,7 @@ Resources:
                   - !GetAtt TranscriptionJobStartLambdaFunction.Arn
                   - !GetAtt TranscriptionJobResultsLambdaFunction.Arn
                   - !GetAtt CallbackLambdaFunction.Arn
+                  - !GetAtt TranscodeTaskInputLambdaFunction.Arn
                   - !GetAtt TranscodeTaskOutputLambdaFunction.Arn
                   - !GetAtt NormalizeOutputLambdaFunction.Arn
                   - !GetAtt JobSerializerLambdaFunction.Arn
@@ -2069,7 +2142,7 @@ Resources:
                         "Choices": [
                           { "Variable": "$.Task.Type", "StringEquals": "Inspect", "Next": "Inspect Task Handler" },
                           { "Variable": "$.Task.Type", "StringEquals": "Copy", "Next": "Copy Task Handler" },
-                          { "Variable": "$.Task.Type", "StringEquals": "Transcode", "Next": "Transcode Task Fargate Execution" },
+                          { "Variable": "$.Task.Type", "StringEquals": "Transcode", "Next": "Transcode Task Input Preprocessor" },
                           { "Variable": "$.Task.Type", "StringEquals": "Image", "Next": "Image Task Handler" },
                           { "Variable": "$.Task.Type", "StringEquals": "Transcribe", "Next": "Transcribe Task Job Start" }
                         ]
@@ -2138,6 +2211,33 @@ Resources:
                           }
                         ]
                       },
+                      "Transcode Task Input Preprocessor": {
+                        "Type": "Task",
+                        "Comment": "Formats the input of a transcode task",
+                        "Resource": "${TranscodeTaskInputLambdaFunctionArn}",
+                        "InputPath": "$",
+                        "Parameters": {
+                          "Task.$": "$.Task"
+                        },
+                        "ResultPath": "$.JSON",
+                        "OutputPath": "$",
+                        "Next": "Transcode Task Fargate Execution",
+                        "Retry": [
+                          {
+                            "ErrorEquals": ["States.ALL"],
+                            "IntervalSeconds": 5,
+                            "MaxAttempts": 3,
+                            "BackoffRate": 2
+                          }
+                        ],
+                        "Catch": [
+                          {
+                            "ErrorEquals": ["States.ALL"],
+                            "ResultPath": "$.Error",
+                            "Next": "TaskResult Error Callback Map"
+                          }
+                        ]
+                      },
                       "Transcode Task Fargate Execution": {
                         "Type": "Task",
                         "Comment": "Transcodes multimedia artifact",
@@ -2172,6 +2272,9 @@ Resources:
                                     "Name": "STATE_MACHINE_ARTIFACT_OBJECT_KEY",
                                     "Value.$": "$.Artifact.ObjectKey"
                                   }, {
+                                    "Name": "STATE_MACHINE_DESTINATION_JSON",
+                                    "Value.$": "$.JSON.Destination"
+                                  }, {
                                     "Name": "STATE_MACHINE_DESTINATION_MODE",
                                     "Value.$": "$.Task.Destination.Mode"
                                   }, {
@@ -2180,9 +2283,6 @@ Resources:
                                   }, {
                                     "Name": "STATE_MACHINE_DESTINATION_OBJECT_KEY",
                                     "Value.$": "$.Task.Destination.ObjectKey"
-                                  }, {
-                                    "Name": "STATE_MACHINE_DESTINATION_PARAMETER_CONTENT_TYPE",
-                                    "Value.$": "$.Task.Destination.Parameters.ContentType"
                                   }, {
                                     "Name": "STATE_MACHINE_DESTINATION_FORMAT",
                                     "Value.$": "$.Task.Format"
@@ -2606,6 +2706,7 @@ Resources:
             TranscriptionJobResultsLambdaFunctionArn: !GetAtt TranscriptionJobResultsLambdaFunction.Arn
             EcsClusterArn: !GetAtt EcsCluster.Arn
             TranscodeEcsTaskDefinitionArn: !Ref TranscodeEcsTaskDefinition
+            TranscodeTaskInputLambdaFunctionArn: !GetAtt TranscodeTaskInputLambdaFunction.Arn
             TranscodeTaskOutputLambdaFunctionArn: !GetAtt TranscodeTaskOutputLambdaFunction.Arn
             JobSerializerLambdaFunctionArn: !GetAtt JobSerializerLambdaFunction.Arn
             VpcSubnet1: !Ref Subnet1
