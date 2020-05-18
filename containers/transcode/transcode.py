@@ -50,22 +50,27 @@ print('Downloading artifact')
 s3.meta.client.download_file(
     os.environ['STATE_MACHINE_ARTIFACT_BUCKET_NAME'],
     os.environ['STATE_MACHINE_ARTIFACT_OBJECT_KEY'],
-    'artifact'
+    'artifact.file'
 )
 
 # Execute the transcode
-print('Calling FFmpeg')
-os.system(' '.join([
+ffmpeg_cmd = ' '.join([
     "./ffmpeg-git-20200504-amd64-static/ffmpeg",
     os.environ['STATE_MACHINE_FFMPEG_GLOBAL_OPTIONS'],
-    "{i} -i artifact".format(
+    "{i} -i artifact.file".format(
         i=os.environ['STATE_MACHINE_FFMPEG_INPUT_FILE_OPTIONS']
     ),
-    "{o} -f {f} output".format(
+    "{o} -f {f} output.file".format(
         o=os.environ['STATE_MACHINE_FFMPEG_OUTPUT_FILE_OPTIONS'],
         f=os.environ['STATE_MACHINE_DESTINATION_FORMAT']
     )
-]))
+])
+
+print('Calling FFmpeg')
+print(ffmpeg_cmd)
+
+if os.system(ffmpeg_cmd) != 0:
+    raise Exception('FFmpeg failed')
 
 end_time = time.time()
 duration = end_time - start_time
@@ -119,7 +124,7 @@ if destination['Mode'] == 'AWS/S3':
     # Upload the encoded file to the S3
     print('Writing output to S3 destination')
     s3_writer.meta.client.upload_file(
-        'output',
+        'output.file',
         os.environ['STATE_MACHINE_DESTINATION_BUCKET_NAME'],
         os.environ['STATE_MACHINE_DESTINATION_OBJECT_KEY'],
         ExtraArgs=s3_parameters
