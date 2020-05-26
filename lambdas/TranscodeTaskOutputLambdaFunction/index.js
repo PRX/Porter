@@ -12,7 +12,7 @@ exports.handler = async (event) => {
     BucketName: event.Task.Destination.BucketName,
     ObjectKey: event.Task.Destination.ObjectKey,
     Time: now.toISOString(),
-    Timestamp: now / 1000,
+    Timestamp: +now / 1000,
   };
 
   console.log(JSON.stringify({ msg: 'Result', result }));
