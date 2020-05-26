@@ -1,4 +1,3 @@
-# porter.yml
 AWSTemplateFormatVersion: '2010-09-09'
 Transform: AWS::Serverless-2016-10-31
 Description: >-
@@ -794,6 +793,11 @@ Resources:
         Rules:
           - ExpirationInDays: 1
             Status: Enabled
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: true
+        BlockPublicPolicy: true
+        IgnorePublicAcls: true
+        RestrictPublicBuckets: true
       Tags:
         - Key: Project
           Value: Porter
