@@ -2014,17 +2014,6 @@ Resources:
         Project: Porter
         prx:cloudformation:stack-name: !Ref AWS::StackName
         prx:cloudformation:stack-id: !Ref AWS::StackId
-
-  # StateMachine:
-  #   Type: AWS::StepFunctions::StateMachine
-  #   Properties:
-  #     # There are a number of line breaks in the template. They're there to try
-  #     # and make this a little easier to navigate. The chunks are:
-  #     # - Pre-task work
-  #     # - Tasks
-  #     # - Post-task work
-  #     # - Pre-task error handling
-
   StateMachineTimedOutAlarm:
     Type: AWS::CloudWatch::Alarm
     Properties:
