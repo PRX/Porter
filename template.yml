@@ -1987,27 +1987,27 @@ Resources:
     Type: AWS::Serverless::StateMachine
     Properties:
       DefinitionSubstitutions:
+        AwsPartition: !Ref AWS::Partition
+        AwsRegion: !Ref AWS::Region
+        CallbackLambdaFunctionArn: !GetAtt CallbackLambdaFunction.Arn
+        CopyLambdaFunctionArn: !GetAtt CopyLambdaFunction.Arn
+        EcsClusterArn: !GetAtt EcsCluster.Arn
+        ImageTransformLambdaFunctionArn: !GetAtt ImageTransformLambdaFunction.Arn
+        IngestLambdaFunctionArn: !GetAtt IngestLambdaFunction.Arn
+        InspectMediaLambdaFunctionArn: !GetAtt InspectMediaLambdaFunction.Arn
+        JobSerializerLambdaFunctionArn: !GetAtt JobSerializerLambdaFunction.Arn
         NormalizeInputLambdaFunctionArn: !GetAtt NormalizeInputLambdaFunction.Arn
         NormalizeOutputLambdaFunctionArn: !GetAtt NormalizeOutputLambdaFunction.Arn
-        IngestLambdaFunctionArn: !GetAtt IngestLambdaFunction.Arn
+        S3DestinationWriterRoleArn: !GetAtt S3DestinationWriterRole.Arn
         SourceTypeLambdaFunctionArn: !GetAtt SourceTypeLambdaFunction.Arn
-        CopyLambdaFunctionArn: !GetAtt CopyLambdaFunction.Arn
-        ImageTransformLambdaFunctionArn: !GetAtt ImageTransformLambdaFunction.Arn
-        InspectMediaLambdaFunctionArn: !GetAtt InspectMediaLambdaFunction.Arn
-        CallbackLambdaFunctionArn: !GetAtt CallbackLambdaFunction.Arn
-        TranscriptionJobStartLambdaFunctionArn: !GetAtt TranscriptionJobStartLambdaFunction.Arn
-        TranscriptionJobResultsLambdaFunctionArn: !GetAtt TranscriptionJobResultsLambdaFunction.Arn
-        EcsClusterArn: !GetAtt EcsCluster.Arn
+        TranscodeContainerName: !Sub ${AWS::StackName}-transcode-container
         TranscodeEcsTaskDefinitionArn: !Ref TranscodeEcsTaskDefinition
         TranscodeTaskInputLambdaFunctionArn: !GetAtt TranscodeTaskInputLambdaFunction.Arn
         TranscodeTaskOutputLambdaFunctionArn: !GetAtt TranscodeTaskOutputLambdaFunction.Arn
-        JobSerializerLambdaFunctionArn: !GetAtt JobSerializerLambdaFunction.Arn
+        TranscriptionJobResultsLambdaFunctionArn: !GetAtt TranscriptionJobResultsLambdaFunction.Arn
+        TranscriptionJobStartLambdaFunctionArn: !GetAtt TranscriptionJobStartLambdaFunction.Arn
         VpcSubnet1: !Ref Subnet1
         VpcSubnet2: !Ref Subnet2
-        TranscodeContainerName: !Sub ${AWS::StackName}-transcode-container
-        S3DestinationWriterRoleArn: !GetAtt S3DestinationWriterRole.Arn
-        AwsRegion: !Ref AWS::Region
-        AwsPartition: !Ref AWS::Partition
       DefinitionUri: state-machine.asl.json
       Role: !GetAtt StateMachineIamRole.Arn
       Tags:
