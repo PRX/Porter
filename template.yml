@@ -1982,7 +1982,6 @@ Resources:
           Value: !Ref AWS::StackName
         - Key: prx:cloudformation:stack-id
           Value: !Ref AWS::StackId
-
   StateMachine:
     Type: AWS::Serverless::StateMachine
     Properties:
