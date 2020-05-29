@@ -5,7 +5,7 @@ exports.handler = async (event) => {
   console.log(JSON.stringify({ msg: 'State input', event }));
 
   const now = new Date();
-  const msg = { Time: now.toISOString(), Timestamp: now / 1000 };
+  const msg = { Time: now.toISOString(), Timestamp: +now / 1000 };
 
   if (event.Message) {
     Object.assign(msg, event.Message);
