@@ -5,3 +5,7 @@ printWidth: 80
 useTabs: false
 tabWidth: 2
 endOfLine: lf
+overrides:
+  - files: '*.asl.json'
+    options:
+      parser: json
