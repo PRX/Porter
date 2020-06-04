@@ -121,8 +121,6 @@
       ]
     },
 
-
-
     "Tasks Map": {
       "Type": "Map",
       "Comment": "Iterates over all tasks included in the job",
@@ -148,11 +146,31 @@
             "Comment": "For the current task being iterated, routes to the appropriate state",
             "Default": "Unknown Task Type",
             "Choices": [
-              { "Variable": "$.Task.Type", "StringEquals": "Inspect", "Next": "Inspect Task Handler" },
-              { "Variable": "$.Task.Type", "StringEquals": "Copy", "Next": "Copy Task Handler" },
-              { "Variable": "$.Task.Type", "StringEquals": "Transcode", "Next": "Transcode Task Input Preprocessor" },
-              { "Variable": "$.Task.Type", "StringEquals": "Image", "Next": "Image Task Handler" },
-              { "Variable": "$.Task.Type", "StringEquals": "Transcribe", "Next": "Transcribe Task Job Start" }
+              {
+                "Variable": "$.Task.Type",
+                "StringEquals": "Inspect",
+                "Next": "Inspect Task Handler"
+              },
+              {
+                "Variable": "$.Task.Type",
+                "StringEquals": "Copy",
+                "Next": "Copy Task Handler"
+              },
+              {
+                "Variable": "$.Task.Type",
+                "StringEquals": "Transcode",
+                "Next": "Transcode Task Input Preprocessor"
+              },
+              {
+                "Variable": "$.Task.Type",
+                "StringEquals": "Image",
+                "Next": "Image Task Handler"
+              },
+              {
+                "Variable": "$.Task.Type",
+                "StringEquals": "Transcribe",
+                "Next": "Transcribe Task Job Start"
+              }
             ]
           },
           "Unknown Task Type": {
@@ -253,7 +271,7 @@
             "InputPath": "$",
             "Parameters": {
               "Cluster": "${EcsClusterArn}",
-              "LaunchType":"FARGATE",
+              "LaunchType": "FARGATE",
               "Overrides": {
                 "ContainerOverrides": [
                   {
@@ -261,46 +279,60 @@
                       {
                         "Name": "STATE_MACHINE_NAME",
                         "Value.$": "$$.StateMachine.Name"
-                      }, {
+                      },
+                      {
                         "Name": "STATE_MACHINE_EXECUTION_ID",
                         "Value.$": "$$.Execution.Id"
-                      }, {
+                      },
+                      {
                         "Name": "STATE_MACHINE_JOB_ID",
                         "Value.$": "$.Job.Id"
-                      }, {
+                      },
+                      {
                         "Name": "STATE_MACHINE_S3_DESTINATION_WRITER_ROLE",
                         "Value": "${S3DestinationWriterRoleArn}"
-                      }, {
+                      },
+                      {
                         "Name": "STATE_MACHINE_AWS_REGION",
                         "Value": "${AwsRegion}"
-                      }, {
+                      },
+                      {
                         "Name": "STATE_MACHINE_ARTIFACT_BUCKET_NAME",
                         "Value.$": "$.Artifact.BucketName"
-                      }, {
+                      },
+                      {
                         "Name": "STATE_MACHINE_ARTIFACT_OBJECT_KEY",
                         "Value.$": "$.Artifact.ObjectKey"
-                      }, {
+                      },
+                      {
                         "Name": "STATE_MACHINE_DESTINATION_JSON",
                         "Value.$": "$.JSON.Destination"
-                      }, {
+                      },
+                      {
                         "Name": "STATE_MACHINE_DESTINATION_MODE",
                         "Value.$": "$.Task.Destination.Mode"
-                      }, {
+                      },
+                      {
                         "Name": "STATE_MACHINE_DESTINATION_BUCKET_NAME",
                         "Value.$": "$.Task.Destination.BucketName"
-                      }, {
+                      },
+                      {
                         "Name": "STATE_MACHINE_DESTINATION_OBJECT_KEY",
                         "Value.$": "$.Task.Destination.ObjectKey"
-                      }, {
+                      },
+                      {
                         "Name": "STATE_MACHINE_DESTINATION_FORMAT",
                         "Value.$": "$.Task.Format"
-                      }, {
+                      },
+                      {
                         "Name": "STATE_MACHINE_FFMPEG_GLOBAL_OPTIONS",
                         "Value.$": "$.Task.FFmpeg.GlobalOptions"
-                      }, {
+                      },
+                      {
                         "Name": "STATE_MACHINE_FFMPEG_INPUT_FILE_OPTIONS",
                         "Value.$": "$.Task.FFmpeg.InputFileOptions"
-                      }, {
+                      },
+                      {
                         "Name": "STATE_MACHINE_FFMPEG_OUTPUT_FILE_OPTIONS",
                         "Value.$": "$.Task.FFmpeg.OutputFileOptions"
                       }
@@ -312,10 +344,7 @@
               "NetworkConfiguration": {
                 "AwsvpcConfiguration": {
                   "AssignPublicIp": "ENABLED",
-                  "Subnets": [
-                    "${VpcSubnet1}",
-                    "${VpcSubnet2}"
-                  ]
+                  "Subnets": ["${VpcSubnet1}", "${VpcSubnet2}"]
                 }
               },
               "TaskDefinition": "${TranscodeEcsTaskDefinitionArn}"
@@ -558,8 +587,6 @@
       ]
     },
 
-
-
     "JobResult Callback Map": {
       "Type": "Map",
       "Comment": "Iterates over all callback endpoints to send job results",
@@ -661,8 +688,6 @@
       "OutputPath": "$",
       "End": true
     },
-
-
 
     "Normalize Input Catcher": {
       "Comment": "Add a parameter so normalize errors can be identified",
