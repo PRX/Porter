@@ -92,6 +92,6 @@ exports.handler = async (event) => {
     BucketName: event.Task.BucketName,
     ObjectKey: event.Task.ObjectKey,
     Time: now.toISOString(),
-    Timestamp: now / 1000,
+    Timestamp: +now / 1000,
   };
 };

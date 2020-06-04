@@ -234,7 +234,7 @@ exports.handler = async (event, context) => {
   fs.unlinkSync(artifactFileTmpPath);
 
   Object.assign(inspection, { Audio: audioInspection(ffprobe, mpck) });
-  Object.assign(inspection, { Video: videoInspection(ffprobe, mpck) });
+  Object.assign(inspection, { Video: videoInspection(ffprobe) });
   Object.assign(inspection, { Image: imageInspection(sharpOut) });
   Object.assign(inspection, event.Artifact.Descriptor);
 

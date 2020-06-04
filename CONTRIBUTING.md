@@ -12,11 +12,21 @@ Any code styles that this repository follows should be described in this documen
 
 The `package-lock.json` file is not under version control. The NPM packages it tracks are only used in development, and the versions are largely irrelevant, so ignoring the lock file reduces unnecessary Git churn. The packages listed as `dependencies` are in there only to satisfy ESLint's path resolution checks.
 
+### IDE
+
+There's an expectation that your IDE is set up with the following tools and capabilities:
+
+- [ESLint](https://eslint.org/)
+- [Prettier](https://prettier.io/)
+- [cfn-python-lint](https://github.com/aws-cloudformation/cfn-python-lint)
+- [cnf-nag](https://github.com/stelligent/cfn_nag)
+- [EditorConfig](https://editorconfig.org/)
+
 ### Code Style
 
 This repository contains an [EditorConfig](https://editorconfig.org/) file that dictates some basic code styles. The repository may also contain editor- or IDE-specific settings files, which must follow the styles defined in the EditorConfig file. Any other linters or formatting tools should also follow those styles. You should ensure that your editor is setup to use the EditorConfig styles, regareless of how those settings are installed into program.
 
-For YAML, JavaScript, and JSON files your editor should be configured to _format on save_, and should use [Prettier](https://prettier.io/) as the formatter, following the settings described in `.prettierrc`.
+For YAML, JavaScript, and JSON files your editor should be configured to _format on save_, and should use [Prettier](https://prettier.io/) as the formatter, following the settings described in `.prettierrc`. Ensure that the state machine files (`.asl.json`) are also being formatted.
 
 [ESLint](https://eslint.org/) is used for JavaScript files. The rules are primarily inherited from the Airbnb rules and made to work with the Prettier settings, with some minor project-specific modifications. If possible, it can be helpful to have your editor lint JavaScript files on the fly.
 
