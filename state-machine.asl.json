@@ -1,0 +1,729 @@
+{
+  "StartAt": "Normalize Input",
+  "States": {
+    "Normalize Input": {
+      "Comment": "Normalizes input data",
+      "Type": "Task",
+      "InputPath": "$",
+      "Resource": "${NormalizeInputLambdaFunctionArn}",
+      "ResultPath": "$",
+      "OutputPath": "$",
+      "Next": "JobReceived Callbacks Map",
+      "Retry": [
+        {
+          "ErrorEquals": ["States.ALL"],
+          "IntervalSeconds": 1,
+          "MaxAttempts": 2,
+          "BackoffRate": 1
+        }
+      ],
+      "Catch": [
+        {
+          "ErrorEquals": ["States.ALL"],
+          "ResultPath": "$.Error",
+          "Next": "Normalize Input Catcher"
+        }
+      ]
+    },
+    "JobReceived Callbacks Map": {
+      "Type": "Map",
+      "Comment": "Iterates over all callback endpoints to indicate the job was received",
+      "InputPath": "$",
+      "ItemsPath": "$.Job.Callbacks",
+      "Parameters": {
+        "Callback.$": "$$.Map.Item.Value",
+        "Message": {
+          "JobReceived": {
+            "Job": { "Id.$": "$.Job.Id" },
+            "Execution": { "Id.$": "$$.Execution.Id" },
+            "State": "RECEIVED"
+          }
+        }
+      },
+      "ResultPath": "$.Void",
+      "OutputPath": "$",
+      "Next": "Ingest Source File",
+      "MaxConcurrency": 0,
+      "Iterator": {
+        "StartAt": "Send JobReceived Callback",
+        "States": {
+          "Send JobReceived Callback": {
+            "Type": "Task",
+            "Comment": "Sends a job received message for a single callback endpoint in the iterator",
+            "InputPath": "$",
+            "Resource": "${CallbackLambdaFunctionArn}",
+            "ResultPath": "$",
+            "OutputPath": "$",
+            "End": true,
+            "Retry": [
+              {
+                "ErrorEquals": ["States.ALL"],
+                "IntervalSeconds": 5,
+                "MaxAttempts": 3,
+                "BackoffRate": 2
+              }
+            ]
+          }
+        }
+      }
+    },
+    "Ingest Source File": {
+      "Comment": "Creates an artifact of the source file in S3",
+      "Type": "Task",
+      "InputPath": "$",
+      "Parameters": {
+        "Job": { "Source.$": "$.Job.Source" },
+        "Execution": { "Id.$": "$$.Execution.Id" }
+      },
+      "Resource": "${IngestLambdaFunctionArn}",
+      "ResultPath": "$.Artifact",
+      "OutputPath": "$",
+      "Next": "Detect Source File Type",
+      "Retry": [
+        {
+          "ErrorEquals": ["States.ALL"],
+          "IntervalSeconds": 5,
+          "MaxAttempts": 3,
+          "BackoffRate": 2
+        }
+      ],
+      "Catch": [
+        {
+          "ErrorEquals": ["States.ALL"],
+          "ResultPath": "$.Error",
+          "Next": "Ingest Source File Catcher"
+        }
+      ]
+    },
+    "Detect Source File Type": {
+      "Comment": "Detects the file type of the source file artifact",
+      "Type": "Task",
+      "InputPath": "$",
+      "Parameters": { "Artifact.$": "$.Artifact" },
+      "Resource": "${SourceTypeLambdaFunctionArn}",
+      "ResultPath": "$.Artifact.Descriptor",
+      "OutputPath": "$",
+      "Next": "Tasks Map",
+      "Retry": [
+        {
+          "ErrorEquals": ["States.ALL"],
+          "IntervalSeconds": 5,
+          "MaxAttempts": 3,
+          "BackoffRate": 2
+        }
+      ],
+      "Catch": [
+        {
+          "ErrorEquals": ["States.ALL"],
+          "ResultPath": "$.Error",
+          "Next": "Detect Source File Type Catcher"
+        }
+      ]
+    },
+
+    "Tasks Map": {
+      "Type": "Map",
+      "Comment": "Iterates over all tasks included in the job",
+      "InputPath": "$",
+      "ItemsPath": "$.Job.Tasks",
+      "Parameters": {
+        "Job": { "Id.$": "$.Job.Id" },
+        "Execution": { "Id.$": "$$.Execution.Id" },
+        "Artifact.$": "$.Artifact",
+        "TaskIndex.$": "$$.Map.Item.Index",
+        "Task.$": "$$.Map.Item.Value",
+        "Callbacks.$": "$.Job.Callbacks"
+      },
+      "ResultPath": "$.TaskResults",
+      "OutputPath": "$",
+      "Next": "JobResult Callback Map",
+      "MaxConcurrency": 0,
+      "Iterator": {
+        "StartAt": "Route Task By Type",
+        "States": {
+          "Route Task By Type": {
+            "Type": "Choice",
+            "Comment": "For the current task being iterated, routes to the appropriate state",
+            "Default": "Unknown Task Type",
+            "Choices": [
+              {
+                "Variable": "$.Task.Type",
+                "StringEquals": "Inspect",
+                "Next": "Inspect Task Handler"
+              },
+              {
+                "Variable": "$.Task.Type",
+                "StringEquals": "Copy",
+                "Next": "Copy Task Handler"
+              },
+              {
+                "Variable": "$.Task.Type",
+                "StringEquals": "Transcode",
+                "Next": "Transcode Task Input Preprocessor"
+              },
+              {
+                "Variable": "$.Task.Type",
+                "StringEquals": "Image",
+                "Next": "Image Task Handler"
+              },
+              {
+                "Variable": "$.Task.Type",
+                "StringEquals": "Transcribe",
+                "Next": "Transcribe Task Job Start"
+              }
+            ]
+          },
+          "Unknown Task Type": {
+            "Type": "Pass",
+            "Comment": "Handles and blackholes tasks with an unknown type",
+            "End": true,
+            "ResultPath": "$",
+            "Result": { "Task": "Null" }
+          },
+          "Inspect Task Handler": {
+            "Type": "Task",
+            "Comment": "Inspects the artifact file",
+            "Resource": "${InspectMediaLambdaFunctionArn}",
+            "InputPath": "$",
+            "Parameters": {
+              "Job": { "Id.$": "$.Job.Id" },
+              "Artifact.$": "$.Artifact"
+            },
+            "ResultPath": "$.TaskResult",
+            "OutputPath": "$",
+            "Next": "TaskResult Callbacks Map",
+            "Retry": [
+              {
+                "ErrorEquals": ["States.ALL"],
+                "IntervalSeconds": 5,
+                "MaxAttempts": 3,
+                "BackoffRate": 2
+              }
+            ],
+            "Catch": [
+              {
+                "ErrorEquals": ["States.ALL"],
+                "ResultPath": "$.Error",
+                "Next": "TaskResult Error Callback Map"
+              }
+            ]
+          },
+          "Copy Task Handler": {
+            "Type": "Task",
+            "Comment": "Copies the artifact",
+            "Resource": "${CopyLambdaFunctionArn}",
+            "InputPath": "$",
+            "Parameters": {
+              "Job": { "Id.$": "$.Job.Id" },
+              "Artifact.$": "$.Artifact",
+              "Task.$": "$.Task"
+            },
+            "ResultPath": "$.TaskResult",
+            "OutputPath": "$",
+            "Next": "TaskResult Callbacks Map",
+            "Retry": [
+              {
+                "ErrorEquals": ["States.ALL"],
+                "IntervalSeconds": 5,
+                "MaxAttempts": 3,
+                "BackoffRate": 2
+              }
+            ],
+            "Catch": [
+              {
+                "ErrorEquals": ["States.ALL"],
+                "ResultPath": "$.Error",
+                "Next": "TaskResult Error Callback Map"
+              }
+            ]
+          },
+          "Transcode Task Input Preprocessor": {
+            "Type": "Task",
+            "Comment": "Formats the input of a transcode task",
+            "Resource": "${TranscodeTaskInputLambdaFunctionArn}",
+            "InputPath": "$",
+            "Parameters": {
+              "Task.$": "$.Task"
+            },
+            "ResultPath": "$.JSON",
+            "OutputPath": "$",
+            "Next": "Transcode Task Fargate Execution",
+            "Retry": [
+              {
+                "ErrorEquals": ["States.ALL"],
+                "IntervalSeconds": 5,
+                "MaxAttempts": 3,
+                "BackoffRate": 2
+              }
+            ],
+            "Catch": [
+              {
+                "ErrorEquals": ["States.ALL"],
+                "ResultPath": "$.Error",
+                "Next": "TaskResult Error Callback Map"
+              }
+            ]
+          },
+          "Transcode Task Fargate Execution": {
+            "Type": "Task",
+            "Comment": "Transcodes multimedia artifact",
+            "Resource": "arn:aws:states:::ecs:runTask.sync",
+            "InputPath": "$",
+            "Parameters": {
+              "Cluster": "${EcsClusterArn}",
+              "LaunchType": "FARGATE",
+              "Overrides": {
+                "ContainerOverrides": [
+                  {
+                    "Environment": [
+                      {
+                        "Name": "STATE_MACHINE_NAME",
+                        "Value.$": "$$.StateMachine.Name"
+                      },
+                      {
+                        "Name": "STATE_MACHINE_EXECUTION_ID",
+                        "Value.$": "$$.Execution.Id"
+                      },
+                      {
+                        "Name": "STATE_MACHINE_JOB_ID",
+                        "Value.$": "$.Job.Id"
+                      },
+                      {
+                        "Name": "STATE_MACHINE_S3_DESTINATION_WRITER_ROLE",
+                        "Value": "${S3DestinationWriterRoleArn}"
+                      },
+                      {
+                        "Name": "STATE_MACHINE_AWS_REGION",
+                        "Value": "${AwsRegion}"
+                      },
+                      {
+                        "Name": "STATE_MACHINE_ARTIFACT_BUCKET_NAME",
+                        "Value.$": "$.Artifact.BucketName"
+                      },
+                      {
+                        "Name": "STATE_MACHINE_ARTIFACT_OBJECT_KEY",
+                        "Value.$": "$.Artifact.ObjectKey"
+                      },
+                      {
+                        "Name": "STATE_MACHINE_DESTINATION_JSON",
+                        "Value.$": "$.JSON.Destination"
+                      },
+                      {
+                        "Name": "STATE_MACHINE_DESTINATION_MODE",
+                        "Value.$": "$.Task.Destination.Mode"
+                      },
+                      {
+                        "Name": "STATE_MACHINE_DESTINATION_BUCKET_NAME",
+                        "Value.$": "$.Task.Destination.BucketName"
+                      },
+                      {
+                        "Name": "STATE_MACHINE_DESTINATION_OBJECT_KEY",
+                        "Value.$": "$.Task.Destination.ObjectKey"
+                      },
+                      {
+                        "Name": "STATE_MACHINE_DESTINATION_FORMAT",
+                        "Value.$": "$.Task.Format"
+                      },
+                      {
+                        "Name": "STATE_MACHINE_FFMPEG_GLOBAL_OPTIONS",
+                        "Value.$": "$.Task.FFmpeg.GlobalOptions"
+                      },
+                      {
+                        "Name": "STATE_MACHINE_FFMPEG_INPUT_FILE_OPTIONS",
+                        "Value.$": "$.Task.FFmpeg.InputFileOptions"
+                      },
+                      {
+                        "Name": "STATE_MACHINE_FFMPEG_OUTPUT_FILE_OPTIONS",
+                        "Value.$": "$.Task.FFmpeg.OutputFileOptions"
+                      }
+                    ],
+                    "Name": "${TranscodeContainerName}"
+                  }
+                ]
+              },
+              "NetworkConfiguration": {
+                "AwsvpcConfiguration": {
+                  "AssignPublicIp": "ENABLED",
+                  "Subnets": ["${VpcSubnet1}", "${VpcSubnet2}"]
+                }
+              },
+              "TaskDefinition": "${TranscodeEcsTaskDefinitionArn}"
+            },
+            "ResultPath": "$.Void",
+            "OutputPath": "$",
+            "Next": "Transcode Task Results Formatter",
+            "Retry": [
+              {
+                "ErrorEquals": ["States.ALL"],
+                "IntervalSeconds": 5,
+                "MaxAttempts": 3,
+                "BackoffRate": 2
+              }
+            ],
+            "Catch": [
+              {
+                "ErrorEquals": ["States.ALL"],
+                "ResultPath": "$.Error",
+                "Next": "TaskResult Error Callback Map"
+              }
+            ]
+          },
+          "Transcode Task Results Formatter": {
+            "Type": "Task",
+            "Comment": "Formats the output of a transcode task",
+            "Resource": "${TranscodeTaskOutputLambdaFunctionArn}",
+            "InputPath": "$",
+            "Parameters": {
+              "Job": { "Id.$": "$.Job.Id" },
+              "Task.$": "$.Task"
+            },
+            "ResultPath": "$.TaskResult",
+            "OutputPath": "$",
+            "Next": "TaskResult Callbacks Map",
+            "Retry": [
+              {
+                "ErrorEquals": ["States.ALL"],
+                "IntervalSeconds": 5,
+                "MaxAttempts": 3,
+                "BackoffRate": 2
+              }
+            ],
+            "Catch": [
+              {
+                "ErrorEquals": ["States.ALL"],
+                "ResultPath": "$.Error",
+                "Next": "TaskResult Error Callback Map"
+              }
+            ]
+          },
+          "Image Task Handler": {
+            "Type": "Task",
+            "Comment": "Manipulates and converts image artifacts",
+            "Resource": "${ImageTransformLambdaFunctionArn}",
+            "InputPath": "$",
+            "Parameters": {
+              "Job": { "Id.$": "$.Job.Id" },
+              "Artifact.$": "$.Artifact",
+              "Task.$": "$.Task"
+            },
+            "ResultPath": "$.TaskResult",
+            "OutputPath": "$",
+            "Next": "TaskResult Callbacks Map",
+            "Retry": [
+              {
+                "ErrorEquals": ["States.ALL"],
+                "IntervalSeconds": 5,
+                "MaxAttempts": 3,
+                "BackoffRate": 2
+              }
+            ],
+            "Catch": [
+              {
+                "ErrorEquals": ["States.ALL"],
+                "ResultPath": "$.Error",
+                "Next": "TaskResult Error Callback Map"
+              }
+            ]
+          },
+          "Transcribe Task Job Start": {
+            "Type": "Task",
+            "Comment": "Transcribes audio from artifacts",
+            "Resource": "arn:${AwsPartition}:states:::lambda:invoke.waitForTaskToken",
+            "InputPath": "$",
+            "Parameters": {
+              "FunctionName": "${TranscriptionJobStartLambdaFunctionArn}",
+              "Payload": {
+                "Job": { "Id.$": "$.Job.Id" },
+                "Execution": { "Id.$": "$$.Execution.Id" },
+                "Artifact.$": "$.Artifact",
+                "Task.$": "$.Task",
+                "TaskIteratorIndex.$": "$.TaskIndex",
+                "TaskToken.$": "$$.Task.Token"
+              }
+            },
+            "ResultPath": "$.TranscriptionJob",
+            "OutputPath": "$",
+            "Next": "Transcribe Task Job Success Handler",
+            "Retry": [
+              {
+                "ErrorEquals": ["States.ALL"],
+                "IntervalSeconds": 5,
+                "MaxAttempts": 3,
+                "BackoffRate": 2
+              }
+            ],
+            "Catch": [
+              {
+                "ErrorEquals": ["States.ALL"],
+                "ResultPath": "$.Error",
+                "Next": "TaskResult Error Callback Map"
+              }
+            ]
+          },
+          "Transcribe Task Job Success Handler": {
+            "Type": "Task",
+            "Comment": "Formats the output of a transcribe task",
+            "Resource": "${TranscriptionJobResultsLambdaFunctionArn}",
+            "InputPath": "$",
+            "Parameters": {
+              "Task.$": "$.Task",
+              "TranscriptionJob.$": "$.TranscriptionJob"
+            },
+            "ResultPath": "$.TaskResult",
+            "OutputPath": "$",
+            "Next": "TaskResult Callbacks Map",
+            "Retry": [
+              {
+                "ErrorEquals": ["States.ALL"],
+                "IntervalSeconds": 5,
+                "MaxAttempts": 3,
+                "BackoffRate": 2
+              }
+            ],
+            "Catch": [
+              {
+                "ErrorEquals": ["States.ALL"],
+                "ResultPath": "$.Error",
+                "Next": "TaskResult Error Callback Map"
+              }
+            ]
+          },
+          "TaskResult Callbacks Map": {
+            "Type": "Map",
+            "Comment": "Iterates over all callback endpoints to send messages when tasks are successful",
+            "InputPath": "$",
+            "ItemsPath": "$.Callbacks",
+            "Parameters": {
+              "Callback.$": "$$.Map.Item.Value",
+              "TaskIteratorIndex.$": "$.TaskIndex",
+              "Message": {
+                "Task.$": "$.Task",
+                "TaskResult": {
+                  "Job": { "Id.$": "$.Job.Id" },
+                  "Execution": { "Id.$": "$$.Execution.Id" },
+                  "Result.$": "$.TaskResult"
+                }
+              }
+            },
+            "ResultPath": "$.Void",
+            "OutputPath": "$.TaskResult",
+            "End": true,
+            "MaxConcurrency": 0,
+            "Iterator": {
+              "StartAt": "Send TaskResult Callback",
+              "States": {
+                "Send TaskResult Callback": {
+                  "Type": "Task",
+                  "Comment": "Sends a callback message to a single endpoint when tasks are successful",
+                  "InputPath": "$",
+                  "Resource": "${CallbackLambdaFunctionArn}",
+                  "ResultPath": "$",
+                  "OutputPath": "$",
+                  "End": true,
+                  "Retry": [
+                    {
+                      "ErrorEquals": ["States.ALL"],
+                      "IntervalSeconds": 5,
+                      "MaxAttempts": 3,
+                      "BackoffRate": 2
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "TaskResult Error Callback Map": {
+            "Type": "Map",
+            "Comment": "Iterates over all callback endpoints to send messages when tasks fail",
+            "InputPath": "$",
+            "ItemsPath": "$.Callbacks",
+            "Parameters": {
+              "Callback.$": "$$.Map.Item.Value",
+              "TaskIteratorIndex.$": "$.TaskIndex",
+              "Message": {
+                "Task.$": "$.Task",
+                "TaskResult": {
+                  "Job": { "Id.$": "$.Job.Id" },
+                  "Execution": { "Id.$": "$$.Execution.Id" },
+                  "Error.$": "$.Error"
+                }
+              }
+            },
+            "ResultPath": "$.Void",
+            "OutputPath": "$.Task",
+            "End": true,
+            "MaxConcurrency": 0,
+            "Iterator": {
+              "StartAt": "Send TaskResult Error Callback",
+              "States": {
+                "Send TaskResult Error Callback": {
+                  "Type": "Task",
+                  "Comment": "Sends a callback message to a single endpoint when tasks fail",
+                  "InputPath": "$",
+                  "Resource": "${CallbackLambdaFunctionArn}",
+                  "ResultPath": "$",
+                  "OutputPath": "$",
+                  "End": true,
+                  "Retry": [
+                    {
+                      "ErrorEquals": ["States.ALL"],
+                      "IntervalSeconds": 5,
+                      "MaxAttempts": 3,
+                      "BackoffRate": 2
+                    }
+                  ]
+                }
+              }
+            }
+          }
+        }
+      },
+      "Catch": [
+        {
+          "ErrorEquals": ["States.ALL"],
+          "ResultPath": "$.Error",
+          "Next": "Tasks Map Catcher"
+        }
+      ]
+    },
+
+    "JobResult Callback Map": {
+      "Type": "Map",
+      "Comment": "Iterates over all callback endpoints to send job results",
+      "InputPath": "$",
+      "ItemsPath": "$.Job.Callbacks",
+      "Parameters": {
+        "Callback.$": "$$.Map.Item.Value",
+        "Message": {
+          "JobResult": {
+            "Job": { "Id.$": "$.Job.Id" },
+            "Execution": { "Id.$": "$$.Execution.Id" },
+            "State.$": "$.State",
+            "TaskResults.$": "$.TaskResults.[?(@.Task && @.Task != 'Null')]",
+            "FailedTasks.$": "$.TaskResults.[?(@.Type && @.Type != 'Null')]"
+          }
+        }
+      },
+      "ResultPath": "$.Void",
+      "OutputPath": "$",
+      "Next": "Serialized Jobs Map",
+      "MaxConcurrency": 0,
+      "Iterator": {
+        "StartAt": "Send JobResult Callback",
+        "States": {
+          "Send JobResult Callback": {
+            "Type": "Task",
+            "Comment": "Sends a callback message to a single endpoint in the iterator with a job result",
+            "InputPath": "$",
+            "Resource": "${CallbackLambdaFunctionArn}",
+            "ResultPath": "$",
+            "OutputPath": "$",
+            "End": true,
+            "Retry": [
+              {
+                "ErrorEquals": ["States.ALL"],
+                "IntervalSeconds": 5,
+                "MaxAttempts": 3,
+                "BackoffRate": 2
+              }
+            ]
+          }
+        }
+      }
+    },
+    "Serialized Jobs Map": {
+      "Type": "Map",
+      "Comment": "Iterates over all serialized jobs and sends them to SNS",
+      "InputPath": "$",
+      "ItemsPath": "$.Job.SerializedJobs",
+      "Parameters": {
+        "Execution": { "Id.$": "$$.Execution.Id" },
+        "ExecutionTrace.$": "$.Job.ExecutionTrace",
+        "SerializedJob.$": "$$.Map.Item.Value"
+      },
+      "ResultPath": "$.Void",
+      "OutputPath": "$",
+      "Next": "Normalize Output",
+      "MaxConcurrency": 0,
+      "Iterator": {
+        "StartAt": "Start Serialized Job Execution",
+        "States": {
+          "Start Serialized Job Execution": {
+            "Type": "Task",
+            "Comment": "Sends a serialized job to the job execution SNS topic",
+            "InputPath": "$",
+            "Resource": "${JobSerializerLambdaFunctionArn}",
+            "ResultPath": "$",
+            "OutputPath": "$",
+            "End": true,
+            "Retry": [
+              {
+                "ErrorEquals": ["States.ALL"],
+                "IntervalSeconds": 5,
+                "MaxAttempts": 3,
+                "BackoffRate": 2
+              }
+            ]
+          }
+        }
+      }
+    },
+    "Normalize Output": {
+      "Comment": "Normalizes output data",
+      "Type": "Task",
+      "InputPath": "$",
+      "Parameters": {
+        "Message": {
+          "JobResult": {
+            "Job": { "Id.$": "$.Job.Id" },
+            "Execution": { "Id.$": "$$.Execution.Id" },
+            "State.$": "$.State",
+            "TaskResults.$": "$.TaskResults.[?(@.Task && @.Task != 'Null')]",
+            "FailedTasks.$": "$.TaskResults.[?(@.Type && @.Type != 'Null')]"
+          }
+        }
+      },
+      "Resource": "${NormalizeOutputLambdaFunctionArn}",
+      "ResultPath": "$",
+      "OutputPath": "$",
+      "End": true
+    },
+
+    "Normalize Input Catcher": {
+      "Comment": "Add a parameter so normalize errors can be identified",
+      "Type": "Pass",
+      "InputPath": "$",
+      "Result": "NORMALIZE_INPUT_ERROR",
+      "ResultPath": "$.State",
+      "OutputPath": "$",
+      "Next": "JobResult Callback Map"
+    },
+    "Ingest Source File Catcher": {
+      "Comment": "Add a parameter so ingest errors can be identified",
+      "Type": "Pass",
+      "InputPath": "$",
+      "Result": "SOURCE_FILE_INGEST_ERROR",
+      "ResultPath": "$.State",
+      "OutputPath": "$",
+      "Next": "JobResult Callback Map"
+    },
+    "Detect Source File Type Catcher": {
+      "Comment": "Add a parameter so type detection errors can be identified",
+      "Type": "Pass",
+      "InputPath": "$",
+      "Result": "SOURCE_FILE_TYPE_DETECTION_ERROR",
+      "ResultPath": "$.State",
+      "OutputPath": "$",
+      "Next": "JobResult Callback Map"
+    },
+    "Tasks Map Catcher": {
+      "Comment": "Add a parameter so task execution errors can be identified",
+      "Type": "Pass",
+      "InputPath": "$",
+      "Result": "ITERATOR_ERROR",
+      "ResultPath": "$.State",
+      "OutputPath": "$",
+      "Next": "JobResult Callback Map"
+    }
+  }
+}
