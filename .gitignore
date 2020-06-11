@@ -9,5 +9,6 @@ node_modules
 .npm
 package-lock.json
 samconfig.toml
+samconfig.dev.toml
 samconfig.stag.toml
 samconfig.prod.toml
