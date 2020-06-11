@@ -3,6 +3,10 @@
   "editor.tabSize": 2,
   "editor.trimAutoWhitespace": true,
   "files.insertFinalNewline": true,
+  "[asl]": {
+    "editor.defaultFormatter": "esbenp.prettier-vscode",
+    "editor.formatOnSave": true
+  },
   "[javascript]": {
     "editor.defaultFormatter": "esbenp.prettier-vscode",
     "editor.formatOnSave": true
