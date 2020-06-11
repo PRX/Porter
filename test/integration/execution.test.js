@@ -2,13 +2,11 @@ const fs = require('fs');
 const { yamlParse, yamlDump } = require('yaml-cfn');
 
 test('integration test', async () => {
-  const file = fs.readFileSync('template.yml', 'utf8');
-  const template = yamlParse(file);
-  const state = template.Resources.StateMachine;
-  const json = state.Properties.DefinitionString['Fn::Sub'][0];
-  const definition = JSON.parse(json);
+  const yaml = fs.readFileSync('template.yml', 'utf8');
+  const cfn = yamlParse(yaml);
 
-  console.log(definition);
+  const json = fs.readFileSync('state-machine.asl.json', 'utf8');
+  const asl = JSON.parse(json);
 
   expect(1).toEqual(1);
 });
