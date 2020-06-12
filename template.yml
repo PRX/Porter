@@ -10,6 +10,7 @@ Parameters:
   EnvironmentType:
     Type: String
     AllowedValues:
+      - Testing
       - Staging
       - Production
   TranscodeJobNamePrefix:
