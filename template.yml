@@ -515,6 +515,19 @@ Resources:
         - !Ref Subnet2
       VpcEndpointType: Interface
       VpcId: !Ref VPC
+  EcrApiVpcEndpoint:
+    # https://docs.aws.amazon.com/AmazonECS/latest/developerguide/platform_versions.html#platform-version-migration
+    Type: AWS::EC2::VPCEndpoint
+    Properties:
+      PrivateDnsEnabled: true
+      SecurityGroupIds:
+        - !Ref AwsServiceInterfaceEndpointsSecurityGroup
+      ServiceName: !Sub com.amazonaws.${AWS::Region}.ecr.api
+      SubnetIds:
+        - !Ref Subnet1
+        - !Ref Subnet2
+      VpcEndpointType: Interface
+      VpcId: !Ref VPC
   CloudWatchVpcEndpoint:
     # https://docs.aws.amazon.com/AmazonCloudWatch/latest/monitoring/cloudwatch-and-interface-VPC.html
     Type: AWS::EC2::VPCEndpoint
