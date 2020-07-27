@@ -1,13 +1,10 @@
-const path = require('path');
-const os = require('os');
-
 // const AWSXRay = require('aws-xray-sdk');
 // const AWS = AWSXRay.captureAWS(require('aws-sdk'));
 const AWS = require('aws-sdk');
 
 const wavefile = require('./wavefile.js');
 
-exports.handler = async (event, context) => {
+exports.handler = async (event) => {
   const s3 = new AWS.S3({ apiVersion: '2006-03-01' });
   const sts = new AWS.STS({ apiVersion: '2011-06-15' });
 
@@ -31,7 +28,12 @@ exports.handler = async (event, context) => {
       })
       .promise();
   } catch (error) {
-    console.log('S3 getObject failed', bucket, key, error);
+    console.log(
+      'S3 getObject failed',
+      event.Artifact.BucketName,
+      event.Artifact.ObjectKey,
+      error,
+    );
     throw error;
   }
 
@@ -52,13 +54,16 @@ exports.handler = async (event, context) => {
     Object.keys(event.Task.Chunks).forEach((chunk) => {
       // Set data if this is a chunk supported by wavefile
       // this will override any data set on there already
-      if (wav.hasOwnProperty(chunk)) {
+      if (Object.prototype.hasOwnProperty.call(wav, chunk)) {
         wav[chunk].chunkId = chunk;
         Object.keys(wav[chunk])
           .filter((val) => {
             return (
               !['chunkId', 'chunkSize'].includes(val) &&
-              event.Task.Chunks[chunk].hasOwnProperty(val)
+              Object.prototype.hasOwnProperty.call(
+                event.Task.Chunks[chunk],
+                val,
+              )
             );
           })
           .forEach((key) => {
@@ -92,7 +97,7 @@ exports.handler = async (event, context) => {
     BucketName: event.Task.Destination.BucketName,
     ObjectKey: event.Task.Destination.ObjectKey,
     Time: now.toISOString(),
-    Timestamp: now / 1000,
+    Timestamp: +now / 1000,
   };
 };
 
