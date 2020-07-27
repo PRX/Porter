@@ -4,6 +4,67 @@ const AWS = require('aws-sdk');
 
 const wavefile = require('./wavefile.js');
 
+async function s3Upload(s3, sts, event, uploadBuffer) {
+  const role = await sts
+    .assumeRole({
+      RoleArn: process.env.S3_DESTINATION_WRITER_ROLE,
+      RoleSessionName: 'porter_wavwrapper_task',
+    })
+    .promise();
+
+  const s3writer = new AWS.S3({
+    apiVersion: '2006-03-01',
+    accessKeyId: role.Credentials.AccessKeyId,
+    secretAccessKey: role.Credentials.SecretAccessKey,
+    sessionToken: role.Credentials.SessionToken,
+  });
+
+  const params = {
+    Bucket: event.Task.Destination.BucketName,
+    Key: event.Task.Destination.ObjectKey,
+    Body: uploadBuffer,
+  };
+
+  // When the optional `ContentType` property is set to `REPLACE`, if a MIME is
+  // included with the artifact, that should be used as the new audio file's
+  // content type
+  if (
+    Object.prototype.hasOwnProperty.call(
+      event.Task.Destination,
+      'ContentType',
+    ) &&
+    event.Task.Destination.ContentType === 'REPLACE' &&
+    Object.prototype.hasOwnProperty.call(event.Artifact, 'Descriptor') &&
+    Object.prototype.hasOwnProperty.call(event.Artifact.Descriptor, 'MIME')
+  ) {
+    params.ContentType = event.Artifact.Descriptor.MIME;
+  }
+
+  // Assign all members of Parameters to params. Remove the properties required
+  // for the Copy operation, so there is no collision
+  if (
+    Object.prototype.hasOwnProperty.call(event.Task.Destination, 'Parameters')
+  ) {
+    delete event.Task.Destination.Parameters.Bucket;
+    delete event.Task.Destination.Parameters.Key;
+    delete event.Task.Destination.Parameters.Body;
+
+    Object.assign(params, event.Task.Destination.Parameters);
+  }
+
+  // Upload the resulting file to the destination in S3
+  const uploadStart = process.hrtime();
+  await s3writer.upload(params).promise();
+
+  const uploadEnd = process.hrtime(uploadStart);
+  console.log(
+    JSON.stringify({
+      msg: 'Finished S3 upload',
+      duration: `${uploadEnd[0]} s ${uploadEnd[1] / 1000000} ms`,
+    }),
+  );
+}
+
 exports.handler = async (event) => {
   const s3 = new AWS.S3({ apiVersion: '2006-03-01' });
   const sts = new AWS.STS({ apiVersion: '2011-06-15' });
@@ -100,64 +161,3 @@ exports.handler = async (event) => {
     Timestamp: +now / 1000,
   };
 };
-
-async function s3Upload(s3, sts, event, uploadBuffer) {
-  const role = await sts
-    .assumeRole({
-      RoleArn: process.env.S3_DESTINATION_WRITER_ROLE,
-      RoleSessionName: 'porter_wavwrapper_task',
-    })
-    .promise();
-
-  const s3writer = new AWS.S3({
-    apiVersion: '2006-03-01',
-    accessKeyId: role.Credentials.AccessKeyId,
-    secretAccessKey: role.Credentials.SecretAccessKey,
-    sessionToken: role.Credentials.SessionToken,
-  });
-
-  const params = {
-    Bucket: event.Task.Destination.BucketName,
-    Key: event.Task.Destination.ObjectKey,
-    Body: uploadBuffer,
-  };
-
-  // When the optional `ContentType` property is set to `REPLACE`, if a MIME is
-  // included with the artifact, that should be used as the new audio file's
-  // content type
-  if (
-    Object.prototype.hasOwnProperty.call(
-      event.Task.Destination,
-      'ContentType',
-    ) &&
-    event.Task.Destination.ContentType === 'REPLACE' &&
-    Object.prototype.hasOwnProperty.call(event.Artifact, 'Descriptor') &&
-    Object.prototype.hasOwnProperty.call(event.Artifact.Descriptor, 'MIME')
-  ) {
-    params.ContentType = event.Artifact.Descriptor.MIME;
-  }
-
-  // Assign all members of Parameters to params. Remove the properties required
-  // for the Copy operation, so there is no collision
-  if (
-    Object.prototype.hasOwnProperty.call(event.Task.Destination, 'Parameters')
-  ) {
-    delete event.Task.Destination.Parameters.Bucket;
-    delete event.Task.Destination.Parameters.Key;
-    delete event.Task.Destination.Parameters.Body;
-
-    Object.assign(params, event.Task.Destination.Parameters);
-  }
-
-  // Upload the resulting file to the destination in S3
-  const uploadStart = process.hrtime();
-  await s3writer.upload(params).promise();
-
-  const uploadEnd = process.hrtime(uploadStart);
-  console.log(
-    JSON.stringify({
-      msg: 'Finished S3 upload',
-      duration: `${uploadEnd[0]} s ${uploadEnd[1] / 1000000} ms`,
-    }),
-  );
-}
