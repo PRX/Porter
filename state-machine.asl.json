@@ -170,6 +170,11 @@
                 "Variable": "$.Task.Type",
                 "StringEquals": "Transcribe",
                 "Next": "Transcribe Task Job Start"
+              },
+              {
+                "Variable": "$.Task.Type",
+                "StringEquals": "WavWrap",
+                "Next": "WAV Wrap Task Handler"
               }
             ]
           },
@@ -400,6 +405,35 @@
             "Type": "Task",
             "Comment": "Manipulates and converts image artifacts",
             "Resource": "${ImageTransformLambdaFunctionArn}",
+            "InputPath": "$",
+            "Parameters": {
+              "Job": { "Id.$": "$.Job.Id" },
+              "Artifact.$": "$.Artifact",
+              "Task.$": "$.Task"
+            },
+            "ResultPath": "$.TaskResult",
+            "OutputPath": "$",
+            "Next": "TaskResult Callbacks Map",
+            "Retry": [
+              {
+                "ErrorEquals": ["States.ALL"],
+                "IntervalSeconds": 5,
+                "MaxAttempts": 3,
+                "BackoffRate": 2
+              }
+            ],
+            "Catch": [
+              {
+                "ErrorEquals": ["States.ALL"],
+                "ResultPath": "$.Error",
+                "Next": "TaskResult Error Callback Map"
+              }
+            ]
+          },
+          "WAV Wrap Task Handler": {
+            "Type": "Task",
+            "Comment": "WAV wraps audio artifacts",
+            "Resource": "${WavWrapLambdaFunctionArn}",
             "InputPath": "$",
             "Parameters": {
               "Job": { "Id.$": "$.Job.Id" },
