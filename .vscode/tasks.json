@@ -7,7 +7,7 @@
       "type": "pickString",
       "id": "appEnv",
       "description": "Which application environment do you want to deploy?",
-      "options": ["stag", "prod"],
+      "options": ["test", "stag", "prod"],
       "default": "stag"
     }
   ],
