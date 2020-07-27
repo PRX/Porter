@@ -1,4 +1,5 @@
 .aws-sam
+.bundle
 .config
 .deploy
 node_modules
@@ -10,5 +11,7 @@ node_modules
 package-lock.json
 samconfig.toml
 samconfig.dev.toml
+samconfig.test.toml
 samconfig.stag.toml
 samconfig.prod.toml
+vendor

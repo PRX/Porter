@@ -2,23 +2,28 @@ version: 0.2
 env:
   variables:
     PRX_ECR_REGION: 'us-east-1'
+  parameter-store:
+    PORTER_STATE_MACHINE_ARN: '/prx/test/meta.prx.org/PORTER_STATE_MACHINE_ARN'
 phases:
   install:
     runtime-versions:
       docker: 18
       nodejs: 10
       python: 3.7
+      ruby: 2.7
     commands:
       - 'cd $(ls -d */|head -n 1)'
       - 'echo "Installing CloudFormation Linter"'
       - 'pip install cfn-lint --upgrade'
       - 'echo "Installing Prettier"'
       - 'npm install'
+      - 'bundle install'
   build:
     commands:
       - 'cfn-lint --ignore-checks W --template template.yml'
       - 'npm run prettier -- --check "**/*.{js,json,yaml,yml}"'
       - 'npm run eslint -- "**/*.js"'
+      - 'bundle exec rake'
       - 'docker-compose build'
       - 'docker-compose run ci'
   post_build:
