@@ -9,11 +9,11 @@ services:
       context: ./
       dockerfile: ci.Dockerfile
     command: test
-    depends_on:
-      - sam
-      - step_functions
-    links:
-      - step_functions
+    # depends_on:
+    #   - sam
+    #   - step_functions
+    # links:
+    #   - step_functions
     networks:
       - porternetwork
     volumes:
