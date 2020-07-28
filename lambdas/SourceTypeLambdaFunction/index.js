@@ -6,9 +6,9 @@ const AWSXRay = require('aws-xray-sdk');
 
 const AWS = AWSXRay.captureAWS(require('aws-sdk'));
 
-const s3 = new AWS.S3({ apiVersion: '2006-03-01' });
-
 exports.handler = async (event) => {
+  const s3 = new AWS.S3({ apiVersion: '2006-03-01' });
+
   console.log(JSON.stringify({ msg: 'State input', input: event }));
 
   const s3stream = s3
