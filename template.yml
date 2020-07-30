@@ -29,6 +29,8 @@ Parameters:
     Type: String
   NpmFileTypeLambdaLayerVersionArn:
     Type: String
+  WavefileLambdaLayerVersionArn:
+    Type: String
   TranscodeEcsTaskDefinitionImage:
     Type: String
   EnableSqsJobExecution:
@@ -1464,6 +1466,7 @@ Resources:
       Layers:
         - !Ref AwsXraySdkLambdaLayerVersionArn
         - !Ref NpmSharpLambdaLayerVersionArn
+        - !Ref WavefileLambdaLayerVersionArn
       MemorySize: 3008
       Role: !GetAtt WavWrapLambdaIamRole.Arn
       Runtime: nodejs10.x
