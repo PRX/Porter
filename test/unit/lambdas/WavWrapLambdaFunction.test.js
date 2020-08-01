@@ -1,23 +1,17 @@
-const handler = require('../../../lambdas/WavWrapLambdaFunction/index').handler;
-
 const AWS = require('aws-sdk-mock');
+const { handler } = require('../../../lambdas/WavWrapLambdaFunction/index');
 
 // Callbacks
 test('wraps an mp2', async () => {
-  AWS.mock('S3', 'getObject', {
-    Body: Buffer.from(require('fs').readFileSync('test/samples/test.mp2')),
-  });
+  AWS.mock('S3', 'getObject', { Body: Buffer.from(require('fs').readFileSync('test/samples/test.mp2')) });
   AWS.mock('S3', 'upload', true);
-  AWS.mock('STS', 'assumeRole', {
-    Credentials: { SecretAccessKey: 'key', SessionToken: 'token' },
-  });
+  AWS.mock('STS', 'assumeRole', { Credentials: { SecretAccessKey: 'key', SessionToken: 'token' }});
   process.env.S3_DESTINATION_WRITER_ROLE = 'arn:thisisafake';
 
   const result = await handler({
     Artifact: {
       BucketName: 'myStackName-artifactbucket-1hnyu12xzvbel',
-      ObjectKey:
-        'test000-1111-aaaa-2222-616797212639/c6cd0af8-ac3d-424b-bbb7-fac5f9189a60/test.mp2',
+      ObjectKey: 'test000-1111-aaaa-2222-616797212639/c6cd0af8-ac3d-424b-bbb7-fac5f9189a60/test.mp2',
       Descriptor: {
         Extension: 'mp2',
         MIME: 'audio/mpeg',
@@ -36,8 +30,7 @@ test('wraps an mp2', async () => {
         cart: {
           version: '0101',
           cutId: '30000',
-          title:
-            'SOUNDOPI: 20191129: 731: 06: Thanksgiving Leftovers & DJ Shadow',
+          title: 'SOUNDOPI: 20191129: 731: 06: Thanksgiving Leftovers & DJ Shadow',
           artist: 'Sound Opinions',
           startDate: '2020/05/31',
           startTime: '10:00:00',

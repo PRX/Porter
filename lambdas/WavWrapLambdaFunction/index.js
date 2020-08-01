@@ -1,7 +1,7 @@
-// const AWSXRay = require('aws-xray-sdk');
-// const AWS = AWSXRay.captureAWS(require('aws-sdk'));
-const AWS = require('aws-sdk');
-const wavefile = require('wavefile');
+const AWSXRay = require('aws-xray-sdk');
+const AWS = AWSXRay.captureAWS(require('aws-sdk'));
+
+const wavefile = require('prx-wavefile');
 
 async function s3Upload(s3, sts, event, uploadBuffer) {
   const role = await sts
