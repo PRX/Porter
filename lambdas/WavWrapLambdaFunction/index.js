@@ -3,6 +3,14 @@ const AWS = AWSXRay.captureAWS(require('aws-sdk'));
 
 const wavefile = require('prx-wavefile');
 
+function camelize(str) {
+  return str
+    .replace(/(?:^\w|[A-Z]|\b\w)/g, function (word, index) {
+      return index === 0 ? word.toLowerCase() : word.toUpperCase();
+    })
+    .replace(/\s+/g, '');
+}
+
 async function s3Upload(s3, sts, event, uploadBuffer) {
   const role = await sts
     .assumeRole({
@@ -65,10 +73,10 @@ async function s3Upload(s3, sts, event, uploadBuffer) {
 }
 
 exports.handler = async (event) => {
+  console.log(JSON.stringify({ msg: 'State input', input: event }));
+
   const s3 = new AWS.S3({ apiVersion: '2006-03-01' });
   const sts = new AWS.STS({ apiVersion: '2011-06-15' });
-
-  console.log(JSON.stringify({ msg: 'State input', input: event }));
 
   // Fetch the source file artifact from S3
   console.log(
@@ -110,44 +118,35 @@ exports.handler = async (event) => {
   wav.fromMpeg(s3Object.Body);
 
   // If there are chunks passed in, iterate through each
-  if (event.Task.Chunks) {
-    Object.keys(event.Task.Chunks).forEach((chunk) => {
-      // Set data if this is a chunk supported by wavefile
-      // this will override any data set on there already
-      if (Object.prototype.hasOwnProperty.call(wav, chunk)) {
-        wav[chunk].chunkId = chunk;
-        Object.keys(wav[chunk])
-          .filter((val) => {
-            return (
-              !['chunkId', 'chunkSize'].includes(val) &&
-              Object.prototype.hasOwnProperty.call(
-                event.Task.Chunks[chunk],
-                val,
-              )
-            );
-          })
-          .forEach((key) => {
-            wav[chunk][key] = event.Task.Chunks[chunk][key];
-          });
-      }
-    });
-  }
+  const resultChunks = [];
+  event.Task.Chunks.forEach((taskChunk) => {
+    // Set data if this is a chunk supported by wavefile
+    const chunkId = taskChunk.ChunkId;
+    if (Object.prototype.hasOwnProperty.call(wav, chunkId)) {
+      Object.keys(taskChunk).forEach((taskKey) => {
+        const wavKey = camelize(taskKey);
+        if (
+          !['chunkSize'].includes(wavKey) &&
+          Object.prototype.hasOwnProperty.call(wav[chunkId], wavKey)
+        ) {
+          wav[chunkId][wavKey] = taskChunk[taskKey];
+        }
+      });
+      resultChunks.push(wav[chunkId]);
+    }
+  });
 
-  // Upload the resulting file to the destination in S3
-  const uploadStart = process.hrtime();
+  console.log(
+    JSON.stringify({
+      msg: 'Wavefile chunks set',
+      chunks: resultChunks,
+    }),
+  );
 
   // save to s3 destination
   if (event.Task.Destination.Mode === 'AWS/S3') {
     await s3Upload(s3, sts, event, Buffer.from(wav.toBuffer()));
   }
-
-  const uploadEnd = process.hrtime(uploadStart);
-  console.log(
-    JSON.stringify({
-      msg: 'Finished S3 upload',
-      duration: `${uploadEnd[0]} s ${uploadEnd[1] / 1000000} ms`,
-    }),
-  );
 
   const now = new Date();
 
@@ -158,5 +157,6 @@ exports.handler = async (event) => {
     ObjectKey: event.Task.Destination.ObjectKey,
     Time: now.toISOString(),
     Timestamp: +now / 1000,
+    WavefileChunks: resultChunks,
   };
 };

@@ -2,7 +2,7 @@
 
 Porter is a general-purpose file processing system. It is designed to work asynchronously – jobs are sent to Porter from other applications, and the results can be returned to the applications via callbacks. It supports a variety of tasks that can be run on the files included in each job. Some are generic tasks (such as copying a file to a new location), and some are specific to certiain file types (such as resizing an image, or transcoding an audio file).
 
-Porter is built on top of [AWS Step Functions](https://aws.amazon.com/step-functions/), as well a number of other AWS services. Each job that is sent to Porter for processing corresponds to a single state machine [execution](https://docs.aws.amazon.com/step-functions/latest/dg/concepts-state-machine-executions.html) of the Step Function. Each Porter job represents one (and only one) input file, which is considered the job's *source file*. Every task that the job definition includes is run against that original source file in parallel.
+Porter is built on top of [AWS Step Functions](https://aws.amazon.com/step-functions/), as well a number of other AWS services. Each job that is sent to Porter for processing corresponds to a single state machine [execution](https://docs.aws.amazon.com/step-functions/latest/dg/concepts-state-machine-executions.html) of the Step Function. Each Porter job represents one (and only one) input file, which is considered the job's _source file_. Every task that the job definition includes is run against that original source file in parallel.
 
 The system is design to be highly scalable, both in terms of the number of jobs that can be processed, as well as the number of tasks an individual job can include. Many of the states that the Step Function orchestrates are built on [AWS Lambda](https://aws.amazon.com/lambda/) and [AWS Fargate](https://aws.amazon.com/fargate/), which are serverless compute platforms and support that scalability. As such, there are no prioritization options or explicit queueing controls available. It can be assumed that jobs begin to execute as soon as they are received by Porter.
 
@@ -13,19 +13,20 @@ Job executions within Porter are not intended to be inspected directly or in rea
 Many input and output methods are supported to allow flexibility with other applications. For example, source files can come from HTTP or S3 endpoints, and callback messages can be sent via HTTP, [SNS](https://aws.amazon.com/sns/), and [SQS](https://aws.amazon.com/sqs/). The list of supported source and destination methods will grow over time; see below for a more complete list of methods that each aspect of the job execution support.
 
 ### Table of Contents
+
 - [Introduction](#porter)
 - [Execution Model](#execution-model)
 - [Messaging I/O](#messaging-io)
-    - [Starting a Job](#starting-a-job)
-    - [Input Message Format](#input-message-format)
-    - [Callback Messages](#callback-messages)
+  - [Starting a Job](#starting-a-job)
+  - [Input Message Format](#input-message-format)
+  - [Callback Messages](#callback-messages)
 - [Tasks](#tasks)
-    - [Inspect](#inspect)
-    - [Copy](#copy)
-    - [Image Transform](#image-transform)
-    - [Transcode](#transcode)
-    - [Transcribe](#transcribe)
-    - [WAV Wrap](#wav-wrap)
+  - [Inspect](#inspect)
+  - [Copy](#copy)
+  - [Image Transform](#image-transform)
+  - [Transcode](#transcode)
+  - [Transcribe](#transcribe)
+  - [WAV Wrap](#wav-)
 - [Serialized Jobs](#serialized-jobs)
 - [S3 Destination Permissions](#s3-destination-permissions)
 
@@ -77,25 +78,25 @@ Input messages are represented as JSON data. The root JSON object must include a
 
 ```json
 {
-    "Job": {
-        "Id": "1234567890asdfghjkl",
-        "Source": {
-            "Mode": "AWS/S3",
-            "BucketName": "myBucket",
-            "ObjectKey": "myObject.jpg"
-        },
-        "Tasks": [
-            {
-                "Type": "Inspect"
-            }
-        ],
-        "Callbacks": [
-            {
-                "Type": "AWS/SNS",
-                "Topic": "arn:aws:sns:us-east-1:123456789012:my-callback-topic"
-            }
-        ],
-    }
+  "Job": {
+    "Id": "1234567890asdfghjkl",
+    "Source": {
+      "Mode": "AWS/S3",
+      "BucketName": "myBucket",
+      "ObjectKey": "myObject.jpg"
+    },
+    "Tasks": [
+      {
+        "Type": "Inspect"
+      }
+    ],
+    "Callbacks": [
+      {
+        "Type": "AWS/SNS",
+        "Topic": "arn:aws:sns:us-east-1:123456789012:my-callback-topic"
+      }
+    ]
+  }
 }
 ```
 
@@ -123,7 +124,6 @@ A job's source is the file that all tasks in the job will be performed on. One i
 
 The `ObjectPrefix` property is required, but it can be an empty string, which will result in no prefix being added. An example of a prefix would be `porter_results/`, though the trailing slash is also not required. The `index` value in a task result's file name matches the index of that task from the original job (zero-based numbering). The `Execution ID` is only the final segment of the execution ID ARN.
 
-
 ### Callback Messages
 
 Callback messages are dispatched at various points throughout the execution of a job. Whenever callback messages are sent, messages are always sent to all callbacks defined in the job. Callbacks are optional, and any value in `Job.Callbacks` other than an array will be ignored. Empty arrays are okay.
@@ -136,17 +136,17 @@ Callbacks are sent when a job has been received (after the input has been normal
 
 ```json
 {
-    "Time": "2012-12-21T12:34:56Z",
-    "Timestamp": 1356093296.123,
-    "JobReceived": {
-        "Job": {
-            "Id": "1234567890asdfghjkl"
-        },
-        "Execution": {
-            "Id": "arn:aws:states:us-east-1:561178107736:execution:StateMachine-cvPVX5enHWdj:221672a9-ada6-483f-a5a7-ccffd4eee8c5"
-        },
-        "State": "RECEIVED"
-    }
+  "Time": "2012-12-21T12:34:56Z",
+  "Timestamp": 1356093296.123,
+  "JobReceived": {
+    "Job": {
+      "Id": "1234567890asdfghjkl"
+    },
+    "Execution": {
+      "Id": "arn:aws:states:us-east-1:561178107736:execution:StateMachine-cvPVX5enHWdj:221672a9-ada6-483f-a5a7-ccffd4eee8c5"
+    },
+    "State": "RECEIVED"
+  }
 }
 ```
 
@@ -187,26 +187,26 @@ The JSON message for a failed task will have an `Error` key rather than a `Resul
 
 ```json
 {
-    "Time": "2012-12-21T12:34:56Z",
-    "Timestamp": 1356093296.123,
-    "Task": {
-        "Type": "Copy",
-        "Mode": "AWS/S3",
-        "BucketName": "myBucket",
-        "ObjectKey": "myObject.ext"
+  "Time": "2012-12-21T12:34:56Z",
+  "Timestamp": 1356093296.123,
+  "Task": {
+    "Type": "Copy",
+    "Mode": "AWS/S3",
+    "BucketName": "myBucket",
+    "ObjectKey": "myObject.ext"
+  },
+  "TaskResult": {
+    "Job": {
+      "Id": "1234567890asdfghjkl"
     },
-    "TaskResult": {
-        "Job": {
-            "Id": "1234567890asdfghjkl"
-        },
-        "Execution": {
-            "Id": "arn:aws:states:us-east-1:561178107736:execution:StateMachine-cvPVX5enHWdj:221672a9-ada6-483f-a5a7-ccffd4eee8c5"
-        },
-        "Error": {
-            "Error": "…",
-            "Cause": "…"
-        }
+    "Execution": {
+      "Id": "arn:aws:states:us-east-1:561178107736:execution:StateMachine-cvPVX5enHWdj:221672a9-ada6-483f-a5a7-ccffd4eee8c5"
+    },
+    "Error": {
+      "Error": "…",
+      "Cause": "…"
     }
+  }
 }
 ```
 
@@ -306,19 +306,19 @@ This is an example of a job that included two tasks, but whose source file could
 
 ```json
 {
-    "Time": "2012-12-21T12:34:56Z",
-    "Timestamp": 1356093296.123,
-    "JobResult": {
-        "Job": {
-            "Id": "1234567890asdfghjkl"
-        },
-        "Execution": {
-            "Id": "arn:aws:states:us-east-1:561178107736:execution:StateMachine-cvPVX5enHWdj:221672a9-ada6-483f-a5a7-ccffd4eee8c5"
-        },
-        "State": "SOURCE_FILE_INGEST_ERROR",
-        "FailedTasks": [],
-        "TaskResults": []
-    }
+  "Time": "2012-12-21T12:34:56Z",
+  "Timestamp": 1356093296.123,
+  "JobResult": {
+    "Job": {
+      "Id": "1234567890asdfghjkl"
+    },
+    "Execution": {
+      "Id": "arn:aws:states:us-east-1:561178107736:execution:StateMachine-cvPVX5enHWdj:221672a9-ada6-483f-a5a7-ccffd4eee8c5"
+    },
+    "State": "SOURCE_FILE_INGEST_ERROR",
+    "FailedTasks": [],
+    "TaskResults": []
+  }
 }
 ```
 
@@ -344,37 +344,37 @@ All jobs included directly as members of `SerializedJobs` are started simultaneo
 
 ```json
 {
-    "Job": {
-        "Id": "1234567890asdfghjkl",
-        "Source": {
+  "Job": {
+    "Id": "1234567890asdfghjkl",
+    "Source": {
+      "Mode": "AWS/S3",
+      "BucketName": "farski-sandbox-prx",
+      "ObjectKey": "130224.mp2"
+    },
+    "SerializedJobs": [
+      {
+        "Job": {
+          "Id": "1234567890asdfghjkl",
+          "Source": {
             "Mode": "AWS/S3",
             "BucketName": "farski-sandbox-prx",
             "ObjectKey": "130224.mp2"
-        },
-        "SerializedJobs": [
-            {
-                "Job": {
-                    "Id": "1234567890asdfghjkl",
-                    "Source": {
-                        "Mode": "AWS/S3",
-                        "BucketName": "farski-sandbox-prx",
-                        "ObjectKey": "130224.mp2"
-                    }
-                }
-            }, {
-                "Job": {
-                    "Id": "1234567890asdfghjkl",
-                    "Source": {
-                        "Mode": "AWS/S3",
-                        "BucketName": "farski-sandbox-prx",
-                        "ObjectKey": "130224.mp2"
-                    }
-                }
-            }
-        ]
-    }
+          }
+        }
+      },
+      {
+        "Job": {
+          "Id": "1234567890asdfghjkl",
+          "Source": {
+            "Mode": "AWS/S3",
+            "BucketName": "farski-sandbox-prx",
+            "ObjectKey": "130224.mp2"
+          }
+        }
+      }
+    ]
+  }
 }
-
 ```
 
 ## Tasks
@@ -387,7 +387,7 @@ The `Time` and `Timestamp` in the output represent approximately when the file f
 
 #### AWS/S3
 
- S3 copy operations are done by the [copyObject()](https://docs.aws.amazon.com/AWSJavaScriptSDK/latest/AWS/S3.html#copyObject-property) method in the AWS Node SDK. Copying files larger than 5 GB is not supported by the AWS API.
+S3 copy operations are done by the [copyObject()](https://docs.aws.amazon.com/AWSJavaScriptSDK/latest/AWS/S3.html#copyObject-property) method in the AWS Node SDK. Copying files larger than 5 GB is not supported by the AWS API.
 
 The `BucketName` and `ObjectKey` properties are required.
 
@@ -399,10 +399,10 @@ Input:
 
 ```json
 {
-    "Type": "Copy",
-    "Mode": "AWS/S3",
-    "BucketName": "myBucket",
-    "ObjectKey": "myObject.ext"
+  "Type": "Copy",
+  "Mode": "AWS/S3",
+  "BucketName": "myBucket",
+  "ObjectKey": "myObject.ext"
 }
 ```
 
@@ -410,19 +410,19 @@ Input with additional parameters:
 
 ```json
 {
-    "Type": "Copy",
-    "Mode": "AWS/S3",
-    "BucketName": "myBucket",
-    "ObjectKey": "myObject.ext",
-    "ContentType": "REPLACE",
-    "Parameters": {
-        "ACL": "public-read",
-        "ContentDisposition": "attachment",
-        "Metadata": {
-            "MyMetadataKey": "MyMetadataValue"
-        },
-        "MetadataDirective": "REPLACE"
-    }
+  "Type": "Copy",
+  "Mode": "AWS/S3",
+  "BucketName": "myBucket",
+  "ObjectKey": "myObject.ext",
+  "ContentType": "REPLACE",
+  "Parameters": {
+    "ACL": "public-read",
+    "ContentDisposition": "attachment",
+    "Metadata": {
+      "MyMetadataKey": "MyMetadataValue"
+    },
+    "MetadataDirective": "REPLACE"
+  }
 }
 ```
 
@@ -430,11 +430,11 @@ Output:
 
 ```json
 {
-    "Task": "Copy",
-    "BucketName": "myBucket",
-    "ObjectKey": "myObject.ext",
-    "Time": "2012-12-21T12:34:56Z",
-    "Timestamp": 1356093296.123
+  "Task": "Copy",
+  "BucketName": "myBucket",
+  "ObjectKey": "myObject.ext",
+  "Time": "2012-12-21T12:34:56Z",
+  "Timestamp": 1356093296.123
 }
 ```
 
@@ -450,7 +450,7 @@ By default all image metadata (EXIF, XMP, IPTC, etc) is stripped away during pro
 
 #### AWS/S3
 
- S3 image destinations are done by the [upload()](https://docs.aws.amazon.com/AWSJavaScriptSDK/latest/AWS/S3.html#upload-property) method in the AWS Node SDK.
+S3 image destinations are done by the [upload()](https://docs.aws.amazon.com/AWSJavaScriptSDK/latest/AWS/S3.html#upload-property) method in the AWS Node SDK.
 
 The `BucketName` and `ObjectKey` properties are required.
 
@@ -462,27 +462,27 @@ Input:
 
 ```json
 {
-    "Type": "Image",
-    "Format": "png",
-    "Metadata": "PRESERVE",
-    "Resize": {
-        "Fit": "cover",
-        "Height": 300,
-        "Position": "centre",
-        "Width": 300
-    },
-    "Destination": {
-        "Mode": "AWS/S3",
-        "BucketName": "myBucket",
-        "ObjectKey": "myObject.png",
-        "ContentType": "REPLACE",
-        "Parameters": {
-            "ContentDisposition": "attachment",
-            "Metadata": {
-                "MyMetadataKey": "MyMetadataValue"
-            }
-        }
+  "Type": "Image",
+  "Format": "png",
+  "Metadata": "PRESERVE",
+  "Resize": {
+    "Fit": "cover",
+    "Height": 300,
+    "Position": "centre",
+    "Width": 300
+  },
+  "Destination": {
+    "Mode": "AWS/S3",
+    "BucketName": "myBucket",
+    "ObjectKey": "myObject.png",
+    "ContentType": "REPLACE",
+    "Parameters": {
+      "ContentDisposition": "attachment",
+      "Metadata": {
+        "MyMetadataKey": "MyMetadataValue"
+      }
     }
+  }
 }
 ```
 
@@ -490,11 +490,11 @@ Output:
 
 ```json
 {
-    "Task": "Image",
-    "BucketName": "myBucket",
-    "ObjectKey": "myObject.ext",
-    "Time": "2012-12-21T12:34:56Z",
-    "Timestamp": 1356093296.123
+  "Task": "Image",
+  "BucketName": "myBucket",
+  "ObjectKey": "myObject.ext",
+  "Time": "2012-12-21T12:34:56Z",
+  "Timestamp": 1356093296.123
 }
 ```
 
@@ -512,21 +512,21 @@ Input:
 
 ```json
 {
-    "Type": "Transcode",
-    "Format": "flac",
-    "FFmpeg": {
-        "GlobalOptions": "-loglevel info",
-        "InputFileOptions": "-t 500",
-        "OutputFileOptions": "-metadata title=some_title"
-    },
-    "Destination": {
-        "Mode": "AWS/S3",
-        "BucketName": "myBucket",
-        "ObjectKey": "myObject.flac",
-        "Parameters": {
-            "ContentType": "audio/flac"
-        }
+  "Type": "Transcode",
+  "Format": "flac",
+  "FFmpeg": {
+    "GlobalOptions": "-loglevel info",
+    "InputFileOptions": "-t 500",
+    "OutputFileOptions": "-metadata title=some_title"
+  },
+  "Destination": {
+    "Mode": "AWS/S3",
+    "BucketName": "myBucket",
+    "ObjectKey": "myObject.flac",
+    "Parameters": {
+      "ContentType": "audio/flac"
     }
+  }
 }
 ```
 
@@ -534,9 +534,9 @@ Output:
 
 ```json
 {
-    "Task": "Transcode",
-    "BucketName": "myBucket",
-    "ObjectKey": "myObject.flac"
+  "Task": "Transcode",
+  "BucketName": "myBucket",
+  "ObjectKey": "myObject.flac"
 }
 ```
 
@@ -548,7 +548,7 @@ Input:
 
 ```json
 {
-    "Type": "Inspect"
+  "Type": "Inspect"
 }
 ```
 
@@ -575,14 +575,14 @@ Input:
 
 ```json
 {
-    "Type": "Transcribe",
-    "LanguageCode": "en-US",
-    "MediaFormat": "mp3",
-    "Destination": {
-        "Mode": "AWS/S3",
-        "BucketName": "myBucket",
-        "ObjectKey": "myTranscript.json"
-    }
+  "Type": "Transcribe",
+  "LanguageCode": "en-US",
+  "MediaFormat": "mp3",
+  "Destination": {
+    "Mode": "AWS/S3",
+    "BucketName": "myBucket",
+    "ObjectKey": "myTranscript.json"
+  }
 }
 ```
 
@@ -590,9 +590,9 @@ Output:
 
 ```json
 {
-    "Task": "Transcribe",
-    "BucketName": "myBucket",
-    "ObjectKey": "myTranscript.json"
+  "Task": "Transcribe",
+  "BucketName": "myBucket",
+  "ObjectKey": "myTranscript.json"
 }
 ```
 
@@ -600,26 +600,84 @@ Output:
 
 `WavWrap` tasks create a [WAV](https://en.wikipedia.org/wiki/WAV) file from an audio artifact, and apply data to specific chunks of the WAV wrapper.
 
-TKTKTKTK
+It accepts MPEG audio files, and any of the chunks supported by [prx-wavefile](https://github.com/PRX/prx-wavefile) including all Broadcast Wave Format chunks and `cart` chunks.
+
+`prx-wavefile` will attempt to set the `fmt`, `mext`, `bext`, `fact`, and `data` chunks from the source file, e.g. analyzing the mpeg audio to set the `fmt` sample rate, bit rate, and number of channels.
+
+The `cart` chunk will not be set unless at all unless it is passed in to the input `Task.Chunks` array, as in the example below.
+
+The Output includes a `WavfileChunks` array with the attributes set on the `prx-wavefile` chunks.
 
 Input:
 
 ```json
 {
-    "Type": "WavWrap",
-    "Destination": {
-        "Mode": "AWS/S3",
-        "BucketName": "myBucket",
-        "ObjectKey": "myTranscript.json"
-    },
-    "Chunks": {
+  "Type": "WavWrap",
+  "Destination": {
+    "Mode": "AWS/S3",
+    "BucketName": "myBucket",
+    "ObjectKey": "myTranscript.json"
+  },
+  "Chunks": [
+    {
+      "ChunkId": "cart",
+      "Version": "0101",
+      "CutId": "12345",
+      "Title": "Title",
+      "Artist": "Artist",
+      "StartDate": "2020/01/01",
+      "StartTime": "00:00:00",
+      "EndDate": "2020/01/14",
+      "EndTime": "00:00:00",
+      "ProducerAppId": "PRX",
+      "ProducerAppVersion": "3.0"
     }
+  ]
+}
+```
+
+Output:
+
+````json
+{
+  "Task": "WavWrap",
+  "Mode": "AWS/S3",
+  "BucketName": "myBucket",
+  "ObjectKey": "myTranscript.json",
+  "Time": "2012-12-21T12:34:56Z",
+  "Timestamp": 1356093296.123,
+  "WavefileChunks": [
+    {
+      "chunkId": "cart",
+      "chunkSize": 2048,
+      "version": "0101",
+      "title": "Title",
+      "artist": "Artist",
+      "cutId": "12345",
+      "clientId": "",
+      "category": "",
+      "classification": "",
+      "outCue": "",
+      "startDate": "2020/01/01",
+      "startTime": "00:00:00",
+      "endDate": "2020/01/14",
+      "endTime": "10:00:00",
+      "producerAppId": "PRX",
+      "producerAppVersion": "3.0",
+      "userDef": "",
+      "levelReference": 0,
+      "postTimer": [],
+      "reserved": "",
+      "url": "",
+      "tagText": ""
+    }
+  ]
 }
 ```
 
 #### AWS/S3
 
- S3 image destinations are done by the [upload()](https://docs.aws.amazon.com/AWSJavaScriptSDK/latest/AWS/S3.html#upload-property) method in the AWS Node SDK.
+S3 image destinations are done by the [upload()](https://docs.aws.amazon.com/AWSJavaScriptSDK/latest/AWS/S3.html#upload-property) method in the AWS Node SDK.
 
 The `BucketName` and `ObjectKey` properties are required.
 
@@ -635,28 +693,28 @@ The following is an example of the bucket policy used for granting Porter access
 
 ```json
 {
-    "Version": "2012-10-17",
-    "Statement": [
-        {
-            "Effect": "Allow",
-            "Principal": {
-                "AWS": "arn:aws:iam::123456789012:role/porter-prod-S3DestinationWriterRole-TKTKTKTKTK"
-            },
-            "Action": "s3:ListBucketMultipartUploads",
-            "Resource": "arn:aws:s3:::myBucket"
-        },
-        {
-            "Effect": "Allow",
-            "Principal": {
-                "AWS": "arn:aws:iam::123456789012:role/porter-prod-S3DestinationWriterRole-TKTKTKTKTK"
-            },
-            "Action": [
-                "s3:PutObject*",
-                "s3:AbortMultipartUpload",
-                "s3:ListMultipartUploadParts"
-            ],
-            "Resource": "arn:aws:s3:::myBucket/*"
-        }
-    ]
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Effect": "Allow",
+      "Principal": {
+        "AWS": "arn:aws:iam::123456789012:role/porter-prod-S3DestinationWriterRole-TKTKTKTKTK"
+      },
+      "Action": "s3:ListBucketMultipartUploads",
+      "Resource": "arn:aws:s3:::myBucket"
+    },
+    {
+      "Effect": "Allow",
+      "Principal": {
+        "AWS": "arn:aws:iam::123456789012:role/porter-prod-S3DestinationWriterRole-TKTKTKTKTK"
+      },
+      "Action": [
+        "s3:PutObject*",
+        "s3:AbortMultipartUpload",
+        "s3:ListMultipartUploadParts"
+      ],
+      "Resource": "arn:aws:s3:::myBucket/*"
+    }
+  ]
 }
-```
+````

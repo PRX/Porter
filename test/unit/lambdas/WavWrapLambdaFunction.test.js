@@ -1,7 +1,6 @@
 const AWS = require('aws-sdk-mock');
 const { handler } = require('../../../lambdas/WavWrapLambdaFunction/index');
 
-// Callbacks
 test('wraps an mp2', async () => {
   AWS.mock('S3', 'getObject', { Body: Buffer.from(require('fs').readFileSync('test/samples/test.mp2')) });
   AWS.mock('S3', 'upload', true);
@@ -25,23 +24,33 @@ test('wraps an mp2', async () => {
         Mode: 'AWS/S3',
         BucketName: 'myStackName-artifactbucket-1hnyu12xzvbel',
         ObjectKey: 'wxyz/sound-opinions/30000.wav',
+        ContentType: 'audio/wav',
       },
-      Chunks: {
-        cart: {
-          version: '0101',
-          cutId: '30000',
-          title: 'SOUNDOPI: 20191129: 731: 06: Thanksgiving Leftovers & DJ Shadow',
-          artist: 'Sound Opinions',
-          startDate: '2020/05/31',
-          startTime: '10:00:00',
-          endDate: '2020/06/10',
-          endTime: '10:00:00',
-          producerAppId: 'PRX',
-          producerAppVersion: '3.0',
-        },
-      },
+      Chunks: [
+        {
+          ChunkId: 'cart',
+          Version: '0101',
+          CutId: '30000',
+          Title: 'SOUNDOPI: 20191129: 731: 06: Thanksgiving Leftovers & DJ Shadow',
+          Artist: 'Sound Opinions',
+          StartDate: '2020/05/31',
+          StartTime: '10:00:00',
+          EndDate: '2020/06/10',
+          EndTime: '10:00:00',
+          ProducerAppId: 'PRX',
+          ProducerAppVersion: '3.0',
+        }
+      ]
     },
   });
+
+  // console.log("WavWrapLambdaFunction result", result);
+  const cartChunk = result.WavefileChunks[0];
+  expect(cartChunk.chunkId).toEqual('cart');
+  expect(cartChunk.version).toEqual('0101');
+  expect(cartChunk.cutId).toEqual('30000');
+  expect(cartChunk.title).toEqual('SOUNDOPI: 20191129: 731: 06: Thanksgiving Leftovers & DJ Shadow');
+  expect(cartChunk.artist).toEqual('Sound Opinions');
 
   AWS.restore('STS');
   AWS.restore('S3');
