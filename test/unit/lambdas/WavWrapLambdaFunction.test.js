@@ -2,15 +2,20 @@ const AWS = require('aws-sdk-mock');
 const { handler } = require('../../../lambdas/WavWrapLambdaFunction/index');
 
 test('wraps an mp2', async () => {
-  AWS.mock('S3', 'getObject', { Body: Buffer.from(require('fs').readFileSync('test/samples/test.mp2')) });
+  AWS.mock('S3', 'getObject', {
+    Body: Buffer.from(require('fs').readFileSync('test/samples/test.mp2')),
+  });
   AWS.mock('S3', 'upload', true);
-  AWS.mock('STS', 'assumeRole', { Credentials: { SecretAccessKey: 'key', SessionToken: 'token' }});
+  AWS.mock('STS', 'assumeRole', {
+    Credentials: { SecretAccessKey: 'key', SessionToken: 'token' },
+  });
   process.env.S3_DESTINATION_WRITER_ROLE = 'arn:thisisafake';
 
   const result = await handler({
     Artifact: {
       BucketName: 'myStackName-artifactbucket-1hnyu12xzvbel',
-      ObjectKey: 'test000-1111-aaaa-2222-616797212639/c6cd0af8-ac3d-424b-bbb7-fac5f9189a60/test.mp2',
+      ObjectKey:
+        'test000-1111-aaaa-2222-616797212639/c6cd0af8-ac3d-424b-bbb7-fac5f9189a60/test.mp2',
       Descriptor: {
         Extension: 'mp2',
         MIME: 'audio/mpeg',
@@ -31,7 +36,8 @@ test('wraps an mp2', async () => {
           ChunkId: 'cart',
           Version: '0101',
           CutId: '30000',
-          Title: 'SOUNDOPI: 20191129: 731: 06: Thanksgiving Leftovers & DJ Shadow',
+          Title:
+            'SOUNDOPI: 20191129: 731: 06: Thanksgiving Leftovers & DJ Shadow',
           Artist: 'Sound Opinions',
           StartDate: '2020/05/31',
           StartTime: '10:00:00',
@@ -39,8 +45,8 @@ test('wraps an mp2', async () => {
           EndTime: '10:00:00',
           ProducerAppId: 'PRX',
           ProducerAppVersion: '3.0',
-        }
-      ]
+        },
+      ],
     },
   });
 
@@ -49,7 +55,9 @@ test('wraps an mp2', async () => {
   expect(cartChunk.chunkId).toEqual('cart');
   expect(cartChunk.version).toEqual('0101');
   expect(cartChunk.cutId).toEqual('30000');
-  expect(cartChunk.title).toEqual('SOUNDOPI: 20191129: 731: 06: Thanksgiving Leftovers & DJ Shadow');
+  expect(cartChunk.title).toEqual(
+    'SOUNDOPI: 20191129: 731: 06: Thanksgiving Leftovers & DJ Shadow',
+  );
   expect(cartChunk.artist).toEqual('Sound Opinions');
 
   AWS.restore('STS');
