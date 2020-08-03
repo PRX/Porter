@@ -12,3 +12,7 @@ overrides:
   - files: '*.md'
     options:
       tabWidth: 4
+  - files: 'Makefile'
+    options:
+      tabWidth: 4
+      useTabs: true

@@ -29,8 +29,6 @@ Parameters:
     Type: String
   NpmFileTypeLambdaLayerVersionArn:
     Type: String
-  WavefileLambdaLayerVersionArn:
-    Type: String
   TranscodeEcsTaskDefinitionImage:
     Type: String
   EnableSqsJobExecution:
@@ -821,6 +819,16 @@ Resources:
           Value: !Ref AWS::StackName
         - Key: prx:cloudformation:stack-id
           Value: !Ref AWS::StackId
+  # Lambda Layers
+  WavefileLambdaLayer:
+    Type: AWS::Serverless::LayerVersion
+    Metadata:
+      BuildMethod: makefile
+    Properties:
+      Description: wavefile NPM module
+      ContentUri: layers/wavefile
+      CompatibleRuntimes:
+        - nodejs12.x
   # Normalize Input Lambda
   NormalizeInputLambdaIamRole:
     Type: AWS::IAM::Role
@@ -1428,6 +1436,7 @@ Resources:
       Dimensions:
         - Name: LambdaFunctionArn
           Value: !GetAtt ImageTransformLambdaFunction.Arn
+  # WAV Wrap Lambda
   WavWrapLambdaIamRole:
     Type: AWS::IAM::Role
     Properties:
@@ -1463,11 +1472,10 @@ Resources:
       Handler: index.handler
       Layers:
         - !Ref AwsXraySdkLambdaLayerVersionArn
-        - !Ref NpmSharpLambdaLayerVersionArn
-        - !Ref WavefileLambdaLayerVersionArn
+        - !Ref WavefileLambdaLayer
       MemorySize: 3008
       Role: !GetAtt WavWrapLambdaIamRole.Arn
-      Runtime: nodejs10.x
+      Runtime: nodejs12.x
       Tags:
         Project: Porter
         prx:cloudformation:stack-name: !Ref AWS::StackName
