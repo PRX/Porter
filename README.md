@@ -638,7 +638,7 @@ Input:
 
 Output:
 
-````json
+```json
 {
   "Task": "WavWrap",
   "Mode": "AWS/S3",
@@ -717,4 +717,4 @@ The following is an example of the bucket policy used for granting Porter access
     }
   ]
 }
-````
+```
