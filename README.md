@@ -26,7 +26,7 @@ Many input and output methods are supported to allow flexibility with other appl
   - [Image Transform](#image-transform)
   - [Transcode](#transcode)
   - [Transcribe](#transcribe)
-  - [WAV Wrap](#wav-)
+  - [WAV Wrap](#wav-wrap)
 - [Serialized Jobs](#serialized-jobs)
 - [S3 Destination Permissions](#s3-destination-permissions)
 
