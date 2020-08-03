@@ -87,6 +87,7 @@ Resources:
               AWS:
                 - !GetAtt CopyLambdaIamRole.Arn
                 - !GetAtt ImageTransformLambdaIamRole.Arn
+                - !GetAtt WavWrapLambdaIamRole.Arn
                 - !GetAtt TranscriptionJobResultsLambdaIamRole.Arn
                 - !GetAtt CallbackLambdaIamRole.Arn
                 - !GetAtt TranscodeEcsTaskIamRole.Arn
