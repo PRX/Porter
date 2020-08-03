@@ -1,0 +1,40 @@
+{
+  "Job": {
+    "Id": "porter-sample-wav-wrap",
+    "Source": {
+      "Mode": "HTTP",
+      "URL": "https://prx-tech.s3.us-east-1.amazonaws.com/example/test.mp2"
+    },
+    "Tasks": [
+      {
+        "Type": "WavWrap",
+        "Destination": {
+          "Mode": "AWS/S3",
+          "BucketName": "prx-porter-sandbox",
+          "ObjectKey": "dev/sample/wav-wrap/10000.wav",
+          "ContentType": "audio/wav",
+          "Parameters": {
+            "ContentDisposition": "attachment",
+            "Metadata": {
+              "MyMetadataKey": "MyMetadataValue"
+            }
+          }
+        },
+        "Chunks": [
+          {
+            "ChunkId": "cart",
+            "CutId": "30000",
+            "Title": "SOUNDOPI: 20191129: 731: 06: Thanksgiving Leftovers & DJ Shadow on Sampling",
+            "Artist": "Sound Opinions",
+            "StartDate": "2020/05/31",
+            "StartTime": "10:00:00",
+            "EndDate": "2020/06/10",
+            "EndTime": "10:00:00",
+            "ProducerAppId": "PRX",
+            "ProducerAppVersion": "3.0"
+          }
+        ]
+      }
+    ]
+  }
+}

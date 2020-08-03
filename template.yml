@@ -77,6 +77,7 @@ Resources:
               AWS:
                 - !GetAtt CopyLambdaIamRole.Arn
                 - !GetAtt ImageTransformLambdaIamRole.Arn
+                - !GetAtt WavWrapLambdaIamRole.Arn
                 - !GetAtt TranscriptionJobResultsLambdaIamRole.Arn
                 - !GetAtt CallbackLambdaIamRole.Arn
                 - !GetAtt TranscodeEcsTaskIamRole.Arn
@@ -848,7 +849,6 @@ Resources:
       Description: wavefile NPM module
       ContentUri: layers/wavefile
       CompatibleRuntimes:
-        - nodejs10.x
         - nodejs12.x
   FfmpegLambdaLayer:
     Type: AWS::Serverless::LayerVersion
@@ -1430,7 +1430,7 @@ Resources:
     Properties:
       CodeUri: lambdas/ImageTransformLambdaFunction/
       Description: >-
-        Performans image manipulation operations on a source file
+        Performs image manipulation operations on a source file
       Environment:
         Variables:
           S3_DESTINATION_WRITER_ROLE: !GetAtt S3DestinationWriterRole.Arn
@@ -1477,6 +1477,82 @@ Resources:
       Dimensions:
         - Name: LambdaFunctionArn
           Value: !GetAtt ImageTransformLambdaFunction.Arn
+  # WAV Wrap Lambda
+  WavWrapLambdaIamRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+                - lambda.amazonaws.com
+            Action:
+              - sts:AssumeRole
+      ManagedPolicyArns:
+        - !Ref ArtifactBucketReadOnlyAccessPolicy
+        - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+        - arn:aws:iam::aws:policy/AWSXrayWriteOnlyAccess
+      Tags:
+        - Key: Project
+          Value: Porter
+        - Key: prx:cloudformation:stack-name
+          Value: !Ref AWS::StackName
+        - Key: prx:cloudformation:stack-id
+          Value: !Ref AWS::StackId
+  WavWrapLambdaFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: lambdas/WavWrapLambdaFunction/
+      Description: >-
+        WAV wrap a source audio file
+      Environment:
+        Variables:
+          S3_DESTINATION_WRITER_ROLE: !GetAtt S3DestinationWriterRole.Arn
+      Handler: index.handler
+      Layers:
+        - !Ref AwsXraySdkLambdaLayerVersionArn
+        - !Ref WavefileLambdaLayer
+      MemorySize: 3008
+      Role: !GetAtt WavWrapLambdaIamRole.Arn
+      Runtime: nodejs12.x
+      Tags:
+        Project: Porter
+        prx:cloudformation:stack-name: !Ref AWS::StackName
+        prx:cloudformation:stack-id: !Ref AWS::StackId
+      Timeout: 900
+      Tracing: Active
+  WavWrapLambdaLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub /aws/lambda/${WavWrapLambdaFunction}
+      RetentionInDays: 30
+  WavWrapLambdaErrorAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Condition: CreateProductionResources
+    Properties:
+      ActionsEnabled: true
+      AlarmName: '[Porter][WAV][Lambda] Elevated error volume'
+      AlarmActions:
+        - !Ref OpsErrorMessagesSnsTopicArn
+      InsufficientDataActions:
+        - !Ref OpsErrorMessagesSnsTopicArn
+      OKActions:
+        - !Ref OpsErrorMessagesSnsTopicArn
+      AlarmDescription: >-
+        WAV wrap function has encountered an invocation error
+      ComparisonOperator: GreaterThanThreshold
+      EvaluationPeriods: 1
+      MetricName: LambdaFunctionsFailed
+      Namespace: AWS/States
+      Period: 60
+      Statistic: Sum
+      Threshold: 0
+      TreatMissingData: notBreaching
+      Dimensions:
+        - Name: LambdaFunctionArn
+          Value: !GetAtt WavWrapLambdaFunction.Arn
   # Transcribe Start Lambda
   TranscriptionJobStartLambdaIamRole:
     Type: AWS::IAM::Role
@@ -1980,6 +2056,7 @@ Resources:
                   - !GetAtt SourceTypeLambdaFunction.Arn
                   - !GetAtt CopyLambdaFunction.Arn
                   - !GetAtt ImageTransformLambdaFunction.Arn
+                  - !GetAtt WavWrapLambdaFunction.Arn
                   - !GetAtt InspectMediaLambdaFunction.Arn
                   - !GetAtt TranscriptionJobStartLambdaFunction.Arn
                   - !GetAtt TranscriptionJobResultsLambdaFunction.Arn
@@ -2072,6 +2149,7 @@ Resources:
         TranscriptionJobStartLambdaFunctionArn: !GetAtt TranscriptionJobStartLambdaFunction.Arn
         VpcSubnet1: !Ref Subnet1
         VpcSubnet2: !Ref Subnet2
+        WavWrapLambdaFunctionArn: !GetAtt WavWrapLambdaFunction.Arn
       DefinitionUri: state-machine.asl.json
       Role: !GetAtt StateMachineIamRole.Arn
       Tags:

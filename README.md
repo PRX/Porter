@@ -1,32 +1,34 @@
 # Porter
 
-Porter is a general-purpose file processing system. It is designed to work asynchronously – jobs are sent to Porter from other applications, and the results can be returned to the applications via callbacks. It supports a variety of tasks that can be run on the files included in each job. Some are generic tasks (such as copying a file to a new location), and some are specific to certiain file types (such as resizing an image, or transcoding an audio file).
+Porter is a general-purpose file processing system. It is designed to work asynchronously – jobs are sent to Porter from other applications, and the results can be returned to the applications via callbacks. It supports a variety of tasks that can be run on the files included in each job. Some are generic tasks (such as copying a file to a new location), and some are specific to certain file types (such as resizing an image, or transcoding an audio file).
 
-Porter is built on top of [AWS Step Functions](https://aws.amazon.com/step-functions/), as well a number of other AWS services. Each job that is sent to Porter for processing corresponds to a single state machine [execution](https://docs.aws.amazon.com/step-functions/latest/dg/concepts-state-machine-executions.html) of the Step Function. Each Porter job represents one (and only one) input file, which is considered the job's *source file*. Every task that the job definition includes is run against that original source file in parallel.
+Porter is built on top of [AWS Step Functions](https://aws.amazon.com/step-functions/), as well a number of other AWS services. Each job that is sent to Porter for processing corresponds to a single state machine [execution](https://docs.aws.amazon.com/step-functions/latest/dg/concepts-state-machine-executions.html) of the Step Function. Each Porter job represents one (and only one) input file, which is considered the job's _source file_. Every task that the job definition includes is run against that original source file in parallel.
 
 The system is design to be highly scalable, both in terms of the number of jobs that can be processed, as well as the number of tasks an individual job can include. Many of the states that the Step Function orchestrates are built on [AWS Lambda](https://aws.amazon.com/lambda/) and [AWS Fargate](https://aws.amazon.com/fargate/), which are serverless compute platforms and support that scalability. As such, there are no prioritization options or explicit queueing controls available. It can be assumed that jobs begin to execute as soon as they are received by Porter.
 
 Porter utilizes the robust [error handling](https://docs.aws.amazon.com/step-functions/latest/dg/concepts-error-handling.html) and retry logic that Step Functions offer to ensure that tasks are resilient to transient service issues. In cases where a job execution is not able to complete all its tasks, Porter sends callbacks to indicate the failure, and the application must decide how to attempt to retry the work.
 
-Job executions within Porter are not intended to be inspected directly or in real time by other applications. An application that's submitting jobs should be designed to track the state of its jobs based on the callback messages that it has or has not receieved. Callback messages are sent at various points during a job execution, which is explained in more detail [below](#callback-messages).
+Job executions within Porter are not intended to be inspected directly or in real time by other applications. An application that's submitting jobs should be designed to track the state of its jobs based on the callback messages that it has or has not received. Callback messages are sent at various points during a job execution, which is explained in more detail [below](#callback-messages).
 
 Many input and output methods are supported to allow flexibility with other applications. For example, source files can come from HTTP or S3 endpoints, and callback messages can be sent via HTTP, [SNS](https://aws.amazon.com/sns/), and [SQS](https://aws.amazon.com/sqs/). The list of supported source and destination methods will grow over time; see below for a more complete list of methods that each aspect of the job execution support.
 
 ### Table of Contents
-- [Introduction](#porter)
-- [Execution Model](#execution-model)
-- [Messaging I/O](#messaging-io)
-    - [Starting a Job](#starting-a-job)
-    - [Input Message Format](#input-message-format)
-    - [Callback Messages](#callback-messages)
-- [Tasks](#tasks)
-    - [Inspect](#inspect)
-    - [Copy](#copy)
-    - [Image Transform](#image-transform)
-    - [Transcode](#transcode)
-    - [Transcribe](#transcribe)
-- [Serialized Jobs](#serialized-jobs)
-- [S3 Destination Permissions](#s3-destination-permissions)
+
+-   [Introduction](#porter)
+-   [Execution Model](#execution-model)
+-   [Messaging I/O](#messaging-io)
+    -   [Starting a Job](#starting-a-job)
+    -   [Input Message Format](#input-message-format)
+    -   [Callback Messages](#callback-messages)
+-   [Tasks](#tasks)
+    -   [Inspect](#inspect)
+    -   [Copy](#copy)
+    -   [Image Transform](#image-transform)
+    -   [Transcode](#transcode)
+    -   [Transcribe](#transcribe)
+    -   [WAV Wrap](#wav-wrap)
+-   [Serialized Jobs](#serialized-jobs)
+-   [S3 Destination Permissions](#s3-destination-permissions)
 
 ## Execution Model
 
@@ -93,7 +95,7 @@ Input messages are represented as JSON data. The root JSON object must include a
                 "Type": "AWS/SNS",
                 "Topic": "arn:aws:sns:us-east-1:123456789012:my-callback-topic"
             }
-        ],
+        ]
     }
 }
 ```
@@ -116,12 +118,11 @@ A job's source is the file that all tasks in the job will be performed on. One i
 
 `AWS/S3` callbacks require both the `BucketName` and `ObjectPrefix` properties. Each callback result will be written to S3 individually (i.e., one file for each task result, and one file for the job result). The object name will be one of the following:
 
-- `[ObjectPrefix][Execution ID]/job_received.json`
-- `[ObjectPrefix][Execution ID]/job_result.json`
-- `[ObjectPrefix][Execution ID]/task_result.[index].json`
+-   `[ObjectPrefix][Execution ID]/job_received.json`
+-   `[ObjectPrefix][Execution ID]/job_result.json`
+-   `[ObjectPrefix][Execution ID]/task_result.[index].json`
 
 The `ObjectPrefix` property is required, but it can be an empty string, which will result in no prefix being added. An example of a prefix would be `porter_results/`, though the trailing slash is also not required. The `index` value in a task result's file name matches the index of that task from the original job (zero-based numbering). The `Execution ID` is only the final segment of the execution ID ARN.
-
 
 ### Callback Messages
 
@@ -217,11 +218,11 @@ Callbacks are also sent when the job completes. Job callbacks can be identified 
 
 Each job result will include a `State`, which will be one of the following values:
 
-- `"DONE"`
-- `"NORMALIZE_INPUT_ERROR"`
-- `"SOURCE_FILE_INGEST_ERROR"`
-- `"SOURCE_FILE_TYPE_DETECTION_ERROR"`
-- `"ITERATOR_ERROR"`
+-   `"DONE"`
+-   `"NORMALIZE_INPUT_ERROR"`
+-   `"SOURCE_FILE_INGEST_ERROR"`
+-   `"SOURCE_FILE_TYPE_DETECTION_ERROR"`
+-   `"ITERATOR_ERROR"`
 
 `Done` indicates that the job was able to attempt all the tasks. This is **not** an indication that all the tasks were successful. The other states will appear if an execution step prior to the tasks running fails. `SOURCE_FILE_INGEST_ERROR`, for example, indicates that the artifact copy of the source file couldn't be created.
 
@@ -360,7 +361,8 @@ All jobs included directly as members of `SerializedJobs` are started simultaneo
                         "ObjectKey": "130224.mp2"
                     }
                 }
-            }, {
+            },
+            {
                 "Job": {
                     "Id": "1234567890asdfghjkl",
                     "Source": {
@@ -373,7 +375,6 @@ All jobs included directly as members of `SerializedJobs` are started simultaneo
         ]
     }
 }
-
 ```
 
 ## Tasks
@@ -386,7 +387,7 @@ The `Time` and `Timestamp` in the output represent approximately when the file f
 
 #### AWS/S3
 
- S3 copy operations are done by the [copyObject()](https://docs.aws.amazon.com/AWSJavaScriptSDK/latest/AWS/S3.html#copyObject-property) method in the AWS Node SDK. Copying files larger than 5 GB is not supported by the AWS API.
+S3 copy operations are done by the [copyObject()](https://docs.aws.amazon.com/AWSJavaScriptSDK/latest/AWS/S3.html#copyObject-property) method in the AWS Node SDK. Copying files larger than 5 GB is not supported by the AWS API.
 
 The `BucketName` and `ObjectKey` properties are required.
 
@@ -449,7 +450,7 @@ By default all image metadata (EXIF, XMP, IPTC, etc) is stripped away during pro
 
 #### AWS/S3
 
- S3 image destinations are done by the [upload()](https://docs.aws.amazon.com/AWSJavaScriptSDK/latest/AWS/S3.html#upload-property) method in the AWS Node SDK.
+S3 image destinations are done by the [upload()](https://docs.aws.amazon.com/AWSJavaScriptSDK/latest/AWS/S3.html#upload-property) method in the AWS Node SDK.
 
 The `BucketName` and `ObjectKey` properties are required.
 
@@ -594,6 +595,95 @@ Output:
     "ObjectKey": "myTranscript.json"
 }
 ```
+
+### WAV Wrap
+
+`WavWrap` tasks create a [WAV](https://en.wikipedia.org/wiki/WAV) file from an audio artifact, and apply data to specific chunks of the WAV wrapper.
+
+It accepts MPEG audio files, and any of the chunks supported by [prx-wavefile](https://github.com/PRX/prx-wavefile) including all Broadcast Wave Format chunks and `cart` chunks.
+
+`prx-wavefile` will attempt to set the `fmt`, `mext`, `bext`, `fact`, and `data` chunks from the source file, e.g. analyzing the mpeg audio to set the `fmt` sample rate, bit rate, and number of channels.
+
+The `cart` chunk is optional, and won't be set unless it's included in the `Task.Chunks` array, as in the example below.
+
+The Output includes a `WavfileChunks` array with the attributes set on the `prx-wavefile` chunks.
+
+Input:
+
+```json
+{
+    "Type": "WavWrap",
+    "Destination": {
+        "Mode": "AWS/S3",
+        "BucketName": "myBucket",
+        "ObjectKey": "myTranscript.json"
+    },
+    "Chunks": [
+        {
+            "ChunkId": "cart",
+            "Version": "0101",
+            "CutId": "12345",
+            "Title": "Title",
+            "Artist": "Artist",
+            "StartDate": "2020/01/01",
+            "StartTime": "00:00:00",
+            "EndDate": "2020/01/14",
+            "EndTime": "00:00:00",
+            "ProducerAppId": "PRX",
+            "ProducerAppVersion": "3.0"
+        }
+    ]
+}
+```
+
+Output:
+
+```json
+{
+    "Task": "WavWrap",
+    "Mode": "AWS/S3",
+    "BucketName": "myBucket",
+    "ObjectKey": "myTranscript.json",
+    "Time": "2012-12-21T12:34:56Z",
+    "Timestamp": 1356093296.123,
+    "WavefileChunks": [
+        {
+            "chunkId": "cart",
+            "chunkSize": 2048,
+            "version": "0101",
+            "title": "Title",
+            "artist": "Artist",
+            "cutId": "12345",
+            "clientId": "",
+            "category": "",
+            "classification": "",
+            "outCue": "",
+            "startDate": "2020/01/01",
+            "startTime": "00:00:00",
+            "endDate": "2020/01/14",
+            "endTime": "10:00:00",
+            "producerAppId": "PRX",
+            "producerAppVersion": "3.0",
+            "userDef": "",
+            "levelReference": 0,
+            "postTimer": [],
+            "reserved": "",
+            "url": "",
+            "tagText": ""
+        }
+    ]
+}
+```
+
+#### AWS/S3
+
+S3 destinations are done by the [upload()](https://docs.aws.amazon.com/AWSJavaScriptSDK/latest/AWS/S3.html#upload-property) method in the AWS Node SDK.
+
+The `BucketName` and `ObjectKey` properties are required.
+
+To set metadata on the new audio file object, use the optional `Parameters` property on the destination. The contents of `Parameters` are passed directly to the [upload()](https://docs.aws.amazon.com/AWSJavaScriptSDK/latest/AWS/S3.html#upload-property) method.
+
+If you set the optional `ContentType` property to `REPLACE`, the content type of the newly created audio file will be set to a [heuristically-determined](https://www.npmjs.com/package/file-type) value from the job's source file. If the content type could not be determined heuristically, this property has no effect. If a `ContentType` value is explicitly defined in `Parameters` that value will take precedence.
 
 ## S3 Destination Permissions
 

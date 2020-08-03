@@ -9,3 +9,10 @@ overrides:
   - files: '*.asl.json'
     options:
       parser: json
+  - files: '*.md'
+    options:
+      tabWidth: 4
+  - files: 'Makefile'
+    options:
+      tabWidth: 4
+      useTabs: true
