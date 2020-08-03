@@ -2007,6 +2007,7 @@ Resources:
                   - !GetAtt SourceTypeLambdaFunction.Arn
                   - !GetAtt CopyLambdaFunction.Arn
                   - !GetAtt ImageTransformLambdaFunction.Arn
+                  - !GetAtt WavWrapLambdaFunction.Arn
                   - !GetAtt InspectMediaLambdaFunction.Arn
                   - !GetAtt TranscriptionJobStartLambdaFunction.Arn
                   - !GetAtt TranscriptionJobResultsLambdaFunction.Arn
