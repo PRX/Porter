@@ -1428,7 +1428,6 @@ Resources:
       Dimensions:
         - Name: LambdaFunctionArn
           Value: !GetAtt ImageTransformLambdaFunction.Arn
-  # Image Manipulation Lambda
   WavWrapLambdaIamRole:
     Type: AWS::IAM::Role
     Properties:
@@ -1442,7 +1441,6 @@ Resources:
             Action:
               - sts:AssumeRole
       ManagedPolicyArns:
-        # Image operations are always fetching from the artifact bucket
         - !Ref ArtifactBucketReadOnlyAccessPolicy
         - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
         - arn:aws:iam::aws:policy/AWSXrayWriteOnlyAccess
