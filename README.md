@@ -14,21 +14,21 @@ Many input and output methods are supported to allow flexibility with other appl
 
 ### Table of Contents
 
-- [Introduction](#porter)
-- [Execution Model](#execution-model)
-- [Messaging I/O](#messaging-io)
-  - [Starting a Job](#starting-a-job)
-  - [Input Message Format](#input-message-format)
-  - [Callback Messages](#callback-messages)
-- [Tasks](#tasks)
-  - [Inspect](#inspect)
-  - [Copy](#copy)
-  - [Image Transform](#image-transform)
-  - [Transcode](#transcode)
-  - [Transcribe](#transcribe)
-  - [WAV Wrap](#wav-wrap)
-- [Serialized Jobs](#serialized-jobs)
-- [S3 Destination Permissions](#s3-destination-permissions)
+-   [Introduction](#porter)
+-   [Execution Model](#execution-model)
+-   [Messaging I/O](#messaging-io)
+    -   [Starting a Job](#starting-a-job)
+    -   [Input Message Format](#input-message-format)
+    -   [Callback Messages](#callback-messages)
+-   [Tasks](#tasks)
+    -   [Inspect](#inspect)
+    -   [Copy](#copy)
+    -   [Image Transform](#image-transform)
+    -   [Transcode](#transcode)
+    -   [Transcribe](#transcribe)
+    -   [WAV Wrap](#wav-wrap)
+-   [Serialized Jobs](#serialized-jobs)
+-   [S3 Destination Permissions](#s3-destination-permissions)
 
 ## Execution Model
 
@@ -78,25 +78,25 @@ Input messages are represented as JSON data. The root JSON object must include a
 
 ```json
 {
-  "Job": {
-    "Id": "1234567890asdfghjkl",
-    "Source": {
-      "Mode": "AWS/S3",
-      "BucketName": "myBucket",
-      "ObjectKey": "myObject.jpg"
-    },
-    "Tasks": [
-      {
-        "Type": "Inspect"
-      }
-    ],
-    "Callbacks": [
-      {
-        "Type": "AWS/SNS",
-        "Topic": "arn:aws:sns:us-east-1:123456789012:my-callback-topic"
-      }
-    ]
-  }
+    "Job": {
+        "Id": "1234567890asdfghjkl",
+        "Source": {
+            "Mode": "AWS/S3",
+            "BucketName": "myBucket",
+            "ObjectKey": "myObject.jpg"
+        },
+        "Tasks": [
+            {
+                "Type": "Inspect"
+            }
+        ],
+        "Callbacks": [
+            {
+                "Type": "AWS/SNS",
+                "Topic": "arn:aws:sns:us-east-1:123456789012:my-callback-topic"
+            }
+        ]
+    }
 }
 ```
 
@@ -118,9 +118,9 @@ A job's source is the file that all tasks in the job will be performed on. One i
 
 `AWS/S3` callbacks require both the `BucketName` and `ObjectPrefix` properties. Each callback result will be written to S3 individually (i.e., one file for each task result, and one file for the job result). The object name will be one of the following:
 
-- `[ObjectPrefix][Execution ID]/job_received.json`
-- `[ObjectPrefix][Execution ID]/job_result.json`
-- `[ObjectPrefix][Execution ID]/task_result.[index].json`
+-   `[ObjectPrefix][Execution ID]/job_received.json`
+-   `[ObjectPrefix][Execution ID]/job_result.json`
+-   `[ObjectPrefix][Execution ID]/task_result.[index].json`
 
 The `ObjectPrefix` property is required, but it can be an empty string, which will result in no prefix being added. An example of a prefix would be `porter_results/`, though the trailing slash is also not required. The `index` value in a task result's file name matches the index of that task from the original job (zero-based numbering). The `Execution ID` is only the final segment of the execution ID ARN.
 
@@ -136,17 +136,17 @@ Callbacks are sent when a job has been received (after the input has been normal
 
 ```json
 {
-  "Time": "2012-12-21T12:34:56Z",
-  "Timestamp": 1356093296.123,
-  "JobReceived": {
-    "Job": {
-      "Id": "1234567890asdfghjkl"
-    },
-    "Execution": {
-      "Id": "arn:aws:states:us-east-1:561178107736:execution:StateMachine-cvPVX5enHWdj:221672a9-ada6-483f-a5a7-ccffd4eee8c5"
-    },
-    "State": "RECEIVED"
-  }
+    "Time": "2012-12-21T12:34:56Z",
+    "Timestamp": 1356093296.123,
+    "JobReceived": {
+        "Job": {
+            "Id": "1234567890asdfghjkl"
+        },
+        "Execution": {
+            "Id": "arn:aws:states:us-east-1:561178107736:execution:StateMachine-cvPVX5enHWdj:221672a9-ada6-483f-a5a7-ccffd4eee8c5"
+        },
+        "State": "RECEIVED"
+    }
 }
 ```
 
@@ -187,26 +187,26 @@ The JSON message for a failed task will have an `Error` key rather than a `Resul
 
 ```json
 {
-  "Time": "2012-12-21T12:34:56Z",
-  "Timestamp": 1356093296.123,
-  "Task": {
-    "Type": "Copy",
-    "Mode": "AWS/S3",
-    "BucketName": "myBucket",
-    "ObjectKey": "myObject.ext"
-  },
-  "TaskResult": {
-    "Job": {
-      "Id": "1234567890asdfghjkl"
+    "Time": "2012-12-21T12:34:56Z",
+    "Timestamp": 1356093296.123,
+    "Task": {
+        "Type": "Copy",
+        "Mode": "AWS/S3",
+        "BucketName": "myBucket",
+        "ObjectKey": "myObject.ext"
     },
-    "Execution": {
-      "Id": "arn:aws:states:us-east-1:561178107736:execution:StateMachine-cvPVX5enHWdj:221672a9-ada6-483f-a5a7-ccffd4eee8c5"
-    },
-    "Error": {
-      "Error": "…",
-      "Cause": "…"
+    "TaskResult": {
+        "Job": {
+            "Id": "1234567890asdfghjkl"
+        },
+        "Execution": {
+            "Id": "arn:aws:states:us-east-1:561178107736:execution:StateMachine-cvPVX5enHWdj:221672a9-ada6-483f-a5a7-ccffd4eee8c5"
+        },
+        "Error": {
+            "Error": "…",
+            "Cause": "…"
+        }
     }
-  }
 }
 ```
 
@@ -218,11 +218,11 @@ Callbacks are also sent when the job completes. Job callbacks can be identified 
 
 Each job result will include a `State`, which will be one of the following values:
 
-- `"DONE"`
-- `"NORMALIZE_INPUT_ERROR"`
-- `"SOURCE_FILE_INGEST_ERROR"`
-- `"SOURCE_FILE_TYPE_DETECTION_ERROR"`
-- `"ITERATOR_ERROR"`
+-   `"DONE"`
+-   `"NORMALIZE_INPUT_ERROR"`
+-   `"SOURCE_FILE_INGEST_ERROR"`
+-   `"SOURCE_FILE_TYPE_DETECTION_ERROR"`
+-   `"ITERATOR_ERROR"`
 
 `Done` indicates that the job was able to attempt all the tasks. This is **not** an indication that all the tasks were successful. The other states will appear if an execution step prior to the tasks running fails. `SOURCE_FILE_INGEST_ERROR`, for example, indicates that the artifact copy of the source file couldn't be created.
 
@@ -306,19 +306,19 @@ This is an example of a job that included two tasks, but whose source file could
 
 ```json
 {
-  "Time": "2012-12-21T12:34:56Z",
-  "Timestamp": 1356093296.123,
-  "JobResult": {
-    "Job": {
-      "Id": "1234567890asdfghjkl"
-    },
-    "Execution": {
-      "Id": "arn:aws:states:us-east-1:561178107736:execution:StateMachine-cvPVX5enHWdj:221672a9-ada6-483f-a5a7-ccffd4eee8c5"
-    },
-    "State": "SOURCE_FILE_INGEST_ERROR",
-    "FailedTasks": [],
-    "TaskResults": []
-  }
+    "Time": "2012-12-21T12:34:56Z",
+    "Timestamp": 1356093296.123,
+    "JobResult": {
+        "Job": {
+            "Id": "1234567890asdfghjkl"
+        },
+        "Execution": {
+            "Id": "arn:aws:states:us-east-1:561178107736:execution:StateMachine-cvPVX5enHWdj:221672a9-ada6-483f-a5a7-ccffd4eee8c5"
+        },
+        "State": "SOURCE_FILE_INGEST_ERROR",
+        "FailedTasks": [],
+        "TaskResults": []
+    }
 }
 ```
 
@@ -344,36 +344,36 @@ All jobs included directly as members of `SerializedJobs` are started simultaneo
 
 ```json
 {
-  "Job": {
-    "Id": "1234567890asdfghjkl",
-    "Source": {
-      "Mode": "AWS/S3",
-      "BucketName": "farski-sandbox-prx",
-      "ObjectKey": "130224.mp2"
-    },
-    "SerializedJobs": [
-      {
-        "Job": {
-          "Id": "1234567890asdfghjkl",
-          "Source": {
+    "Job": {
+        "Id": "1234567890asdfghjkl",
+        "Source": {
             "Mode": "AWS/S3",
             "BucketName": "farski-sandbox-prx",
             "ObjectKey": "130224.mp2"
-          }
-        }
-      },
-      {
-        "Job": {
-          "Id": "1234567890asdfghjkl",
-          "Source": {
-            "Mode": "AWS/S3",
-            "BucketName": "farski-sandbox-prx",
-            "ObjectKey": "130224.mp2"
-          }
-        }
-      }
-    ]
-  }
+        },
+        "SerializedJobs": [
+            {
+                "Job": {
+                    "Id": "1234567890asdfghjkl",
+                    "Source": {
+                        "Mode": "AWS/S3",
+                        "BucketName": "farski-sandbox-prx",
+                        "ObjectKey": "130224.mp2"
+                    }
+                }
+            },
+            {
+                "Job": {
+                    "Id": "1234567890asdfghjkl",
+                    "Source": {
+                        "Mode": "AWS/S3",
+                        "BucketName": "farski-sandbox-prx",
+                        "ObjectKey": "130224.mp2"
+                    }
+                }
+            }
+        ]
+    }
 }
 ```
 
@@ -399,10 +399,10 @@ Input:
 
 ```json
 {
-  "Type": "Copy",
-  "Mode": "AWS/S3",
-  "BucketName": "myBucket",
-  "ObjectKey": "myObject.ext"
+    "Type": "Copy",
+    "Mode": "AWS/S3",
+    "BucketName": "myBucket",
+    "ObjectKey": "myObject.ext"
 }
 ```
 
@@ -410,19 +410,19 @@ Input with additional parameters:
 
 ```json
 {
-  "Type": "Copy",
-  "Mode": "AWS/S3",
-  "BucketName": "myBucket",
-  "ObjectKey": "myObject.ext",
-  "ContentType": "REPLACE",
-  "Parameters": {
-    "ACL": "public-read",
-    "ContentDisposition": "attachment",
-    "Metadata": {
-      "MyMetadataKey": "MyMetadataValue"
-    },
-    "MetadataDirective": "REPLACE"
-  }
+    "Type": "Copy",
+    "Mode": "AWS/S3",
+    "BucketName": "myBucket",
+    "ObjectKey": "myObject.ext",
+    "ContentType": "REPLACE",
+    "Parameters": {
+        "ACL": "public-read",
+        "ContentDisposition": "attachment",
+        "Metadata": {
+            "MyMetadataKey": "MyMetadataValue"
+        },
+        "MetadataDirective": "REPLACE"
+    }
 }
 ```
 
@@ -430,11 +430,11 @@ Output:
 
 ```json
 {
-  "Task": "Copy",
-  "BucketName": "myBucket",
-  "ObjectKey": "myObject.ext",
-  "Time": "2012-12-21T12:34:56Z",
-  "Timestamp": 1356093296.123
+    "Task": "Copy",
+    "BucketName": "myBucket",
+    "ObjectKey": "myObject.ext",
+    "Time": "2012-12-21T12:34:56Z",
+    "Timestamp": 1356093296.123
 }
 ```
 
@@ -462,27 +462,27 @@ Input:
 
 ```json
 {
-  "Type": "Image",
-  "Format": "png",
-  "Metadata": "PRESERVE",
-  "Resize": {
-    "Fit": "cover",
-    "Height": 300,
-    "Position": "centre",
-    "Width": 300
-  },
-  "Destination": {
-    "Mode": "AWS/S3",
-    "BucketName": "myBucket",
-    "ObjectKey": "myObject.png",
-    "ContentType": "REPLACE",
-    "Parameters": {
-      "ContentDisposition": "attachment",
-      "Metadata": {
-        "MyMetadataKey": "MyMetadataValue"
-      }
+    "Type": "Image",
+    "Format": "png",
+    "Metadata": "PRESERVE",
+    "Resize": {
+        "Fit": "cover",
+        "Height": 300,
+        "Position": "centre",
+        "Width": 300
+    },
+    "Destination": {
+        "Mode": "AWS/S3",
+        "BucketName": "myBucket",
+        "ObjectKey": "myObject.png",
+        "ContentType": "REPLACE",
+        "Parameters": {
+            "ContentDisposition": "attachment",
+            "Metadata": {
+                "MyMetadataKey": "MyMetadataValue"
+            }
+        }
     }
-  }
 }
 ```
 
@@ -490,11 +490,11 @@ Output:
 
 ```json
 {
-  "Task": "Image",
-  "BucketName": "myBucket",
-  "ObjectKey": "myObject.ext",
-  "Time": "2012-12-21T12:34:56Z",
-  "Timestamp": 1356093296.123
+    "Task": "Image",
+    "BucketName": "myBucket",
+    "ObjectKey": "myObject.ext",
+    "Time": "2012-12-21T12:34:56Z",
+    "Timestamp": 1356093296.123
 }
 ```
 
@@ -512,21 +512,21 @@ Input:
 
 ```json
 {
-  "Type": "Transcode",
-  "Format": "flac",
-  "FFmpeg": {
-    "GlobalOptions": "-loglevel info",
-    "InputFileOptions": "-t 500",
-    "OutputFileOptions": "-metadata title=some_title"
-  },
-  "Destination": {
-    "Mode": "AWS/S3",
-    "BucketName": "myBucket",
-    "ObjectKey": "myObject.flac",
-    "Parameters": {
-      "ContentType": "audio/flac"
+    "Type": "Transcode",
+    "Format": "flac",
+    "FFmpeg": {
+        "GlobalOptions": "-loglevel info",
+        "InputFileOptions": "-t 500",
+        "OutputFileOptions": "-metadata title=some_title"
+    },
+    "Destination": {
+        "Mode": "AWS/S3",
+        "BucketName": "myBucket",
+        "ObjectKey": "myObject.flac",
+        "Parameters": {
+            "ContentType": "audio/flac"
+        }
     }
-  }
 }
 ```
 
@@ -534,9 +534,9 @@ Output:
 
 ```json
 {
-  "Task": "Transcode",
-  "BucketName": "myBucket",
-  "ObjectKey": "myObject.flac"
+    "Task": "Transcode",
+    "BucketName": "myBucket",
+    "ObjectKey": "myObject.flac"
 }
 ```
 
@@ -548,7 +548,7 @@ Input:
 
 ```json
 {
-  "Type": "Inspect"
+    "Type": "Inspect"
 }
 ```
 
@@ -575,14 +575,14 @@ Input:
 
 ```json
 {
-  "Type": "Transcribe",
-  "LanguageCode": "en-US",
-  "MediaFormat": "mp3",
-  "Destination": {
-    "Mode": "AWS/S3",
-    "BucketName": "myBucket",
-    "ObjectKey": "myTranscript.json"
-  }
+    "Type": "Transcribe",
+    "LanguageCode": "en-US",
+    "MediaFormat": "mp3",
+    "Destination": {
+        "Mode": "AWS/S3",
+        "BucketName": "myBucket",
+        "ObjectKey": "myTranscript.json"
+    }
 }
 ```
 
@@ -590,9 +590,9 @@ Output:
 
 ```json
 {
-  "Task": "Transcribe",
-  "BucketName": "myBucket",
-  "ObjectKey": "myTranscript.json"
+    "Task": "Transcribe",
+    "BucketName": "myBucket",
+    "ObjectKey": "myTranscript.json"
 }
 ```
 
@@ -612,27 +612,27 @@ Input:
 
 ```json
 {
-  "Type": "WavWrap",
-  "Destination": {
-    "Mode": "AWS/S3",
-    "BucketName": "myBucket",
-    "ObjectKey": "myTranscript.json"
-  },
-  "Chunks": [
-    {
-      "ChunkId": "cart",
-      "Version": "0101",
-      "CutId": "12345",
-      "Title": "Title",
-      "Artist": "Artist",
-      "StartDate": "2020/01/01",
-      "StartTime": "00:00:00",
-      "EndDate": "2020/01/14",
-      "EndTime": "00:00:00",
-      "ProducerAppId": "PRX",
-      "ProducerAppVersion": "3.0"
-    }
-  ]
+    "Type": "WavWrap",
+    "Destination": {
+        "Mode": "AWS/S3",
+        "BucketName": "myBucket",
+        "ObjectKey": "myTranscript.json"
+    },
+    "Chunks": [
+        {
+            "ChunkId": "cart",
+            "Version": "0101",
+            "CutId": "12345",
+            "Title": "Title",
+            "Artist": "Artist",
+            "StartDate": "2020/01/01",
+            "StartTime": "00:00:00",
+            "EndDate": "2020/01/14",
+            "EndTime": "00:00:00",
+            "ProducerAppId": "PRX",
+            "ProducerAppVersion": "3.0"
+        }
+    ]
 }
 ```
 
@@ -640,38 +640,38 @@ Output:
 
 ```json
 {
-  "Task": "WavWrap",
-  "Mode": "AWS/S3",
-  "BucketName": "myBucket",
-  "ObjectKey": "myTranscript.json",
-  "Time": "2012-12-21T12:34:56Z",
-  "Timestamp": 1356093296.123,
-  "WavefileChunks": [
-    {
-      "chunkId": "cart",
-      "chunkSize": 2048,
-      "version": "0101",
-      "title": "Title",
-      "artist": "Artist",
-      "cutId": "12345",
-      "clientId": "",
-      "category": "",
-      "classification": "",
-      "outCue": "",
-      "startDate": "2020/01/01",
-      "startTime": "00:00:00",
-      "endDate": "2020/01/14",
-      "endTime": "10:00:00",
-      "producerAppId": "PRX",
-      "producerAppVersion": "3.0",
-      "userDef": "",
-      "levelReference": 0,
-      "postTimer": [],
-      "reserved": "",
-      "url": "",
-      "tagText": ""
-    }
-  ]
+    "Task": "WavWrap",
+    "Mode": "AWS/S3",
+    "BucketName": "myBucket",
+    "ObjectKey": "myTranscript.json",
+    "Time": "2012-12-21T12:34:56Z",
+    "Timestamp": 1356093296.123,
+    "WavefileChunks": [
+        {
+            "chunkId": "cart",
+            "chunkSize": 2048,
+            "version": "0101",
+            "title": "Title",
+            "artist": "Artist",
+            "cutId": "12345",
+            "clientId": "",
+            "category": "",
+            "classification": "",
+            "outCue": "",
+            "startDate": "2020/01/01",
+            "startTime": "00:00:00",
+            "endDate": "2020/01/14",
+            "endTime": "10:00:00",
+            "producerAppId": "PRX",
+            "producerAppVersion": "3.0",
+            "userDef": "",
+            "levelReference": 0,
+            "postTimer": [],
+            "reserved": "",
+            "url": "",
+            "tagText": ""
+        }
+    ]
 }
 ```
 
@@ -693,28 +693,28 @@ The following is an example of the bucket policy used for granting Porter access
 
 ```json
 {
-  "Version": "2012-10-17",
-  "Statement": [
-    {
-      "Effect": "Allow",
-      "Principal": {
-        "AWS": "arn:aws:iam::123456789012:role/porter-prod-S3DestinationWriterRole-TKTKTKTKTK"
-      },
-      "Action": "s3:ListBucketMultipartUploads",
-      "Resource": "arn:aws:s3:::myBucket"
-    },
-    {
-      "Effect": "Allow",
-      "Principal": {
-        "AWS": "arn:aws:iam::123456789012:role/porter-prod-S3DestinationWriterRole-TKTKTKTKTK"
-      },
-      "Action": [
-        "s3:PutObject*",
-        "s3:AbortMultipartUpload",
-        "s3:ListMultipartUploadParts"
-      ],
-      "Resource": "arn:aws:s3:::myBucket/*"
-    }
-  ]
+    "Version": "2012-10-17",
+    "Statement": [
+        {
+            "Effect": "Allow",
+            "Principal": {
+                "AWS": "arn:aws:iam::123456789012:role/porter-prod-S3DestinationWriterRole-TKTKTKTKTK"
+            },
+            "Action": "s3:ListBucketMultipartUploads",
+            "Resource": "arn:aws:s3:::myBucket"
+        },
+        {
+            "Effect": "Allow",
+            "Principal": {
+                "AWS": "arn:aws:iam::123456789012:role/porter-prod-S3DestinationWriterRole-TKTKTKTKTK"
+            },
+            "Action": [
+                "s3:PutObject*",
+                "s3:AbortMultipartUpload",
+                "s3:ListMultipartUploadParts"
+            ],
+            "Resource": "arn:aws:s3:::myBucket/*"
+        }
+    ]
 }
 ```

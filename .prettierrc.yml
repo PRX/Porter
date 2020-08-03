@@ -9,3 +9,6 @@ overrides:
   - files: '*.asl.json'
     options:
       parser: json
+  - files: '*.md'
+    options:
+      tabWidth: 4
