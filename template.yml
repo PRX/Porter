@@ -2197,3 +2197,5 @@ Outputs:
     Value: !Ref JobExecutionSqsQueue
   S3DestinationWriterRoleArn:
     Value: !GetAtt S3DestinationWriterRole.Arn
+  IngestLambdaIamRoleArn:
+    Value: !GetAtt IngestLambdaIamRole.Arn
