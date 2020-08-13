@@ -110,7 +110,7 @@ A job's source is the file that all tasks in the job will be performed on. One i
 
 ##### S3 Read Permissions
 
-The IAM role used to access S3 objects defined as job source files has `s3:GetObject*` to all (`*`) resources. This should provide read access to any files in the same AWS that Porter is deployed into (unless bucket policies are in place to prevent it). For source files in buckets in a different account, a bucket policy must exist that grants the role access to the source file object.
+The IAM role used to access S3 objects defined as job source files has `s3:GetObject*` to all (`*`) resources. This should provide read access to any files in the same AWS account that Porter is deployed into (unless bucket policies are in place to prevent it). For source files in buckets in a different account, a bucket policy must exist that grants the role access to the source file object.
 
 The role's ARN is published as an output on the CloudFormation stack. The following example bucket policy gives the role read access to all objects in a bucket:
 
