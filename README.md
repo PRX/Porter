@@ -108,6 +108,28 @@ The job ID is a user-defined value, and does not need to be unique. It is distin
 
 A job's source is the file that all tasks in the job will be performed on. One immutable copy of the source file is made for every Porter job execution, and each tasks uses that copy to do its work. `Source.Mode` is required and indicates the protocol used to fetch the source file. When the mode is set to `S3`, `Source.BucketName` and `Source.ObjectKey` are also required. When the mode is set to `HTTP`, `Source.URL` is also required, which can use either an `http://` or `https://` protocol.
 
+##### S3 Read Permissions
+
+The IAM role used to access S3 objects defined as job source files has `s3:GetObject*` to all (`*`) resources. This should provide read access to any files in the same AWS that Porter is deployed into (unless bucket policies are in place to prevent it). For source files in buckets in a different account, a bucket policy must exist that grants the role access to the source file object.
+
+The role's ARN is published as an output on the CloudFormation stack. The following example bucket policy gives the role read access to all objects in a bucket:
+
+```json
+{
+    "Version": "2012-10-17",
+    "Statement": [
+        {
+            "Effect": "Allow",
+            "Principal": {
+                "AWS": "arn:aws:iam::123456789012:role/porter-prod-IngestLambdaIamRole-TKTKTKTKTK"
+            },
+            "Action": "s3:GetObject",
+            "Resource": "arn:aws:s3:::myBucket/*"
+        }
+    ]
+}
+```
+
 #### Job Tasks
 
 `Tasks` is an array of individual operations the state machine should perform. Every member of the array should be an object with a `Type` property. Valid types are: [`Inspect`](#inspect), [`Copy`](#copy), [`Image`](#image-transform), [`Transcode`](#transcode), [`Transcribe`](#transcribe). Tasks with invalid types are ignored. The other properties of any given task are determined by their type (see below).
