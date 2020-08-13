@@ -294,7 +294,7 @@ Here's an example of a job that had no errors:
 }
 ```
 
-Here's an example of a job that included one successful task and one failed task. Please note that `TaskResults` have a `Task` key, and `TaskErrors` have a `Type` key.
+Here's an example of a job that included one successful task and one failed task. Please note that `TaskResults` have a `Task` key, and `FailedTasks` have a `Type` key.
 
 ```json
 {
@@ -310,7 +310,7 @@ Here's an example of a job that included one successful task and one failed task
         "State": "DONE",
         "FailedTasks": [
             {
-                "Task": "Copy"
+                "Type": "Copy"
                 (Additional task-specific results)
             }
         ],
