@@ -300,7 +300,8 @@
                       {
                         "Name": "STATE_MACHINE_DESTINATION_JSON",
                         "Value.$": "$.JSON.Destination"
-                      },
+                      }
+                    ],
                     "Name": "${FtpCopyContainerName}"
                   }
                 ]
