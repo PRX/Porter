@@ -798,6 +798,117 @@ Resources:
         - Key: prx:cloudformation:stack-id
           Value: !Ref AWS::StackId
       TaskRoleArn: !GetAtt TranscodeEcsTaskIamRole.Arn
+  # FTP Copy ECS Service
+  FtpCopyEcsTaskLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      RetentionInDays: 14
+  FtpCopyEcsTaskExecutionIamRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Action:
+              - sts:AssumeRole
+            Effect: Allow
+            Principal:
+              Service:
+                - ecs-tasks.amazonaws.com
+      Description: String
+      Policies:
+        # https://docs.aws.amazon.com/AmazonECS/latest/developerguide/task_execution_IAM_role.html#task-execution-ecr-conditionkeys
+        # An alternative to the managed AmazonECSTaskExecutionRolePolicy, which
+        # restrics access to a specific VPC and VPC endpoint
+        - PolicyName: TaskExecutionPolicy
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - ecr:GetAuthorizationToken
+                  - logs:CreateLogStream
+                  - logs:PutLogEvents
+                Resource:
+                  - '*'
+              - Effect: Allow
+                Action:
+                  - ecr:BatchCheckLayerAvailability
+                  - ecr:GetDownloadUrlForLayer
+                  - ecr:BatchGetImage
+                Condition:
+                  StringEquals:
+                    aws:sourceVpce: !Ref EcrVpcEndpoint
+                    aws:sourceVpc: !Ref VPC
+                Resource:
+                  - '*'
+      Tags:
+        - Key: Project
+          Value: Porter
+        - Key: prx:cloudformation:stack-name
+          Value: !Ref AWS::StackName
+        - Key: prx:cloudformation:stack-id
+          Value: !Ref AWS::StackId
+  FtpCopyEcsTaskIamRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Action:
+              - sts:AssumeRole
+            Effect: Allow
+            Principal:
+              Service:
+                - ecs-tasks.amazonaws.com
+      Policies:
+        # Allow it to put CloudWatch Metrics
+        - PolicyName: PutCloudWatchMetric
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - cloudwatch:PutMetricData
+                Resource:
+                  - '*'
+      ManagedPolicyArns:
+        # Transcode operations are always pulling FROM the artifact bucket
+        - !Ref ArtifactBucketReadOnlyAccessPolicy
+      Tags:
+        - Key: Project
+          Value: Porter
+        - Key: prx:cloudformation:stack-name
+          Value: !Ref AWS::StackName
+        - Key: prx:cloudformation:stack-id
+          Value: !Ref AWS::StackId
+  FtpCopyEcsTaskDefinition:
+    Type: AWS::ECS::TaskDefinition
+    Properties:
+      ContainerDefinitions:
+        - Essential: true
+          Image: !Ref FtpCopyEcsTaskDefinitionImage
+          LogConfiguration:
+            LogDriver: awslogs
+            Options:
+              awslogs-group: !Ref FtpCopyEcsTaskLogGroup
+              awslogs-region: !Ref AWS::Region
+              awslogs-stream-prefix: ecs
+          Name: !Sub ${AWS::StackName}-ftp-copy-container
+      Cpu: '4096'
+      ExecutionRoleArn: !GetAtt FtpCopyEcsTaskExecutionIamRole.Arn
+      Memory: '8192'
+      NetworkMode: awsvpc
+      RequiresCompatibilities:
+        - FARGATE
+      Tags:
+        - Key: Project
+          Value: Porter
+        - Key: prx:cloudformation:stack-name
+          Value: !Ref AWS::StackName
+        - Key: prx:cloudformation:stack-id
+          Value: !Ref AWS::StackId
+      TaskRoleArn: !GetAtt FtpCopyEcsTaskIamRole.Arn
   # Artifact Bucket
   ArtifactBucket:
     Type: AWS::S3::Bucket
@@ -2101,6 +2212,8 @@ Resources:
         NormalizeOutputLambdaFunctionArn: !GetAtt NormalizeOutputLambdaFunction.Arn
         S3DestinationWriterRoleArn: !GetAtt S3DestinationWriterRole.Arn
         SourceTypeLambdaFunctionArn: !GetAtt SourceTypeLambdaFunction.Arn
+        FtpCopyContainerName: !Sub ${AWS::StackName}-ftp-copy-container
+        FtpCopyEcsTaskDefinitionArn: !Ref FtpCopyEcsTaskDefinition
         TranscodeContainerName: !Sub ${AWS::StackName}-transcode-container
         TranscodeEcsTaskDefinitionArn: !Ref TranscodeEcsTaskDefinition
         TranscodeTaskInputLambdaFunctionArn: !GetAtt TranscodeTaskInputLambdaFunction.Arn
