@@ -152,9 +152,28 @@
                 "Next": "Inspect Task Handler"
               },
               {
-                "Variable": "$.Task.Type",
-                "StringEquals": "Copy",
+                "And": [
+                  {
+                    "Variable": "$.Task.Type",
+                    "StringEquals": "Copy"
+                  },{
+                    "Variable": "$.Task.Mode",
+                    "StringEquals": "AWS/S3"
+                  }
+                ],
                 "Next": "Copy Task Handler"
+              },
+              {
+                "And": [
+                  {
+                    "Variable": "$.Task.Type",
+                    "StringEquals": "Copy"
+                  },{
+                    "Variable": "$.Task.Mode",
+                    "StringEquals": "FTP"
+                  }
+                ],
+                "Next": "FTP Copy Task Fargate Execution"
               },
               {
                 "Variable": "$.Task.Type",
