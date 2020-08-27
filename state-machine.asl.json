@@ -261,6 +261,77 @@
               }
             ]
           },
+          "FTP Copy Task Fargate Execution": {
+            "Type": "Task",
+            "Comment": "Sends artifact to an FTP destination",
+            "Resource": "arn:aws:states:::ecs:runTask.sync",
+            "InputPath": "$",
+            "Parameters": {
+              "Cluster": "${EcsClusterArn}",
+              "LaunchType": "FARGATE",
+              "Overrides": {
+                "ContainerOverrides": [
+                  {
+                    "Environment": [
+                      {
+                        "Name": "STATE_MACHINE_NAME",
+                        "Value.$": "$$.StateMachine.Name"
+                      },
+                      {
+                        "Name": "STATE_MACHINE_EXECUTION_ID",
+                        "Value.$": "$$.Execution.Id"
+                      },
+                      {
+                        "Name": "STATE_MACHINE_JOB_ID",
+                        "Value.$": "$.Job.Id"
+                      },
+                      {
+                        "Name": "STATE_MACHINE_AWS_REGION",
+                        "Value": "${AwsRegion}"
+                      },
+                      {
+                        "Name": "STATE_MACHINE_ARTIFACT_BUCKET_NAME",
+                        "Value.$": "$.Artifact.BucketName"
+                      },
+                      {
+                        "Name": "STATE_MACHINE_ARTIFACT_OBJECT_KEY",
+                        "Value.$": "$.Artifact.ObjectKey"
+                      },
+                      {
+                        "Name": "STATE_MACHINE_DESTINATION_JSON",
+                        "Value.$": "$.JSON.Destination"
+                      },
+                    "Name": "${FtpCopyContainerName}"
+                  }
+                ]
+              },
+              "NetworkConfiguration": {
+                "AwsvpcConfiguration": {
+                  "AssignPublicIp": "ENABLED",
+                  "Subnets": ["${VpcSubnet1}", "${VpcSubnet2}"]
+                }
+              },
+              "TaskDefinition": "${FtpCopyEcsTaskDefinitionArn}"
+            },
+            "ResultPath": "$.Void",
+            "OutputPath": "$",
+            "Next": "FTP Copy Task Results Formatter",
+            "Retry": [
+              {
+                "ErrorEquals": ["States.ALL"],
+                "IntervalSeconds": 5,
+                "MaxAttempts": 3,
+                "BackoffRate": 2
+              }
+            ],
+            "Catch": [
+              {
+                "ErrorEquals": ["States.ALL"],
+                "ResultPath": "$.Error",
+                "Next": "TaskResult Error Callback Map"
+              }
+            ]
+          },
           "Transcode Task Input Preprocessor": {
             "Type": "Task",
             "Comment": "Formats the input of a transcode task",
