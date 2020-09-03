@@ -31,11 +31,40 @@ Parameters:
     Type: String
   TranscodeEcsTaskDefinitionImage:
     Type: String
+  FtpCopyEcsTaskDefinitionImage:
+    Type: String
   EnableSqsJobExecution:
     Type: String
     AllowedValues:
       - 'True'
       - 'False'
+    Default: 'False'
+  SubnetIPv4CidrBits:
+    Default: 14
+    Description: >-
+      The number of subnet bits for each subnet's IPv4 CIDR.
+      For example, a value of 8 will create CIDRs with a mask of "/24".
+      To calculate the required host bits for a given subnet bits, subtract the
+      subnet bits from 32 for IPv4.
+      Updating requires replacement of all subnets. When subnets are being
+      replaced the ranges of the new subnets cannot overlap those being
+      replaced.
+    MaxValue: 256
+    MinValue: 1
+    Type: Number
+  SubnetIPv6CidrBits:
+    Default: 64
+    Description: >-
+      The number of subnet bits for each subnet's IPv6 CIDR.
+      For example, a value of 64 will create CIDRs with a mask of "/64".
+      To calculate the required host bits for a given subnet bits, subtract the
+      subnet bits from 128 for IPv6.
+      Updating requires replacement of all subnets. When subnets are being
+      replaced the ranges of the new subnets cannot overlap those being
+      replaced.
+    MaxValue: 256
+    MinValue: 1
+    Type: Number
 Resources:
   # Managed IAM Policies
   ArtifactBucketReadOnlyAccessPolicy:
@@ -446,6 +475,15 @@ Resources:
       Targets:
         - Arn: !GetAtt TranscriptionJobStateChangeLambdaFunction.Arn
           Id: !Sub ${AWS::StackName}.Transcribe.JobState
+  ##############################################################################
+  ##############################################################################
+  ##############################################################################
+  # ██╗   ██╗██████╗  ██████╗
+  # ██║   ██║██╔══██╗██╔════╝
+  # ██║   ██║██████╔╝██║
+  # ╚██╗ ██╔╝██╔═══╝ ██║
+  #  ╚████╔╝ ██║     ╚██████╗
+  #   ╚═══╝  ╚═╝      ╚═════╝
   # VPC
   VPC:
     Type: AWS::EC2::VPC
@@ -463,199 +501,13 @@ Resources:
           Value: !Ref AWS::StackName
         - Key: prx:cloudformation:stack-id
           Value: !Ref AWS::StackId
-  RouteTable:
-    Type: AWS::EC2::RouteTable
+  # IPv6
+  IPv6VpcCidrBlock:
+    Type: AWS::EC2::VPCCidrBlock
     Properties:
+      AmazonProvidedIpv6CidrBlock: true
       VpcId: !Ref VPC
-      Tags:
-        - Key: Project
-          Value: Porter
-        - Key: Name
-          Value: !Sub ${AWS::StackName}-RouteTable
-        - Key: prx:cloudformation:stack-name
-          Value: !Ref AWS::StackName
-        - Key: prx:cloudformation:stack-id
-          Value: !Ref AWS::StackId
-  S3VpcEndpoint:
-    Type: AWS::EC2::VPCEndpoint
-    Properties:
-      RouteTableIds:
-        - !Ref RouteTable
-      ServiceName: !Sub com.amazonaws.${AWS::Region}.s3
-      VpcEndpointType: Gateway
-      VpcId: !Ref VPC
-  AwsServiceInterfaceEndpointsSecurityGroup:
-    Type: AWS::EC2::SecurityGroup
-    Properties:
-      VpcId: !Ref VPC
-      GroupDescription: Allow ECS traffic
-      SecurityGroupIngress:
-        - CidrIp: 0.0.0.0/0
-          IpProtocol: tcp
-          FromPort: 443
-          ToPort: 443
-      Tags:
-        - Key: Project
-          Value: Porter
-        - Key: Name
-          Value: !Sub ${AWS::StackName}-EcsEndpointsSecurityGroup
-        - Key: prx:cloudformation:stack-name
-          Value: !Ref AWS::StackName
-        - Key: prx:cloudformation:stack-id
-          Value: !Ref AWS::StackId
-  EcrVpcEndpoint:
-    # https://docs.aws.amazon.com/AmazonECR/latest/userguide/vpc-endpoints.html#ecr-vpc-endpoint-considerations
-    Type: AWS::EC2::VPCEndpoint
-    Properties:
-      PrivateDnsEnabled: true
-      SecurityGroupIds:
-        - !Ref AwsServiceInterfaceEndpointsSecurityGroup
-      ServiceName: !Sub com.amazonaws.${AWS::Region}.ecr.dkr
-      SubnetIds:
-        - !Ref Subnet1
-        - !Ref Subnet2
-      VpcEndpointType: Interface
-      VpcId: !Ref VPC
-  EcrApiVpcEndpoint:
-    # https://docs.aws.amazon.com/AmazonECS/latest/developerguide/platform_versions.html#platform-version-migration
-    Type: AWS::EC2::VPCEndpoint
-    Properties:
-      PrivateDnsEnabled: true
-      SecurityGroupIds:
-        - !Ref AwsServiceInterfaceEndpointsSecurityGroup
-      ServiceName: !Sub com.amazonaws.${AWS::Region}.ecr.api
-      SubnetIds:
-        - !Ref Subnet1
-        - !Ref Subnet2
-      VpcEndpointType: Interface
-      VpcId: !Ref VPC
-  CloudWatchVpcEndpoint:
-    # https://docs.aws.amazon.com/AmazonCloudWatch/latest/monitoring/cloudwatch-and-interface-VPC.html
-    Type: AWS::EC2::VPCEndpoint
-    Properties:
-      PrivateDnsEnabled: true
-      SecurityGroupIds:
-        - !Ref AwsServiceInterfaceEndpointsSecurityGroup
-      ServiceName: !Sub com.amazonaws.${AWS::Region}.monitoring
-      SubnetIds:
-        - !Ref Subnet1
-        - !Ref Subnet2
-      VpcEndpointType: Interface
-      VpcId: !Ref VPC
-  CloudWatchLogsVpcEndpoint:
-    # https://docs.aws.amazon.com/AmazonCloudWatch/latest/logs/cloudwatch-logs-and-interface-VPC.html
-    Type: AWS::EC2::VPCEndpoint
-    Properties:
-      PrivateDnsEnabled: true
-      SecurityGroupIds:
-        - !Ref AwsServiceInterfaceEndpointsSecurityGroup
-      ServiceName: !Sub com.amazonaws.${AWS::Region}.logs
-      SubnetIds:
-        - !Ref Subnet1
-        - !Ref Subnet2
-      VpcEndpointType: Interface
-      VpcId: !Ref VPC
-  StsVpcEndpoint:
-    # https://docs.aws.amazon.com/IAM/latest/UserGuide/id_credentials_sts_vpce.html
-    Type: AWS::EC2::VPCEndpoint
-    Properties:
-      PrivateDnsEnabled: true
-      SecurityGroupIds:
-        - !Ref AwsServiceInterfaceEndpointsSecurityGroup
-      ServiceName: !Sub com.amazonaws.${AWS::Region}.sts
-      SubnetIds:
-        - !Ref Subnet1
-        - !Ref Subnet2
-      VpcEndpointType: Interface
-      VpcId: !Ref VPC
-  Subnet1:
-    Type: AWS::EC2::Subnet
-    Properties:
-      AvailabilityZone:
-        Fn::Select:
-          - 0
-          - Fn::GetAZs: !Ref AWS::Region
-      CidrBlock: 10.0.0.0/17
-      Tags:
-        - Key: Project
-          Value: Porter
-        - Key: Name
-          Value: !Sub ${AWS::StackName}-Subnet-1
-        - Key: prx:cloudformation:stack-name
-          Value: !Ref AWS::StackName
-        - Key: prx:cloudformation:stack-id
-          Value: !Ref AWS::StackId
-      VpcId: !Ref VPC
-  Subnet2:
-    Type: AWS::EC2::Subnet
-    Properties:
-      AvailabilityZone:
-        Fn::Select:
-          - 1
-          - Fn::GetAZs: !Ref AWS::Region
-      CidrBlock: 10.0.128.0/17
-      Tags:
-        - Key: Project
-          Value: Porter
-        - Key: Name
-          Value: !Sub ${AWS::StackName}-Subnet-2
-        - Key: prx:cloudformation:stack-name
-          Value: !Ref AWS::StackName
-        - Key: prx:cloudformation:stack-id
-          Value: !Ref AWS::StackId
-      VpcId: !Ref VPC
-  Subnet1RouteTableAssociation:
-    Type: AWS::EC2::SubnetRouteTableAssociation
-    Properties:
-      RouteTableId: !Ref RouteTable
-      SubnetId: !Ref Subnet1
-  Subnet2RouteTableAssociation:
-    Type: AWS::EC2::SubnetRouteTableAssociation
-    Properties:
-      RouteTableId: !Ref RouteTable
-      SubnetId: !Ref Subnet2
-  NetworkAcl:
-    Type: AWS::EC2::NetworkAcl
-    Properties:
-      Tags:
-        - Key: Project
-          Value: Porter
-        - Key: Name
-          Value: !Sub ${AWS::StackName}-NetworkAcl
-        - Key: prx:cloudformation:stack-name
-          Value: !Ref AWS::StackName
-        - Key: prx:cloudformation:stack-id
-          Value: !Ref AWS::StackId
-      VpcId: !Ref VPC
-  InboundTrafficNetworkAclEntry:
-    # TODO This is only for debugging
-    Type: AWS::EC2::NetworkAclEntry
-    Properties:
-      CidrBlock: 0.0.0.0/0
-      Egress: false
-      NetworkAclId: !Ref NetworkAcl
-      Protocol: -1 # All
-      RuleAction: allow
-      RuleNumber: 100
-  OutboudTrafficNetworkAclEntry:
-    Type: AWS::EC2::NetworkAclEntry
-    Properties:
-      CidrBlock: 0.0.0.0/0
-      Egress: true
-      NetworkAclId: !Ref NetworkAcl
-      Protocol: -1 # All
-      RuleAction: allow
-      RuleNumber: 100
-  Subnet1NetworkAclAssociation:
-    Type: AWS::EC2::SubnetNetworkAclAssociation
-    Properties:
-      NetworkAclId: !Ref NetworkAcl
-      SubnetId: !Ref Subnet1
-  Subnet2NetworkAclAssociation:
-    Type: AWS::EC2::SubnetNetworkAclAssociation
-    Properties:
-      NetworkAclId: !Ref NetworkAcl
-      SubnetId: !Ref Subnet2
+  # DHCP
   DhcpOptions:
     Type: AWS::EC2::DHCPOptions
     Properties:
@@ -676,6 +528,513 @@ Resources:
     Properties:
       DhcpOptionsId: !Ref DhcpOptions
       VpcId: !Ref VPC
+  # Internet gateway
+  InternetGateway:
+    Type: AWS::EC2::InternetGateway
+    Properties:
+      Tags:
+        - Key: Project
+          Value: Porter
+        - Key: Name
+          Value: !Sub ${AWS::StackName}-IG
+        - Key: prx:cloudformation:stack-name
+          Value: !Ref AWS::StackName
+        - Key: prx:cloudformation:stack-id
+          Value: !Ref AWS::StackId
+  VpcGatewayAttachment:
+    Type: AWS::EC2::VPCGatewayAttachment
+    Properties:
+      InternetGatewayId: !Ref InternetGateway
+      VpcId: !Ref VPC
+  # Routing for public subnets
+  PublicRouteTable:
+    Type: AWS::EC2::RouteTable
+    Properties:
+      Tags:
+        - Key: Project
+          Value: Porter
+        - Key: Name
+          Value: !Sub ${AWS::StackName}-PublicRouteTable
+        - Key: prx:cloudformation:stack-name
+          Value: !Ref AWS::StackName
+        - Key: prx:cloudformation:stack-id
+          Value: !Ref AWS::StackId
+      VpcId: !Ref VPC
+  IPv4Route:
+    DependsOn: VpcGatewayAttachment
+    Type: AWS::EC2::Route
+    Properties:
+      DestinationCidrBlock: 0.0.0.0/0
+      GatewayId: !Ref InternetGateway
+      RouteTableId: !Ref PublicRouteTable
+  IPv6Route:
+    Type: AWS::EC2::Route
+    Properties:
+      DestinationIpv6CidrBlock: ::/0
+      GatewayId: !Ref InternetGateway
+      RouteTableId: !Ref PublicRouteTable
+  # Public subnets
+  PublicSubnet1:
+    # DeletionPolicy: Retain
+    DependsOn: IPv6VpcCidrBlock
+    Type: AWS::EC2::Subnet
+    # UpdateReplacePolicy: Retain
+    Properties:
+      AvailabilityZone: !Select [0, !GetAZs '']
+      CidrBlock:
+        !Select [0, !Cidr [!GetAtt VPC.CidrBlock, 1, !Ref SubnetIPv4CidrBits]]
+      Ipv6CidrBlock:
+        !Select [
+          0,
+          !Cidr [
+            !Select [0, !GetAtt VPC.Ipv6CidrBlocks],
+            1,
+            !Ref SubnetIPv6CidrBits,
+          ],
+        ]
+      Tags:
+        - Key: Project
+          Value: Porter
+        - Key: Name
+          Value: !Sub ${AWS::StackName}-PublicSubnet1
+        - Key: prx:cloudformation:stack-name
+          Value: !Ref AWS::StackName
+        - Key: prx:cloudformation:stack-id
+          Value: !Ref AWS::StackId
+      VpcId: !Ref VPC
+  PublicSubnet1RouteTableAssociation:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      RouteTableId: !Ref PublicRouteTable
+      SubnetId: !Ref PublicSubnet1
+  PublicSubnet2:
+    # DeletionPolicy: Retain
+    DependsOn: IPv6VpcCidrBlock
+    Type: AWS::EC2::Subnet
+    # UpdateReplacePolicy: Retain
+    Properties:
+      AvailabilityZone: !Select [1, !GetAZs '']
+      CidrBlock:
+        !Select [1, !Cidr [!GetAtt VPC.CidrBlock, 2, !Ref SubnetIPv4CidrBits]]
+      Ipv6CidrBlock:
+        !Select [
+          1,
+          !Cidr [
+            !Select [0, !GetAtt VPC.Ipv6CidrBlocks],
+            2,
+            !Ref SubnetIPv6CidrBits,
+          ],
+        ]
+      Tags:
+        - Key: Project
+          Value: Porter
+        - Key: Name
+          Value: !Sub ${AWS::StackName}-PublicSubnet2
+        - Key: prx:cloudformation:stack-name
+          Value: !Ref AWS::StackName
+        - Key: prx:cloudformation:stack-id
+          Value: !Ref AWS::StackId
+      VpcId: !Ref VPC
+  PublicSubnet2RouteTableAssociation:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      RouteTableId: !Ref PublicRouteTable
+      SubnetId: !Ref PublicSubnet2
+  # ACL for public subnets
+  PublicSubnetNetworkAcl:
+    Type: AWS::EC2::NetworkAcl
+    Properties:
+      Tags:
+        - Key: Project
+          Value: Porter
+        - Key: Name
+          Value: !Sub ${AWS::StackName}-PublicSubnetNetworkAcl
+        - Key: prx:cloudformation:stack-name
+          Value: !Ref AWS::StackName
+        - Key: prx:cloudformation:stack-id
+          Value: !Ref AWS::StackId
+      VpcId: !Ref VPC
+  ##
+  PublicSubnetIPv4AllowFtpControlConnectionOutboundTrafficNetworkAclEntry:
+    Type: AWS::EC2::NetworkAclEntry
+    Properties:
+      CidrBlock: 0.0.0.0/0
+      Egress: true
+      NetworkAclId: !Ref PublicSubnetNetworkAcl
+      PortRange:
+        From: 21
+        To: 21
+      Protocol: 6 # TCP
+      RuleAction: allow
+      RuleNumber: 100
+  PublicSubnetIPv6AllowFtpControlConnectionOutboundTrafficNetworkAclEntry:
+    Type: AWS::EC2::NetworkAclEntry
+    Properties:
+      Egress: true
+      Ipv6CidrBlock: ::/0
+      NetworkAclId: !Ref PublicSubnetNetworkAcl
+      PortRange:
+        From: 21
+        To: 21
+      Protocol: 6 # TCP
+      RuleAction: allow
+      RuleNumber: 101
+  ##
+  PublicSubnetIPv4AllowFtpPassiveDataConnectionOutboundTrafficNetworkAclEntry:
+    Type: AWS::EC2::NetworkAclEntry
+    Properties:
+      CidrBlock: 0.0.0.0/0
+      Egress: true
+      NetworkAclId: !Ref PublicSubnetNetworkAcl
+      PortRange:
+        From: 1024
+        To: 65535
+      Protocol: 6 # TCP
+      RuleAction: allow
+      RuleNumber: 102
+  PublicSubnetIPv6AllowFtpPassiveDataConnectionOutboundTrafficNetworkAclEntry:
+    Type: AWS::EC2::NetworkAclEntry
+    Properties:
+      Egress: true
+      Ipv6CidrBlock: ::/0
+      NetworkAclId: !Ref PublicSubnetNetworkAcl
+      PortRange:
+        From: 1024
+        To: 65535
+      Protocol: 6 # TCP
+      RuleAction: allow
+      RuleNumber: 103
+  ##
+  PublicSubnetIPv4AllowHttpsOutboundTrafficNetworkAclEntry:
+    Type: AWS::EC2::NetworkAclEntry
+    Properties:
+      CidrBlock: 0.0.0.0/0
+      Egress: true
+      NetworkAclId: !Ref PublicSubnetNetworkAcl
+      PortRange:
+        From: 443
+        To: 443
+      Protocol: 6 # TCP
+      RuleAction: allow
+      RuleNumber: 104
+  PublicSubnetIPv6AllowHttpsOutboundTrafficNetworkAclEntry:
+    Type: AWS::EC2::NetworkAclEntry
+    Properties:
+      Egress: true
+      Ipv6CidrBlock: ::/0
+      NetworkAclId: !Ref PublicSubnetNetworkAcl
+      PortRange:
+        From: 443
+        To: 443
+      Protocol: 6 # TCP
+      RuleAction: allow
+      RuleNumber: 105
+  ##
+  PublicSubnetIPv4AllowFtpActiveDataConnectionInboundTrafficNetworkAclEntry:
+    Type: AWS::EC2::NetworkAclEntry
+    Properties:
+      CidrBlock: 0.0.0.0/0
+      Egress: false
+      NetworkAclId: !Ref PublicSubnetNetworkAcl
+      PortRange:
+        From: 32768
+        To: 61000
+      Protocol: 6 # TCP
+      RuleAction: allow
+      RuleNumber: 100
+  PublicSubnetIPv6AllowFtpActiveDataConnectionInboundTrafficNetworkAclEntry:
+    Type: AWS::EC2::NetworkAclEntry
+    Properties:
+      Egress: false
+      Ipv6CidrBlock: ::/0
+      NetworkAclId: !Ref PublicSubnetNetworkAcl
+      PortRange:
+        From: 62000
+        To: 62099
+      Protocol: 6 # TCP
+      RuleAction: allow
+      RuleNumber: 101
+  ##
+  PublicSubnetIPv4AllowEphemeralInboundTrafficNetworkAclEntry:
+    Type: AWS::EC2::NetworkAclEntry
+    Properties:
+      CidrBlock: 0.0.0.0/0
+      Egress: false
+      NetworkAclId: !Ref PublicSubnetNetworkAcl
+      PortRange:
+        From: 32768
+        To: 61000
+      Protocol: 6 # TCP
+      RuleAction: allow
+      RuleNumber: 102
+  PublicSubnetIPv6AllowEphemeralInboundTrafficNetworkAclEntry:
+    Type: AWS::EC2::NetworkAclEntry
+    Properties:
+      Egress: false
+      Ipv6CidrBlock: ::/0
+      NetworkAclId: !Ref PublicSubnetNetworkAcl
+      PortRange:
+        From: 62000
+        To: 62099
+      Protocol: 6 # TCP
+      RuleAction: allow
+      RuleNumber: 103
+  ##
+  PublicSubnet1NetworkAclAssociation:
+    Type: AWS::EC2::SubnetNetworkAclAssociation
+    Properties:
+      NetworkAclId: !Ref PublicSubnetNetworkAcl
+      SubnetId: !Ref PublicSubnet1
+  PublicSubnet2NetworkAclAssociation:
+    Type: AWS::EC2::SubnetNetworkAclAssociation
+    Properties:
+      NetworkAclId: !Ref PublicSubnetNetworkAcl
+      SubnetId: !Ref PublicSubnet2
+  # Routing for private subnets
+  PrivateRouteTable:
+    Type: AWS::EC2::RouteTable
+    Properties:
+      VpcId: !Ref VPC
+      Tags:
+        - Key: Project
+          Value: Porter
+        - Key: Name
+          Value: !Sub ${AWS::StackName}-PrivateRouteTable
+        - Key: prx:cloudformation:stack-name
+          Value: !Ref AWS::StackName
+        - Key: prx:cloudformation:stack-id
+          Value: !Ref AWS::StackId
+  # Private subnets
+  PrivateSubnet1:
+    # DeletionPolicy: Retain
+    DependsOn: IPv6VpcCidrBlock
+    Type: AWS::EC2::Subnet
+    # UpdateReplacePolicy: Retain
+    Properties:
+      AvailabilityZone: !Select [0, !GetAZs '']
+      CidrBlock:
+        !Select [2, !Cidr [!GetAtt VPC.CidrBlock, 3, !Ref SubnetIPv4CidrBits]]
+      Ipv6CidrBlock:
+        !Select [
+          2,
+          !Cidr [
+            !Select [0, !GetAtt VPC.Ipv6CidrBlocks],
+            3,
+            !Ref SubnetIPv6CidrBits,
+          ],
+        ]
+      Tags:
+        - Key: Project
+          Value: Porter
+        - Key: Name
+          Value: !Sub ${AWS::StackName}-PrivateSubnet1
+        - Key: prx:cloudformation:stack-name
+          Value: !Ref AWS::StackName
+        - Key: prx:cloudformation:stack-id
+          Value: !Ref AWS::StackId
+      VpcId: !Ref VPC
+  PrivateSubnet1RouteTableAssociation:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      RouteTableId: !Ref PrivateRouteTable
+      SubnetId: !Ref PrivateSubnet1
+  PrivateSubnet2:
+    # DeletionPolicy: Retain
+    DependsOn: IPv6VpcCidrBlock
+    Type: AWS::EC2::Subnet
+    # UpdateReplacePolicy: Retain
+    Properties:
+      AvailabilityZone: !Select [1, !GetAZs '']
+      CidrBlock:
+        !Select [3, !Cidr [!GetAtt VPC.CidrBlock, 4, !Ref SubnetIPv4CidrBits]]
+      Ipv6CidrBlock:
+        !Select [
+          3,
+          !Cidr [
+            !Select [0, !GetAtt VPC.Ipv6CidrBlocks],
+            4,
+            !Ref SubnetIPv6CidrBits,
+          ],
+        ]
+      Tags:
+        - Key: Project
+          Value: Porter
+        - Key: Name
+          Value: !Sub ${AWS::StackName}-PrivateSubnet2
+        - Key: prx:cloudformation:stack-name
+          Value: !Ref AWS::StackName
+        - Key: prx:cloudformation:stack-id
+          Value: !Ref AWS::StackId
+      VpcId: !Ref VPC
+  PrivateSubnet2RouteTableAssociation:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      RouteTableId: !Ref PrivateRouteTable
+      SubnetId: !Ref PrivateSubnet2
+  # ACL for private subnets
+  # Private subnets allow all inbound and outbound traffic
+  PrivateSubnetNetworkAcl:
+    Type: AWS::EC2::NetworkAcl
+    Properties:
+      Tags:
+        - Key: Project
+          Value: Porter
+        - Key: Name
+          Value: !Sub ${AWS::StackName}-PrivateSubnetNetworkAcl
+        - Key: prx:cloudformation:stack-name
+          Value: !Ref AWS::StackName
+        - Key: prx:cloudformation:stack-id
+          Value: !Ref AWS::StackId
+      VpcId: !Ref VPC
+  ##
+  PrivateSubnetIPv4AllowAllInboundTrafficNetworkAclEntry:
+    Type: AWS::EC2::NetworkAclEntry
+    Properties:
+      CidrBlock: 0.0.0.0/0
+      Egress: false
+      NetworkAclId: !Ref PrivateSubnetNetworkAcl
+      Protocol: -1 # All
+      RuleAction: allow
+      RuleNumber: 100
+  PrivateSubnetIPv6AllowAllInboundTrafficNetworkAclEntry:
+    Type: AWS::EC2::NetworkAclEntry
+    Properties:
+      Egress: false
+      Ipv6CidrBlock: ::/0
+      NetworkAclId: !Ref PrivateSubnetNetworkAcl
+      Protocol: -1 # All
+      RuleAction: allow
+      RuleNumber: 101
+  ##
+  PrivateSubnetIPv4AllowAllOutboudTrafficNetworkAclEntry:
+    Type: AWS::EC2::NetworkAclEntry
+    Properties:
+      CidrBlock: 0.0.0.0/0
+      Egress: true
+      NetworkAclId: !Ref PrivateSubnetNetworkAcl
+      Protocol: -1 # All
+      RuleAction: allow
+      RuleNumber: 100
+  PrivateSubnetIPv6AllowAllOutboudTrafficNetworkAclEntry:
+    Type: AWS::EC2::NetworkAclEntry
+    Properties:
+      Egress: true
+      Ipv6CidrBlock: ::/0
+      NetworkAclId: !Ref PrivateSubnetNetworkAcl
+      Protocol: -1 # All
+      RuleAction: allow
+      RuleNumber: 101
+  ##
+  PrivateSubnet1NetworkAclAssociation:
+    Type: AWS::EC2::SubnetNetworkAclAssociation
+    Properties:
+      NetworkAclId: !Ref PrivateSubnetNetworkAcl
+      SubnetId: !Ref PrivateSubnet1
+  PrivateSubnet2NetworkAclAssociation:
+    Type: AWS::EC2::SubnetNetworkAclAssociation
+    Properties:
+      NetworkAclId: !Ref PrivateSubnetNetworkAcl
+      SubnetId: !Ref PrivateSubnet2
+  #
+  AwsServiceInterfaceEndpointsSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      VpcId: !Ref VPC
+      GroupDescription: Allow ECS traffic
+      SecurityGroupIngress:
+        - CidrIp: 0.0.0.0/0
+          IpProtocol: tcp
+          FromPort: 443
+          ToPort: 443
+      Tags:
+        - Key: Project
+          Value: Porter
+        - Key: Name
+          Value: !Sub ${AWS::StackName}-EcsEndpointsSecurityGroup
+        - Key: prx:cloudformation:stack-name
+          Value: !Ref AWS::StackName
+        - Key: prx:cloudformation:stack-id
+          Value: !Ref AWS::StackId
+  # Gateway VPC endpoints
+  # https://docs.aws.amazon.com/vpc/latest/userguide/vpce-gateway.html
+  S3VpcEndpoint:
+    Type: AWS::EC2::VPCEndpoint
+    Properties:
+      RouteTableIds:
+        - !Ref PrivateRouteTable
+      ServiceName: !Sub com.amazonaws.${AWS::Region}.s3
+      VpcEndpointType: Gateway
+      VpcId: !Ref VPC
+  # Interface VPC endpoints
+  # https://docs.aws.amazon.com/vpc/latest/userguide/vpce-interface.html
+  EcrVpcEndpoint:
+    # https://docs.aws.amazon.com/AmazonECR/latest/userguide/vpc-endpoints.html#ecr-vpc-endpoint-considerations
+    Type: AWS::EC2::VPCEndpoint
+    Properties:
+      PrivateDnsEnabled: true
+      SecurityGroupIds:
+        - !Ref AwsServiceInterfaceEndpointsSecurityGroup
+      ServiceName: !Sub com.amazonaws.${AWS::Region}.ecr.dkr
+      SubnetIds:
+        - !Ref PrivateSubnet1
+        - !Ref PrivateSubnet2
+      VpcEndpointType: Interface
+      VpcId: !Ref VPC
+  EcrApiVpcEndpoint:
+    # https://docs.aws.amazon.com/AmazonECS/latest/developerguide/platform_versions.html#platform-version-migration
+    Type: AWS::EC2::VPCEndpoint
+    Properties:
+      PrivateDnsEnabled: true
+      SecurityGroupIds:
+        - !Ref AwsServiceInterfaceEndpointsSecurityGroup
+      ServiceName: !Sub com.amazonaws.${AWS::Region}.ecr.api
+      SubnetIds:
+        - !Ref PrivateSubnet1
+        - !Ref PrivateSubnet2
+      VpcEndpointType: Interface
+      VpcId: !Ref VPC
+  CloudWatchVpcEndpoint:
+    # https://docs.aws.amazon.com/AmazonCloudWatch/latest/monitoring/cloudwatch-and-interface-VPC.html
+    Type: AWS::EC2::VPCEndpoint
+    Properties:
+      PrivateDnsEnabled: true
+      SecurityGroupIds:
+        - !Ref AwsServiceInterfaceEndpointsSecurityGroup
+      ServiceName: !Sub com.amazonaws.${AWS::Region}.monitoring
+      SubnetIds:
+        - !Ref PrivateSubnet1
+        - !Ref PrivateSubnet2
+      VpcEndpointType: Interface
+      VpcId: !Ref VPC
+  CloudWatchLogsVpcEndpoint:
+    # https://docs.aws.amazon.com/AmazonCloudWatch/latest/logs/cloudwatch-logs-and-interface-VPC.html
+    Type: AWS::EC2::VPCEndpoint
+    Properties:
+      PrivateDnsEnabled: true
+      SecurityGroupIds:
+        - !Ref AwsServiceInterfaceEndpointsSecurityGroup
+      ServiceName: !Sub com.amazonaws.${AWS::Region}.logs
+      SubnetIds:
+        - !Ref PrivateSubnet1
+        - !Ref PrivateSubnet2
+      VpcEndpointType: Interface
+      VpcId: !Ref VPC
+  StsVpcEndpoint:
+    # https://docs.aws.amazon.com/IAM/latest/UserGuide/id_credentials_sts_vpce.html
+    Type: AWS::EC2::VPCEndpoint
+    Properties:
+      PrivateDnsEnabled: true
+      SecurityGroupIds:
+        - !Ref AwsServiceInterfaceEndpointsSecurityGroup
+      ServiceName: !Sub com.amazonaws.${AWS::Region}.sts
+      SubnetIds:
+        - !Ref PrivateSubnet1
+        - !Ref PrivateSubnet2
+      VpcEndpointType: Interface
+      VpcId: !Ref VPC
+  ##############################################################################
+  ##############################################################################
+  ##############################################################################
   # ECS Cluster
   EcsCluster:
     Type: AWS::ECS::Cluster
@@ -1328,6 +1687,78 @@ Resources:
       Dimensions:
         - Name: LambdaFunctionArn
           Value: !GetAtt CopyLambdaFunction.Arn
+
+  # FTP Copy Output Lambda
+  FtpCopyTaskOutputLambdaIamRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+                - lambda.amazonaws.com
+            Action:
+              - sts:AssumeRole
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+        - arn:aws:iam::aws:policy/AWSXrayWriteOnlyAccess
+      Tags:
+        - Key: Project
+          Value: Porter
+        - Key: prx:cloudformation:stack-name
+          Value: !Ref AWS::StackName
+        - Key: prx:cloudformation:stack-id
+          Value: !Ref AWS::StackId
+  FtpCopyTaskOutputLambdaFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: lambdas/FtpCopyTaskOutputLambdaFunction/
+      Description: >-
+        Formats the output of a transcode task result
+      Handler: index.handler
+      Layers:
+        - !Ref AwsXraySdkLambdaLayerVersionArn
+      MemorySize: 128
+      Role: !GetAtt FtpCopyTaskOutputLambdaIamRole.Arn
+      Runtime: nodejs12.x
+      Tags:
+        Project: Porter
+        prx:cloudformation:stack-name: !Ref AWS::StackName
+        prx:cloudformation:stack-id: !Ref AWS::StackId
+      Timeout: 4
+      Tracing: Active
+  FtpCopyTaskOutputLambdaLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub /aws/lambda/${FtpCopyTaskOutputLambdaFunction}
+      RetentionInDays: 30
+  FtpCopyTaskOutputLambdaErrorAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Condition: CreateProductionResources
+    Properties:
+      ActionsEnabled: true
+      AlarmName: '[Porter][FTP][Lambda] Elevated error volume'
+      AlarmActions:
+        - !Ref OpsErrorMessagesSnsTopicArn
+      InsufficientDataActions:
+        - !Ref OpsErrorMessagesSnsTopicArn
+      OKActions:
+        - !Ref OpsErrorMessagesSnsTopicArn
+      AlarmDescription: >-
+        FTP copy output format function has encountered an invocation error
+      ComparisonOperator: GreaterThanThreshold
+      EvaluationPeriods: 1
+      MetricName: LambdaFunctionsFailed
+      Namespace: AWS/States
+      Period: 60
+      Statistic: Sum
+      Threshold: 0
+      TreatMissingData: notBreaching
+      Dimensions:
+        - Name: LambdaFunctionArn
+          Value: !GetAtt FtpCopyTaskOutputLambdaFunction.Arn
   # Transcode Input Lambda
   TranscodeTaskInputLambdaIamRole:
     Type: AWS::IAM::Role
@@ -2136,6 +2567,7 @@ Resources:
                   - !GetAtt TranscodeTaskOutputLambdaFunction.Arn
                   - !GetAtt NormalizeOutputLambdaFunction.Arn
                   - !GetAtt JobSerializerLambdaFunction.Arn
+                  - !GetAtt FtpCopyTaskOutputLambdaFunction.Arn
         - PolicyName: PassRoleToEcsPolicy
           PolicyDocument:
             Version: '2012-10-17'
@@ -2146,6 +2578,8 @@ Resources:
                 Resource:
                   - !GetAtt TranscodeEcsTaskExecutionIamRole.Arn
                   - !GetAtt TranscodeEcsTaskIamRole.Arn
+                  - !GetAtt FtpCopyEcsTaskExecutionIamRole.Arn
+                  - !GetAtt FtpCopyEcsTaskIamRole.Arn
         # https://docs.aws.amazon.com/step-functions/latest/dg/ecs-iam.html
         - PolicyName: EcsSyncStaticResourcesPolicy
           PolicyDocument:
@@ -2214,14 +2648,17 @@ Resources:
         SourceTypeLambdaFunctionArn: !GetAtt SourceTypeLambdaFunction.Arn
         FtpCopyContainerName: !Sub ${AWS::StackName}-ftp-copy-container
         FtpCopyEcsTaskDefinitionArn: !Ref FtpCopyEcsTaskDefinition
+        FtpCopyTaskOutputLambdaFunctionArn: !GetAtt FtpCopyTaskOutputLambdaFunction.Arn
         TranscodeContainerName: !Sub ${AWS::StackName}-transcode-container
         TranscodeEcsTaskDefinitionArn: !Ref TranscodeEcsTaskDefinition
         TranscodeTaskInputLambdaFunctionArn: !GetAtt TranscodeTaskInputLambdaFunction.Arn
         TranscodeTaskOutputLambdaFunctionArn: !GetAtt TranscodeTaskOutputLambdaFunction.Arn
         TranscriptionJobResultsLambdaFunctionArn: !GetAtt TranscriptionJobResultsLambdaFunction.Arn
         TranscriptionJobStartLambdaFunctionArn: !GetAtt TranscriptionJobStartLambdaFunction.Arn
-        VpcSubnet1: !Ref Subnet1
-        VpcSubnet2: !Ref Subnet2
+        VpcPublicSubnet1: !Ref PublicSubnet1
+        VpcPublicSubnet2: !Ref PublicSubnet2
+        VpcPrivateSubnet1: !Ref PrivateSubnet1
+        VpcPrivateSubnet2: !Ref PrivateSubnet2
         WavWrapLambdaFunctionArn: !GetAtt WavWrapLambdaFunction.Arn
       DefinitionUri: state-machine.asl.json
       Role: !GetAtt StateMachineIamRole.Arn

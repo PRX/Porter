@@ -1,0 +1,20 @@
+// Because the result of a Fargate task is not sufficient for sending a proper
+// callback, this function takes the entire task input and builds a better
+// result that gets passed to the callback task.
+
+exports.handler = async (event) => {
+  console.log(JSON.stringify({ msg: 'State input', input: event }));
+
+  const now = new Date();
+
+  const result = {
+    Task: event.Task.Type,
+    URL: event.Task.URL,
+    Time: now.toISOString(),
+    Timestamp: +now / 1000,
+  };
+
+  console.log(JSON.stringify({ msg: 'Result', result }));
+
+  return result;
+};

@@ -156,7 +156,8 @@
                   {
                     "Variable": "$.Task.Type",
                     "StringEquals": "Copy"
-                  },{
+                  },
+                  {
                     "Variable": "$.Task.Mode",
                     "StringEquals": "AWS/S3"
                   }
@@ -168,7 +169,8 @@
                   {
                     "Variable": "$.Task.Type",
                     "StringEquals": "Copy"
-                  },{
+                  },
+                  {
                     "Variable": "$.Task.Mode",
                     "StringEquals": "FTP"
                   }
@@ -298,8 +300,8 @@
                         "Value.$": "$.Artifact.ObjectKey"
                       },
                       {
-                        "Name": "STATE_MACHINE_DESTINATION_JSON",
-                        "Value.$": "$.JSON.Destination"
+                        "Name": "STATE_MACHINE_TASK_JSON",
+                        "Value.$": "States.JsonToString($.Task)"
                       }
                     ],
                     "Name": "${FtpCopyContainerName}"
@@ -309,7 +311,11 @@
               "NetworkConfiguration": {
                 "AwsvpcConfiguration": {
                   "AssignPublicIp": "ENABLED",
-                  "Subnets": ["${VpcSubnet1}", "${VpcSubnet2}"]
+                  "Subnets": [
+                    "${VpcPublicSubnet1}",
+                    "${VpcPublicSubnet2}",
+                    "${VpcPublicSubnet2}"
+                  ]
                 }
               },
               "TaskDefinition": "${FtpCopyEcsTaskDefinitionArn}"
@@ -317,6 +323,34 @@
             "ResultPath": "$.Void",
             "OutputPath": "$",
             "Next": "FTP Copy Task Results Formatter",
+            "Retry": [
+              {
+                "ErrorEquals": ["States.ALL"],
+                "IntervalSeconds": 5,
+                "MaxAttempts": 3,
+                "BackoffRate": 2
+              }
+            ],
+            "Catch": [
+              {
+                "ErrorEquals": ["States.ALL"],
+                "ResultPath": "$.Error",
+                "Next": "TaskResult Error Callback Map"
+              }
+            ]
+          },
+          "FTP Copy Task Results Formatter": {
+            "Type": "Task",
+            "Comment": "Formats the output of an FTP copy task",
+            "Resource": "${FtpCopyTaskOutputLambdaFunctionArn}",
+            "InputPath": "$",
+            "Parameters": {
+              "Job": { "Id.$": "$.Job.Id" },
+              "Task.$": "$.Task"
+            },
+            "ResultPath": "$.TaskResult",
+            "OutputPath": "$",
+            "Next": "TaskResult Callbacks Map",
             "Retry": [
               {
                 "ErrorEquals": ["States.ALL"],
@@ -440,7 +474,7 @@
               "NetworkConfiguration": {
                 "AwsvpcConfiguration": {
                   "AssignPublicIp": "ENABLED",
-                  "Subnets": ["${VpcSubnet1}", "${VpcSubnet2}"]
+                  "Subnets": ["${VpcPrivateSubnet1}", "${VpcPrivateSubnet2}"]
                 }
               },
               "TaskDefinition": "${TranscodeEcsTaskDefinitionArn}"
