@@ -5,5 +5,18 @@
     "prettier/prettier": ["error"],
     "no-console": 0,
     "no-param-reassign": 0
-  }
+  },
+  "overrides": [
+    {
+      "files": ["lambdas/*.js"],
+      "rules": {
+        "import/no-extraneous-dependencies": [
+          "error",
+          {
+            "devDependencies": true
+          }
+        ]
+      }
+    }
+  ]
 }
