@@ -2563,7 +2563,6 @@ Resources:
                   - !GetAtt TranscriptionJobStartLambdaFunction.Arn
                   - !GetAtt TranscriptionJobResultsLambdaFunction.Arn
                   - !GetAtt CallbackLambdaFunction.Arn
-                  - !GetAtt TranscodeTaskInputLambdaFunction.Arn
                   - !GetAtt TranscodeTaskOutputLambdaFunction.Arn
                   - !GetAtt NormalizeOutputLambdaFunction.Arn
                   - !GetAtt JobSerializerLambdaFunction.Arn
@@ -2651,7 +2650,6 @@ Resources:
         FtpCopyTaskOutputLambdaFunctionArn: !GetAtt FtpCopyTaskOutputLambdaFunction.Arn
         TranscodeContainerName: !Sub ${AWS::StackName}-transcode-container
         TranscodeEcsTaskDefinitionArn: !Ref TranscodeEcsTaskDefinition
-        TranscodeTaskInputLambdaFunctionArn: !GetAtt TranscodeTaskInputLambdaFunction.Arn
         TranscodeTaskOutputLambdaFunctionArn: !GetAtt TranscodeTaskOutputLambdaFunction.Arn
         TranscriptionJobResultsLambdaFunctionArn: !GetAtt TranscriptionJobResultsLambdaFunction.Arn
         TranscriptionJobStartLambdaFunctionArn: !GetAtt TranscriptionJobStartLambdaFunction.Arn

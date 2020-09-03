@@ -180,7 +180,7 @@
               {
                 "Variable": "$.Task.Type",
                 "StringEquals": "Transcode",
-                "Next": "Transcode Task Input Preprocessor"
+                "Next": "Transcode Task Fargate Execution"
               },
               {
                 "Variable": "$.Task.Type",
@@ -436,7 +436,7 @@
                       },
                       {
                         "Name": "STATE_MACHINE_DESTINATION_JSON",
-                        "Value.$": "$.JSON.Destination"
+                        "Value.$": "States.JsonToString($.Task.Destination)"
                       },
                       {
                         "Name": "STATE_MACHINE_DESTINATION_MODE",
