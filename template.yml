@@ -1687,7 +1687,6 @@ Resources:
       Dimensions:
         - Name: LambdaFunctionArn
           Value: !GetAtt CopyLambdaFunction.Arn
-
   # FTP Copy Output Lambda
   FtpCopyTaskOutputLambdaIamRole:
     Type: AWS::IAM::Role
