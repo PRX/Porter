@@ -8,7 +8,7 @@
   },
   "overrides": [
     {
-      "files": ["lambdas/*.js"],
+      "files": ["lambdas/**/index.js"],
       "rules": {
         "import/no-extraneous-dependencies": [
           "error",
