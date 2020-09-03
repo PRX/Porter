@@ -159,7 +159,7 @@
               {
                 "Variable": "$.Task.Type",
                 "StringEquals": "Transcode",
-                "Next": "Transcode Task Input Preprocessor"
+                "Next": "Transcode Task Fargate Execution"
               },
               {
                 "Variable": "$.Task.Type",
@@ -242,33 +242,6 @@
               }
             ]
           },
-          "Transcode Task Input Preprocessor": {
-            "Type": "Task",
-            "Comment": "Formats the input of a transcode task",
-            "Resource": "${TranscodeTaskInputLambdaFunctionArn}",
-            "InputPath": "$",
-            "Parameters": {
-              "Task.$": "$.Task"
-            },
-            "ResultPath": "$.JSON",
-            "OutputPath": "$",
-            "Next": "Transcode Task Fargate Execution",
-            "Retry": [
-              {
-                "ErrorEquals": ["States.ALL"],
-                "IntervalSeconds": 5,
-                "MaxAttempts": 3,
-                "BackoffRate": 2
-              }
-            ],
-            "Catch": [
-              {
-                "ErrorEquals": ["States.ALL"],
-                "ResultPath": "$.Error",
-                "Next": "TaskResult Error Callback Map"
-              }
-            ]
-          },
           "Transcode Task Fargate Execution": {
             "Type": "Task",
             "Comment": "Transcodes multimedia artifact",
@@ -311,7 +284,7 @@
                       },
                       {
                         "Name": "STATE_MACHINE_DESTINATION_JSON",
-                        "Value.$": "$.JSON.Destination"
+                        "Value.$": "States.JsonToString($.Task.Destination)"
                       },
                       {
                         "Name": "STATE_MACHINE_DESTINATION_MODE",
