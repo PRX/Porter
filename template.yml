@@ -19,16 +19,6 @@ Parameters:
     Type: String
   OpsErrorMessagesSnsTopicArn:
     Type: String
-  AwsXraySdkLambdaLayerVersionArn:
-    Type: String
-  FfmpegLambdaLayerVersionArn:
-    Type: String
-  MpckLambdaLayerVersionArn:
-    Type: String
-  NpmSharpLambdaLayerVersionArn:
-    Type: String
-  NpmFileTypeLambdaLayerVersionArn:
-    Type: String
   TranscodeEcsTaskDefinitionImage:
     Type: String
   FtpCopyEcsTaskDefinitionImage:
@@ -195,7 +185,7 @@ Resources:
           STATE_MACHINE_ARN: !Ref StateMachine
       Handler: index.handler
       Layers:
-        - !Ref AwsXraySdkLambdaLayerVersionArn
+        - !Ref AwsXraySdkLambdaLayer
       MemorySize: 128
       Role: !GetAtt JobExecutionSnsTopicLambdaIamRole.Arn
       Runtime: nodejs12.x
@@ -323,7 +313,7 @@ Resources:
             Queue: !GetAtt JobExecutionSqsQueue.Arn
       Handler: index.handler
       Layers:
-        - !Ref AwsXraySdkLambdaLayerVersionArn
+        - !Ref AwsXraySdkLambdaLayer
       MemorySize: 128
       Role: !GetAtt JobExecutionSqsQueueLambdaIamRole.Arn
       Runtime: nodejs12.x
@@ -406,7 +396,7 @@ Resources:
           TRANSCODE_JOB_NAME_PREFIX: !Ref TranscodeJobNamePrefix
       Handler: index.handler
       Layers:
-        - !Ref AwsXraySdkLambdaLayerVersionArn
+        - !Ref AwsXraySdkLambdaLayer
       MemorySize: 128
       Role: !GetAtt TranscriptionJobStateChangeLambdaIamRole.Arn
       Runtime: nodejs12.x
@@ -1291,6 +1281,36 @@ Resources:
         - Key: prx:cloudformation:stack-id
           Value: !Ref AWS::StackId
   # Lambda Layers
+  AwsXraySdkLambdaLayer:
+    Type: AWS::Serverless::LayerVersion
+    Metadata:
+      BuildMethod: makefile
+    Properties:
+      Description: aws-xray NPM module
+      ContentUri: layers/aws-xray-sdk
+      CompatibleRuntimes:
+        - nodejs10.x
+        - nodejs12.x
+  FileTypeLambdaLayer:
+    Type: AWS::Serverless::LayerVersion
+    Metadata:
+      BuildMethod: makefile
+    Properties:
+      Description: file-type NPM module
+      ContentUri: layers/file-type
+      CompatibleRuntimes:
+        - nodejs10.x
+        - nodejs12.x
+  SharpLambdaLayer:
+    Type: AWS::Serverless::LayerVersion
+    Metadata:
+      BuildMethod: makefile
+    Properties:
+      Description: sharp NPM module
+      ContentUri: layers/sharp
+      CompatibleRuntimes:
+        - nodejs10.x
+        - nodejs12.x
   WavefileLambdaLayer:
     Type: AWS::Serverless::LayerVersion
     Metadata:
@@ -1299,6 +1319,26 @@ Resources:
       Description: wavefile NPM module
       ContentUri: layers/wavefile
       CompatibleRuntimes:
+        - nodejs12.x
+  FfmpegLambdaLayer:
+    Type: AWS::Serverless::LayerVersion
+    Metadata:
+      BuildMethod: makefile
+    Properties:
+      Description: wavefile NPM module
+      ContentUri: layers/ffmpeg
+      CompatibleRuntimes:
+        - nodejs10.x
+        - nodejs12.x
+  MpckLambdaLayer:
+    Type: AWS::Serverless::LayerVersion
+    Metadata:
+      BuildMethod: makefile
+    Properties:
+      Description: wavefile NPM module
+      ContentUri: layers/mpck
+      CompatibleRuntimes:
+        - nodejs10.x
         - nodejs12.x
   # Normalize Input Lambda
   NormalizeInputLambdaIamRole:
@@ -1331,7 +1371,7 @@ Resources:
         Normalizes Porter job input
       Handler: index.handler
       Layers:
-        - !Ref AwsXraySdkLambdaLayerVersionArn
+        - !Ref AwsXraySdkLambdaLayer
       MemorySize: 128
       Role: !GetAtt NormalizeInputLambdaIamRole.Arn
       Runtime: nodejs12.x
@@ -1419,7 +1459,7 @@ Resources:
           MAX_HTTP_REDIRECTS: '10'
       Handler: index.handler
       Layers:
-        - !Ref AwsXraySdkLambdaLayerVersionArn
+        - !Ref AwsXraySdkLambdaLayer
       MemorySize: 512
       Role: !GetAtt IngestLambdaIamRole.Arn
       Runtime: nodejs12.x
@@ -1495,8 +1535,8 @@ Resources:
           MAX_HTTP_REDIRECTS: '10'
       Handler: index.handler
       Layers:
-        - !Ref AwsXraySdkLambdaLayerVersionArn
-        - !Ref NpmFileTypeLambdaLayerVersionArn
+        - !Ref AwsXraySdkLambdaLayer
+        - !Ref FileTypeLambdaLayer
       MemorySize: 256
       Role: !GetAtt SourceTypeLambdaIamRole.Arn
       Runtime: nodejs12.x
@@ -1568,10 +1608,10 @@ Resources:
         Inspects (ffprobe, etc) the source file
       Handler: index.handler
       Layers:
-        - !Ref AwsXraySdkLambdaLayerVersionArn
-        - !Ref FfmpegLambdaLayerVersionArn
-        - !Ref MpckLambdaLayerVersionArn
-        - !Ref NpmSharpLambdaLayerVersionArn
+        - !Ref AwsXraySdkLambdaLayer
+        - !Ref FfmpegLambdaLayer
+        - !Ref MpckLambdaLayer
+        - !Ref SharpLambdaLayer
       MemorySize: 512
       Role: !GetAtt InspectMediaLambdaIamRole.Arn
       Runtime: nodejs10.x
@@ -1647,7 +1687,7 @@ Resources:
           S3_DESTINATION_WRITER_ROLE: !GetAtt S3DestinationWriterRole.Arn
       Handler: index.handler
       Layers:
-        - !Ref AwsXraySdkLambdaLayerVersionArn
+        - !Ref AwsXraySdkLambdaLayer
       MemorySize: 512
       Role: !GetAtt CopyLambdaIamRole.Arn
       Runtime: nodejs12.x
@@ -1718,7 +1758,7 @@ Resources:
         Formats the output of a transcode task result
       Handler: index.handler
       Layers:
-        - !Ref AwsXraySdkLambdaLayerVersionArn
+        - !Ref AwsXraySdkLambdaLayer
       MemorySize: 128
       Role: !GetAtt FtpCopyTaskOutputLambdaIamRole.Arn
       Runtime: nodejs12.x
@@ -1789,7 +1829,7 @@ Resources:
         Formats the output of a transcode task result
       Handler: index.handler
       Layers:
-        - !Ref AwsXraySdkLambdaLayerVersionArn
+        - !Ref AwsXraySdkLambdaLayer
       MemorySize: 128
       Role: !GetAtt TranscodeTaskOutputLambdaIamRole.Arn
       Runtime: nodejs12.x
@@ -1865,8 +1905,8 @@ Resources:
           S3_DESTINATION_WRITER_ROLE: !GetAtt S3DestinationWriterRole.Arn
       Handler: index.handler
       Layers:
-        - !Ref AwsXraySdkLambdaLayerVersionArn
-        - !Ref NpmSharpLambdaLayerVersionArn
+        - !Ref AwsXraySdkLambdaLayer
+        - !Ref SharpLambdaLayer
       MemorySize: 1024
       Role: !GetAtt ImageTransformLambdaIamRole.Arn
       Runtime: nodejs10.x
@@ -1941,7 +1981,7 @@ Resources:
           S3_DESTINATION_WRITER_ROLE: !GetAtt S3DestinationWriterRole.Arn
       Handler: index.handler
       Layers:
-        - !Ref AwsXraySdkLambdaLayerVersionArn
+        - !Ref AwsXraySdkLambdaLayer
         - !Ref WavefileLambdaLayer
       MemorySize: 3008
       Role: !GetAtt WavWrapLambdaIamRole.Arn
@@ -2043,7 +2083,7 @@ Resources:
           TRANSCODE_JOB_NAME_PREFIX: !Ref TranscodeJobNamePrefix
       Handler: index.handler
       Layers:
-        - !Ref AwsXraySdkLambdaLayerVersionArn
+        - !Ref AwsXraySdkLambdaLayer
       MemorySize: 128
       Role: !GetAtt TranscriptionJobStartLambdaIamRole.Arn
       Runtime: nodejs12.x
@@ -2129,7 +2169,7 @@ Resources:
           S3_DESTINATION_WRITER_ROLE: !GetAtt S3DestinationWriterRole.Arn
       Handler: index.handler
       Layers:
-        - !Ref AwsXraySdkLambdaLayerVersionArn
+        - !Ref AwsXraySdkLambdaLayer
       MemorySize: 512
       Role: !GetAtt TranscriptionJobResultsLambdaIamRole.Arn
       Runtime: nodejs12.x
@@ -2235,7 +2275,7 @@ Resources:
           S3_DESTINATION_WRITER_ROLE: !GetAtt S3DestinationWriterRole.Arn
       Handler: index.handler
       Layers:
-        - !Ref AwsXraySdkLambdaLayerVersionArn
+        - !Ref AwsXraySdkLambdaLayer
       MemorySize: 128
       Role: !GetAtt CallbackLambdaIamRole.Arn
       Runtime: nodejs12.x
@@ -2345,7 +2385,7 @@ Resources:
           JOB_EXECUTION_SNS_TOPIC_ARN: !Ref JobExecutionSnsTopic
       Handler: index.handler
       Layers:
-        - !Ref AwsXraySdkLambdaLayerVersionArn
+        - !Ref AwsXraySdkLambdaLayer
       MemorySize: 128
       Role: !GetAtt JobSerializerLambdaIamRole.Arn
       Runtime: nodejs12.x
@@ -2416,7 +2456,7 @@ Resources:
         Normalizes Porter job output
       Handler: index.handler
       Layers:
-        - !Ref AwsXraySdkLambdaLayerVersionArn
+        - !Ref AwsXraySdkLambdaLayer
       MemorySize: 128
       Role: !GetAtt NormalizeOutputLambdaIamRole.Arn
       Runtime: nodejs12.x
