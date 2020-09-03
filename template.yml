@@ -1614,7 +1614,7 @@ Resources:
         - !Ref SharpLambdaLayer
       MemorySize: 512
       Role: !GetAtt InspectMediaLambdaIamRole.Arn
-      Runtime: nodejs10.x
+      Runtime: nodejs12.x
       Tags:
         Project: Porter
         prx:cloudformation:stack-name: !Ref AWS::StackName
@@ -1909,7 +1909,7 @@ Resources:
         - !Ref SharpLambdaLayer
       MemorySize: 1024
       Role: !GetAtt ImageTransformLambdaIamRole.Arn
-      Runtime: nodejs10.x
+      Runtime: nodejs12.x
       Tags:
         Project: Porter
         prx:cloudformation:stack-name: !Ref AWS::StackName
