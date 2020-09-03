@@ -367,33 +367,6 @@
               }
             ]
           },
-          "Transcode Task Input Preprocessor": {
-            "Type": "Task",
-            "Comment": "Formats the input of a transcode task",
-            "Resource": "${TranscodeTaskInputLambdaFunctionArn}",
-            "InputPath": "$",
-            "Parameters": {
-              "Task.$": "$.Task"
-            },
-            "ResultPath": "$.JSON",
-            "OutputPath": "$",
-            "Next": "Transcode Task Fargate Execution",
-            "Retry": [
-              {
-                "ErrorEquals": ["States.ALL"],
-                "IntervalSeconds": 5,
-                "MaxAttempts": 3,
-                "BackoffRate": 2
-              }
-            ],
-            "Catch": [
-              {
-                "ErrorEquals": ["States.ALL"],
-                "ResultPath": "$.Error",
-                "Next": "TaskResult Error Callback Map"
-              }
-            ]
-          },
           "Transcode Task Fargate Execution": {
             "Type": "Task",
             "Comment": "Transcodes multimedia artifact",
