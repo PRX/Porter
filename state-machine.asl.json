@@ -350,7 +350,9 @@
             "InputPath": "$",
             "Parameters": {
               "Job": { "Id.$": "$.Job.Id" },
-              "Task.$": "$.Task"
+              "Execution": { "Id.$": "$$.Execution.Id" },
+              "Task.$": "$.Task",
+              "TaskIteratorIndex.$": "$.TaskIndex"
             },
             "ResultPath": "$.TaskResult",
             "OutputPath": "$",
