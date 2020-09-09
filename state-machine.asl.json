@@ -288,6 +288,10 @@
                         "Value.$": "$.Job.Id"
                       },
                       {
+                        "Name": "STATE_MACHINE_TASK_INDEX",
+                        "Value.$": "$.TaskIndex"
+                      },
+                      {
                         "Name": "STATE_MACHINE_AWS_REGION",
                         "Value": "${AwsRegion}"
                       },
