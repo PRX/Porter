@@ -1222,8 +1222,8 @@ Resources:
                 Resource:
                   - '*'
       ManagedPolicyArns:
-        # Transcode operations are always pulling FROM the artifact bucket
         - !Ref ArtifactBucketReadOnlyAccessPolicy
+        - !Ref ArtifactBucketWriteAccessPolicy
       Tags:
         - Key: Project
           Value: Porter
@@ -2138,7 +2138,6 @@ Resources:
             Action:
               - sts:AssumeRole
       ManagedPolicyArns:
-        # Copy operations are always copying FROM the artifact bucket
         - !Ref ArtifactBucketReadOnlyAccessPolicy
         - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
         - arn:aws:iam::aws:policy/AWSXrayWriteOnlyAccess
