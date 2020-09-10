@@ -23,6 +23,7 @@ phases:
       - 'cfn-lint --ignore-checks W --template template.yml'
       - 'npm run prettier -- --check "**/*.{js,json,yaml,yml}"'
       - 'npm run eslint -- "**/*.js"'
+      # TODO Run rubocop
       - 'bundle exec rake'
       - 'docker-compose build'
       - 'docker-compose run ci'
