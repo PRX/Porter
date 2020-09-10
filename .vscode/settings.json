@@ -26,6 +26,10 @@
     "editor.insertSpaces": false,
     "editor.tabSize": 4
   },
+  "[ruby]": {
+    "editor.defaultFormatter": "rebornix.ruby",
+    "editor.formatOnSave": true
+  },
   "[yaml]": {
     "editor.defaultFormatter": "esbenp.prettier-vscode",
     "editor.formatOnSave": true

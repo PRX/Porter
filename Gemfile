@@ -9,4 +9,5 @@ gem 'aws-sdk-states', '~> 1'
 group :development do
   gem 'dotenv'
   gem 'pry'
+  gem 'rubocop'
 end
