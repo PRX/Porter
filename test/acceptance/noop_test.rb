@@ -10,25 +10,25 @@ describe :porter do
   describe :noop do
     it 'returns the basic execution output' do
       req = step_functions.start_execution({
-        state_machine_arn: CONFIG.PORTER_STATE_MACHINE_ARN,
-        input: {
-          Job: {
-            Id: 'porter-test-no-op',
-            Source: {
-              Mode: 'HTTP',
-              URL: 'http://example.com/'
-            }
-          }
-        }.to_json
-      })
+                                             state_machine_arn: CONFIG.PORTER_STATE_MACHINE_ARN,
+                                             input: {
+                                               Job: {
+                                                 Id: 'porter-test-no-op',
+                                                 Source: {
+                                                   Mode: 'HTTP',
+                                                   URL: 'http://example.com/'
+                                                 }
+                                               }
+                                             }.to_json
+                                           })
 
       max_retries = 60
       retries = 0
 
       begin
         desc = step_functions.describe_execution({
-          execution_arn: req.execution_arn,
-        })
+                                                   execution_arn: req.execution_arn
+                                                 })
 
         raise RuntimeError if desc.status == 'RUNNING'
       rescue RuntimeError => e
