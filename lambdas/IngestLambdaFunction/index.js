@@ -147,11 +147,14 @@ exports.handler = async (event, context) => {
     // https://docs.aws.amazon.com/AWSJavaScriptSDK/latest/AWS/S3.html#copyObject-property
     // https://docs.aws.amazon.com/AmazonS3/latest/API/RESTObjectCOPY.html
     // CopySource expects: "/sourcebucket/path/to/object.extension"
+    // CopySource expects "/sourcebucket/path/to/object.extension" to be URI-encoded
     const start = process.hrtime();
 
     await s3
       .copyObject({
-        CopySource: `/${event.Job.Source.BucketName}/${event.Job.Source.ObjectKey}`,
+        CopySource: encodeURI(
+          `/${event.Job.Source.BucketName}/${event.Job.Source.ObjectKey}`,
+        ),
         Bucket: artifact.BucketName,
         Key: artifact.ObjectKey,
       })
