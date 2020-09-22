@@ -154,7 +154,7 @@ exports.handler = async (event, context) => {
       .copyObject({
         CopySource: encodeURI(
           `/${event.Job.Source.BucketName}/${event.Job.Source.ObjectKey}`,
-        ),
+        ).replace(/\+/g, '%2B'),
         Bucket: artifact.BucketName,
         Key: artifact.ObjectKey,
       })
