@@ -151,7 +151,9 @@ exports.handler = async (event, context) => {
 
     await s3
       .copyObject({
-        CopySource: `/${event.Job.Source.BucketName}/${event.Job.Source.ObjectKey}`,
+        CopySource: encodeURI(
+          `/${event.Job.Source.BucketName}/${event.Job.Source.ObjectKey}`,
+        ),
         Bucket: artifact.BucketName,
         Key: artifact.ObjectKey,
       })
