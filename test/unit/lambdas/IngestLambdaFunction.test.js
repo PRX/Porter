@@ -43,6 +43,38 @@ test('extracts filenames from complex HTTP URLs', async () => {
   expect(filename).toEqual('foo.bar');
 });
 
+test('extracts filenames with literal spaces', async () => {
+  const filename = await filenameFromSource({
+    Mode: 'HTTP',
+    URL: 'http://example.com:8888/path/to/foo bar',
+  });
+  expect(filename).toEqual('foo bar');
+});
+
+test('extracts filenames with encoded spaces', async () => {
+  const filename = await filenameFromSource({
+    Mode: 'HTTP',
+    URL: 'http://example.com:8888/path/to/foo%20bar',
+  });
+  expect(filename).toEqual('foo bar');
+});
+
+test('extracts filenames with literal plus signs', async () => {
+  const filename = await filenameFromSource({
+    Mode: 'HTTP',
+    URL: 'http://example.com:8888/path/to/foo+bar',
+  });
+  expect(filename).toEqual('foo+bar');
+});
+
+test('extracts filenames with encoded plus signs', async () => {
+  const filename = await filenameFromSource({
+    Mode: 'HTTP',
+    URL: 'http://example.com:8888/path/to/foo%2Bbar',
+  });
+  expect(filename).toEqual('foo+bar');
+});
+
 test('extracts filenames from root HTTP URLs', async () => {
   const filename = await filenameFromSource({
     Mode: 'HTTP',

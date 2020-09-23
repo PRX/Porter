@@ -34,7 +34,7 @@ async function awsS3copyObject(event) {
   const params = {
     CopySource: encodeURI(
       `/${event.Artifact.BucketName}/${event.Artifact.ObjectKey}`,
-    ),
+    ).replace(/\+/g, '%2B'),
     Bucket: event.Task.BucketName,
     Key: event.Task.ObjectKey,
   };
