@@ -85,7 +85,9 @@ function httpGet(uri, file, redirectCount) {
 function filenameFromSource(source) {
   if (source.Mode === 'HTTP') {
     const urlObj = url.parse(source.URL);
-    return urlObj.pathname.split('/').pop() || urlObj.hostname;
+    return (
+      decodeURIComponent(urlObj.pathname.split('/').pop()) || urlObj.hostname
+    );
   }
 
   if (source.Mode === 'AWS/S3') {
