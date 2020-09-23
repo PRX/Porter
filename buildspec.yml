@@ -4,6 +4,7 @@ env:
     PRX_ECR_REGION: 'us-east-1'
   parameter-store:
     PORTER_STATE_MACHINE_ARN: '/prx/test/meta.prx.org/PORTER_STATE_MACHINE_ARN'
+    PORTER_TEST_BUCKET_NAME: '/prx/test/meta.prx.org/PORTER_TEST_BUCKET_NAME'
 phases:
   install:
     runtime-versions:
