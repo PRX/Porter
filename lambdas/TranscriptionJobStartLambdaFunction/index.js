@@ -28,6 +28,16 @@ exports.handler = async (event) => {
 
   let mediaFormat = event.Artifact.Descriptor.Extension;
 
+  // Remap some common types to the equivalent required value that the
+  // Transcribe API expects
+  if (mediaFormat === 'm4a') {
+    mediaFormat = 'mp4';
+  } else if (mediaFormat === '3ga') {
+    mediaFormat = 'amr';
+  } else if (mediaFormat === 'oga' || mediaFormat === 'opus') {
+    mediaFormat = 'ogg';
+  }
+
   // Take your life in your own hands, force a format
   if (event.Task.MediaFormat) {
     mediaFormat = event.Task.MediaFormat;
