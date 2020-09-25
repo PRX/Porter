@@ -34,7 +34,9 @@ exports.handler = async (event) => {
   }
 
   // Only start the job if the artifact type (or passed in MediaFormat) is supported
-  if (!['mp3', 'mp4', 'wav', 'flac'].includes(mediaFormat)) {
+  if (
+    !['mp3', 'mp4', 'wav', 'flac', 'ogg', 'amr', 'webm'].includes(mediaFormat)
+  ) {
     throw new Error('Artifact format not supported');
   }
 
@@ -62,7 +64,7 @@ exports.handler = async (event) => {
       },
       TranscriptionJobName: transcriptionJobName,
       LanguageCode: event.Task.LanguageCode,
-      // Valid Values: mp3 | mp4 | wav | flac
+      // Valid Values: mp3 | mp4 | wav | flac | ogg | amr | webm
       MediaFormat: mediaFormat,
       OutputBucketName: event.Artifact.BucketName,
     })
