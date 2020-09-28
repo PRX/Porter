@@ -28,13 +28,25 @@ exports.handler = async (event) => {
 
   let mediaFormat = event.Artifact.Descriptor.Extension;
 
+  // Remap some common types to the equivalent required value that the
+  // Transcribe API expects
+  if (mediaFormat === 'm4a') {
+    mediaFormat = 'mp4';
+  } else if (mediaFormat === '3ga') {
+    mediaFormat = 'amr';
+  } else if (mediaFormat === 'oga' || mediaFormat === 'opus') {
+    mediaFormat = 'ogg';
+  }
+
   // Take your life in your own hands, force a format
   if (event.Task.MediaFormat) {
     mediaFormat = event.Task.MediaFormat;
   }
 
   // Only start the job if the artifact type (or passed in MediaFormat) is supported
-  if (!['mp3', 'mp4', 'wav', 'flac'].includes(mediaFormat)) {
+  if (
+    !['mp3', 'mp4', 'wav', 'flac', 'ogg', 'amr', 'webm'].includes(mediaFormat)
+  ) {
     throw new Error('Artifact format not supported');
   }
 
@@ -62,7 +74,7 @@ exports.handler = async (event) => {
       },
       TranscriptionJobName: transcriptionJobName,
       LanguageCode: event.Task.LanguageCode,
-      // Valid Values: mp3 | mp4 | wav | flac
+      // Valid Values: mp3 | mp4 | wav | flac | ogg | amr | webm
       MediaFormat: mediaFormat,
       OutputBucketName: event.Artifact.BucketName,
     })
