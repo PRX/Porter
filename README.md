@@ -48,9 +48,11 @@ Porter receives messages to start jobs, and sends messages while jobs are runnin
 
 ### Starting a Job
 
-When you want to start a job, a message must be sent to Porter. This can be done either directly through the [AWS Step Functions API](https://docs.aws.amazon.com/step-functions/latest/apireference/Welcome.html), or by way of an SNS topic that is created along side the state machine when the CloudFormation stack is launched.
+When you want to start a job, a message must be sent to Porter. There are a number of methods supported.
 
-**API Example**
+**Step Functions API**
+
+Directly through the [AWS Step Functions API](https://docs.aws.amazon.com/step-functions/latest/apireference/Welcome.html)
 
 ```python
 import boto3
@@ -61,7 +63,9 @@ stepfunctions.start_execution(
 )
 ```
 
-**SNS Example**
+**SNS**
+
+By way of an SNS topic that is created along side the state machine when the CloudFormation stack is launched:
 
 ```python
 import boto3
@@ -69,6 +73,20 @@ sns = boto3.client('sns')
 sns.publish(
     TopicArn='arn:aws:sns:us-east-2:1234512345:SnsTopic-ABCDE1234',
     Message='{"Job": { … }}'
+)
+```
+
+
+**Optional SQS Queue**
+
+If the `EnableSqsJobExecution` stack parameter is set to `True`, an [Amazon SQS](https://aws.amazon.com/sqs/) queue will also be created when the Porter stack is launched, and messages sent to the queue will be [processed](https://docs.aws.amazon.com/lambda/latest/dg/with-sqs.html) and forwarded to the state machine automatically. Be aware that enabling this option relies on regularly polling the queue, and there are costs associated with that even when no messages are being sent.
+
+```python
+import boto3
+sqs = boto3.client('sqs')
+sqs.send_message(
+    QueueUrl='https://sqs.us-east-2.amazonaws.com/1234512345/Porter1234-JobExecutionSqsQueue',
+    MessageBody='{"Job": { … }}'
 )
 ```
 
