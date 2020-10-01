@@ -76,6 +76,22 @@ sns.publish(
 )
 ```
 
+**EventBridge**
+
+Events can be sent to a bus in [Amazon EventBridge](https://aws.amazon.com/eventbridge/). When the stack is launched a rule is added to both the default event bus as well as a custom event bus whose name can be found in the stack's outputs. Events can be sent to either bus. You can disable the default bus rule using the stack's parameters. Only an event's `detail` is sent to the state machine.
+
+The event detail type must be `Porter Job Execution Submission`.
+
+```python
+import boto3
+events = boto3.client('events')
+events.put_events(
+    Entries=[
+        'DetailType': 'Porter Job Execution Submission',
+        'Detail': '{"Job": { … }}'
+    ]
+)
+```
 
 **Optional SQS Queue**
 
@@ -154,7 +170,11 @@ The role's ARN is published as an output on the CloudFormation stack. The follow
 
 #### Job Callbacks
 
-`Callbacks` is an array of endpoints to which callback messages about the job execution will be sent. Each endpoint object has a `Type` (supported types are `AWS/SNS`, `AWS/SQS`, `AWS/S3`, and `HTTP`). Different modes will have additional required properties. `HTTP` callbacks using methods like `POST` or `PUT` require a `Content-Type`. Possible values are `application/json` and `application/x-www-form-urlencoded`.
+`Callbacks` is an array of endpoints to which callback messages about the job execution will be sent. Each endpoint object has a `Type` (supported types are `AWS/SNS`, `AWS/SQS`, `AWS/S3`, `AWS/EventBridge`, and `HTTP`). Different modes will have additional required properties.
+
+`HTTP` callbacks using methods like `POST` or `PUT` require a `Content-Type`. Possible values are `application/json` and `application/x-www-form-urlencoded`.
+
+`AWS/SNS` callbacks must include a `Topic`, and `AWS/SQS` callbacks must include a `Queue` in the form of a URL. An `AWS/EventBridge` callback can optionally include an `EventBusName`; if excluded the callback will be sent to the default event bus.
 
 `AWS/S3` callbacks require both the `BucketName` and `ObjectPrefix` properties. Each callback result will be written to S3 individually (i.e., one file for each task result, and one file for the job result). The object name will be one of the following:
 

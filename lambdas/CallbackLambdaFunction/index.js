@@ -10,6 +10,7 @@ const sns = new AWS.SNS({ apiVersion: '2010-03-31' });
 const sqs = new AWS.SQS({ apiVersion: '2012-11-05' });
 const sts = new AWS.STS({ apiVersion: '2011-06-15' });
 const cloudwatch = new AWS.CloudWatch({ apiVersion: '2010-08-01' });
+const eventbridge = new AWS.EventBridge({ apiVersion: '2015-10-07' });
 
 function httpRequest(event, message, redirectCount) {
   return new Promise((resolve, reject) => {
@@ -122,6 +123,45 @@ async function s3Put(event, message) {
     .promise();
 }
 
+async function eventBridgePutEvent(event, message, now) {
+  const Detail = JSON.stringify(message);
+
+  let DetailType;
+  let executionArn;
+  const stateMachineArn = process.env.STATE_MACHINE_ARN;
+
+  // Assign values based on the type of callback message being sent, which is
+  // detected by the precense of certain keys
+  if (Object.prototype.hasOwnProperty.call(message, 'JobReceived')) {
+    DetailType = 'Porter Job Received Callback';
+    executionArn = message.JobReceived.Execution.Id;
+  } else if (Object.prototype.hasOwnProperty.call(message, 'TaskResult')) {
+    DetailType = 'Porter Task Result Callback';
+    executionArn = message.TaskResult.Execution.Id;
+  } else if (Object.prototype.hasOwnProperty.call(message, 'JobResult')) {
+    DetailType = 'Porter Job Result Callback';
+    executionArn = message.JobResult.Execution.Id;
+  }
+
+  await eventbridge
+    .putEvents({
+      Entries: [
+        {
+          Detail,
+          DetailType,
+          ...(event.Callback.EventBusName && {
+            EventBusName: event.Callback.EventBusName,
+          }),
+          EventBusName: 'STRING_VALUE',
+          Resources: [stateMachineArn, executionArn],
+          Source: 'org.prx.porter',
+          Time: now,
+        },
+      ],
+    })
+    .promise();
+}
+
 async function putErrorMetric() {
   await cloudwatch
     .putMetricData({
@@ -183,6 +223,8 @@ exports.handler = async (event) => {
     await sqs.sendMessage({ QueueUrl, MessageBody }).promise();
   } else if (event.Callback.Type === 'AWS/S3') {
     await s3Put(event, msg);
+  } else if (event.Callback.Type === 'AWS/EventBridge') {
+    await eventBridgePutEvent(event, msg, now);
   } else if (event.Callback.Type === 'HTTP') {
     await httpRequest(event, msg);
   }
