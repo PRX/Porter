@@ -1,4 +1,3 @@
-const url = require('url');
 const querystring = require('querystring');
 const AWSXRay = require('aws-xray-sdk');
 
@@ -13,9 +12,15 @@ const cloudwatch = new AWS.CloudWatch({ apiVersion: '2010-08-01' });
 
 function httpRequest(event, message, redirectCount) {
   return new Promise((resolve, reject) => {
-    const options = url.parse(event.Callback.URL);
-    options.method = event.Callback.Method;
-    options.headers = {};
+    const q = new URL(event.Callback.URL);
+
+    const options = {
+      host: q.host,
+      port: q.port,
+      path: `${q.pathname || ''}${q.search || ''}`,
+      method: event.Callback.Method,
+      headers: {},
+    };
 
     let body;
     if (event.Callback['Content-Type'] === 'application/json') {
@@ -143,6 +148,9 @@ async function putErrorMetric() {
     .promise();
 }
 
+/**
+ * @param {object} event
+ */
 exports.handler = async (event) => {
   console.log(JSON.stringify({ msg: 'State input', input: event }));
 
