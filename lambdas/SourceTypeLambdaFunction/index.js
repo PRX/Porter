@@ -9,6 +9,16 @@ const AWS = AWSXRay.captureAWS(require('aws-sdk'));
 /** The number of bytes to use to detect a files type. */
 const MINIMUM_BYTES = 4100;
 
+/**
+ * @typedef {object} SourceTypeResult
+ * @property {string} [Extension]
+ * @property {string} [MIME]
+ */
+
+/**
+ * @param {object} event
+ * @returns {Promise<SourceTypeResult>}
+ */
 exports.handler = async (event) => {
   const s3 = new AWS.S3({ apiVersion: '2006-03-01' });
 
