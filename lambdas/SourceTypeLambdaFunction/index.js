@@ -6,6 +6,9 @@ const AWSXRay = require('aws-xray-sdk');
 
 const AWS = AWSXRay.captureAWS(require('aws-sdk'));
 
+/** The number of bytes to use to detect a files type. */
+const MINIMUM_BYTES = 4100;
+
 exports.handler = async (event) => {
   const s3 = new AWS.S3({ apiVersion: '2006-03-01' });
 
@@ -15,7 +18,7 @@ exports.handler = async (event) => {
     .getObject({
       Bucket: event.Artifact.BucketName,
       Key: event.Artifact.ObjectKey,
-      Range: `bytes=0-${fileType.minimumBytes}`,
+      Range: `bytes=0-${MINIMUM_BYTES}`,
     })
     .createReadStream();
 
