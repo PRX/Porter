@@ -84,7 +84,7 @@ function httpGet(uri, file, redirectCount) {
 
 function filenameFromSource(source) {
   if (source.Mode === 'HTTP') {
-    const urlObj = url.parse(source.URL);
+    const urlObj = new URL(source.URL);
     return (
       decodeURIComponent(urlObj.pathname.split('/').pop()) || urlObj.hostname
     );
