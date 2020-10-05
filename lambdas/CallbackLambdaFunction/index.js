@@ -3,8 +3,8 @@ const querystring = require('querystring');
 const AWSXRay = require('aws-xray-sdk');
 
 const AWS = AWSXRay.captureAWS(require('aws-sdk'));
-const http = AWSXRay.captureHTTPs(require('http'));
-const https = AWSXRay.captureHTTPs(require('https'));
+const http = AWSXRay.captureHTTPs(require('http'), false);
+const https = AWSXRay.captureHTTPs(require('https'), false);
 
 const sns = new AWS.SNS({ apiVersion: '2010-03-31' });
 const sqs = new AWS.SQS({ apiVersion: '2012-11-05' });

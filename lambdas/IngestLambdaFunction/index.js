@@ -22,8 +22,8 @@ const fs = require('fs');
 const url = require('url');
 const AWSXRay = require('aws-xray-sdk');
 
-const http = AWSXRay.captureHTTPs(require('http'));
-const https = AWSXRay.captureHTTPs(require('https'));
+const http = AWSXRay.captureHTTPs(require('http'), false);
+const https = AWSXRay.captureHTTPs(require('https'), false);
 const AWS = AWSXRay.captureAWS(require('aws-sdk'));
 
 const s3 = new AWS.S3({ apiVersion: '2006-03-01' });
