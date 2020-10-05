@@ -107,8 +107,7 @@ exports.handler = async (event) => {
   const wav = new wavefile.WaveFile();
 
   if (s3Object.Body instanceof Uint8Array) {
-    const mpegBuffer = s3Object.Body;
-    wav.fromMpeg(mpegBuffer);
+    wav.fromMpeg(s3Object.Body);
   }
 
   // If there are chunks passed in, iterate through each
