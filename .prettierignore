@@ -1,2 +1,5 @@
+.aws-sam
+.config
 .deploy
 node_modules
+vendor/bundle
