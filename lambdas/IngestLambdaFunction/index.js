@@ -19,7 +19,6 @@
 const path = require('path');
 const os = require('os');
 const fs = require('fs');
-const url = require('url');
 const AWSXRay = require('aws-xray-sdk');
 
 const http = AWSXRay.captureHTTPs(require('http'), false);
