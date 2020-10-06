@@ -106,7 +106,7 @@ exports.handler = async (event) => {
   // create the wav object
   const wav = new wavefile.WaveFile();
 
-  if (s3Object.Body instanceof Uint8Array) {
+  if (s3Object.Body instanceof Uint8Array || Buffer.isBuffer(s3Object.Body)) {
     wav.fromMpeg(s3Object.Body);
   }
 
