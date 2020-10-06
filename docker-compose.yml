@@ -8,12 +8,10 @@ services:
     build:
       context: ./
       dockerfile: ci.Dockerfile
-    command: test
-    # depends_on:
-    #   - sam
-    #   - step_functions
-    # links:
-    #   - step_functions
+    command: ['-k', 'ci']
+    environment:
+      - PORTER_STATE_MACHINE_ARN
+      - PORTER_TEST_BUCKET_NAME
     networks:
       - porternetwork
     volumes:
