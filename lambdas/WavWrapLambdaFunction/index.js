@@ -108,6 +108,10 @@ exports.handler = async (event) => {
 
   if (s3Object.Body instanceof Uint8Array || Buffer.isBuffer(s3Object.Body)) {
     wav.fromMpeg(s3Object.Body);
+  } else {
+    throw new Error(
+      'No suitable mpeg buffer found to set up WaveFileCreator object',
+    );
   }
 
   // If there are chunks passed in, iterate through each
