@@ -1,5 +1,6 @@
 build-MpckLambdaLayer:
-	# TODO Build this layer, rather than copy a static asset
-	curl https://media.prx.org/tech/bin-mpck.zip --output "$(ARTIFACTS_DIR)/bin-mpck.zip"
-	unzip "$(ARTIFACTS_DIR)/bin-mpck.zip" -d "$(ARTIFACTS_DIR)"
-	rm "$(ARTIFACTS_DIR)/bin-mpck.zip"
+	curl https://checkmate.gissen.nl/checkmate-0.21.tar.gz --output "$(ARTIFACTS_DIR)/checkmate-0.21.tar.gz"
+	tar xvzf "$(ARTIFACTS_DIR)/checkmate-0.21.tar.gz" -C "$(ARTIFACTS_DIR)"
+	(cd "$(ARTIFACTS_DIR)/checkmate-0.21" && ./configure --disable-dependency-tracking --prefix="$(ARTIFACTS_DIR)" && make && make install)
+	rm "$(ARTIFACTS_DIR)/checkmate-0.21.tar.gz"
+	rm -rf "$(ARTIFACTS_DIR)/checkmate-0.21"
