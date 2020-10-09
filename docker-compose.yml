@@ -14,5 +14,5 @@ services:
       - PORTER_TEST_BUCKET_NAME
     networks:
       - porternetwork
-    volumes:
-      - .:/app
+    # volumes:
+    #   - .:/app

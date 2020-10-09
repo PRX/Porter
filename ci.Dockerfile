@@ -7,7 +7,6 @@ RUN yum update -y
 RUN yum install -y gcc-c++ make \
     && curl -sL https://rpm.nodesource.com/setup_12.x | bash - \
     && yum install -y nodejs
-    # && yum install -y python-pip \
 RUN yum clean all
 
 ENV APP_HOME /app
@@ -15,14 +14,16 @@ ENV HOME=$APP_HOME
 RUN mkdir -p $APP_HOME
 WORKDIR $APP_HOME
 
-ADD package.json .
+ADD . .
+
+# ADD package.json .
 RUN npm install
 
-ADD Gemfile .
+# ADD Gemfile .
 RUN gem install bundler
 RUN bundle install
 
-ADD requirements.txt .
+# ADD requirements.txt .
 RUN /usr/bin/pip3.8 install -r requirements.txt
 
 ENTRYPOINT [ "make" ]
