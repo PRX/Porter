@@ -10,6 +10,9 @@ services:
       dockerfile: ci.Dockerfile
     command: ['-k', 'ci']
     environment:
+      - AWS_ACCESS_KEY_ID
+      - AWS_SECRET_ACCESS_KEY
+      - AWS_SESSION_TOKEN
       - PORTER_STATE_MACHINE_ARN
       - PORTER_TEST_BUCKET_NAME
     networks:
