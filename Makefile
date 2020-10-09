@@ -1,9 +1,14 @@
-sam_build:
+# SHELL = /bin/sh
+
+all: check
+ci: check
+
+sam-build:
 	sam build --use-container
 
-ci: lint test
+check: lint test
 lint: cfnlint prettier eslint typescript rubocop
-test: ruby_tests node_tests
+test: minitest jest
 
 cfnlint:
 	cfn-lint --ignore-checks W --template template.yml
@@ -20,8 +25,8 @@ typescript:
 rubocop:
 	bundle exec rubocop
 
-ruby_tests:
+minitest:
 	bundle exec rake test
 
-node_tests:
+jest:
 	npm test
