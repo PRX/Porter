@@ -5,7 +5,7 @@ const wavefile = require('prx-wavefile');
 
 function camelize(str) {
   return str
-    .replace(/(?:^\w|[A-Z]|\b\w)/g, function (word, index) {
+    .replace(/(?:^\w|[A-Z]|\b\w)/g, (word, index) => {
       return index === 0 ? word.toLowerCase() : word.toUpperCase();
     })
     .replace(/\s+/g, '');
@@ -87,23 +87,13 @@ exports.handler = async (event) => {
   );
 
   const s3start = process.hrtime();
-  let s3Object = null;
-  try {
-    s3Object = await s3
-      .getObject({
-        Bucket: event.Artifact.BucketName,
-        Key: event.Artifact.ObjectKey,
-      })
-      .promise();
-  } catch (error) {
-    console.log(
-      'S3 getObject failed',
-      event.Artifact.BucketName,
-      event.Artifact.ObjectKey,
-      error,
-    );
-    throw error;
-  }
+
+  const s3Object = await s3
+    .getObject({
+      Bucket: event.Artifact.BucketName,
+      Key: event.Artifact.ObjectKey,
+    })
+    .promise();
 
   const s3end = process.hrtime(s3start);
   console.log(
@@ -115,7 +105,14 @@ exports.handler = async (event) => {
 
   // create the wav object
   const wav = new wavefile.WaveFile();
-  wav.fromMpeg(s3Object.Body);
+
+  if (s3Object.Body instanceof Uint8Array || Buffer.isBuffer(s3Object.Body)) {
+    wav.fromMpeg(s3Object.Body);
+  } else {
+    throw new Error(
+      'No suitable mpeg buffer found to set up WaveFileCreator object',
+    );
+  }
 
   // If there are chunks passed in, iterate through each
   const resultChunks = [];
