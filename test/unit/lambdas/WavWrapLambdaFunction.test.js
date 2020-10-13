@@ -1,9 +1,11 @@
 const AWS = require('aws-sdk-mock');
+const fs = require('fs');
+
 const { handler } = require('../../../lambdas/WavWrapLambdaFunction/index');
 
 test('wraps an mp2', async () => {
   AWS.mock('S3', 'getObject', {
-    Body: Buffer.from(require('fs').readFileSync('test/samples/test.mp2')),
+    Body: Buffer.from(fs.readFileSync('test/samples/test.mp2')),
   });
   AWS.mock('S3', 'upload', true);
   AWS.mock('STS', 'assumeRole', {

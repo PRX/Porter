@@ -1,6 +1,6 @@
 {
   "extends": ["airbnb-base", "prettier"],
-  "plugins": ["prettier"],
+  "plugins": ["prettier", "jest"],
   "rules": {
     "prettier/prettier": ["error"],
     "no-console": 0,
@@ -16,6 +16,12 @@
             "devDependencies": true
           }
         ]
+      }
+    },
+    {
+      "files": ["**/*.test.js"],
+      "env": {
+        "jest/globals": true
       }
     }
   ]

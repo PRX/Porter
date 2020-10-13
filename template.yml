@@ -1289,7 +1289,6 @@ Resources:
       Description: aws-xray NPM module
       ContentUri: layers/aws-xray-sdk
       CompatibleRuntimes:
-        - nodejs10.x
         - nodejs12.x
   FileTypeLambdaLayer:
     Type: AWS::Serverless::LayerVersion
@@ -1299,7 +1298,6 @@ Resources:
       Description: file-type NPM module
       ContentUri: layers/file-type
       CompatibleRuntimes:
-        - nodejs10.x
         - nodejs12.x
   SharpLambdaLayer:
     Type: AWS::Serverless::LayerVersion
@@ -1309,7 +1307,6 @@ Resources:
       Description: sharp NPM module
       ContentUri: layers/sharp
       CompatibleRuntimes:
-        - nodejs10.x
         - nodejs12.x
   WavefileLambdaLayer:
     Type: AWS::Serverless::LayerVersion
@@ -1328,7 +1325,6 @@ Resources:
       Description: wavefile NPM module
       ContentUri: layers/ffmpeg
       CompatibleRuntimes:
-        - nodejs10.x
         - nodejs12.x
   MpckLambdaLayer:
     Type: AWS::Serverless::LayerVersion
@@ -1338,7 +1334,6 @@ Resources:
       Description: wavefile NPM module
       ContentUri: layers/mpck
       CompatibleRuntimes:
-        - nodejs10.x
         - nodejs12.x
   # Normalize Input Lambda
   NormalizeInputLambdaIamRole:
