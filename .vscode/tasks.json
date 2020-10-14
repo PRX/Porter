@@ -29,6 +29,12 @@
       "type": "shell",
       "command": "cd containers/transcode && ./ecr-push.sh",
       "problemMatcher": []
+    },
+    {
+      "label": "FTP ECR Push",
+      "type": "shell",
+      "command": "cd containers/ftp && ./ecr-push.sh",
+      "problemMatcher": []
     }
   ]
 }
