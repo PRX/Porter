@@ -88,20 +88,16 @@ function httpRequest(event, message, redirectCount) {
 }
 
 async function s3Put(event, message) {
-  let key;
-  let id;
+  const id = event.Execution.Id.split(':').pop();
 
+  let key;
   if (message.JobReceived) {
-    id = message.JobReceived.Execution.Id.split(':').pop();
     key = '/job_received.json';
   } else if (message.TaskResult) {
-    id = message.TaskResult.Execution.Id.split(':').pop();
     key = `/task_result.${event.TaskIteratorIndex}.json`;
   } else if (message.JobResult) {
-    id = message.JobResult.Execution.Id.split(':').pop();
     key = '/job_result.json';
   } else {
-    id = message.JobResult.Execution.Id.split(':').pop();
     key = `/unknown_${+new Date()}.json`;
   }
 
