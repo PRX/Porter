@@ -152,9 +152,30 @@
                 "Next": "Inspect Task Handler"
               },
               {
-                "Variable": "$.Task.Type",
-                "StringEquals": "Copy",
+                "And": [
+                  {
+                    "Variable": "$.Task.Type",
+                    "StringEquals": "Copy"
+                  },
+                  {
+                    "Variable": "$.Task.Mode",
+                    "StringEquals": "AWS/S3"
+                  }
+                ],
                 "Next": "Copy Task Handler"
+              },
+              {
+                "And": [
+                  {
+                    "Variable": "$.Task.Type",
+                    "StringEquals": "Copy"
+                  },
+                  {
+                    "Variable": "$.Task.Mode",
+                    "StringEquals": "FTP"
+                  }
+                ],
+                "Next": "FTP Copy Task Fargate Execution"
               },
               {
                 "Variable": "$.Task.Type",
@@ -222,6 +243,116 @@
               "Job": { "Id.$": "$.Job.Id" },
               "Artifact.$": "$.Artifact",
               "Task.$": "$.Task"
+            },
+            "ResultPath": "$.TaskResult",
+            "OutputPath": "$",
+            "Next": "TaskResult Callbacks Map",
+            "Retry": [
+              {
+                "ErrorEquals": ["States.ALL"],
+                "IntervalSeconds": 5,
+                "MaxAttempts": 3,
+                "BackoffRate": 2
+              }
+            ],
+            "Catch": [
+              {
+                "ErrorEquals": ["States.ALL"],
+                "ResultPath": "$.Error",
+                "Next": "TaskResult Error Callback Map"
+              }
+            ]
+          },
+          "FTP Copy Task Fargate Execution": {
+            "Type": "Task",
+            "Comment": "Sends artifact to an FTP destination",
+            "Resource": "arn:aws:states:::ecs:runTask.sync",
+            "InputPath": "$",
+            "Parameters": {
+              "Cluster": "${EcsClusterArn}",
+              "LaunchType": "FARGATE",
+              "Overrides": {
+                "ContainerOverrides": [
+                  {
+                    "Environment": [
+                      {
+                        "Name": "STATE_MACHINE_NAME",
+                        "Value.$": "$$.StateMachine.Name"
+                      },
+                      {
+                        "Name": "STATE_MACHINE_EXECUTION_ID",
+                        "Value.$": "$$.Execution.Id"
+                      },
+                      {
+                        "Name": "STATE_MACHINE_JOB_ID",
+                        "Value.$": "$.Job.Id"
+                      },
+                      {
+                        "Name": "STATE_MACHINE_TASK_INDEX",
+                        "Value.$": "$.TaskIndex"
+                      },
+                      {
+                        "Name": "STATE_MACHINE_AWS_REGION",
+                        "Value": "${AwsRegion}"
+                      },
+                      {
+                        "Name": "STATE_MACHINE_ARTIFACT_BUCKET_NAME",
+                        "Value.$": "$.Artifact.BucketName"
+                      },
+                      {
+                        "Name": "STATE_MACHINE_ARTIFACT_OBJECT_KEY",
+                        "Value.$": "$.Artifact.ObjectKey"
+                      },
+                      {
+                        "Name": "STATE_MACHINE_TASK_JSON",
+                        "Value.$": "States.JsonToString($.Task)"
+                      }
+                    ],
+                    "Name": "${FtpCopyContainerName}"
+                  }
+                ]
+              },
+              "NetworkConfiguration": {
+                "AwsvpcConfiguration": {
+                  "AssignPublicIp": "ENABLED",
+                  "Subnets": [
+                    "${VpcPublicSubnet1}",
+                    "${VpcPublicSubnet2}",
+                    "${VpcPublicSubnet2}"
+                  ]
+                }
+              },
+              "TaskDefinition": "${FtpCopyEcsTaskDefinitionArn}"
+            },
+            "ResultPath": "$.Void",
+            "OutputPath": "$",
+            "Next": "FTP Copy Task Results Formatter",
+            "Retry": [
+              {
+                "ErrorEquals": ["States.ALL"],
+                "IntervalSeconds": 5,
+                "MaxAttempts": 3,
+                "BackoffRate": 2
+              }
+            ],
+            "Catch": [
+              {
+                "ErrorEquals": ["States.ALL"],
+                "ResultPath": "$.Error",
+                "Next": "TaskResult Error Callback Map"
+              }
+            ]
+          },
+          "FTP Copy Task Results Formatter": {
+            "Type": "Task",
+            "Comment": "Formats the output of an FTP copy task",
+            "Resource": "${FtpCopyTaskOutputLambdaFunctionArn}",
+            "InputPath": "$",
+            "Parameters": {
+              "Job": { "Id.$": "$.Job.Id" },
+              "Execution": { "Id.$": "$$.Execution.Id" },
+              "Task.$": "$.Task",
+              "TaskIteratorIndex.$": "$.TaskIndex"
             },
             "ResultPath": "$.TaskResult",
             "OutputPath": "$",
@@ -322,7 +453,7 @@
               "NetworkConfiguration": {
                 "AwsvpcConfiguration": {
                   "AssignPublicIp": "ENABLED",
-                  "Subnets": ["${VpcSubnet1}", "${VpcSubnet2}"]
+                  "Subnets": ["${VpcPrivateSubnet1}", "${VpcPrivateSubnet2}"]
                 }
               },
               "TaskDefinition": "${TranscodeEcsTaskDefinitionArn}"

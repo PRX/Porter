@@ -498,6 +498,20 @@ Output:
 }
 ```
 
+#### FTP
+
+TKTKTK
+
+Input:
+
+```json
+{
+    "Type": "Copy",
+    "Mode": "FTP",
+    "URL": "ftp://foo:bar@example.com"
+}
+```
+
 ### Image Transform
 
 `Image` tasks perform image manipulations on the source file. These are intended for static image files (eg, jpeg, png, webp, gif, svg. Currently the only supported destination mode is `AWS/S3`. A job can include any number of image tasks; each will perform the operation against the original state of the source file.

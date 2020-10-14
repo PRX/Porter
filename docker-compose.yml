@@ -8,35 +8,12 @@ services:
     build:
       context: ./
       dockerfile: ci.Dockerfile
-    command: test
-    # depends_on:
-    #   - sam
-    #   - step_functions
-    # links:
-    #   - step_functions
+    command: ['-k', 'ci']
+    environment:
+      - AWS_CONTAINER_CREDENTIALS_RELATIVE_URI
+      - PORTER_STATE_MACHINE_ARN
+      - PORTER_TEST_BUCKET_NAME
     networks:
       - porternetwork
-    volumes:
-      - .:/app
-  sam:
-    build:
-      context: ./
-      dockerfile: sam.Dockerfile
-    command: ['$PWD']
-    networks:
-      - porternetwork
-    ports:
-      - '3001:3001'
-    volumes:
-      - .:/app
-      - /var/run/docker.sock:/var/run/docker.sock
-  step_functions:
-    build:
-      context: ./
-      dockerfile: step-functions.Dockerfile
-    networks:
-      - porternetwork
-    ports:
-      - '8083:8083'
-    volumes:
-      - .:/app
+    # volumes:
+    #   - .:/app

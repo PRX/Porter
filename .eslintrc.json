@@ -1,9 +1,28 @@
 {
   "extends": ["airbnb-base", "prettier"],
-  "plugins": ["prettier"],
+  "plugins": ["prettier", "jest"],
   "rules": {
     "prettier/prettier": ["error"],
     "no-console": 0,
     "no-param-reassign": 0
-  }
+  },
+  "overrides": [
+    {
+      "files": ["lambdas/**/index.js"],
+      "rules": {
+        "import/no-extraneous-dependencies": [
+          "error",
+          {
+            "devDependencies": true
+          }
+        ]
+      }
+    },
+    {
+      "files": ["**/*.test.js"],
+      "env": {
+        "jest/globals": true
+      }
+    }
+  ]
 }

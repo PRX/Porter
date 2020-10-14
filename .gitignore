@@ -1,13 +1,14 @@
 .aws-sam
 .bundle
+.cache
 .config
 .deploy
-node_modules
 .DS_Store
 .env
 .env.stag
 .env.prod
 .npm
+node_modules
 package-lock.json
 samconfig.toml
 samconfig.dev.toml
