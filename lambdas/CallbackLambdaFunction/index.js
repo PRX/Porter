@@ -125,36 +125,28 @@ async function s3Put(event, message) {
 }
 
 async function eventBridgePutEvent(event, message, now) {
-  const Detail = JSON.stringify(message);
-
-  let DetailType;
-  let executionArn;
-  const stateMachineArn = event.StateMachine.Id;
-
   // Assign values based on the type of callback message being sent, which is
   // detected by the precense of certain keys
-  if (Object.prototype.hasOwnProperty.call(message, 'JobReceived')) {
+  let DetailType;
+  if (message.JobReceived) {
     DetailType = 'Porter Job Received Callback';
-    executionArn = message.JobReceived.Execution.Id;
-  } else if (Object.prototype.hasOwnProperty.call(message, 'TaskResult')) {
+  } else if (message.TaskResult) {
     DetailType = 'Porter Task Result Callback';
-    executionArn = message.TaskResult.Execution.Id;
-  } else if (Object.prototype.hasOwnProperty.call(message, 'JobResult')) {
+  } else if (message.JobResult) {
     DetailType = 'Porter Job Result Callback';
-    executionArn = message.JobResult.Execution.Id;
   }
 
   await eventbridge
     .putEvents({
       Entries: [
         {
-          Detail,
+          Detail: JSON.stringify(message),
           DetailType,
           ...(event.Callback.EventBusName && {
             EventBusName: event.Callback.EventBusName,
           }),
           EventBusName: 'STRING_VALUE',
-          Resources: [stateMachineArn, executionArn],
+          Resources: [event.StateMachine.Id, event.Execution.Id],
           Source: 'org.prx.porter',
           Time: now,
         },
