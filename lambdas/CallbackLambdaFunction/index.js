@@ -9,6 +9,7 @@ const sns = new AWS.SNS({ apiVersion: '2010-03-31' });
 const sqs = new AWS.SQS({ apiVersion: '2012-11-05' });
 const sts = new AWS.STS({ apiVersion: '2011-06-15' });
 const cloudwatch = new AWS.CloudWatch({ apiVersion: '2010-08-01' });
+const eventbridge = new AWS.EventBridge({ apiVersion: '2015-10-07' });
 
 function httpRequest(event, message, redirectCount) {
   return new Promise((resolve, reject) => {
@@ -87,20 +88,16 @@ function httpRequest(event, message, redirectCount) {
 }
 
 async function s3Put(event, message) {
-  let key;
-  let id;
+  const id = event.Execution.Id.split(':').pop();
 
+  let key;
   if (message.JobReceived) {
-    id = message.JobReceived.Execution.Id.split(':').pop();
     key = '/job_received.json';
   } else if (message.TaskResult) {
-    id = message.TaskResult.Execution.Id.split(':').pop();
     key = `/task_result.${event.TaskIteratorIndex}.json`;
   } else if (message.JobResult) {
-    id = message.JobResult.Execution.Id.split(':').pop();
     key = '/job_result.json';
   } else {
-    id = message.JobResult.Execution.Id.split(':').pop();
     key = `/unknown_${+new Date()}.json`;
   }
 
@@ -123,6 +120,37 @@ async function s3Put(event, message) {
       Bucket: event.Callback.BucketName,
       Key: [event.Callback.ObjectPrefix, id, key].join(''),
       Body: JSON.stringify(message),
+    })
+    .promise();
+}
+
+async function eventBridgePutEvent(event, message, now) {
+  // Assign values based on the type of callback message being sent, which is
+  // detected by the precense of certain keys
+  let DetailType;
+  if (message.JobReceived) {
+    DetailType = 'Porter Job Received Callback';
+  } else if (message.TaskResult) {
+    DetailType = 'Porter Task Result Callback';
+  } else if (message.JobResult) {
+    DetailType = 'Porter Job Result Callback';
+  }
+
+  await eventbridge
+    .putEvents({
+      Entries: [
+        {
+          Detail: JSON.stringify(message),
+          DetailType,
+          ...(event.Callback.EventBusName && {
+            EventBusName: event.Callback.EventBusName,
+          }),
+          EventBusName: 'STRING_VALUE',
+          Resources: [event.StateMachine.Id, event.Execution.Id],
+          Source: 'org.prx.porter',
+          Time: now,
+        },
+      ],
     })
     .promise();
 }
@@ -191,6 +219,8 @@ exports.handler = async (event) => {
     await sqs.sendMessage({ QueueUrl, MessageBody }).promise();
   } else if (event.Callback.Type === 'AWS/S3') {
     await s3Put(event, msg);
+  } else if (event.Callback.Type === 'AWS/EventBridge') {
+    await eventBridgePutEvent(event, msg, now);
   } else if (event.Callback.Type === 'HTTP') {
     await httpRequest(event, msg);
   }

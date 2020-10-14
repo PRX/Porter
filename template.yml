@@ -6,6 +6,7 @@ Description: >-
 Conditions:
   CreateProductionResources: !Equals [!Ref EnvironmentType, Production]
   CreateSqsEventMapping: !Equals [!Ref EnableSqsJobExecution, 'True']
+  CreateDefaultEventBusRule: !Equals [!Ref EnableDefaultEventBusRule, 'True']
 Parameters:
   EnvironmentType:
     Type: String
@@ -29,6 +30,12 @@ Parameters:
       - 'True'
       - 'False'
     Default: 'False'
+  EnableDefaultEventBusRule:
+    Type: String
+    AllowedValues:
+      - 'True'
+      - 'False'
+    Default: 'True'
   SubnetIPv4CidrBits:
     Default: 14
     Description: >-
@@ -352,6 +359,66 @@ Resources:
       Dimensions:
         - Name: FunctionName
           Value: !Ref JobExecutionSqsQueueLambdaFunction
+  # EventBridge
+  CustomEventBus:
+    Type: AWS::Events::EventBus
+    Properties:
+      Name: !Ref AWS::StackName
+  JobExecutionEventRuleIamRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+                - events.amazonaws.com
+            Action:
+              - sts:AssumeRole
+      Policies:
+        - PolicyName: StepFunctionsPolicy
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - states:StartExecution
+                Resource:
+                  - !Ref StateMachine
+      Tags:
+        - Key: Project
+          Value: Porter
+        - Key: prx:cloudformation:stack-name
+          Value: !Ref AWS::StackName
+        - Key: prx:cloudformation:stack-id
+          Value: !Ref AWS::StackId
+  CustomEventBusJobExecutionEventRule:
+    Type: AWS::Events::Rule
+    Properties:
+      EventBusName: !Ref CustomEventBus
+      EventPattern:
+        detail-type:
+          - Porter Job Execution Submission
+      State: ENABLED
+      Targets:
+        - Arn: !Ref StateMachine
+          Id: !Sub ${AWS::StackName}-JobExecutionEventRule
+          InputPath: $.detail
+          RoleArn: !GetAtt JobExecutionEventRuleIamRole.Arn
+  DefaultEventBusJobExecutionEventRule:
+    Type: AWS::Events::Rule
+    Condition: CreateDefaultEventBusRule
+    Properties:
+      EventPattern:
+        detail-type:
+          - Porter Job Execution Submission
+      State: ENABLED
+      Targets:
+        - Arn: !Ref StateMachine
+          Id: !Sub ${AWS::StackName}-JobExecutionEventRule
+          InputPath: $.detail
+          RoleArn: !GetAtt JobExecutionEventRuleIamRole.Arn
   # Transcode Job Watcher
   # Transcode tasks are submitted async, but the state machine will wait for a
   # task token to be sent back as part of a SendTaskSuccess or SendTaskFailure
@@ -2709,3 +2776,5 @@ Outputs:
     Value: !GetAtt S3DestinationWriterRole.Arn
   IngestLambdaIamRoleArn:
     Value: !GetAtt IngestLambdaIamRole.Arn
+  CustomEventBusName:
+    Value: !Ref CustomEventBus
