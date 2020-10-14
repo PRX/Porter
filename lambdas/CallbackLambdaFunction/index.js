@@ -133,7 +133,7 @@ async function eventBridgePutEvent(event, message, now) {
 
   let DetailType;
   let executionArn;
-  const stateMachineArn = process.env.STATE_MACHINE_ARN;
+  const stateMachineArn = event.StateMachine.Id;
 
   // Assign values based on the type of callback message being sent, which is
   // detected by the precense of certain keys

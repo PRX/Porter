@@ -2335,7 +2335,6 @@ Resources:
         Variables:
           MAX_HTTP_REDIRECTS: '3'
           S3_DESTINATION_WRITER_ROLE: !GetAtt S3DestinationWriterRole.Arn
-          STATE_MACHINE_ARN: !Ref StateMachine
       Handler: index.handler
       Layers:
         - !Ref AwsXraySdkLambdaLayer
