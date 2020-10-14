@@ -7,7 +7,7 @@ sam-build:
 	sam build --use-container
 
 check: lint test
-lint: cfnlint prettier eslint typescript rubocop
+lint: cfnlint prettier eslint typescript # rubocop
 test: minitest jest
 
 cfnlint:
