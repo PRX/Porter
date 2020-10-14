@@ -32,6 +32,7 @@
       "ItemsPath": "$.Job.Callbacks",
       "Parameters": {
         "Callback.$": "$$.Map.Item.Value",
+        "StateMachine": { "Id.$": "$$.StateMachine.Id" },
         "Message": {
           "JobReceived": {
             "Job": { "Id.$": "$.Job.Id" },
@@ -633,6 +634,7 @@
             "ItemsPath": "$.Callbacks",
             "Parameters": {
               "Callback.$": "$$.Map.Item.Value",
+              "StateMachine": { "Id.$": "$$.StateMachine.Id" },
               "TaskIteratorIndex.$": "$.TaskIndex",
               "Message": {
                 "Task.$": "$.Task",
@@ -677,6 +679,7 @@
             "ItemsPath": "$.Callbacks",
             "Parameters": {
               "Callback.$": "$$.Map.Item.Value",
+              "StateMachine": { "Id.$": "$$.StateMachine.Id" },
               "TaskIteratorIndex.$": "$.TaskIndex",
               "Message": {
                 "Task.$": "$.Task",
@@ -732,6 +735,7 @@
       "ItemsPath": "$.Job.Callbacks",
       "Parameters": {
         "Callback.$": "$$.Map.Item.Value",
+        "StateMachine": { "Id.$": "$$.StateMachine.Id" },
         "Message": {
           "JobResult": {
             "Job": { "Id.$": "$.Job.Id" },
