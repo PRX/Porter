@@ -86,13 +86,13 @@ The event detail type must be `Porter Job Execution Submission`.
 import boto3
 events = boto3.client('events')
 events.put_events(
-    Entries={
-        [
+    Entries=[
+        {
             'Source': 'com.example.app',
             'DetailType': 'Porter Job Execution Submission',
             'Detail': '{"Job": { … }}'
-        ]
-    }
+        }
+    ]
 )
 ```
 
