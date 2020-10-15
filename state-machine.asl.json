@@ -317,11 +317,7 @@
               "NetworkConfiguration": {
                 "AwsvpcConfiguration": {
                   "AssignPublicIp": "ENABLED",
-                  "Subnets": [
-                    "${VpcPublicSubnet1}",
-                    "${VpcPublicSubnet2}",
-                    "${VpcPublicSubnet2}"
-                  ]
+                  "Subnets": ["${VpcPublicSubnet1}", "${VpcPublicSubnet2}"]
                 }
               },
               "TaskDefinition": "${FtpCopyEcsTaskDefinitionArn}"
