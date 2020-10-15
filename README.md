@@ -166,7 +166,7 @@ The role's ARN is published as an output on the CloudFormation stack. The follow
 
 #### Job Tasks
 
-`Tasks` is an array of individual operations the state machine should perform. Every member of the array should be an object with a `Type` property. Valid types are: [`Inspect`](#inspect), [`Copy`](#copy), [`Image`](#image-transform), [`Transcode`](#transcode), [`Transcribe`](#transcribe). Tasks with invalid types are ignored. The other properties of any given task are determined by their type (see below).
+`Tasks` is an array of individual operations the state machine should perform. Every member of the array should be an object with a `Type` property. Valid types are: [`Inspect`](#inspect), [`Copy`](#copy), [`Image`](#image-transform), [`Transcode`](#transcode), [`Transcribe`](#transcribe), [`WavWrap`](#wav-wrap). Tasks with invalid types are ignored. The other properties of any given task are determined by their type (see below).
 
 #### Job Callbacks
 
