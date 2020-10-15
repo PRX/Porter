@@ -78,7 +78,7 @@ sns.publish(
 
 **EventBridge**
 
-Events can be sent to a bus in [Amazon EventBridge](https://aws.amazon.com/eventbridge/). When the stack is launched a rule is added to both the default event bus as well as a custom event bus whose name can be found in the stack's outputs. Events can be sent to either bus. You can disable the default bus rule using the stack's parameters. Only an event's `detail` is sent to the state machine.
+Events can be sent to a bus in [Amazon EventBridge](https://aws.amazon.com/eventbridge/). When the stack is launched a rule is added to both the default event bus as well as a custom event bus whose name can be found in the stack's outputs. Events can be sent to either bus. You can disable the default bus rule using the stack's parameters. Only an event's `detail` is sent to the state machine. If you have multiple Porter instances in a single AWS account, all instances will receive all jobs sent to the default bus.
 
 The event detail type must be `Porter Job Execution Submission`.
 
