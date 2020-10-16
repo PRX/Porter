@@ -1,10 +1,12 @@
+# frozen_string_literal: true
+
 source 'https://rubygems.org'
 
-gem 'rake'
-gem 'minitest'
-gem 'minitest-reporters'
-gem 'minitest-focus'
 gem 'aws-sdk-states', '~> 1'
+gem 'minitest'
+gem 'minitest-focus'
+gem 'minitest-reporters'
+gem 'rake'
 
 group :development do
   gem 'dotenv'

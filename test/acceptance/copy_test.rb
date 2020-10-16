@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 require 'test_helper'
 require 'aws-sdk-states'
 require 'json'
@@ -11,33 +13,33 @@ describe :porter do
     describe :to_key_with_spaces do
       it 'handles HTTP source files with spaces' do
         req = step_functions.start_execution({
-          state_machine_arn: CONFIG.PORTER_STATE_MACHINE_ARN,
-          input: {
-            Job: {
-              Id: 'porter-test-copy-http-spaces-to-spaces',
-              Source: {
-                Mode: 'HTTP',
-                URL: 'https://dovetail-cdn-staging.prxu.org/815/dAsUFiIz68rzpns5Cv7XM36Pt8bBzbu7gn3ui6Hg8-o/input file with spaces.mp3'
-              },
-              Tasks: [
-                {
-                  Type: "Copy",
-                  Mode: "AWS/S3",
-                  BucketName: CONFIG.PORTER_TEST_BUCKET_NAME,
-                  ObjectKey: "copied file with spaces"
-                }
-              ]
-            }
-          }.to_json
-        })
+                                               state_machine_arn: CONFIG.PORTER_STATE_MACHINE_ARN,
+                                               input: {
+                                                 Job: {
+                                                   Id: 'porter-test-copy-http-spaces-to-spaces',
+                                                   Source: {
+                                                     Mode: 'HTTP',
+                                                     URL: 'https://dovetail-cdn-staging.prxu.org/815/dAsUFiIz68rzpns5Cv7XM36Pt8bBzbu7gn3ui6Hg8-o/input file with spaces.mp3'
+                                                   },
+                                                   Tasks: [
+                                                     {
+                                                       Type: 'Copy',
+                                                       Mode: 'AWS/S3',
+                                                       BucketName: CONFIG.PORTER_TEST_BUCKET_NAME,
+                                                       ObjectKey: 'copied file with spaces'
+                                                     }
+                                                   ]
+                                                 }
+                                               }.to_json
+                                             })
 
         max_retries = 60
         retries = 0
 
         begin
           desc = step_functions.describe_execution({
-            execution_arn: req.execution_arn,
-          })
+                                                     execution_arn: req.execution_arn
+                                                   })
 
           raise RuntimeError if desc.status == 'RUNNING'
         rescue RuntimeError => e
@@ -60,33 +62,33 @@ describe :porter do
 
       it 'handles HTTP source files with encoded spaces' do
         req = step_functions.start_execution({
-          state_machine_arn: CONFIG.PORTER_STATE_MACHINE_ARN,
-          input: {
-            Job: {
-              Id: 'porter-test-copy-http-encoded-spaces-to-spaces',
-              Source: {
-                Mode: 'HTTP',
-                URL: 'https://dovetail-cdn-staging.prxu.org/815/dAsUFiIz68rzpns5Cv7XM36Pt8bBzbu7gn3ui6Hg8-o/input%20file%20with%20spaces.mp3'
-              },
-              Tasks: [
-                {
-                  Type: "Copy",
-                  Mode: "AWS/S3",
-                  BucketName: CONFIG.PORTER_TEST_BUCKET_NAME,
-                  ObjectKey: "copied file with spaces"
-                }
-              ]
-            }
-          }.to_json
-        })
+                                               state_machine_arn: CONFIG.PORTER_STATE_MACHINE_ARN,
+                                               input: {
+                                                 Job: {
+                                                   Id: 'porter-test-copy-http-encoded-spaces-to-spaces',
+                                                   Source: {
+                                                     Mode: 'HTTP',
+                                                     URL: 'https://dovetail-cdn-staging.prxu.org/815/dAsUFiIz68rzpns5Cv7XM36Pt8bBzbu7gn3ui6Hg8-o/input%20file%20with%20spaces.mp3'
+                                                   },
+                                                   Tasks: [
+                                                     {
+                                                       Type: 'Copy',
+                                                       Mode: 'AWS/S3',
+                                                       BucketName: CONFIG.PORTER_TEST_BUCKET_NAME,
+                                                       ObjectKey: 'copied file with spaces'
+                                                     }
+                                                   ]
+                                                 }
+                                               }.to_json
+                                             })
 
         max_retries = 60
         retries = 0
 
         begin
           desc = step_functions.describe_execution({
-            execution_arn: req.execution_arn,
-          })
+                                                     execution_arn: req.execution_arn
+                                                   })
 
           raise RuntimeError if desc.status == 'RUNNING'
         rescue RuntimeError => e
@@ -109,33 +111,33 @@ describe :porter do
 
       it 'handles HTTP source files with plus' do
         req = step_functions.start_execution({
-          state_machine_arn: CONFIG.PORTER_STATE_MACHINE_ARN,
-          input: {
-            Job: {
-              Id: 'porter-test-copy-http-plus-to-spaces',
-              Source: {
-                Mode: 'HTTP',
-                URL: 'https://dovetail-cdn-staging.prxu.org/815/dAsUFiIz68rzpns5Cv7XM36Pt8bBzbu7gn3ui6Hg8-o/input+file+with+spaces.mp3'
-              },
-              Tasks: [
-                {
-                  Type: "Copy",
-                  Mode: "AWS/S3",
-                  BucketName: CONFIG.PORTER_TEST_BUCKET_NAME,
-                  ObjectKey: "copied file with spaces"
-                }
-              ]
-            }
-          }.to_json
-        })
+                                               state_machine_arn: CONFIG.PORTER_STATE_MACHINE_ARN,
+                                               input: {
+                                                 Job: {
+                                                   Id: 'porter-test-copy-http-plus-to-spaces',
+                                                   Source: {
+                                                     Mode: 'HTTP',
+                                                     URL: 'https://dovetail-cdn-staging.prxu.org/815/dAsUFiIz68rzpns5Cv7XM36Pt8bBzbu7gn3ui6Hg8-o/input+file+with+spaces.mp3'
+                                                   },
+                                                   Tasks: [
+                                                     {
+                                                       Type: 'Copy',
+                                                       Mode: 'AWS/S3',
+                                                       BucketName: CONFIG.PORTER_TEST_BUCKET_NAME,
+                                                       ObjectKey: 'copied file with spaces'
+                                                     }
+                                                   ]
+                                                 }
+                                               }.to_json
+                                             })
 
         max_retries = 60
         retries = 0
 
         begin
           desc = step_functions.describe_execution({
-            execution_arn: req.execution_arn,
-          })
+                                                     execution_arn: req.execution_arn
+                                                   })
 
           raise RuntimeError if desc.status == 'RUNNING'
         rescue RuntimeError => e
@@ -158,33 +160,33 @@ describe :porter do
 
       it 'handles HTTP source files with encoded plus' do
         req = step_functions.start_execution({
-          state_machine_arn: CONFIG.PORTER_STATE_MACHINE_ARN,
-          input: {
-            Job: {
-              Id: 'porter-test-copy-http-encoded-plus-to-spaces',
-              Source: {
-                Mode: 'HTTP',
-                URL: 'https://dovetail-cdn-staging.prxu.org/815/dAsUFiIz68rzpns5Cv7XM36Pt8bBzbu7gn3ui6Hg8-o/input%2Bfile%2Bwith%2Bspaces.mp3'
-              },
-              Tasks: [
-                {
-                  Type: "Copy",
-                  Mode: "AWS/S3",
-                  BucketName: CONFIG.PORTER_TEST_BUCKET_NAME,
-                  ObjectKey: "copied file with spaces"
-                }
-              ]
-            }
-          }.to_json
-        })
+                                               state_machine_arn: CONFIG.PORTER_STATE_MACHINE_ARN,
+                                               input: {
+                                                 Job: {
+                                                   Id: 'porter-test-copy-http-encoded-plus-to-spaces',
+                                                   Source: {
+                                                     Mode: 'HTTP',
+                                                     URL: 'https://dovetail-cdn-staging.prxu.org/815/dAsUFiIz68rzpns5Cv7XM36Pt8bBzbu7gn3ui6Hg8-o/input%2Bfile%2Bwith%2Bspaces.mp3'
+                                                   },
+                                                   Tasks: [
+                                                     {
+                                                       Type: 'Copy',
+                                                       Mode: 'AWS/S3',
+                                                       BucketName: CONFIG.PORTER_TEST_BUCKET_NAME,
+                                                       ObjectKey: 'copied file with spaces'
+                                                     }
+                                                   ]
+                                                 }
+                                               }.to_json
+                                             })
 
         max_retries = 60
         retries = 0
 
         begin
           desc = step_functions.describe_execution({
-            execution_arn: req.execution_arn,
-          })
+                                                     execution_arn: req.execution_arn
+                                                   })
 
           raise RuntimeError if desc.status == 'RUNNING'
         rescue RuntimeError => e
@@ -207,33 +209,33 @@ describe :porter do
 
       it 'handles HTTP source files with encoded percent' do
         req = step_functions.start_execution({
-          state_machine_arn: CONFIG.PORTER_STATE_MACHINE_ARN,
-          input: {
-            Job: {
-              Id: 'porter-test-copy-http-encoded-percent-to-spaces',
-              Source: {
-                Mode: 'HTTP',
-                URL: 'https://dovetail-cdn-staging.prxu.org/815/dAsUFiIz68rzpns5Cv7XM36Pt8bBzbu7gn3ui6Hg8-o/input%25file%25with%25spaces.mp3'
-              },
-              Tasks: [
-                {
-                  Type: "Copy",
-                  Mode: "AWS/S3",
-                  BucketName: CONFIG.PORTER_TEST_BUCKET_NAME,
-                  ObjectKey: "copied file with spaces"
-                }
-              ]
-            }
-          }.to_json
-        })
+                                               state_machine_arn: CONFIG.PORTER_STATE_MACHINE_ARN,
+                                               input: {
+                                                 Job: {
+                                                   Id: 'porter-test-copy-http-encoded-percent-to-spaces',
+                                                   Source: {
+                                                     Mode: 'HTTP',
+                                                     URL: 'https://dovetail-cdn-staging.prxu.org/815/dAsUFiIz68rzpns5Cv7XM36Pt8bBzbu7gn3ui6Hg8-o/input%25file%25with%25spaces.mp3'
+                                                   },
+                                                   Tasks: [
+                                                     {
+                                                       Type: 'Copy',
+                                                       Mode: 'AWS/S3',
+                                                       BucketName: CONFIG.PORTER_TEST_BUCKET_NAME,
+                                                       ObjectKey: 'copied file with spaces'
+                                                     }
+                                                   ]
+                                                 }
+                                               }.to_json
+                                             })
 
         max_retries = 60
         retries = 0
 
         begin
           desc = step_functions.describe_execution({
-            execution_arn: req.execution_arn,
-          })
+                                                     execution_arn: req.execution_arn
+                                                   })
 
           raise RuntimeError if desc.status == 'RUNNING'
         rescue RuntimeError => e
@@ -258,33 +260,33 @@ describe :porter do
     describe :to_key_with_plus do
       it 'handles HTTP source files with spaces' do
         req = step_functions.start_execution({
-          state_machine_arn: CONFIG.PORTER_STATE_MACHINE_ARN,
-          input: {
-            Job: {
-              Id: 'porter-test-copy-http-spaces-to-plus',
-              Source: {
-                Mode: 'HTTP',
-                URL: 'https://dovetail-cdn-staging.prxu.org/815/dAsUFiIz68rzpns5Cv7XM36Pt8bBzbu7gn3ui6Hg8-o/input file with spaces.mp3'
-              },
-              Tasks: [
-                {
-                  Type: "Copy",
-                  Mode: "AWS/S3",
-                  BucketName: CONFIG.PORTER_TEST_BUCKET_NAME,
-                  ObjectKey: "copied+file+with+spaces"
-                }
-              ]
-            }
-          }.to_json
-        })
+                                               state_machine_arn: CONFIG.PORTER_STATE_MACHINE_ARN,
+                                               input: {
+                                                 Job: {
+                                                   Id: 'porter-test-copy-http-spaces-to-plus',
+                                                   Source: {
+                                                     Mode: 'HTTP',
+                                                     URL: 'https://dovetail-cdn-staging.prxu.org/815/dAsUFiIz68rzpns5Cv7XM36Pt8bBzbu7gn3ui6Hg8-o/input file with spaces.mp3'
+                                                   },
+                                                   Tasks: [
+                                                     {
+                                                       Type: 'Copy',
+                                                       Mode: 'AWS/S3',
+                                                       BucketName: CONFIG.PORTER_TEST_BUCKET_NAME,
+                                                       ObjectKey: 'copied+file+with+spaces'
+                                                     }
+                                                   ]
+                                                 }
+                                               }.to_json
+                                             })
 
         max_retries = 60
         retries = 0
 
         begin
           desc = step_functions.describe_execution({
-            execution_arn: req.execution_arn,
-          })
+                                                     execution_arn: req.execution_arn
+                                                   })
 
           raise RuntimeError if desc.status == 'RUNNING'
         rescue RuntimeError => e
@@ -307,33 +309,33 @@ describe :porter do
 
       it 'handles HTTP source files with encoded spaces' do
         req = step_functions.start_execution({
-          state_machine_arn: CONFIG.PORTER_STATE_MACHINE_ARN,
-          input: {
-            Job: {
-              Id: 'porter-test-copy-http-encoded-spaces-to-plus',
-              Source: {
-                Mode: 'HTTP',
-                URL: 'https://dovetail-cdn-staging.prxu.org/815/dAsUFiIz68rzpns5Cv7XM36Pt8bBzbu7gn3ui6Hg8-o/input%20file%20with%20spaces.mp3'
-              },
-              Tasks: [
-                {
-                  Type: "Copy",
-                  Mode: "AWS/S3",
-                  BucketName: CONFIG.PORTER_TEST_BUCKET_NAME,
-                  ObjectKey: "copied+file+with+spaces"
-                }
-              ]
-            }
-          }.to_json
-        })
+                                               state_machine_arn: CONFIG.PORTER_STATE_MACHINE_ARN,
+                                               input: {
+                                                 Job: {
+                                                   Id: 'porter-test-copy-http-encoded-spaces-to-plus',
+                                                   Source: {
+                                                     Mode: 'HTTP',
+                                                     URL: 'https://dovetail-cdn-staging.prxu.org/815/dAsUFiIz68rzpns5Cv7XM36Pt8bBzbu7gn3ui6Hg8-o/input%20file%20with%20spaces.mp3'
+                                                   },
+                                                   Tasks: [
+                                                     {
+                                                       Type: 'Copy',
+                                                       Mode: 'AWS/S3',
+                                                       BucketName: CONFIG.PORTER_TEST_BUCKET_NAME,
+                                                       ObjectKey: 'copied+file+with+spaces'
+                                                     }
+                                                   ]
+                                                 }
+                                               }.to_json
+                                             })
 
         max_retries = 60
         retries = 0
 
         begin
           desc = step_functions.describe_execution({
-            execution_arn: req.execution_arn,
-          })
+                                                     execution_arn: req.execution_arn
+                                                   })
 
           raise RuntimeError if desc.status == 'RUNNING'
         rescue RuntimeError => e
@@ -356,33 +358,33 @@ describe :porter do
 
       it 'handles HTTP source files with plus' do
         req = step_functions.start_execution({
-          state_machine_arn: CONFIG.PORTER_STATE_MACHINE_ARN,
-          input: {
-            Job: {
-              Id: 'porter-test-copy-http-plus-to-plus',
-              Source: {
-                Mode: 'HTTP',
-                URL: 'https://dovetail-cdn-staging.prxu.org/815/dAsUFiIz68rzpns5Cv7XM36Pt8bBzbu7gn3ui6Hg8-o/input+file+with+spaces.mp3'
-              },
-              Tasks: [
-                {
-                  Type: "Copy",
-                  Mode: "AWS/S3",
-                  BucketName: CONFIG.PORTER_TEST_BUCKET_NAME,
-                  ObjectKey: "copied+file+with+spaces"
-                }
-              ]
-            }
-          }.to_json
-        })
+                                               state_machine_arn: CONFIG.PORTER_STATE_MACHINE_ARN,
+                                               input: {
+                                                 Job: {
+                                                   Id: 'porter-test-copy-http-plus-to-plus',
+                                                   Source: {
+                                                     Mode: 'HTTP',
+                                                     URL: 'https://dovetail-cdn-staging.prxu.org/815/dAsUFiIz68rzpns5Cv7XM36Pt8bBzbu7gn3ui6Hg8-o/input+file+with+spaces.mp3'
+                                                   },
+                                                   Tasks: [
+                                                     {
+                                                       Type: 'Copy',
+                                                       Mode: 'AWS/S3',
+                                                       BucketName: CONFIG.PORTER_TEST_BUCKET_NAME,
+                                                       ObjectKey: 'copied+file+with+spaces'
+                                                     }
+                                                   ]
+                                                 }
+                                               }.to_json
+                                             })
 
         max_retries = 60
         retries = 0
 
         begin
           desc = step_functions.describe_execution({
-            execution_arn: req.execution_arn,
-          })
+                                                     execution_arn: req.execution_arn
+                                                   })
 
           raise RuntimeError if desc.status == 'RUNNING'
         rescue RuntimeError => e
@@ -405,33 +407,33 @@ describe :porter do
 
       it 'handles HTTP source files with encoded plus' do
         req = step_functions.start_execution({
-          state_machine_arn: CONFIG.PORTER_STATE_MACHINE_ARN,
-          input: {
-            Job: {
-              Id: 'porter-test-copy-http-encoded-plus-to-plus',
-              Source: {
-                Mode: 'HTTP',
-                URL: 'https://dovetail-cdn-staging.prxu.org/815/dAsUFiIz68rzpns5Cv7XM36Pt8bBzbu7gn3ui6Hg8-o/input%2Bfile%2Bwith%2Bspaces.mp3'
-              },
-              Tasks: [
-                {
-                  Type: "Copy",
-                  Mode: "AWS/S3",
-                  BucketName: CONFIG.PORTER_TEST_BUCKET_NAME,
-                  ObjectKey: "copied+file+with+spaces"
-                }
-              ]
-            }
-          }.to_json
-        })
+                                               state_machine_arn: CONFIG.PORTER_STATE_MACHINE_ARN,
+                                               input: {
+                                                 Job: {
+                                                   Id: 'porter-test-copy-http-encoded-plus-to-plus',
+                                                   Source: {
+                                                     Mode: 'HTTP',
+                                                     URL: 'https://dovetail-cdn-staging.prxu.org/815/dAsUFiIz68rzpns5Cv7XM36Pt8bBzbu7gn3ui6Hg8-o/input%2Bfile%2Bwith%2Bspaces.mp3'
+                                                   },
+                                                   Tasks: [
+                                                     {
+                                                       Type: 'Copy',
+                                                       Mode: 'AWS/S3',
+                                                       BucketName: CONFIG.PORTER_TEST_BUCKET_NAME,
+                                                       ObjectKey: 'copied+file+with+spaces'
+                                                     }
+                                                   ]
+                                                 }
+                                               }.to_json
+                                             })
 
         max_retries = 60
         retries = 0
 
         begin
           desc = step_functions.describe_execution({
-            execution_arn: req.execution_arn,
-          })
+                                                     execution_arn: req.execution_arn
+                                                   })
 
           raise RuntimeError if desc.status == 'RUNNING'
         rescue RuntimeError => e
@@ -454,33 +456,33 @@ describe :porter do
 
       it 'handles HTTP source files with encoded percent' do
         req = step_functions.start_execution({
-          state_machine_arn: CONFIG.PORTER_STATE_MACHINE_ARN,
-          input: {
-            Job: {
-              Id: 'porter-test-copy-http-encoded-percent-to-plus',
-              Source: {
-                Mode: 'HTTP',
-                URL: 'https://dovetail-cdn-staging.prxu.org/815/dAsUFiIz68rzpns5Cv7XM36Pt8bBzbu7gn3ui6Hg8-o/input%25file%25with%25spaces.mp3'
-              },
-              Tasks: [
-                {
-                  Type: "Copy",
-                  Mode: "AWS/S3",
-                  BucketName: CONFIG.PORTER_TEST_BUCKET_NAME,
-                  ObjectKey: "copied+file+with+spaces"
-                }
-              ]
-            }
-          }.to_json
-        })
+                                               state_machine_arn: CONFIG.PORTER_STATE_MACHINE_ARN,
+                                               input: {
+                                                 Job: {
+                                                   Id: 'porter-test-copy-http-encoded-percent-to-plus',
+                                                   Source: {
+                                                     Mode: 'HTTP',
+                                                     URL: 'https://dovetail-cdn-staging.prxu.org/815/dAsUFiIz68rzpns5Cv7XM36Pt8bBzbu7gn3ui6Hg8-o/input%25file%25with%25spaces.mp3'
+                                                   },
+                                                   Tasks: [
+                                                     {
+                                                       Type: 'Copy',
+                                                       Mode: 'AWS/S3',
+                                                       BucketName: CONFIG.PORTER_TEST_BUCKET_NAME,
+                                                       ObjectKey: 'copied+file+with+spaces'
+                                                     }
+                                                   ]
+                                                 }
+                                               }.to_json
+                                             })
 
         max_retries = 60
         retries = 0
 
         begin
           desc = step_functions.describe_execution({
-            execution_arn: req.execution_arn,
-          })
+                                                     execution_arn: req.execution_arn
+                                                   })
 
           raise RuntimeError if desc.status == 'RUNNING'
         rescue RuntimeError => e
