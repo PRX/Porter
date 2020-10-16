@@ -198,6 +198,11 @@
                 "Variable": "$.Task.Type",
                 "StringEquals": "WavWrap",
                 "Next": "WAV Wrap Task Handler"
+              },
+              {
+                "Variable": "$.Task.Type",
+                "StringEquals": "Translate",
+                "Next": "Translate Task Job Start"
               }
             ]
           },
@@ -608,6 +613,41 @@
             "ResultPath": "$.TaskResult",
             "OutputPath": "$",
             "Next": "TaskResult Callbacks Map",
+            "Retry": [
+              {
+                "ErrorEquals": ["States.ALL"],
+                "IntervalSeconds": 5,
+                "MaxAttempts": 3,
+                "BackoffRate": 2
+              }
+            ],
+            "Catch": [
+              {
+                "ErrorEquals": ["States.ALL"],
+                "ResultPath": "$.Error",
+                "Next": "TaskResult Error Callback Map"
+              }
+            ]
+          },
+          "Translate Task Job Start": {
+            "Type": "Task",
+            "Comment": "Translates text from artifacts",
+            "Resource": "arn:${AwsPartition}:states:::lambda:invoke.waitForTaskToken",
+            "InputPath": "$",
+            "Parameters": {
+              "FunctionName": "${TranslationJobStartLambdaFunctionArn}",
+              "Payload": {
+                "Job": { "Id.$": "$.Job.Id" },
+                "Execution": { "Id.$": "$$.Execution.Id" },
+                "Artifact.$": "$.Artifact",
+                "Task.$": "$.Task",
+                "TaskIteratorIndex.$": "$.TaskIndex",
+                "TaskToken.$": "$$.Task.Token"
+              }
+            },
+            "ResultPath": "$.TranslateJob",
+            "OutputPath": "$",
+            "Next": "Translate Task Job Success Handler",
             "Retry": [
               {
                 "ErrorEquals": ["States.ALL"],

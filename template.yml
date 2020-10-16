@@ -2682,6 +2682,8 @@ Resources:
         TranscodeTaskOutputLambdaFunctionArn: !GetAtt TranscodeTaskOutputLambdaFunction.Arn
         TranscriptionJobResultsLambdaFunctionArn: !GetAtt TranscriptionJobResultsLambdaFunction.Arn
         TranscriptionJobStartLambdaFunctionArn: !GetAtt TranscriptionJobStartLambdaFunction.Arn
+        TranslationJobStartLambdaFunctionArn: !GetAtt TranslationJobStartLambdaFunction.Arn
+        TranslationJobResultsLambdaFunctionArn: !GetAtt TranslationJobResultsLambdaFunction.Arn
         VpcPublicSubnet1: !Ref PublicSubnet1
         VpcPublicSubnet2: !Ref PublicSubnet2
         VpcPrivateSubnet1: !Ref PrivateSubnet1

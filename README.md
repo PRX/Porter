@@ -26,6 +26,7 @@ Many input and output methods are supported to allow flexibility with other appl
     -   [Image Transform](#image-transform)
     -   [Transcode](#transcode)
     -   [Transcribe](#transcribe)
+    -   [Translate](#translate)
     -   [WAV Wrap](#wav-wrap)
 -   [Serialized Jobs](#serialized-jobs)
 -   [S3 Destination Permissions](#s3-destination-permissions)
@@ -659,6 +660,37 @@ Input:
         "Mode": "AWS/S3",
         "BucketName": "myBucket",
         "ObjectKey": "myTranscript.json"
+    }
+}
+```
+
+Output:
+
+```json
+{
+    "Task": "Transcribe",
+    "BucketName": "myBucket",
+    "ObjectKey": "myTranscript.json"
+}
+```
+
+### Translate
+
+`Translate` tasks use [Amazon Translate](https://aws.amazon.com/translate/) neural machine translation service to translate source text from one language to others. The source artifact must have a content type of `text/plain` or `text/html`. The `SourceLanguageCode` property is required. The `TargetLanguageCodes` property is also required and must be an array. The destination property is required, and the only mode currently supported is `AWS/S3`.
+
+Input:
+
+```json
+{
+    "Type": "Translate",
+    "SourceLanguageCode": "en",
+    "TargetLanguageCodes": [
+        "es"
+    ]
+    "Destination": {
+        "Mode": "AWS/S3",
+        "BucketName": "myBucket",
+        "ObjectPrefix": "myTranslations"
     }
 }
 ```
