@@ -38,12 +38,14 @@ module.exports = {
 
       if (stream) {
         Object.assign(inspection, {
-          Duration: Math.round(nmbr(stream.duration) * 1000),
-          Format: stream.codec_name,
-          Bitrate: nmbr(stream.bit_rate),
-          Frequency: nmbr(stream.sample_rate),
-          Channels: stream.channels,
-          Layout: stream.channel_layout,
+          ...(stream.duration && {
+            Duration: Math.round(nmbr(stream.duration) * 1000),
+          }),
+          ...(stream.codec_name && { Format: stream.codec_name }),
+          ...(stream.bit_rate && { Bitrate: nmbr(stream.bit_rate) }),
+          ...(stream.sample_rate && { Frequency: nmbr(stream.sample_rate) }),
+          ...(stream.channels && { Channels: stream.channels }),
+          ...(stream.channel_layout && { Layout: stream.channel_layout }),
         });
       }
     } catch (error) {
@@ -57,10 +59,12 @@ module.exports = {
 
         if (check) {
           Object.assign(inspection, {
-            Layer: check.layer,
-            Frames: check.frames,
-            Samples: check.samples,
-            UnidentifiedBytes: check.unidentified,
+            ...(check.layer && { Layer: check.layer }),
+            ...(check.frames && { Frames: check.frames }),
+            ...(check.samples && { Samples: check.samples }),
+            ...(check.unidentified && {
+              UnidentifiedBytes: check.unidentified,
+            }),
           });
         }
       } catch (error) {
@@ -75,9 +79,9 @@ module.exports = {
 
         if (loudness) {
           Object.assign(inspection, {
-            LoudnessIntegrated: +loudness.input_i,
-            LoudnessTruePeak: +loudness.input_tp,
-            LoudnessRange: +loudness.input_lra,
+            ...(loudness.input_i && { LoudnessIntegrated: +loudness.input_i }),
+            ...(loudness.input_tp && { LoudnessTruePeak: +loudness.input_tp }),
+            ...(loudness.input_lra && { LoudnessRange: +loudness.input_lra }),
           });
         }
       } catch (error) {

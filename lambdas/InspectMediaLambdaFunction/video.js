@@ -32,14 +32,16 @@ module.exports = {
 
       if (stream) {
         Object.assign(inspection, {
-          Duration: Math.round(nmbr(stream.duration) * 1000),
-          Format: stream.codec_name,
-          Width: stream.width,
-          Height: stream.height,
-          Aspect: stream.display_aspect_ratio,
-          // r_frame_rate may be expressed as a string ratio, e.g. "24000/1001"
-          // eslint-disable-next-line no-eval
-          Framerate: nmbr(stream.r_frame_rate),
+          ...(stream.duration && {
+            Duration: Math.round(nmbr(stream.duration) * 1000),
+          }),
+          ...(stream.codec_name && { Format: stream.codec_name }),
+          ...(stream.width && { Width: stream.width }),
+          ...(stream.height && { Height: stream.height }),
+          ...(stream.display_aspect_ratio && {
+            Aspect: stream.display_aspect_ratio,
+          }),
+          ...(stream.r_frame_rate && { Framerate: nmbr(stream.r_frame_rate) }),
         });
       }
     } catch (error) {
