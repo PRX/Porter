@@ -2,22 +2,20 @@ const childProcess = require('child_process');
 const os = require('os');
 
 /**
- * @typedef {object} FfprobeResult
- * @property {array} [streams]
- * @property {object} [format]
+ * @typedef {object} FfmpegLoudnormResult
+ * @property {string} [input_i]
+ * @property {string} [input_tp]
+ * @property {string} [input_lra]
+ * @property {string} [input_thresh]
  */
 
 module.exports = {
   /**
    * @param {string} filePath
-   * @returns {Promise<FfprobeResult>}
+   * @returns {Promise<FfmpegLoudnormResult>}
    */
-  inspect: async function inspect(filePath, measureLoudness) {
+  inspect: async function inspect(filePath) {
     return new Promise((resolve, reject) => {
-      if (measureLoudness !== true) {
-        resolve({});
-      }
-
       const start = process.hrtime();
 
       // This will return JSON data after a lot of other FFmpeg process
@@ -65,8 +63,9 @@ module.exports = {
           reject(new Error(`ffprobe failed with ${code || signal}`));
         } else {
           const output = Buffer.concat(resultBuffers).toString().trim();
-          const match = output.match(/\n({.+})$/m);
-
+          // The JSON loudness data should come at the end of the output
+          const match = output.match(/\n({[\s\S]+})$/m);
+          console.log(match);
           if (match) {
             const json = match[1];
 

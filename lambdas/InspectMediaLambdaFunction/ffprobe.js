@@ -2,9 +2,40 @@ const childProcess = require('child_process');
 const os = require('os');
 
 /**
+ * @typedef {object} FfprobeFormat
+ * @property {string} [filename]
+ * @property {number} [nb_streams]
+ * @property {number} [nb_programs]
+ * @property {string} [format_name]
+ * @property {string} [format_long_name]
+ * @property {string} [start_time]
+ * @property {string} [duration]
+ * @property {string} [size]
+ * @property {number} [probe_score]
+ * @property {object} [tags]
+ */
+
+/**
+ * @typedef {object} FfprobeStream
+ * @property {number} [index]
+ * @property {string} [codec_name]
+ * @property {string} [codec_long_name]
+ * @property {string} [codec_type]
+ * @property {string} [sample_rate]
+ * @property {number} [channels]
+ * @property {string} [channel_layout]
+ * @property {string} [bit_rate]
+ * @property {string} [duration]
+ * @property {number} [width]
+ * @property {number} [height]
+ * @property {string} [display_aspect_ratio]
+ * @property {string} [r_frame_rate]
+ */
+
+/**
  * @typedef {object} FfprobeResult
- * @property {array} [streams]
- * @property {object} [format]
+ * @property {FfprobeStream[]} [streams]
+ * @property {FfprobeFormat} [format]
  */
 
 module.exports = {
