@@ -1,6 +1,7 @@
 const ebur128 = require('./ebu-r-128');
 const ffprobe = require('./ffprobe');
 const mpck = require('./mpck');
+const { nmbr } = require('./util');
 
 /** @typedef {import('./index').InspectTask} InspectTask */
 
@@ -37,10 +38,10 @@ module.exports = {
 
       if (stream) {
         Object.assign(inspection, {
-          Duration: Math.round(+stream.duration * 1000),
+          Duration: Math.round(nmbr(stream.duration) * 1000),
           Format: stream.codec_name,
-          Bitrate: +stream.bit_rate,
-          Frequency: +stream.sample_rate,
+          Bitrate: nmbr(stream.bit_rate),
+          Frequency: nmbr(stream.sample_rate),
           Channels: stream.channels,
           Layout: stream.channel_layout,
         });
