@@ -83,7 +83,10 @@ module.exports = {
           reject(new Error(`ffprobe failed with ${code || signal}`));
         } else {
           try {
-            resolve(JSON.parse(Buffer.concat(resultBuffers).toString().trim()));
+            const data = JSON.parse(
+              Buffer.concat(resultBuffers).toString().trim(),
+            );
+            resolve(data);
           } catch (error) {
             reject(error);
           }
