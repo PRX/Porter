@@ -65,7 +65,7 @@ module.exports = {
           const output = Buffer.concat(resultBuffers).toString().trim();
           // The JSON loudness data should come at the end of the output
           const match = output.match(/\n({[\s\S]+})$/m);
-          console.log(match);
+
           if (match) {
             const json = match[1];
 
