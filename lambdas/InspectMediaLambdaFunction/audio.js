@@ -90,6 +90,6 @@ module.exports = {
     }
 
     console.log('Audio inspection yielded no results');
-    return;
+    return null;
   },
 };

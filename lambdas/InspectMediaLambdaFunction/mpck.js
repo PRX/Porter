@@ -20,7 +20,7 @@ function extract(output) {
 
   const layer = output.match(/layer\s+([1-3])/);
   if (layer) {
-    result.layer = layer[1];
+    [, result.layer] = layer;
   }
 
   const frames = output.match(/frames\s+([0-9]+)/);

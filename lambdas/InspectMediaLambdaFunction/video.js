@@ -37,6 +37,7 @@ module.exports = {
           Height: stream.height,
           Aspect: stream.display_aspect_ratio,
           // r_frame_rate may be expressed as a string ratio, e.g. "24000/1001"
+          // eslint-disable-next-line no-eval
           Framerate: +eval(stream.r_frame_rate),
         });
       }
@@ -50,6 +51,6 @@ module.exports = {
     }
 
     console.log('Video inspection yielded no results');
-    return;
+    return null;
   },
 };

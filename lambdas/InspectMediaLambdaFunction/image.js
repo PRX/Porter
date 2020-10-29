@@ -47,6 +47,6 @@ module.exports = {
     }
 
     console.log('Image inspection yielded no results');
-    return;
+    return null;
   },
 };
