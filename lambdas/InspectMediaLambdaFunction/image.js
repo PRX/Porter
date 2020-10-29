@@ -32,9 +32,9 @@ module.exports = {
 
       if (meta) {
         Object.assign(inspection, {
-          Width: +meta.width,
-          Height: +meta.height,
-          Format: meta.format,
+          ...(meta.width && { Width: +meta.width }),
+          ...(meta.height && { Height: +meta.height }),
+          ...(meta.format && { Format: meta.format }),
         });
       }
     } catch (error) {
