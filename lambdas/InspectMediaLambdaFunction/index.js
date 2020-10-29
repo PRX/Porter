@@ -26,7 +26,10 @@ function spawn(command, argsarray, envOptions) {
     const resultBuffers = [];
 
     childProc.stdout.on('data', (buffer) => resultBuffers.push(buffer));
-    childProc.stderr.on('data', (buffer) => console.error(buffer.toString()));
+    childProc.stderr.on('data', (buffer) => {
+      console.error(buffer.toString());
+      resultBuffers.push(buffer);
+    });
 
     childProc.on('exit', (code, signal) => {
       if (code || signal) {
@@ -59,7 +62,7 @@ function s3GetObject(bucket, fileKey, filePath) {
   });
 }
 
-function audioInspection(ffprobe, mpck) {
+function audioInspection(ffprobe, mpck, loudnorm) {
   const stream = ffprobe.streams.find((s) => s.codec_type === 'audio');
 
   const inspection = {};
@@ -68,8 +71,8 @@ function audioInspection(ffprobe, mpck) {
     Object.assign(inspection, {
       Duration: Math.round(stream.duration * 1000),
       Format: stream.codec_name,
-      Bitrate: stream.bit_rate,
-      Frequency: stream.sample_rate,
+      Bitrate: +stream.bit_rate,
+      Frequency: +stream.sample_rate,
       Channels: stream.channels,
       Layout: stream.channel_layout,
     });
@@ -82,11 +85,29 @@ function audioInspection(ffprobe, mpck) {
         ? mpck.match(/layer (.+)/)[1].trim()
         : null,
       Samples: mpck.match(/samples (.+)/)
-        ? mpck.match(/samples (.+)/)[1].trim()
+        ? +mpck.match(/samples (.+)/)[1].trim()
         : null,
       Frames: mpck.match(/frames (.+)/)
-        ? mpck.match(/frames (.+)/)[1].trim()
+        ? +mpck.match(/frames (.+)/)[1].trim()
         : null,
+    });
+  }
+
+  if (loudnorm && loudnorm.input_i) {
+    Object.assign(inspection, {
+      LoudnessIntegrated: +loudnorm.input_i,
+    });
+  }
+
+  if (loudnorm && loudnorm.input_tp) {
+    Object.assign(inspection, {
+      LoudnessTruePeak: +loudnorm.input_tp,
+    });
+  }
+
+  if (loudnorm && loudnorm.input_lra) {
+    Object.assign(inspection, {
+      LoudnessRange: +loudnorm.input_lra,
     });
   }
 
@@ -153,6 +174,51 @@ async function runffprobe(artifactFileTmpPath) {
   );
 
   return ffprobe;
+}
+
+async function runffmpegloudnorm(artifactFileTmpPath, measureLoudness) {
+  if (measureLoudness !== true) {
+    return {};
+  }
+
+  const start = process.hrtime();
+
+  const buffer = await spawn(
+    '/opt/bin/ffmpeg',
+    [
+      '-v',
+      'info',
+      '-hide_banner',
+      '-nostats',
+      '-i',
+      artifactFileTmpPath,
+      '-af',
+      'loudnorm=dual_mono=true:print_format=json',
+      '-f',
+      'null',
+      '-',
+    ],
+    { env: process.env, cwd: os.tmpdir() },
+  );
+
+  const end = process.hrtime(start);
+
+  let loudnorm = {};
+
+  try {
+    // TODO Very fragile
+    loudnorm = JSON.parse(`{${buffer.split('\n{\n')[1]}`);
+  } catch (error) {}
+
+  console.log(
+    JSON.stringify({
+      msg: 'Finished loudnorm',
+      duration: `${end[0]} s ${end[1] / 1000000} ms`,
+      data: loudnorm,
+    }),
+  );
+
+  return loudnorm;
 }
 
 async function runmpck(artifactFileTmpPath) {
@@ -225,6 +291,10 @@ exports.handler = async (event, context) => {
   await fetchArtifact(event, artifactFileTmpPath);
 
   const ffprobe = await runffprobe(artifactFileTmpPath);
+  const loudnorm = await runffmpegloudnorm(
+    artifactFileTmpPath,
+    event.Task.EBUR128,
+  );
   const mpck = await runmpck(artifactFileTmpPath);
   const sharpOut = await runsharp(artifactFileTmpPath);
 
@@ -233,7 +303,9 @@ exports.handler = async (event, context) => {
 
   fs.unlinkSync(artifactFileTmpPath);
 
-  Object.assign(inspection, { Audio: audioInspection(ffprobe, mpck) });
+  Object.assign(inspection, {
+    Audio: audioInspection(ffprobe, mpck, loudnorm),
+  });
   Object.assign(inspection, { Video: videoInspection(ffprobe) });
   Object.assign(inspection, { Image: imageInspection(sharpOut) });
   Object.assign(inspection, event.Artifact.Descriptor);
