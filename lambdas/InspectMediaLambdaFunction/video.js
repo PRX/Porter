@@ -1,6 +1,6 @@
 const ffprobe = require('./ffprobe');
 
-/** @typedef {import('./index2').InspectTask} InspectTask */
+/** @typedef {import('./index').InspectTask} InspectTask */
 
 /**
  * @typedef {object} VideoInspection

@@ -1,6 +1,6 @@
 const sharp = require('sharp');
 
-/** @typedef {import('./index2').InspectTask} InspectTask */
+/** @typedef {import('./index').InspectTask} InspectTask */
 
 /**
  * @typedef {object} ImageInspection

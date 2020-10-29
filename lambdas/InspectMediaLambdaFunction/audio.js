@@ -2,7 +2,7 @@ const ebur128 = require('./ebu-r-128');
 const ffprobe = require('./ffprobe');
 const mpck = require('./mpck');
 
-/** @typedef {import('./index2').InspectTask} InspectTask */
+/** @typedef {import('./index').InspectTask} InspectTask */
 
 /**
  * @typedef {object} AudioInspection
