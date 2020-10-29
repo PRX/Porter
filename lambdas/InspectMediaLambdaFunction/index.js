@@ -91,17 +91,23 @@ exports.handler = async (event, context) => {
 
   const stat = fs.statSync(artifactFileTmpPath);
 
-  const audioInspection = await audio.inspect(event.Task, artifactFileTmpPath);
-  const videoInspection = await video.inspect(event.Task, artifactFileTmpPath);
-  const imageInspection = await image.inspect(event.Task, artifactFileTmpPath);
+  const [
+    audioInspection,
+    videoInspection,
+    imageInspection,
+  ] = await Promise.all([
+    audio.inspect(event.Task, artifactFileTmpPath),
+    video.inspect(event.Task, artifactFileTmpPath),
+    image.inspect(event.Task, artifactFileTmpPath),
+  ]);
 
   /** @type Inspection */
   const inspection = {
     Size: stat.size,
     ...event.Artifact.Descriptor,
-    ...(audioInspection && { Audio: await audioInspection }),
-    ...(videoInspection && { Video: await videoInspection }),
-    ...(imageInspection && { Image: await imageInspection }),
+    ...(audioInspection && { Audio: audioInspection }),
+    ...(videoInspection && { Video: videoInspection }),
+    ...(imageInspection && { Image: imageInspection }),
   };
 
   fs.unlinkSync(artifactFileTmpPath);
