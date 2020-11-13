@@ -621,11 +621,14 @@ Output:
 
 `Inspect` tasks performs an analysis of the job's source file, and returns a set of metadata. The method of analysis and resulting data are determined by the type of the source file.
 
+If the optional `EBUR128` property is set to `true`, several loudness measurements will be taken based on the [EBU R 128](https://en.wikipedia.org/wiki/EBU_R_128) standard. Given that this takes significantly longer than the rest of the inspection task, when submitting jobs that include loudness measurement, you may want to include two `Inspect` tasks, so that one can return results more quickly.
+
 Input:
 
 ```json
 {
-    "Type": "Inspect"
+    "Type": "Inspect",
+    "EBUR128": true
 }
 ```
 

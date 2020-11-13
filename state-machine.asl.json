@@ -215,7 +215,8 @@
             "InputPath": "$",
             "Parameters": {
               "Job": { "Id.$": "$.Job.Id" },
-              "Artifact.$": "$.Artifact"
+              "Artifact.$": "$.Artifact",
+              "Task.$": "$.Task"
             },
             "ResultPath": "$.TaskResult",
             "OutputPath": "$",
