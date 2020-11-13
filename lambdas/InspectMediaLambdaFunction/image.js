@@ -1,3 +1,4 @@
+// eslint-disable-next-line import/no-extraneous-dependencies
 const sharp = require('sharp');
 
 /** @typedef {import('./index').InspectTask} InspectTask */
