@@ -1681,7 +1681,7 @@ Resources:
         Project: Porter
         prx:cloudformation:stack-name: !Ref AWS::StackName
         prx:cloudformation:stack-id: !Ref AWS::StackId
-      Timeout: 64
+      Timeout: 900
       Tracing: Active
   InspectMediaLambdaLogGroup:
     Type: AWS::Logs::LogGroup
