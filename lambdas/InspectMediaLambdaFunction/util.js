@@ -21,7 +21,7 @@ module.exports = {
       return +match[1] / +match[3];
     }
 
-    //
+    // Look for integer and decimal strings and convert to numbers
     if (typeof val === 'string' && val.match(/^(-?[0-9]+(\.[0-9]+)?)$/)) {
       return +val;
     }
