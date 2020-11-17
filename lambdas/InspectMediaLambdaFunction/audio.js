@@ -52,8 +52,8 @@ module.exports = {
       console.log(error);
     }
 
-    // Additional inspection for MP3 streams
-    if (inspection.Format === 'mp3') {
+    // Additional inspection for mpeg streams
+    if (['mp2', 'mp3'].includes(inspection.Format)) {
       try {
         const check = await mpck.inspect(filePath);
 
