@@ -48,9 +48,11 @@ Porter receives messages to start jobs, and sends messages while jobs are runnin
 
 ### Starting a Job
 
-When you want to start a job, a message must be sent to Porter. This can be done either directly through the [AWS Step Functions API](https://docs.aws.amazon.com/step-functions/latest/apireference/Welcome.html), or by way of an SNS topic that is created along side the state machine when the CloudFormation stack is launched.
+When you want to start a job, a message must be sent to Porter. There are a number of methods supported.
 
-**API Example**
+**Step Functions API**
+
+Directly through the [AWS Step Functions API](https://docs.aws.amazon.com/step-functions/latest/apireference/Welcome.html)
 
 ```python
 import boto3
@@ -61,7 +63,9 @@ stepfunctions.start_execution(
 )
 ```
 
-**SNS Example**
+**SNS**
+
+By way of an SNS topic that is created along side the state machine when the CloudFormation stack is launched:
 
 ```python
 import boto3
@@ -69,6 +73,39 @@ sns = boto3.client('sns')
 sns.publish(
     TopicArn='arn:aws:sns:us-east-2:1234512345:SnsTopic-ABCDE1234',
     Message='{"Job": { … }}'
+)
+```
+
+**EventBridge**
+
+Events can be sent to a bus in [Amazon EventBridge](https://aws.amazon.com/eventbridge/). When the stack is launched a rule is added to both the default event bus as well as a custom event bus whose name can be found in the stack's outputs. Events can be sent to either bus. You can disable the default bus rule using the stack's parameters. Only an event's `detail` is sent to the state machine. If you have multiple Porter instances in a single AWS account, all instances will receive all jobs sent to the default bus.
+
+The event detail type must be `Porter Job Execution Submission`.
+
+```python
+import boto3
+events = boto3.client('events')
+events.put_events(
+    Entries=[
+        {
+            'Source': 'com.example.app',
+            'DetailType': 'Porter Job Execution Submission',
+            'Detail': '{"Job": { … }}'
+        }
+    ]
+)
+```
+
+**Optional SQS Queue**
+
+If the `EnableSqsJobExecution` stack parameter is set to `True`, an [Amazon SQS](https://aws.amazon.com/sqs/) queue will also be created when the Porter stack is launched, and messages sent to the queue will be [processed](https://docs.aws.amazon.com/lambda/latest/dg/with-sqs.html) and forwarded to the state machine automatically. Be aware that enabling this option relies on regularly polling the queue, and there are costs associated with that even when no messages are being sent.
+
+```python
+import boto3
+sqs = boto3.client('sqs')
+sqs.send_message(
+    QueueUrl='https://sqs.us-east-2.amazonaws.com/1234512345/Porter1234-JobExecutionSqsQueue',
+    MessageBody='{"Job": { … }}'
 )
 ```
 
@@ -132,11 +169,15 @@ The role's ARN is published as an output on the CloudFormation stack. The follow
 
 #### Job Tasks
 
-`Tasks` is an array of individual operations the state machine should perform. Every member of the array should be an object with a `Type` property. Valid types are: [`Inspect`](#inspect), [`Copy`](#copy), [`Image`](#image-transform), [`Transcode`](#transcode), [`Transcribe`](#transcribe). Tasks with invalid types are ignored. The other properties of any given task are determined by their type (see below).
+`Tasks` is an array of individual operations the state machine should perform. Every member of the array should be an object with a `Type` property. Valid types are: [`Inspect`](#inspect), [`Copy`](#copy), [`Image`](#image-transform), [`Transcode`](#transcode), [`Transcribe`](#transcribe), [`WavWrap`](#wav-wrap). Tasks with invalid types are ignored. The other properties of any given task are determined by their type (see below).
 
 #### Job Callbacks
 
-`Callbacks` is an array of endpoints to which callback messages about the job execution will be sent. Each endpoint object has a `Type` (supported types are `AWS/SNS`, `AWS/SQS`, `AWS/S3`, and `HTTP`). Different modes will have additional required properties. `HTTP` callbacks using methods like `POST` or `PUT` require a `Content-Type`. Possible values are `application/json` and `application/x-www-form-urlencoded`.
+`Callbacks` is an array of endpoints to which callback messages about the job execution will be sent. Each endpoint object has a `Type` (supported types are `AWS/SNS`, `AWS/SQS`, `AWS/S3`, `AWS/EventBridge`, and `HTTP`). Different modes will have additional required properties.
+
+`HTTP` callbacks using methods like `POST` or `PUT` require a `Content-Type`. Possible values are `application/json` and `application/x-www-form-urlencoded`.
+
+`AWS/SNS` callbacks must include a `Topic`, and `AWS/SQS` callbacks must include a `Queue` in the form of a URL. An `AWS/EventBridge` callback can optionally include an `EventBusName`; if excluded the callback will be sent to the default event bus.
 
 `AWS/S3` callbacks require both the `BucketName` and `ObjectPrefix` properties. Each callback result will be written to S3 individually (i.e., one file for each task result, and one file for the job result). The object name will be one of the following:
 
@@ -580,11 +621,14 @@ Output:
 
 `Inspect` tasks performs an analysis of the job's source file, and returns a set of metadata. The method of analysis and resulting data are determined by the type of the source file.
 
+If the optional `EBUR128` property is set to `true`, several loudness measurements will be taken based on the [EBU R 128](https://en.wikipedia.org/wiki/EBU_R_128) standard. Given that this takes significantly longer than the rest of the inspection task, when submitting jobs that include loudness measurement, you may want to include two `Inspect` tasks, so that one can return results more quickly.
+
 Input:
 
 ```json
 {
-    "Type": "Inspect"
+    "Type": "Inspect",
+    "EBUR128": true
 }
 ```
 

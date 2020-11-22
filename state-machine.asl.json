@@ -32,6 +32,8 @@
       "ItemsPath": "$.Job.Callbacks",
       "Parameters": {
         "Callback.$": "$$.Map.Item.Value",
+        "StateMachine": { "Id.$": "$$.StateMachine.Id" },
+        "Execution": { "Id.$": "$$.Execution.Id" },
         "Message": {
           "JobReceived": {
             "Job": { "Id.$": "$.Job.Id" },
@@ -213,7 +215,8 @@
             "InputPath": "$",
             "Parameters": {
               "Job": { "Id.$": "$.Job.Id" },
-              "Artifact.$": "$.Artifact"
+              "Artifact.$": "$.Artifact",
+              "Task.$": "$.Task"
             },
             "ResultPath": "$.TaskResult",
             "OutputPath": "$",
@@ -315,11 +318,7 @@
               "NetworkConfiguration": {
                 "AwsvpcConfiguration": {
                   "AssignPublicIp": "ENABLED",
-                  "Subnets": [
-                    "${VpcPublicSubnet1}",
-                    "${VpcPublicSubnet2}",
-                    "${VpcPublicSubnet2}"
-                  ]
+                  "Subnets": ["${VpcPublicSubnet1}", "${VpcPublicSubnet2}"]
                 }
               },
               "TaskDefinition": "${FtpCopyEcsTaskDefinitionArn}"
@@ -633,6 +632,8 @@
             "ItemsPath": "$.Callbacks",
             "Parameters": {
               "Callback.$": "$$.Map.Item.Value",
+              "StateMachine": { "Id.$": "$$.StateMachine.Id" },
+              "Execution": { "Id.$": "$$.Execution.Id" },
               "TaskIteratorIndex.$": "$.TaskIndex",
               "Message": {
                 "Task.$": "$.Task",
@@ -677,6 +678,8 @@
             "ItemsPath": "$.Callbacks",
             "Parameters": {
               "Callback.$": "$$.Map.Item.Value",
+              "StateMachine": { "Id.$": "$$.StateMachine.Id" },
+              "Execution": { "Id.$": "$$.Execution.Id" },
               "TaskIteratorIndex.$": "$.TaskIndex",
               "Message": {
                 "Task.$": "$.Task",
@@ -732,6 +735,8 @@
       "ItemsPath": "$.Job.Callbacks",
       "Parameters": {
         "Callback.$": "$$.Map.Item.Value",
+        "StateMachine": { "Id.$": "$$.StateMachine.Id" },
+        "Execution": { "Id.$": "$$.Execution.Id" },
         "Message": {
           "JobResult": {
             "Job": { "Id.$": "$.Job.Id" },

@@ -1,5 +1,6 @@
 .aws-sam
 .bundle
+.cache
 .config
 .deploy
 .DS_Store
