@@ -1674,7 +1674,7 @@ Resources:
         - !Ref FfmpegLambdaLayer
         - !Ref MpckLambdaLayer
         - !Ref SharpLambdaLayer
-      MemorySize: 512
+      MemorySize: 2048
       Role: !GetAtt InspectMediaLambdaIamRole.Arn
       Runtime: nodejs12.x
       Tags:
