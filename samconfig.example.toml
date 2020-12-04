@@ -2,7 +2,7 @@ version = 0.1
 
 [stag.deploy.parameters]
 stack_name = "porter-stag-example"
-s3_bucket = "tktktktk" # This bucket has usually created by SAM previously
+s3_bucket = "tktktktk" # This bucket has usually been created by SAM previously
 s3_prefix = "porter-stag-example"
 region = "us-east-2"
 profile = "tktktktk"
@@ -12,7 +12,7 @@ parameter_overrides = "TranscodeJobNamePrefix=\"porter-example-\" EnvironmentTyp
 
 [prod.deploy.parameters]
 stack_name = "porter-prod-example"
-s3_bucket = "tktktktk" # This bucket has usually created by SAM previously
+s3_bucket = "tktktktk" # This bucket has usually been created by SAM previously
 s3_prefix = "porter-prod-example"
 region = "us-east-2"
 profile = "tktktktk"
