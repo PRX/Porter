@@ -13,6 +13,12 @@
   ],
   "tasks": [
     {
+      "label": "Clean",
+      "type": "shell",
+      "command": "make clean",
+      "problemMatcher": []
+    },
+    {
       "label": "CI:Build & Test",
       "type": "shell",
       "command": "docker-compose build && docker-compose run ci",
