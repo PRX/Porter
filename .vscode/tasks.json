@@ -27,7 +27,7 @@
     {
       "label": "SAM:Deploy",
       "type": "shell",
-      "command": "cp samconfig.${input:appEnv}.toml samconfig.toml && sam deploy && rm samconfig.toml",
+      "command": "make deploy env=${input:appEnv}",
       "problemMatcher": []
     },
     {
