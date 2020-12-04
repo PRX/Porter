@@ -1,10 +1,4 @@
 {
   "name": "null",
-  "version": "1.0.0",
-  "dependencies": {},
-  "devDependencies": {
-    "aws-sdk": "^2.663.0",
-    "aws-xray-sdk": "^3.0.0",
-    "sharp": "^0.25.2"
-  }
+  "version": "1.0.0"
 }

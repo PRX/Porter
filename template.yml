@@ -1353,28 +1353,31 @@ Resources:
     Metadata:
       BuildMethod: makefile
     Properties:
-      Description: aws-xray NPM module
       ContentUri: layers/aws-xray-sdk
       CompatibleRuntimes:
         - nodejs12.x
+      Description: aws-xray NPM module
+      RetentionPolicy: Delete
   FileTypeLambdaLayer:
     Type: AWS::Serverless::LayerVersion
     Metadata:
       BuildMethod: makefile
     Properties:
-      Description: file-type NPM module
       ContentUri: layers/file-type
       CompatibleRuntimes:
         - nodejs12.x
+      Description: file-type NPM module
+      RetentionPolicy: Delete
   SharpLambdaLayer:
     Type: AWS::Serverless::LayerVersion
     Metadata:
       BuildMethod: makefile
     Properties:
-      Description: sharp NPM module
       ContentUri: layers/sharp
       CompatibleRuntimes:
         - nodejs12.x
+      Description: sharp NPM module
+      RetentionPolicy: Delete
   WavefileLambdaLayer:
     Type: AWS::Serverless::LayerVersion
     Metadata:
@@ -1384,24 +1387,27 @@ Resources:
       ContentUri: layers/wavefile
       CompatibleRuntimes:
         - nodejs12.x
+      RetentionPolicy: Delete
   FfmpegLambdaLayer:
     Type: AWS::Serverless::LayerVersion
     Metadata:
       BuildMethod: makefile
     Properties:
-      Description: wavefile NPM module
       ContentUri: layers/ffmpeg
       CompatibleRuntimes:
         - nodejs12.x
+      Description: wavefile NPM module
+      RetentionPolicy: Delete
   MpckLambdaLayer:
     Type: AWS::Serverless::LayerVersion
     Metadata:
       BuildMethod: makefile
     Properties:
-      Description: wavefile NPM module
       ContentUri: layers/mpck
       CompatibleRuntimes:
         - nodejs12.x
+      Description: wavefile NPM module
+      RetentionPolicy: Delete
   # Normalize Input Lambda
   NormalizeInputLambdaIamRole:
     Type: AWS::IAM::Role
