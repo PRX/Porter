@@ -1,12 +1,21 @@
 version = 0.1
-[default]
-[default.deploy]
-[default.deploy.parameters]
-stack_name = "porter-example"
+
+[stag.deploy.parameters]
+stack_name = "porter-stag-example"
 s3_bucket = "tktktktk" # This bucket has usually created by SAM previously
-s3_prefix = "porter-example"
-region = "us-east-1"
+s3_prefix = "porter-stag-example"
+region = "us-east-2"
 profile = "tktktktk"
 confirm_changeset = true
 capabilities = "CAPABILITY_IAM"
 parameter_overrides = "TranscodeJobNamePrefix=\"porter-example-\" EnvironmentType=\"Staging\" OpsWarnMessagesSnsTopicArn=\"arn:…\" OpsErrorMessagesSnsTopicArn=\"arn:…\" TranscodeEcsTaskDefinitionImage=\"…\" FtpCopyEcsTaskDefinitionImage=\"…\""
+
+[prod.deploy.parameters]
+stack_name = "porter-prod-example"
+s3_bucket = "tktktktk" # This bucket has usually created by SAM previously
+s3_prefix = "porter-prod-example"
+region = "us-east-2"
+profile = "tktktktk"
+confirm_changeset = true
+capabilities = "CAPABILITY_IAM"
+parameter_overrides = "TranscodeJobNamePrefix=\"porter-example-\" EnvironmentType=\"Production\" OpsWarnMessagesSnsTopicArn=\"arn:…\" OpsErrorMessagesSnsTopicArn=\"arn:…\" TranscodeEcsTaskDefinitionImage=\"…\" FtpCopyEcsTaskDefinitionImage=\"…\""
