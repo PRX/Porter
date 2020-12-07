@@ -9,6 +9,8 @@
       {
         "Type": "Copy",
         "Mode": "FTP",
+        "Passive": "true",
+        "MD5": "true",
         "URL": "ftp://usr:pwd@ftp.example.com/path/to/file.ext"
       }
     ]
