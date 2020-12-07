@@ -20,6 +20,7 @@ ADD *.rb ./
 
 ADD get-ecs-task-public-ip ./
 ADD run ./
+RUN chmod +x ./ftp.rb
 RUN chmod +x ./get-ecs-task-public-ip
 RUN chmod +x ./run
 
