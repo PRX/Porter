@@ -1,0 +1,48 @@
+#!/bin/bash
+
+TMPFILE=ecstaskpubliciptempfile
+AWS=/usr/local/bin/aws
+
+function err() {
+    echo "E: $*" >>/dev/stderr
+}
+
+function try() {
+    eval $*
+    if [ $? -ne 0 ]; then
+        err "Error while evaluating \"$*\", exiting..."
+        exit 1
+    fi
+}
+
+try rm -f $TMPFILE
+
+try curl -s ${ECS_CONTAINER_METADATA_URI_V4}/task -o $TMPFILE
+
+ECS_CLUSTER=$(cat $TMPFILE | jq -r '.Cluster'|cut -d/ -f2)
+ECS_TASK=$(cat $TMPFILE | jq -r '.TaskARN'|cut -d/ -f2)
+
+if [[ -z "${ECS_CLUSTER}" ]]  || [[ -z "${ECS_TASK}" ]] ; then
+    err "Missing Task or Cluster ID, exiting..."
+    exit 1
+fi
+
+try $AWS ecs describe-tasks --tasks $ECS_TASK --cluster $ECS_CLUSTER  > $TMPFILE
+ENI_ID=$(cat $TMPFILE | jq -r '.tasks[].attachments[].details[] | select(.name =="networkInterfaceId") | .value ')
+
+
+if [[ -z "${ENI_ID}" ]] ; then
+    err "Missing ENI ID, exiting..."
+    exit 1
+fi
+
+try $AWS ec2 describe-network-interfaces  --filters Name=network-interface-id,Values=$ENI_ID > $TMPFILE
+
+ECS_TASK_PUBLIC_IP=$(cat $TMPFILE | jq -r '.NetworkInterfaces[0].Association.PublicIp')
+
+if [[ -z "${ECS_TASK_PUBLIC_IP}" ]] ; then
+    err "Missing Public IP, exiting..."
+    exit 1
+fi
+
+echo $ECS_TASK_PUBLIC_IP

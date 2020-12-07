@@ -1,0 +1,19 @@
+# The following environment variables are passed in as ContainerOverrides when
+# the state machine runs the ECS task
+STATE_MACHINE_NAME=development-state-machine
+STATE_MACHINE_EXECUTION_ID=eid
+STATE_MACHINE_JOB_ID=jid
+STATE_MACHINE_TASK_INDEX=tidx
+STATE_MACHINE_AWS_REGION=us-east-1
+STATE_MACHINE_ARTIFACT_BUCKET_NAME=prx-tech
+STATE_MACHINE_ARTIFACT_OBJECT_KEY=example/test.mp2
+STATE_MACHINE_TASK_JSON={"URL":"ftp://username:mypass@ftp.prx.docker/test.mp2"}
+
+# The `ftp` service defaults to 10 retries to download files from S3
+S3_RETRY_COUNT=10
+
+# These are only for development, when credentials are not set by role
+AWS_ACCESS_KEY_ID=
+AWS_ACCOUNT_ID=
+AWS_REGION=
+AWS_SECRET_ACCESS_KEY=
