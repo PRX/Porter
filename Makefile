@@ -1,10 +1,16 @@
 # SHELL = /bin/sh
 
-all: check
+all: clean check build
 ci: check
 
-sam-build:
-	sam build --use-container
+clean:
+	rm -rf .aws-sam
+
+deploy: check build
+	sam deploy --config-env=$(env)
+
+build:
+	sam build --use-container --parallel --cached
 
 check: lint test
 lint: cfnlint prettier eslint typescript rubocop
