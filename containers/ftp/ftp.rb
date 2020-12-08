@@ -14,13 +14,16 @@
 STDOUT.sync = true
 STDERR.sync = true
 
-require 'logger'
+require 'rubygems'
+require 'bundler/setup'
 require 'aws-sdk-cloudwatch'
 require 'net/sftp'
 require 'net/ftp'
+require 'logger'
 
 load './ftp_files.rb'
 load './s3_files.rb'
+load './recorder.rb'
 
 logger = Logger.new(STDOUT)
 logger.debug('ftp.rb start')
@@ -29,22 +32,13 @@ start_time = Time.now
 logger.debug("start_time: #{start_time}")
 
 # Count the transfers in CloudWatch Metrics
-cloudwatch = Aws::CloudWatch::Client.new
-cloudwatch.put_metric_data(
-  {
-    namespace: 'PRX/Porter',
-    metric_data: [
-      {
-        metric_name: 'FtpTransfers',
-        dimensions: [
-          { name: 'StateMachineName', value: ENV['STATE_MACHINE_NAME'] }
-        ],
-        value: 1.0,
-        unit: 'Count'
-      }
-    ]
-  }
+recorder = Recorder.new(
+  Aws::CloudWatch::Client.new,
+  'PRX/Porter',
+  [{ name: 'StateMachineName', value: ENV['STATE_MACHINE_NAME'] }]
 )
+
+recorder.record('FtpTransfers', 'Count', 1.0)
 
 bucket = ENV['STATE_MACHINE_ARTIFACT_BUCKET_NAME']
 key = ENV['STATE_MACHINE_ARTIFACT_OBJECT_KEY']
@@ -59,24 +53,11 @@ uri = URI.parse(task['URL'])
 md5 = task['MD5'].nil? ? false : !!task['MD5']
 passive = task['Passive'].nil? ? true : !!task['Passive']
 
-ftp_files = FtpFiles.new(logger)
+ftp_files = FtpFiles.new(logger, recorder)
 ftp_files.upload_file(uri, file, md5: md5, public_ip: ip, passive: passive)
 
 # Count the transfers in CloudWatch Metrics
 end_time = Time.now
 duration = start_time - end_time
-cloudwatch.put_metric_data(
-  {
-    namespace: 'PRX/Porter',
-    metric_data: [
-      {
-        metric_name: 'FtpTransferDuration',
-        dimensions: [
-          { name: 'StateMachineName', value: ENV['STATE_MACHINE_NAME'] }
-        ],
-        value: duration,
-        unit: 'Seconds'
-      }
-    ]
-  }
-)
+
+recorder.record('FtpTransferDuration', 'Seconds', duration)

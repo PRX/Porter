@@ -3,10 +3,11 @@ load './utils.rb'
 
 class FtpFiles
   include Utils
-  attr_reader :logger
+  attr_reader :logger, :recorder
 
-  def initialize(logger)
+  def initialize(logger, recorder)
     @logger = logger || Logger.new(STDOUT)
+    @recorder = recorder
   end
 
   #
@@ -19,7 +20,7 @@ class FtpFiles
   # - retry: retries by default, so this is true by default
   # - retry_wait: defaults to 10 seconds
   # - retry_max: when there is retry, defaults to 6 tries
-  # - md5: will write an md5 by default, defaults to true
+  # - md5: will write an md5 by default, defaults to false
   # - keep_alive: will attempt to keep connections alive by default, true
   # - passive: use passive mode, true by default
   # - binary: binary transfer, true by default
@@ -146,7 +147,14 @@ class FtpFiles
         # if we get here, then it all worked!
         result = true
 
+        # this records success!
+        recorder.record('FtpSuccess', 'Count', 1.0)
+
       rescue StandardError => err
+
+        # this records retried fails - open, login, mkdir, or put
+        recorder.record('FtpError', 'Count', 1.0)
+
         # this can happen when this should be an active, not passive mode
         # only try half the retry attempts in this case
         if passive && ((retry_count + 1) >= ((retry_max || 0) / 2).to_i)
@@ -169,6 +177,9 @@ class FtpFiles
     end
 
     if !result
+      # this records final fail (no more retries)
+      recorder.record('FtpFail', 'Count', 1.0)
+
       if err
         raise err
       else
