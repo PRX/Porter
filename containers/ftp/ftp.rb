@@ -49,19 +49,18 @@ cloudwatch.put_metric_data(
 bucket = ENV['STATE_MACHINE_ARTIFACT_BUCKET_NAME']
 key = ENV['STATE_MACHINE_ARTIFACT_OBJECT_KEY']
 logger.debug("Downloading artifact: '#{bucket}/#{key}'")
-
 s3_files = S3Files.new(Aws::S3::Client.new, logger)
-artifact_file = s3_files.download_file(bucket, key)
+file = s3_files.download_file(bucket, key)
 
 logger.debug("Transferring artifact: '#{bucket}/#{key}'")
+ip = ENV['PUBLIC_IP']
 task = JSON.parse(ENV['STATE_MACHINE_TASK_JSON'])
 uri = URI.parse(task['URL'])
+md5 = task['MD5'].nil? ? false : !!task['MD5']
+passive = task['Passive'].nil? ? true : !!task['Passive']
+
 ftp_files = FtpFiles.new(logger)
-ftp_files.upload_file(
-  uri,
-  artifact_file,
-  { md5: true, public_ip: ENV['PUBLIC_IP'] }
-)
+ftp_files.upload_file(uri, file, md5: md5, public_ip: ip, passive: passive)
 
 # Count the transfers in CloudWatch Metrics
 end_time = Time.now
