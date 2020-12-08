@@ -506,9 +506,11 @@ Output:
 FTP operations are handled in the FTP container, using Ruby's `Net::FTP` module.
 
 The `URL` property is required. It should be formatted as follows:
+
 ```
 ftp://user:password@host:port/path/file.extension
 ```
+
 If port is not specified, it will default to the standard FTP command port, `21`.
 
 There are additional parameters to specify how the file is transferred:
@@ -527,7 +529,7 @@ Input:
 {
     "Type": "Copy",
     "Mode": "FTP",
-    "URL": "ftp://foo:bar@example.com",
+    "URL": "ftp://usr:pwd@ftp.example.com:21/path/to/file.ext",
     "MD5": false,
     "Passive": true
 }
@@ -538,7 +540,7 @@ Output:
 ```json
 {
     "Type": "Copy",
-    "URL": "ftp://foo:bar@example.com",
+    "URL": "ftp://usr:pwd@ftp.example.com:21/path/to/file.ext",
     "Time": "2012-12-21T12:34:56Z",
     "Timestamp": 1356093296.123
 }
