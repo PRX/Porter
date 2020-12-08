@@ -24,21 +24,23 @@ class IPAddr
 end
 
 module Net
-  class FTP # provide a masquerade_host to be able to override incorrect PORT response
-    attr_accessor :local_host
-
+  class FTP
     attr_accessor :remote_host
 
     # set to override host when ftp server returns a private/loopback IP on PASV
     attr_accessor :override_local
 
+    # this makes active mode work by setting the public ip of the client
+    attr_accessor :local_host
+
     def makepasv_with_override
-      host, port = makepasv_without_override # puts "host: #{host.inspect}, sock remote ip: #{@sock.remote_address.ip_address}"
+      host, port = makepasv_without_override
       if remote_host
         host = remote_host
       elsif override_local && IPAddr.new(host).private?
+        # server sent a bad/private IP, use the remote IP from the connection
         host = @sock.remote_address.ip_address
-      end # puts "makepasv host:#{host}, port:#{port}"
+      end
 
       return host, port
     end
@@ -49,6 +51,7 @@ module Net
     def makeport_with_override
       sock = TCPServer.open(@sock.addr[3], 0)
       port = sock.addr[1]
+      # set the public ip for the client to receive connections to
       host = local_host ? local_host : sock.addr[3]
 
       sendport(host, port)

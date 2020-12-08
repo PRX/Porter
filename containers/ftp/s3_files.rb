@@ -5,6 +5,8 @@ require 'fileutils'
 require 'logger'
 load './utils.rb'
 
+# This is a more paranoid s3 download class
+# based on all the various errors that have been handled in fixer.
 class S3Files
   include Utils
   attr_reader :s3, :logger, :retry_count
@@ -20,6 +22,11 @@ class S3Files
     file_downloaded = false
     temp_file = nil
 
+    # We saw timing errors where a file was saved to s3,
+    # but didn't show up yet on get,
+    # so we added retry/timeout to wait for it before fully failing the task.
+    # This also allows us to get the content-length,
+    # so that can be used later to see if the file has been fully downloaded.
     tries = 0
     while !file_info && tries < retry_count
       begin
@@ -36,17 +43,11 @@ class S3Files
     while !file_downloaded && tries < retry_count
       tries += 1
       begin
+
+        # in case a temp_file was partially written, start over
         if temp_file
-          begin
-            temp_file.close
-          rescue StandardError
-            nil
-          end
-          begin
-            File.unlink(temp_file)
-          rescue StandardError
-            nil
-          end
+          temp_file.close rescue nil
+          File.unlink(temp_file) rescue nil
         end
 
         temp_file = create_temp_file(key.split('/').last)

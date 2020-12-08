@@ -60,10 +60,10 @@ class FtpFiles
       ftp = Net::FTP.new
 
       begin
-        # this makes active mode work by sending the public ip
+        # this makes active mode work by sending the public ip of the client
         ftp.local_host = public_ip if public_ip
 
-        # this works around badly specified masquerade ip for pasv
+        # this works around when a remote server doesn't send its public IP
         ftp.override_local = true
 
         ftp.passive = passive
