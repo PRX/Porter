@@ -4,7 +4,6 @@ LABEL org.prx.app="yes"
 
 RUN yum update -y \
   && amazon-linux-extras enable ruby2.6 \
-  && yum install -y jq aws-cli \
   && yum install -y ruby ruby-irb rubygems rubygem-rake rubygem-json rubygem-io-console \
   && gem install bundler \
   && yum clean metadata \
@@ -18,10 +17,9 @@ ADD Gemfile* ./
 RUN bundle install
 ADD *.rb ./
 
-ADD get-ecs-task-public-ip ./
 ADD run ./
 RUN chmod +x ./ftp.rb
-RUN chmod +x ./get-ecs-task-public-ip
+RUN chmod +x ./get-ecs-task-public-ip.rb
 RUN chmod +x ./run
 
 ENTRYPOINT ["./run"]
