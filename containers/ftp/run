@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# Get the public ip of the ecs fargate task, for us in FTP requests
+# Get the public ip of the ecs fargate task, for use in FTP requests
 ECS_TASK_PUBLIC_IP=`./get-ecs-task-public-ip | tail -1`
 export PUBLIC_IP=${ECS_TASK_PUBLIC_IP}
 echo "PUBLIC_IP=${PUBLIC_IP}"
