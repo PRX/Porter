@@ -503,7 +503,23 @@ Output:
 
 #### FTP
 
-TKTKTK
+FTP operations are handled in the FTP container, using Ruby's `Net::FTP` module.
+
+The `URL` property is required. It should be formatted as follows:
+```
+ftp://user:password@host:port/path/file.extension
+```
+If port is not specified, it will default to the standard FTP command port, `21`.
+
+There are additional parameters to specify how the file is transferred:
+
+`MD5`: The default is `false`, to indicate the md5 file should not be written.
+If set to `true` Porter will write an md5 file, containing the md5 hash of the input file (e.g. `<input file>.md5`).
+This is useful both as a semaphore file, as it is written after the primary file is written successfully,
+and useful to validate the file was transferred without error by checking the md5 signature.
+
+`Passive`: the default mode is passive, but if this option is set to `false`, it will use active mode.
+The system also includes retry logic, and will try active mode if passive mode fails several times.
 
 Input:
 
@@ -511,7 +527,20 @@ Input:
 {
     "Type": "Copy",
     "Mode": "FTP",
-    "URL": "ftp://foo:bar@example.com"
+    "URL": "ftp://foo:bar@example.com",
+    "MD5": false,
+    "Passive": true
+}
+```
+
+Output:
+
+```json
+{
+    "Type": "Copy",
+    "URL": "ftp://foo:bar@example.com",
+    "Time": "2012-12-21T12:34:56Z",
+    "Timestamp": 1356093296.123
 }
 ```
 
