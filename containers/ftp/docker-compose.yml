@@ -29,7 +29,7 @@ services:
       # - ./tmp/ftpd/ssl:/etc/ssl/private/
     environment:
       VIRTUAL_HOST: ftp.prx.docker
-      PUBLICHOST: "ftp.prx.docker"
+      PUBLICHOST: ftp.prx.docker
       FTP_USER_NAME: username
       FTP_USER_PASS: mypass
       FTP_USER_HOME: /home/username
