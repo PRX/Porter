@@ -57,24 +57,21 @@ class S3Files
         temp_file.fsync
 
         if (file_info.content_length != temp_file.size)
-          raise "File incorrect size, s3 content_length: '#{bucket}/#{key}' #{
+          raise "File incorrect size, s3: '#{bucket}/#{key}' #{
                   file_info.content_length
-                }, local file size: #{temp_file.size}"
+                }, local: #{temp_file.size}"
         end
 
         file_downloaded = true
       rescue StandardError => err
-        logger.error "File failed to be retrieved: '#{bucket}/#{key}' #{
-                       err.message
-                     }"
+        logger.error "File get failed: '#{bucket}/#{key}': #{err.message}"
       end
       sleep(1)
     end
 
     if (file_info.content_length != temp_file.size)
-      raise "File download failed, incorrect size, s3 content_length: '#{
-              bucket
-            }/#{key}' #{file_info.content_length}, local file size: #{
+      raise "File get failed, bad size: '#{bucket}/#{key}' #{
+              file_info.content_length}, local file size: #{
               temp_file.size
             }"
     end
@@ -82,22 +79,5 @@ class S3Files
     raise "Zero length file from s3: '#{bucket}/#{key}'" if temp_file.size == 0
 
     temp_file
-  end
-
-  def upload_file(uri, file, options = {})
-    bucket = uri.host
-    key = uri.path[1..-1]
-    file_name = key.split('/').last
-
-    default_options = {
-      public: false,
-      content_disposition: "attachment; filename=\"#{file_name}\""
-    }
-    opts = default_options.merge(options)
-    opts[:key] = key
-    opts[:body] = File.open(file)
-
-    directory = s3.directories.get(bucket)
-    s3_file = directory.files.create(opts)
   end
 end
