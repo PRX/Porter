@@ -39,9 +39,8 @@ class FtpFiles
 
     public_ip = options[:public_ip]
 
-    if md5 = options[:md5].nil? ? true : !!options[:md5]
-      md5_file = create_md5_digest(local_file.path)
-    end
+    md5 = options[:md5].nil? ? false : !!options[:md5]
+    md5_file = create_md5_digest(local_file.path) if md5
 
     # this may be turned to active on error
     passive = options[:passive].nil? ? true : !!options[:passive]
