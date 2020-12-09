@@ -15,4 +15,17 @@ module Utils
     tmp.binmode if bin_mode
     tmp
   end
+
+  def delete_temp_file(file)
+    begin
+      file.close
+    rescue Object
+      nil
+    end
+    begin
+      File.unlink(file)
+    rescue Object
+      nil
+    end
+  end
 end

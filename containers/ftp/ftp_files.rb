@@ -27,6 +27,10 @@ class FtpFiles
   # - keep_alive: will attempt to keep connections alive by default, true
   # - passive: use passive mode, true by default
   # - binary: binary transfer, true by default
+
+  # rubocop:disable Metrics/CyclomaticComplexity
+  # rubocop:disable Metrics/MethodLength
+  # rubocop:disable Metrics/PerceivedComplexity
   def upload_file(uri, local_file, options = {})
     remote_host = CGI.unescape(uri.host) if uri.host
     remote_port = uri.port
@@ -50,15 +54,13 @@ class FtpFiles
     passive = options[:passive].nil? ? true : options[:passive]
 
     # this may be turned to 0 on error
-    keep_alive = options[:keep_alive].to_i
+    keep_alive = options[:keep_alive].nil? ? 10 : options[:keep_alive].to_i
 
     retry_ftp = options[:retry].nil? ? true : options[:retry]
     retry_max = retry_ftp ? (options[:retry_max] || 6) : 1
     retry_wait = retry_ftp ? (options[:retry_wait] || 10) : 0
     retry_count = 0
-
     result = false
-    err = nil
 
     while !result && (retry_count < retry_max)
       ftp = Net::FTP.new
@@ -72,7 +74,6 @@ class FtpFiles
 
         ftp.passive = passive
         ftp.binary = options[:binary].nil? ? true : options[:binary]
-
         ftp.open_timeout = nil # default is nil
         ftp.read_timeout = 60 # default is 60
 
@@ -83,7 +84,7 @@ class FtpFiles
           end
         rescue StandardError => e
           logger.error "FTP connect failed: #{cstr}: #{e.message}"
-          raise err
+          raise e
         end
 
         # if there is a remote dir that is not "."
@@ -99,7 +100,7 @@ class FtpFiles
             end
           rescue StandardError => e
             logger.error "FTP chdir failed: #{cstr}: #{e.message}"
-            raise err
+            raise e
           end
         end
 
@@ -110,10 +111,7 @@ class FtpFiles
             logger.debug("FTP start #{local_file.path} -> #{remote_file_name}")
 
             last_noop = Time.now.to_i
-
-            # local_file_size = File.size(local_file)
             bytes_uploaded = 0
-
             ftp.put(local_file.path, remote_file_name) do |chunk|
               bytes_uploaded += chunk.size
 
@@ -139,7 +137,7 @@ class FtpFiles
 
             if md5
               ftp.puttextfile(md5_file.path, "#{remote_file_name}.md5")
-              logger.debug "FTP put #{md5_file.path} as #{remote_file_name}.md5"
+              logger.debug("FTP put #{md5_file.path} as #{remote_file_name}.md5")
             end
           end
         rescue StandardError => e
@@ -163,11 +161,10 @@ class FtpFiles
           retry_count = 0
           logger.error "FTP retry as active (#{retry_count}): #{e.message}"
         else
-          # need to do something to retry this - use new a13g func for this.
           logger.error "FTP retry (#{retry_count}): #{e.message}"
           retry_count += 1
-          sleep(retry_wait)
         end
+        sleep(retry_wait)
       ensure
         begin
           ftp.close if ftp && !ftp.closed?
@@ -180,21 +177,14 @@ class FtpFiles
     unless result
       # this records final fail (no more retries)
       recorder.record('FtpFail', 'Count', 1.0)
-
-      if err
-        raise err
-      else
-        raise "FTP failed, no more retries: from '#{local_file}' to '#{cstr}'"
-      end
+      raise "FTP failed, no more retries: from '#{local_file}' to '#{cstr}'"
     end
   ensure
-    begin
-      md5_file.close
-      File.unlink(md5_file)
-    rescue Object
-      nil
-    end
+    delete_temp_file(md5_file)
   end
+  # rubocop:enable Metrics/CyclomaticComplexity
+  # rubocop:enable Metrics/MethodLength
+  # rubocop:enable Metrics/PerceivedComplexity
 
   def create_md5_digest(file)
     digest = Digest::MD5.hexdigest(File.read(file))

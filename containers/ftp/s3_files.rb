@@ -28,42 +28,36 @@ class S3Files
 
     tries = 0
     while !file_downloaded && tries < retry_count
-      tries += 1
       begin
-        # in case a temp_file was partially written, start over
-        delete_temp_file(temp_file)
-
-        temp_file = create_temp_file(key.split('/').last, true)
-        s3.get_object(bucket: bucket, key: key) do |chunk|
-          temp_file.write(chunk)
-        end
-        temp_file.fsync
-
-        if file_info.content_length != temp_file.size
-          raise "Wrong size: '#{bucket}/#{key}': "\
-                "s3:#{file_info.content_length}, local:#{temp_file.size}"
-        end
-
+        tries += 1
+        temp_file = s3_download(bucket, key)
+        check_size(bucket, key, file_info, temp_file)
         file_downloaded = true
       rescue StandardError => e
         logger.error "File get failed: '#{bucket}/#{key}': #{e.message}"
+        delete_temp_file(temp_file)
       end
       sleep(1)
     end
 
-    if file_info.content_length != temp_file.size || temp_file.size.zero?
-      raise "Wrong size: '#{bucket}/#{key}': "\
-            "s3:#{file_info.content_length}, local:#{temp_file.size}"
-    end
-
+    check_size(bucket, key, file_info, temp_file)
     temp_file
   end
 
-  def delete_temp_file(temp_file)
-    temp_file.close
-    File.unlink(temp_file)
-  rescue Object
-    nil
+  def check_size(bucket, key, info, file)
+    if info.content_length != file.size || file.size.zero?
+      raise "Wrong size: '#{bucket}/#{key}': "\
+            "s3:#{info.content_length}, local:#{file.size}"
+    end
+  end
+
+  def s3_download(bucket, key)
+    temp_file = create_temp_file(key.split('/').last, true)
+    s3.get_object(bucket: bucket, key: key) do |chunk|
+      temp_file.write(chunk)
+    end
+    temp_file.fsync
+    temp_file
   end
 
   # We saw timing errors where a file was saved to s3,
