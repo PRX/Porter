@@ -33,7 +33,7 @@ class S3Files
         # in case a temp_file was partially written, start over
         delete_temp_file(temp_file)
 
-        temp_file = create_temp_file(key.split('/').last)
+        temp_file = create_temp_file(key.split('/').last, true)
         s3.get_object(bucket: bucket, key: key) do |chunk|
           temp_file.write(chunk)
         end
