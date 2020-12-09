@@ -1288,6 +1288,24 @@ Resources:
                   - cloudwatch:PutMetricData
                 Resource:
                   - '*'
+        - PolicyName: EC2DescribeNetworkInterfaces
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - ec2:DescribeNetworkInterfaces
+                Resource:
+                  - '*'
+        - PolicyName: ECSDescribeTasks
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - ecs:DescribeTasks
+                Resource:
+                  - '*'
       ManagedPolicyArns:
         - !Ref ArtifactBucketReadOnlyAccessPolicy
         - !Ref ArtifactBucketWriteAccessPolicy

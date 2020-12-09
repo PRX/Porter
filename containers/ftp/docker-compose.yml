@@ -1,0 +1,41 @@
+version: '3.7'
+networks:
+  porterftp:
+    driver: bridge
+    name: porterftp
+services:
+  ftp:
+    build:
+      context: ./
+      dockerfile: Dockerfile
+    command: test
+    networks:
+      - porterftp
+    volumes:
+      - .:/ftp
+    env_file:
+      - .env
+  ftpd:
+    image: stilliard/pure-ftpd
+    container_name: ftpd
+    networks:
+      - porterftp
+    ports:
+      - '21:21'
+      - '30000-30009:30000-30009'
+    volumes:
+      - ./tmp/ftpd/data:/home/username/
+      - ./tmp/ftpd/passwd:/etc/pure-ftpd/passwd
+      # - ./tmp/ftpd/ssl:/etc/ssl/private/
+    environment:
+      VIRTUAL_HOST: ftp.prx.docker
+      PUBLICHOST: ftp.prx.docker
+      FTP_USER_NAME: username
+      FTP_USER_PASS: mypass
+      FTP_USER_HOME: /home/username
+      # TLS_CN: "prx.org"
+      # TLS_ORG: "PRX"
+      # TLS_C: "US"
+      # TLS_USE_DSAPRAM: "true"
+      # ADDED_FLAGS: "--tls=2"
+    restart: always

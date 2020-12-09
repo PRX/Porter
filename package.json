@@ -14,6 +14,7 @@
     "sharp": "^0.25.2"
   },
   "devDependencies": {
+    "@prettier/plugin-ruby": "^0.20.1",
     "aws-sdk-mock": "^5.1.0",
     "dotenv": "^8.2.0",
     "eslint": "^6.8.0",
@@ -23,7 +24,7 @@
     "eslint-plugin-jest": "^24.1.0",
     "eslint-plugin-prettier": "^3.1.3",
     "jest": "^26.0.1",
-    "prettier": "^2.0.5",
+    "prettier": "^2.1.2",
     "typescript": "^4.0",
     "yaml-cfn": "^0.2.3"
   },

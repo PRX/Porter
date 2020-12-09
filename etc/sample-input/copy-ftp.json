@@ -9,7 +9,9 @@
       {
         "Type": "Copy",
         "Mode": "FTP",
-        "URL": "ftp://usr:pwd@ftp.example.com/path/to/file.ext"
+        "URL": "ftp://usr:pwd@ftp.example.com:21/path/to/file.ext",
+        "Passive": true,
+        "MD5": true
       }
     ]
   }

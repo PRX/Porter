@@ -1,4 +1,4 @@
-FROM amazonlinux:latest
+FROM public.ecr.aws/amazonlinux/amazonlinux:latest
 
 RUN amazon-linux-extras install ruby2.6
 RUN amazon-linux-extras install python3.8
