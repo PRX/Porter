@@ -1,12 +1,15 @@
+# frozen_string_literal: true
+
 load './ftp_patch.rb'
 load './utils.rb'
 
+# Class to act as FTP client for uploading files to FTP servers
 class FtpFiles
   include Utils
   attr_reader :logger, :recorder
 
   def initialize(logger, recorder)
-    @logger = logger || Logger.new(STDOUT)
+    @logger = logger || Logger.new($stdout)
     @recorder = recorder
   end
 
@@ -25,31 +28,31 @@ class FtpFiles
   # - passive: use passive mode, true by default
   # - binary: binary transfer, true by default
   def upload_file(uri, local_file, options = {})
-    remote_host = URI.decode(uri.host) if uri.host
+    remote_host = CGI.unescape(uri.host) if uri.host
     remote_port = uri.port
-    remote_path = URI.decode(uri.path)
+    remote_path = CGI.unescape(uri.path) if uri.path
     remote_file_name = File.basename(remote_path)
     remote_directory = File.dirname(remote_path)
-    remote_user = URI.decode(uri.user) if uri.user
-    remote_password = URI.decode(uri.password) if uri.password
+    remote_user = CGI.unescape(uri.user) if uri.user
+    remote_password = CGI.unescape(uri.password) if uri.password
 
     # for logging
     anon_uri = URI.parse(uri.to_s)
-    anon_uri.password = "#{remote_password[0]}#{"*" * (remote_password.length - 1)}"
+    anon_uri.password = "#{remote_password[0]}#{'*' * (remote_password.length - 1)}"
     cstr = anon_uri.to_s
 
     public_ip = options[:public_ip]
 
-    md5 = options[:md5].nil? ? false : !!options[:md5]
+    md5 = options[:md5].nil? ? false : options[:md5]
     md5_file = create_md5_digest(local_file.path) if md5
 
     # this may be turned to active on error
-    passive = options[:passive].nil? ? true : !!options[:passive]
+    passive = options[:passive].nil? ? true : options[:passive]
 
     # this may be turned to 0 on error
     keep_alive = options[:keep_alive].to_i
 
-    retry_ftp = options[:retry].nil? ? true : !!options[:retry]
+    retry_ftp = options[:retry].nil? ? true : options[:retry]
     retry_max = retry_ftp ? (options[:retry_max] || 6) : 1
     retry_wait = retry_ftp ? (options[:retry_wait] || 10) : 0
     retry_count = 0
@@ -57,7 +60,7 @@ class FtpFiles
     result = false
     err = nil
 
-    while (!result && (retry_count < retry_max))
+    while !result && (retry_count < retry_max)
       ftp = Net::FTP.new
 
       begin
@@ -68,9 +71,9 @@ class FtpFiles
         ftp.override_local = true
 
         ftp.passive = passive
-        ftp.binary = options[:binary].nil? ? true : !!options[:binary]
+        ftp.binary = options[:binary].nil? ? true : options[:binary]
 
-        ftp.open_timeout = nil  # default is nil
+        ftp.open_timeout = nil # default is nil
         ftp.read_timeout = 60 # default is 60
 
         begin
@@ -78,8 +81,8 @@ class FtpFiles
             ftp.connect(remote_host, remote_port)
             ftp.login(remote_user, remote_password) if uri.userinfo
           end
-        rescue StandardError => err
-          logger.error "FTP connect failed: #{cstr}: #{err.message}"
+        rescue StandardError => e
+          logger.error "FTP connect failed: #{cstr}: #{e.message}"
           raise err
         end
 
@@ -89,13 +92,13 @@ class FtpFiles
             Timeout.timeout(60) do
               begin
                 ftp.mkdir(remote_directory)
-              rescue StandardError => err
-                logger.warn("FTP mkdir failed: #{cstr}: #{err.message}")
+              rescue StandardError => e
+                logger.warn("FTP mkdir failed: #{cstr}: #{e.message}")
               end
               ftp.chdir(remote_directory)
             end
-          rescue StandardError => err
-            logger.error "FTP chdir failed: #{cstr}: #{err.message}"
+          rescue StandardError => e
+            logger.error "FTP chdir failed: #{cstr}: #{e.message}"
             raise err
           end
         end
@@ -114,18 +117,18 @@ class FtpFiles
             ftp.put(local_file.path, remote_file_name) do |chunk|
               bytes_uploaded += chunk.size
 
-              if (keep_alive > 0) && ((last_noop + keep_alive) < Time.now.to_i)
+              if keep_alive.positive? && ((last_noop + keep_alive) < Time.now.to_i)
                 last_noop = Time.now.to_i
 
                 # this is to act as a keep alive - wbur needed it for remix delivery
                 begin
                   ftp.noop
-                rescue StandardError => err
+                rescue StandardError => e
                   # if they don't support this, and throw an error just keep going.
-                  logger.warn("FTP noop error, off and retry: #{err.message}")
+                  logger.warn("FTP noop error, off and retry: #{e.message}")
                   retry_count = [(retry_count - 1), 0].max
                   keep_alive = 0
-                  raise err
+                  raise e
                 end
 
                 # logger.debug "ftp put to #{remote_host}, #{bytes_uploaded} of #{local_file_size} bytes, (#{bytes_uploaded * 100 / local_file_size}%)."
@@ -135,12 +138,12 @@ class FtpFiles
             logger.debug "FTP put #{local_file.path} as #{remote_file_name}"
 
             if md5
-              ftp.puttextfile(md5_file.path, remote_file_name + '.md5')
+              ftp.puttextfile(md5_file.path, "#{remote_file_name}.md5")
               logger.debug "FTP put #{md5_file.path} as #{remote_file_name}.md5"
             end
           end
-        rescue StandardError => ex
-          logger.error "FTP failed from '#{local_file.path}' to '#{cstr}'\n#{ex.message}\n\t" + ex.backtrace[0, 3].join("\n\t")
+        rescue StandardError => e
+          logger.error "FTP failed from '#{local_file.path}' to '#{cstr}'\n#{e.message}\n\t" + e.backtrace[0, 3].join("\n\t")
           raise ex
         end
 
@@ -149,9 +152,7 @@ class FtpFiles
 
         # this records success!
         recorder.record('FtpSuccess', 'Count', 1.0)
-
-      rescue StandardError => err
-
+      rescue StandardError => e
         # this records retried fails - open, login, mkdir, or put
         recorder.record('FtpError', 'Count', 1.0)
 
@@ -160,23 +161,23 @@ class FtpFiles
         if passive && ((retry_count + 1) >= ((retry_max || 0) / 2).to_i)
           passive = false
           retry_count = 0
-          logger.error "FTP retry as active (#{retry_count}): #{err.message}"
+          logger.error "FTP retry as active (#{retry_count}): #{e.message}"
         else
           # need to do something to retry this - use new a13g func for this.
-          logger.error "FTP retry (#{retry_count}): #{err.message}"
+          logger.error "FTP retry (#{retry_count}): #{e.message}"
           retry_count += 1
           sleep(retry_wait)
         end
       ensure
         begin
           ftp.close if ftp && !ftp.closed?
-        rescue Object => ex
-          logger.error "FTP failed on close: #{ex.message}"
+        rescue Object => e
+          logger.error "FTP failed on close: #{e.message}"
         end
       end
     end
 
-    if !result
+    unless result
       # this records final fail (no more retries)
       recorder.record('FtpFail', 'Count', 1.0)
 
@@ -187,22 +188,25 @@ class FtpFiles
       end
     end
   ensure
-    md5_file.close rescue nil
-    File.unlink(md5_file) rescue nil
+    begin
+      md5_file.close
+      File.unlink(md5_file)
+    rescue Object
+      nil
+    end
   end
 
   def create_md5_digest(file)
     digest = Digest::MD5.hexdigest(File.read(file))
     logger.debug "File md5 digest = #{digest}"
 
-    md5_digest_file = create_temp_file(file + '.md5', false)
+    md5_digest_file = create_temp_file("#{file}.md5", false)
     md5_digest_file.write digest
     md5_digest_file.fsync
     md5_digest_file.close
 
-    if File.size(md5_digest_file.path) == 0
-      raise "Zero length md5 digest file: #{md5_digest_file.path}"
-    end
+    raise "Zero length md5 digest file: #{md5_digest_file.path}" if File.size(md5_digest_file.path).zero?
+
     md5_digest_file
   end
 end
