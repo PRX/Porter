@@ -42,6 +42,8 @@ There are additional template parameters that can be set if needed. Check out th
 
 Rather than calling `sam deploy` directly, you should use `make deploy env=stag`, where `stag` is a table of parameters that exists in `samconfig`, and can be replaced with any other target you need. `make deploy` will run tests and code checks and build the project prior to deploying. If you are unsure of the age of your build artifacts, you can run `make clean` first to ensure that all artifacts are rebuilt fresh.
 
+The tests that are run as part of the deploy run locally (i.e., not in Docker). They will require project dependencies like Ruby gems being installed (`bundle install`) and Node packages being installed (`npm install`).
+
 Deploying a Porter stack creates a number of AWS resources that will be retained if the stack is deleted. This includes S3 buckets, some VPC components, etc. These are retained for a variety of reasons; see the documentation for each resource type for more information.
 
 ### VS Code
