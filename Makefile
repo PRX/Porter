@@ -6,13 +6,14 @@ ci: check
 clean:
 	rm -rf .aws-sam
 
-deploy: check build
+deploy: build deploy-check
 	sam deploy --config-env=$(env)
 
 build:
 	sam build --use-container --parallel --cached
 
 check: lint test
+deploy-check: lint jest
 lint: cfnlint prettier eslint typescript rubocop
 test: minitest jest
 
