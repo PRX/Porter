@@ -1,2 +1,4 @@
+# An already-deploy Step Functions state machine used for acceptance tests
 PORTER_STATE_MACHINE_ARN=
+# An S3 bucket that the above state machine has write access to
 PORTER_TEST_BUCKET_NAME=
