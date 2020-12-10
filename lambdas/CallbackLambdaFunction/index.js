@@ -51,7 +51,11 @@ function httpRequest(event, message, redirectCount) {
       });
 
       res.on('end', async () => {
-        if (res.statusCode >= 200 && res.statusCode < 300) {
+        if (
+          (res.statusCode >= 200 && res.statusCode < 300) ||
+          res.statusCode === 404 ||
+          res.statusCode === 410
+        ) {
           resolve();
         } else if (res.statusCode === 301 || res.statusCode === 302) {
           try {
