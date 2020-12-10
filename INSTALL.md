@@ -2,6 +2,12 @@
 
 Porter is built using the [AWS Serverless Application Model](https://aws.amazon.com/serverless/sam/) (SAM) framework, and is launched and managed using the associated [AWS SAM CLI](https://docs.aws.amazon.com/serverless-application-model/latest/developerguide/serverless-sam-reference.html#serverless-sam-cli) toolchain. SAM is a layer on top of [AWS CloudFormation](https://aws.amazon.com/cloudformation/).
 
+### Standard deployment
+
+Most deploys will use the included **`make deploy`** command, with a specific target environment, like `make deploy env=prod`. This will build, test, lint, and deploy the application. Continue reading for more details about those steps.
+
+For additional details about setting up a development environment see the [CONTRIBUTING](https://github.com/PRX/Porter/blob/master/CONTRIBUTING.md) documentation.
+
 ## Building
 
 The SAM template defines a number of Lambda [layers](https://docs.aws.amazon.com/serverless-application-model/latest/developerguide/building-layers.html) resources that must build before they can be deployed. The [build](https://docs.aws.amazon.com/serverless-application-model/latest/developerguide/sam-cli-command-reference-sam-build.html) command will execute the Makefile for each layer, and generate build artifacts (in `.aws-sam/build`) from the result. These artifact will be utilized automatically by the CLI during a deploy.
