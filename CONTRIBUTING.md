@@ -11,7 +11,7 @@
 
 ## Project Standards & Guidelines
 
-Porter integrates a number of different services, technologies, frameworks, and programming languages. In order to keep help with project maintenance and reducing mental overhead when working on the project, please follow the standards and guidelines described in this section. Whenever possible, ensure that any new or changed standards are documented here and are enforced automatically, such as by tests and IDEs.
+Porter integrates a number of different services, technologies, frameworks, and programming languages. In order to help with project maintenance and reducing mental overhead when working on the project, please follow the standards and guidelines described in this section. Whenever possible, ensure that any new or changed standards are documented here and are enforced automatically, such as by tests and IDEs.
 
 ### Security
 
@@ -22,6 +22,7 @@ Take a _least privilege_ approach to all aspects of security. Create discrete IA
 Git commits always should follow the [seven rules](https://chris.beams.io/posts/git-commit/#seven-rules).
 
 The `package-lock.json` file is not under version control. The NPM packages it tracks are only used in development, and the versions are largely irrelevant, so ignoring the lock file reduces unnecessary Git churn. The packages listed as `dependencies` are in there only to satisfy ESLint's path resolution checks.
+
 ### Code Style
 
 Basic code style guidelines, such as tabs versus spaces, are captured in the project's [`.editorconfig`](https://editorconfig.org/) file. Different file types may follow different style guides. Ensure that you editor or IDE is set up to follow that configuration automatically. If necessary, create an application-specific configuration (such as with the `.vscode` directory for VS Code) that matches `.editorconfig`, and check it in so that others can benefit.
