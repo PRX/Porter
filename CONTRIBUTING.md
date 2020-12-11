@@ -11,7 +11,7 @@
 
 ## Project Standards & Guidelines
 
-Porter integrates a number of different services, technologies, frameworks, and programming languages. In order to help with project maintenance and reducing mental overhead when working on the project, please follow the standards and guidelines described in this section. Whenever possible, ensure that any new or changed standards are documented here and are enforced automatically, such as by tests and IDEs.
+Porter integrates a number of different services, technologies, frameworks and programming languages. In order to help with project maintenance and reducing mental overhead when working on the project, please follow the standards and guidelines described in this section. Whenever possible, ensure that any new or changed standards are documented here and are enforced automatically, such as by tests and IDEs.
 
 ### Security
 
@@ -43,7 +43,7 @@ While the project utilizes TypeScript for type checking and other other JavaScri
 
 The project includes a `Makefile` to centralize various commands used in development and operation. When new commands are required, be sure to add them to the `Makefile`, even if it calls out to something else, like `npm run-script`.
 
-Besides language runtimes, package managers, and command line programs, tooling should be written to assume that libraries are installed within the package, not globally available on the system. I.e, do not asusme the `eslint` or `prettier` are install globally.
+Besides language runtimes, package managers, and command line programs, tooling should be written to assume that libraries are installed within the package, not globally available on the system. I.e, do not asusme the `eslint` or `prettier` are installed globally.
 
 ## Getting Started
 
@@ -95,7 +95,7 @@ In some cases, states will use a result path of `$.Void` if their return values 
 
 ### Execution Overview
 
-**Input:** Job execution input provided by the end user as raw JSON (via SNS, EventBridge, etc). The format is covered in detail in the [README](https://github.com/PRX/Porter/blob/master/README.md). The input is normalized to ensure that certain properties exist. This allows properties to be optional in the job input, even when the state machine definition requires them to exist. As soon as the input has been normalized, callbacks are sent inform the client that the job was recieved.
+**Input:** Job execution input is provided by the end user as raw JSON (via SNS, EventBridge, etc). The format is covered in detail in the [README](https://github.com/PRX/Porter/blob/master/README.md). The input is normalized to ensure that certain properties exist. This allows properties to be optional in the job input, even when the state machine definition requires them to exist. Normalization can also be used to support deprecated properties to preserve backwards compatibility. As soon as the input has been normalized, callbacks are sent inform the client that the job was recieved.
 
 **Pre-processing:** While the heart of any given job execution is the individual tasks that are passed in, there are a number of things that happen in the state maching prior to the tasks starting (including the previously mentioned normalization). The source file is downloaded and a copy is created in the artifact S3 bucket. This is the file that tasks will do their work against. It's helpful to reliably know what the type of the source file is, so some number of bytes of the artifact are examined to detect the file type with a high degree of accuracy. This information is available to subsequent states as both a MIME type and the common extension of the determined type.
 
@@ -103,11 +103,11 @@ Once all pre-processing has completed, the internal state of the machine is suff
 
 **Callbacks:** Callbacks can be sent to an arbitrary number of endpoints, determined by the size of the `Job.Callbacks` array in the job input. This can be any combination of various types of endpoints (HTTP, SNS, etc). While there are several differnt flavors of callbacks sent (or not) at various points during job exectuion (job recieved, task completesd, task failed, etc), they are all handled by a single Lambda function. Each function invocation handles a single callback message (i.e., one message being sent to one endpoint).
 
-The state input sent to the Lambda function (i.e., the `event` parameter) is defined by the `Parameters` property of a `Map` state that wraps the `Task` states which actually invoke the callback Lambda function. The payload sent in each callback message is *always* the JSON (string) representation of the `Message` property on the maps `Parameters`, regardless callback type or endpoint type. If data needs to be included in a callback message, it must appear in the state machine ASL. The exception to this are the `Time` and `Timestamp` values that get injected at the time the callback messages are sent.
+The state input sent to the Lambda function (i.e., the `event` sent the Lambda handler) is defined by the `Parameters` property of a `Map` state that wraps the `Task` states which actually invoke the callback Lambda function. The payload sent in each callback message is *always* the JSON (string) representation of the `Message` property on the map's `Parameters`, regardless of callback type or endpoint type. If data needs to be included in a callback message, it must appear in the state machine ASL. The exception to this are the `Time` and `Timestamp` values that get injected at the time the callback messages are sent.
 
 **Task Execution:** For each item in the job input's `Tasks` list, a `Map` state's iterator will run once. This is a complex iterator that is responsible for routing the execution on the correct path based on the task type (and potentially other properties). For example a `Copy` task will be sent to a state with a Lambda function that handles file copying, while a `Transcode` task will be sent to a series of states, including Lambda functions and Fargate tasks, to transcode audio and video. All of that routing logic happens inside the map's iterator.
 
-Within the iterator, the states responsible for execution the tasks have failure handling that also is isolated within the iterator. When a task state fail, it is caught handled by a task error callback state that exists within the iterator. This means that in a job with multiple tasks, one run of the iterator could fail and another could succeed; they are isolated. This is distinct from the task `Map` state itself failing. If the iterator itself or something within the iterator fail in a way that can't be handled gracefully, the map state fails to a `Pass` state, similar to the pre-processing states.
+Within the iterator, the states responsible for execution the tasks have failure handling that also is isolated within the iterator. When a task state fails, it is caught and handled by a task error callback state that exists _within_ the iterator. This means that in a job with multiple tasks, one run of the iterator could fail and another could succeed; they are isolated. This is distinct from the task `Map` state itself failing. If the iterator itself or something within the iterator fail in a way that can't be handled gracefully, the map state fails to a `Pass` state, similar to the pre-processing states.
 
 Each task type or subtype will have its own execution path. These paths can be any size and including their own branching if necessary. As described before, they can be as simple as the single-state copy task, or more complex like the transcode task. Regardless of a path's shape, the output for any run of the iterator must be consistent. Task callbacks are always the last thing to happen within the iterator, so the input sent to the callback map state must meet the expected requirements. The task results sent to the callback map must include a `TaskResult` property.
 
