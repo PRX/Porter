@@ -36,3 +36,8 @@ minitest:
 
 jest:
 	npm test
+
+bootstrap:
+	bundle install
+	npm install
+	pip3 install -r requirements.txt
