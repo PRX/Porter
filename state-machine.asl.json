@@ -397,6 +397,10 @@
                         "Value.$": "$.Job.Id"
                       },
                       {
+                        "Name": "STATE_MACHINE_TASK_INDEX",
+                        "Value.$": "States.Format('{}', $.TaskIndex)"
+                      },
+                      {
                         "Name": "STATE_MACHINE_S3_DESTINATION_WRITER_ROLE",
                         "Value": "${S3DestinationWriterRoleArn}"
                       },
@@ -483,7 +487,9 @@
             "InputPath": "$",
             "Parameters": {
               "Job": { "Id.$": "$.Job.Id" },
-              "Task.$": "$.Task"
+              "Execution": { "Id.$": "$$.Execution.Id" },
+              "Task.$": "$.Task",
+              "TaskIteratorIndex.$": "$.TaskIndex"
             },
             "ResultPath": "$.TaskResult",
             "OutputPath": "$",

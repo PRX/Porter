@@ -5,6 +5,7 @@
 # STATE_MACHINE_NAME
 # STATE_MACHINE_EXECUTION_ID
 # STATE_MACHINE_JOB_ID
+# STATE_MACHINE_TASK_INDEX
 # STATE_MACHINE_S3_DESTINATION_WRITER_ROLE
 # STATE_MACHINE_AWS_REGION
 # STATE_MACHINE_ARTIFACT_BUCKET_NAME
@@ -54,7 +55,7 @@ s3.meta.client.download_file(
 
 # Execute the transcode
 ffmpeg_cmd = ' '.join([
-    "./ffmpeg-git-20200504-amd64-static/ffmpeg",
+    "./ffmpeg-git-20201128-amd64-static/ffmpeg",
     os.environ['STATE_MACHINE_FFMPEG_GLOBAL_OPTIONS'],
     "{i} -i artifact.file".format(
         i=os.environ['STATE_MACHINE_FFMPEG_INPUT_FILE_OPTIONS']
@@ -73,6 +74,31 @@ if os.system(ffmpeg_cmd) != 0:
 
 end_time = time.time()
 duration = end_time - start_time
+
+# Probe the output of the transcode
+ffprobe_cmd = ' '.join([
+    "./ffmpeg-git-20201128-amd64-static/ffprobe",
+    "-v error",
+    "-show_streams",
+    "-show_format",
+    "-i output.file",
+    "-print_format json",
+    "> ffprobe.json"
+])
+
+if os.system(ffprobe_cmd) != 0:
+    raise Exception('FFmpeg probe failed')
+
+# Write the probe output to S3
+print('Writing probe output to S3 artifact bucket')
+s3.meta.client.upload_file(
+    'ffprobe.json',
+    os.environ['STATE_MACHINE_ARTIFACT_BUCKET_NAME'],
+    "{x}/transcode/ffprobe-{t}.json".format(
+        x=os.environ['STATE_MACHINE_EXECUTION_ID'],
+        t=os.environ['STATE_MACHINE_TASK_INDEX']
+    )
+)
 
 # Record transcode duration in CloudWatch Metrics
 cloudwatch.put_metric_data(
