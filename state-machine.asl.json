@@ -398,7 +398,7 @@
                       },
                       {
                         "Name": "STATE_MACHINE_TASK_INDEX",
-                        "Value.$": "$.TaskIndex"
+                        "Value.$": "States.Format('{}', $.TaskIndex)"
                       },
                       {
                         "Name": "STATE_MACHINE_S3_DESTINATION_WRITER_ROLE",
