@@ -616,6 +616,8 @@ The `FFmpeg` property is optional. When included, each of `GlobalOptions`, `Inpu
 
 For `AWS/S3` destinations, the contents of `Parameters` are passed directly to the [upload_file()](https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/s3.html#S3.Client.upload_file) method as `ExtraArgs`. S3 will default the `content-type` to `binary/octet-stream`, so you may generally want to define that parameter.
 
+The output for the task includes the destination bucket, object key, transcoded file size in bytes, and duration in milliseconds (see example below).
+
 Input:
 
 ```json
@@ -644,7 +646,9 @@ Output:
 {
     "Task": "Transcode",
     "BucketName": "myBucket",
-    "ObjectKey": "myObject.flac"
+    "ObjectKey": "myObject.flac",
+    "Duration": 23222.857,
+    "Size": 186035
 }
 ```
 
