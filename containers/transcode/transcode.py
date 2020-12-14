@@ -81,7 +81,7 @@ ffprobe_cmd = ' '.join([
     "-v error",
     "-show_streams",
     "-show_format",
-    "-i output.file"
+    "-i output.file",
     "-print_format json",
     "> ffprobe.json"
 ])
