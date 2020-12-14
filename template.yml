@@ -1180,6 +1180,9 @@ Resources:
       ManagedPolicyArns:
         # Transcode operations are always pulling FROM the artifact bucket
         - !Ref ArtifactBucketReadOnlyAccessPolicy
+        # Also writing metadata to the artifact bucket for the output Lambda
+        # to read from
+        - !Ref ArtifactBucketWriteAccessPolicy
       Tags:
         - Key: Project
           Value: Porter
@@ -1901,6 +1904,7 @@ Resources:
       ManagedPolicyArns:
         - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
         - arn:aws:iam::aws:policy/AWSXrayWriteOnlyAccess
+        - !Ref ArtifactBucketReadOnlyAccessPolicy
       Tags:
         - Key: Project
           Value: Porter
