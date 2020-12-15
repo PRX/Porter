@@ -63,7 +63,7 @@ Timestamps should always be in seconds.
 
 Create Lambda Layers for external dependencies. Do not include packages and libraries in the deployable Lambda code iteself.
 
-The job input format should generally avoid using parameters specific to particular tools or libraries. The underlying tools used to perform any given task could change over time. In some cases, such as with FFmpeg where recreating the entire API would be impractical, this rule can be adapted.
+The job input format should generally avoid using parameters specific to particular tools or libraries. The underlying tools used to perform any given task could change over time. In some cases, such as with FFmpeg where recreating the entire API would be impractical, this rule can be adapted. In these cases, the input format should make it clear that the options or parameters are related specifically to one tool/library/etc.
 
 When a state fails, in general the desired outcome is that the error gets caught by the state machine and a callback is sent, notifying the user of the issue. By catching errors, it is no longer possible to detect or count task errors by looking for state machine execution failures. Instead the resources themselves (Lambdas functions, etc) must be monitored.
 
