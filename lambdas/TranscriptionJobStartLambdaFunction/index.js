@@ -16,12 +16,14 @@
 //
 // https://docs.aws.amazon.com/transcribe/latest/dg/API_StartTranscriptionJob.html
 
-const AWSXRay = require('aws-xray-sdk');
+const { S3Client, PutObjectCommand } = require('@aws-sdk/client-s3');
+const {
+  TranscribeClient,
+  StartTranscriptionJobCommand,
+} = require('@aws-sdk/client-transcribe');
 
-const AWS = AWSXRay.captureAWS(require('aws-sdk'));
-
-const s3 = new AWS.S3({ apiVersion: '2006-03-01' });
-const transcribe = new AWS.TranscribeService({ apiVersion: '2017-10-26' });
+const s3client = new S3Client({});
+const transcribeClient = new TranscribeClient({});
 
 exports.handler = async (event) => {
   console.log(JSON.stringify({ msg: 'State input', input: event }));
@@ -57,16 +59,16 @@ exports.handler = async (event) => {
   ).pop()}-${event.TaskIteratorIndex}`;
 
   // Write the task token provided by the state machine context to S3
-  await s3
-    .putObject({
+  await s3client.send(
+    new PutObjectCommand({
       Bucket: event.Artifact.BucketName,
       Key: `${transcriptionJobName}.TaskToken`,
       Body: event.TaskToken,
-    })
-    .promise();
+    }),
+  );
 
-  await transcribe
-    .startTranscriptionJob({
+  await transcribeClient.send(
+    new StartTranscriptionJobCommand({
       Media: {
         // https://docs.aws.amazon.com/transcribe/latest/dg/API_Media.html
         // Expects s3://<bucket-name>/<keyprefix>/<objectkey>
@@ -77,6 +79,6 @@ exports.handler = async (event) => {
       // Valid Values: mp3 | mp4 | wav | flac | ogg | amr | webm
       MediaFormat: mediaFormat,
       OutputBucketName: event.Artifact.BucketName,
-    })
-    .promise();
+    }),
+  );
 };
