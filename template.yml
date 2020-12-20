@@ -1369,6 +1369,16 @@ Resources:
         - Key: prx:cloudformation:stack-id
           Value: !Ref AWS::StackId
   # Lambda Layers
+  AwsSdkJsV3LambdaLayer:
+    Type: AWS::Serverless::LayerVersion
+    Metadata:
+      BuildMethod: makefile
+    Properties:
+      ContentUri: layers/aws-sdk-js-v3
+      CompatibleRuntimes:
+        - nodejs12.x
+      Description: aws-sdk-js-v3 NPM module
+      RetentionPolicy: Delete
   AwsXraySdkLambdaLayer:
     Type: AWS::Serverless::LayerVersion
     Metadata:
