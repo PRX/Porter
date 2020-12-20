@@ -1,8 +1,7 @@
-const AWSXRay = require('aws-xray-sdk');
+const { S3Client, CopyObjectCommand } = require('@aws-sdk/client-s3');
+const { STSClient, AssumeRoleCommand } = require('@aws-sdk/client-sts');
 
-const AWS = AWSXRay.captureAWS(require('aws-sdk'));
-
-const sts = new AWS.STS({ apiVersion: '2011-06-15' });
+const stsClient = new STSClient({});
 
 // https://docs.aws.amazon.com/AWSJavaScriptSDK/latest/AWS/S3.html#copyObject-property
 // https://docs.aws.amazon.com/AmazonS3/latest/API/RESTObjectCOPY.html
@@ -17,18 +16,19 @@ async function awsS3copyObject(event) {
     }),
   );
 
-  const role = await sts
-    .assumeRole({
+  const role = await stsClient.send(
+    new AssumeRoleCommand({
       RoleArn: process.env.S3_DESTINATION_WRITER_ROLE,
       RoleSessionName: 'porter_copy_task',
-    })
-    .promise();
+    }),
+  );
 
-  const s3 = new AWS.S3({
-    apiVersion: '2006-03-01',
-    accessKeyId: role.Credentials.AccessKeyId,
-    secretAccessKey: role.Credentials.SecretAccessKey,
-    sessionToken: role.Credentials.SessionToken,
+  const s3client = new S3Client({
+    credentials: {
+      accessKeyId: role.Credentials.AccessKeyId,
+      secretAccessKey: role.Credentials.SecretAccessKey,
+      sessionToken: role.Credentials.SessionToken,
+    },
   });
 
   const params = {
@@ -62,7 +62,7 @@ async function awsS3copyObject(event) {
   }
 
   const start = process.hrtime();
-  await s3.copyObject(params).promise();
+  await s3client.send(new CopyObjectCommand(params));
   const end = process.hrtime(start);
 
   console.log(
