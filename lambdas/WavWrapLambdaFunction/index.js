@@ -1,5 +1,9 @@
-const AWSXRay = require('aws-xray-sdk');
-const AWS = AWSXRay.captureAWS(require('aws-sdk'));
+const { S3Client, GetObjectCommand } = require('@aws-sdk/client-s3');
+const { STSClient, AssumeRoleCommand } = require('@aws-sdk/client-sts');
+const { Upload } = require('@aws-sdk/lib-storage');
+
+const s3client = new S3Client({});
+const stsClient = new STSClient({});
 
 const wavefile = require('prx-wavefile');
 
@@ -11,19 +15,20 @@ function camelize(str) {
     .replace(/\s+/g, '');
 }
 
-async function s3Upload(s3, sts, event, uploadBuffer) {
-  const role = await sts
-    .assumeRole({
+async function s3Upload(event, uploadBuffer) {
+  const role = await stsClient.send(
+    new AssumeRoleCommand({
       RoleArn: process.env.S3_DESTINATION_WRITER_ROLE,
       RoleSessionName: 'porter_wavwrapper_task',
-    })
-    .promise();
+    }),
+  );
 
-  const s3writer = new AWS.S3({
-    apiVersion: '2006-03-01',
-    accessKeyId: role.Credentials.AccessKeyId,
-    secretAccessKey: role.Credentials.SecretAccessKey,
-    sessionToken: role.Credentials.SessionToken,
+  const destWriterS3Client = new S3Client({
+    credentials: {
+      accessKeyId: role.Credentials.AccessKeyId,
+      secretAccessKey: role.Credentials.SecretAccessKey,
+      sessionToken: role.Credentials.SessionToken,
+    },
   });
 
   const params = {
@@ -61,7 +66,12 @@ async function s3Upload(s3, sts, event, uploadBuffer) {
 
   // Upload the resulting file to the destination in S3
   const uploadStart = process.hrtime();
-  await s3writer.upload(params).promise();
+
+  const upload = new Upload({
+    client: destWriterS3Client,
+    params,
+  });
+  await upload.done();
 
   const uploadEnd = process.hrtime(uploadStart);
   console.log(
@@ -75,9 +85,6 @@ async function s3Upload(s3, sts, event, uploadBuffer) {
 exports.handler = async (event) => {
   console.log(JSON.stringify({ msg: 'State input', input: event }));
 
-  const s3 = new AWS.S3({ apiVersion: '2006-03-01' });
-  const sts = new AWS.STS({ apiVersion: '2011-06-15' });
-
   // Fetch the source file artifact from S3
   console.log(
     JSON.stringify({
@@ -88,12 +95,12 @@ exports.handler = async (event) => {
 
   const s3start = process.hrtime();
 
-  const s3Object = await s3
-    .getObject({
+  const s3Object = await s3client.send(
+    new GetObjectCommand({
       Bucket: event.Artifact.BucketName,
       Key: event.Artifact.ObjectKey,
-    })
-    .promise();
+    }),
+  );
 
   const s3end = process.hrtime(s3start);
   console.log(
@@ -142,7 +149,7 @@ exports.handler = async (event) => {
 
   // save to s3 destination
   if (event.Task.Destination.Mode === 'AWS/S3') {
-    await s3Upload(s3, sts, event, Buffer.from(wav.toBuffer()));
+    await s3Upload(event, Buffer.from(wav.toBuffer()));
   }
 
   const now = new Date();
