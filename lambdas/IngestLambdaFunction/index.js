@@ -23,9 +23,11 @@ const AWSXRay = require('aws-xray-sdk');
 
 const http = AWSXRay.captureHTTPs(require('http'), false);
 const https = AWSXRay.captureHTTPs(require('https'), false);
-const AWS = AWSXRay.captureAWS(require('aws-sdk'));
 
-const s3 = new AWS.S3({ apiVersion: '2006-03-01' });
+const { S3Client, CopyObjectCommand } = require('@aws-sdk/client-s3');
+const { Upload } = require('@aws-sdk/lib-storage');
+
+const s3Client = new S3Client({});
 
 // Requests a file over HTTP and writes it to disk
 function httpGet(uri, file, redirectCount) {
@@ -126,13 +128,16 @@ exports.handler = async (event, context) => {
     );
 
     const s3start = process.hrtime();
-    await s3
-      .upload({
+
+    const upload = new Upload({
+      client: s3Client,
+      params: {
         Bucket: artifact.BucketName,
         Key: artifact.ObjectKey,
         Body: fs.createReadStream(localFilePath),
-      })
-      .promise();
+      },
+    });
+    await upload.done();
 
     const s3end = process.hrtime(s3start);
     console.log(
@@ -151,15 +156,15 @@ exports.handler = async (event, context) => {
     // CopySource expects "/sourcebucket/path/to/object.extension" to be URI-encoded
     const start = process.hrtime();
 
-    await s3
-      .copyObject({
+    await s3Client.send(
+      new CopyObjectCommand({
         CopySource: encodeURI(
           `/${event.Job.Source.BucketName}/${event.Job.Source.ObjectKey}`,
         ).replace(/\+/g, '%2B'),
         Bucket: artifact.BucketName,
         Key: artifact.ObjectKey,
-      })
-      .promise();
+      }),
+    );
 
     const end = process.hrtime(start);
 

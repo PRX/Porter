@@ -1559,6 +1559,7 @@ Resources:
       Handler: index.handler
       Layers:
         - !Ref AwsXraySdkLambdaLayer
+        - !Ref AwsSdkJsV3LambdaLayer
       MemorySize: 512
       Role: !GetAtt IngestLambdaIamRole.Arn
       Runtime: nodejs12.x
