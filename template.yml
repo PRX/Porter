@@ -2490,7 +2490,7 @@ Resources:
           JOB_EXECUTION_SNS_TOPIC_ARN: !Ref JobExecutionSnsTopic
       Handler: index.handler
       Layers:
-        - !Ref AwsXraySdkLambdaLayer
+        - !Ref AwsSdkJsV3LambdaLayer
       MemorySize: 128
       Role: !GetAtt JobSerializerLambdaIamRole.Arn
       Runtime: nodejs12.x
