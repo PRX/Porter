@@ -8,14 +8,17 @@
 // This function will also copy the transcript file from its artifact location
 // to the destination defined on the Transcribe task.
 
-const AWSXRay = require('aws-xray-sdk');
-
-const AWS = AWSXRay.captureAWS(require('aws-sdk'));
-
 const url = require('url');
 
-const sts = new AWS.STS({ apiVersion: '2011-06-15' });
-const transcribe = new AWS.TranscribeService({ apiVersion: '2017-10-26' });
+const { S3Client, CopyObjectCommand } = require('@aws-sdk/client-s3');
+const { STSClient, AssumeRoleCommand } = require('@aws-sdk/client-sts');
+const {
+  TranscribeClient,
+  GetTranscriptionJobCommand,
+} = require('@aws-sdk/client-transcribe');
+
+const stsClient = new STSClient({});
+const transcribeClient = new TranscribeClient({});
 
 // https://docs.aws.amazon.com/AWSJavaScriptSDK/latest/AWS/S3.html#copyObject-property
 // https://docs.aws.amazon.com/AmazonS3/latest/API/RESTObjectCOPY.html
@@ -34,18 +37,19 @@ async function awsS3copyObject(event, transcriptionJob) {
     }),
   );
 
-  const role = await sts
-    .assumeRole({
+  const role = await stsClient.send(
+    new AssumeRoleCommand({
       RoleArn: process.env.S3_DESTINATION_WRITER_ROLE,
       RoleSessionName: 'porter_transcribe_task',
-    })
-    .promise();
+    }),
+  );
 
-  const s3 = new AWS.S3({
-    apiVersion: '2006-03-01',
-    accessKeyId: role.Credentials.AccessKeyId,
-    secretAccessKey: role.Credentials.SecretAccessKey,
-    sessionToken: role.Credentials.SessionToken,
+  const s3client = new S3Client({
+    credentials: {
+      accessKeyId: role.Credentials.AccessKeyId,
+      secretAccessKey: role.Credentials.SecretAccessKey,
+      sessionToken: role.Credentials.SessionToken,
+    },
   });
 
   const params = {
@@ -55,7 +59,7 @@ async function awsS3copyObject(event, transcriptionJob) {
   };
 
   const start = process.hrtime();
-  await s3.copyObject(params).promise();
+  await s3client.send(new CopyObjectCommand(params));
   const end = process.hrtime(start);
 
   console.log(
@@ -70,11 +74,11 @@ exports.handler = async (event) => {
   console.log(JSON.stringify({ msg: 'State input', input: event }));
 
   // Get the details of the Transcribe job
-  const res = await transcribe
-    .getTranscriptionJob({
+  const res = await transcribeClient.send(
+    new GetTranscriptionJobCommand({
       TranscriptionJobName: event.TranscriptionJob.TranscriptionJobName,
-    })
-    .promise();
+    }),
+  );
 
   const transcriptionJob = res.TranscriptionJob;
 
