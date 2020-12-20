@@ -192,7 +192,7 @@ Resources:
           STATE_MACHINE_ARN: !Ref StateMachine
       Handler: index.handler
       Layers:
-        - !Ref AwsXraySdkLambdaLayer
+        - !Ref AwsSdkJsV3LambdaLayer
       MemorySize: 128
       Role: !GetAtt JobExecutionSnsTopicLambdaIamRole.Arn
       Runtime: nodejs12.x
