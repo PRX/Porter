@@ -8,12 +8,15 @@
 // This will get triggered by *all* transcribe jobs, so the predefined prefix
 // is used to filter out jobs originating elsewhere.
 
-const AWSXRay = require('aws-xray-sdk');
+const { S3Client, GetObjectCommand } = require('@aws-sdk/client-s3');
+const {
+  SFNClient,
+  SendTaskFailureCommand,
+  SendTaskSuccessCommand,
+} = require('@aws-sdk/client-sfn');
 
-const AWS = AWSXRay.captureAWS(require('aws-sdk'));
-
-const s3 = new AWS.S3({ apiVersion: '2006-03-01' });
-const stepFunctions = new AWS.StepFunctions({ apiVersion: '2016-11-23' });
+const s3client = new S3Client({});
+const sfnClient = new SFNClient({});
 
 exports.handler = async (event) => {
   console.log(JSON.stringify({ msg: 'Event', input: event }));
@@ -27,33 +30,33 @@ exports.handler = async (event) => {
   }
 
   try {
-    const file = await s3
-      .getObject({
+    const file = await s3client.send(
+      new GetObjectCommand({
         Bucket: process.env.ARTIFACT_BUCKET_NAME,
         Key: `${transcriptionJobName}.TaskToken`,
-      })
-      .promise();
+      }),
+    );
 
     const taskToken = file.Body.toString();
 
     if (transcriptionJobStatus === 'COMPLETED') {
       // The `output` parameter becomes the result value of the
       // ExecuteTranscribeTask state
-      await stepFunctions
-        .sendTaskSuccess({
+      await sfnClient.send(
+        new SendTaskSuccessCommand({
           output: JSON.stringify({
             TranscriptionJobName: transcriptionJobName,
           }),
           taskToken,
-        })
-        .promise();
+        }),
+      );
     } else {
       // TODO Add error/cause
-      await stepFunctions
-        .sendTaskFailure({
+      await sfnClient.send(
+        new SendTaskFailureCommand({
           taskToken,
-        })
-        .promise();
+        }),
+      );
     }
   } catch (error) {
     // TODO

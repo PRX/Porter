@@ -463,7 +463,7 @@ Resources:
           TRANSCODE_JOB_NAME_PREFIX: !Ref TranscodeJobNamePrefix
       Handler: index.handler
       Layers:
-        - !Ref AwsXraySdkLambdaLayer
+        - !Ref AwsSdkJsV3LambdaLayer
       MemorySize: 128
       Role: !GetAtt TranscriptionJobStateChangeLambdaIamRole.Arn
       Runtime: nodejs12.x
