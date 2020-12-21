@@ -1934,7 +1934,7 @@ Resources:
           ARTIFACT_BUCKET_NAME: !Ref ArtifactBucket
       Handler: index.handler
       Layers:
-        - !Ref AwsXraySdkLambdaLayer
+        - !Ref AwsSdkJsV3LambdaLayer
       MemorySize: 128
       Role: !GetAtt TranscodeTaskOutputLambdaIamRole.Arn
       Runtime: nodejs12.x
