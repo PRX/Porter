@@ -1,93 +1,72 @@
 const sharp = require('sharp');
-const path = require('path');
-const os = require('os');
-const fs = require('fs');
-const awsxray = require('aws-xray-sdk');
-const AWS = awsxray.captureAWS(require('aws-sdk'));
 
-const s3 = new AWS.S3({ apiVersion: '2006-03-01' });
-const sts = new AWS.STS({ apiVersion: '2011-06-15' });
+const { S3Client, GetObjectCommand } = require('@aws-sdk/client-s3');
+const { STSClient, AssumeRoleCommand } = require('@aws-sdk/client-sts');
+const { Upload } = require('@aws-sdk/lib-storage');
 
-function transform(inputFile, outputFile, event) {
-  return new Promise((resolve, reject) => {
-    try {
-      let process;
+const s3Client = new S3Client({});
+const stsClient = new STSClient({});
 
-      process = sharp(inputFile);
+/** @typedef {import('stream')} Readable */
 
-      if (Object.prototype.hasOwnProperty.call(event.Task, 'Resize')) {
-        process = process.resize({
-          width: event.Task.Resize.Width,
-          height: event.Task.Resize.Height,
-          position: event.Task.Resize.Position || 'centre',
-          fit: event.Task.Resize.Fit || 'cover',
-        });
-      }
+/**
+ * @param {*} s3ObjectBody
+ * @return {s3ObjectBody is Readable}
+ */
+function bodyIsReadable(s3ObjectBody) {
+  if (Object.prototype.hasOwnProperty.call(s3ObjectBody, 'pipe')) {
+    return true;
+  }
 
-      if (Object.prototype.hasOwnProperty.call(event.Task, 'Format')) {
-        process = process.toFormat(event.Task.Format);
-      }
-
-      if (
-        Object.prototype.hasOwnProperty.call(event.Task, 'Metadata') &&
-        event.Task.Metadata === 'PRESERVE'
-      ) {
-        process = process.withMetadata();
-      }
-
-      process.toFile(outputFile, (error, info) => {
-        if (error) {
-          reject(error);
-        } else {
-          resolve(info);
-        }
-      });
-    } catch (error) {
-      reject(error);
-    }
-  });
+  return false;
 }
 
-function s3GetObject(bucket, fileKey, filePath) {
-  return new Promise((resolve, reject) => {
-    const file = fs.createWriteStream(filePath);
-    const stream = s3
-      .getObject({
-        Bucket: bucket,
-        Key: fileKey,
-      })
-      .createReadStream();
+function sharpTransformer(event) {
+  let transform = sharp();
 
-    stream.on('error', reject);
-    file.on('error', reject);
-
-    file.on('finish', () => {
-      resolve(filePath);
+  if (Object.prototype.hasOwnProperty.call(event.Task, 'Resize')) {
+    transform = transform.resize({
+      width: event.Task.Resize.Width,
+      height: event.Task.Resize.Height,
+      position: event.Task.Resize.Position || 'centre',
+      fit: event.Task.Resize.Fit || 'cover',
     });
+  }
 
-    stream.pipe(file);
-  });
+  if (Object.prototype.hasOwnProperty.call(event.Task, 'Format')) {
+    transform = transform.toFormat(event.Task.Format);
+  }
+
+  if (
+    Object.prototype.hasOwnProperty.call(event.Task, 'Metadata') &&
+    event.Task.Metadata === 'PRESERVE'
+  ) {
+    transform = transform.withMetadata();
+  }
+
+  return transform;
 }
 
-async function s3Upload(event, imageFileTmpPath) {
-  const role = await sts
-    .assumeRole({
+async function s3Upload(event, readableStream) {
+  const role = await stsClient.send(
+    new AssumeRoleCommand({
       RoleArn: process.env.S3_DESTINATION_WRITER_ROLE,
       RoleSessionName: 'porter_image_task',
-    })
-    .promise();
+    }),
+  );
 
-  const s3writer = new AWS.S3({
-    apiVersion: '2006-03-01',
-    accessKeyId: role.Credentials.AccessKeyId,
-    secretAccessKey: role.Credentials.SecretAccessKey,
-    sessionToken: role.Credentials.SessionToken,
+  const destWriterS3Client = new S3Client({
+    credentials: {
+      accessKeyId: role.Credentials.AccessKeyId,
+      secretAccessKey: role.Credentials.SecretAccessKey,
+      sessionToken: role.Credentials.SessionToken,
+    },
   });
 
   const params = {
     Bucket: event.Task.Destination.BucketName,
     Key: event.Task.Destination.ObjectKey,
-    Body: fs.createReadStream(imageFileTmpPath),
+    Body: readableStream,
   };
 
   // When the optional `ContentType` property is set to `REPLACE`, if a MIME is
@@ -119,7 +98,12 @@ async function s3Upload(event, imageFileTmpPath) {
 
   // Upload the resulting file to the destination in S3
   const uploadStart = process.hrtime();
-  await s3writer.upload(params).promise();
+
+  const upload = new Upload({
+    client: destWriterS3Client,
+    params,
+  });
+  await upload.done();
 
   const uploadEnd = process.hrtime(uploadStart);
   console.log(
@@ -130,74 +114,48 @@ async function s3Upload(event, imageFileTmpPath) {
   );
 }
 
-exports.handler = async (event, context) => {
+exports.handler = async (event) => {
   console.log(JSON.stringify({ msg: 'State input', input: event }));
-
-  fs.mkdirSync(path.join(os.tmpdir(), context.awsRequestId));
-
-  const artifactFileTmpPath = path.join(
-    os.tmpdir(),
-    context.awsRequestId,
-    'artifact',
-  );
 
   // Fetch the source file artifact from S3
   console.log(
     JSON.stringify({
       msg: 'Fetching artifact from S3',
       s3: `${event.Artifact.BucketName}/${event.Artifact.ObjectKey}`,
-      fs: artifactFileTmpPath,
     }),
   );
 
-  const s3start = process.hrtime();
-  await s3GetObject(
-    event.Artifact.BucketName,
-    event.Artifact.ObjectKey,
-    artifactFileTmpPath,
-  );
-
-  const s3end = process.hrtime(s3start);
-  console.log(
-    JSON.stringify({
-      msg: 'Fetched artifact from S3',
-      duration: `${s3end[0]} s ${s3end[1] / 1000000} ms`,
+  const artifactObject = await s3Client.send(
+    new GetObjectCommand({
+      Bucket: event.Artifact.BucketName,
+      Key: event.Artifact.ObjectKey,
     }),
   );
 
-  // Run the file through sharp
-  const sharpStart = process.hrtime();
+  // Pipe the file data to sharp
+  const transformed = bodyIsReadable(artifactObject.Body)
+    ? artifactObject.Body.pipe(sharpTransformer())
+    : false;
 
-  const imageFileTmpPath = path.join(
-    os.tmpdir(),
-    context.awsRequestId,
-    'output',
-  );
-
-  await transform(artifactFileTmpPath, imageFileTmpPath, event);
-
-  const sharpEnd = process.hrtime(sharpStart);
-  console.log(
-    JSON.stringify({
-      msg: 'Finished image processing',
-      duration: `${sharpEnd[0]} s ${sharpEnd[1] / 1000000} ms`,
-    }),
-  );
-
-  if (event.Task.Destination.Mode === 'AWS/S3') {
-    await s3Upload(event, imageFileTmpPath);
+  if (!transformed) {
+    throw new Error('Unexpected S3 object Body type');
   }
 
-  fs.unlinkSync(artifactFileTmpPath);
-  fs.unlinkSync(imageFileTmpPath);
-
   const now = new Date();
-
-  return {
+  const result = {
     Task: 'Image',
-    BucketName: event.Task.Destination.BucketName,
-    ObjectKey: event.Task.Destination.ObjectKey,
     Time: now.toISOString(),
     Timestamp: +now / 1000,
   };
+
+  if (event.Task.Destination.Mode === 'AWS/S3') {
+    await s3Upload(event, transformed);
+
+    Object.assign(result, {
+      BucketName: event.Task.Destination.BucketName,
+      ObjectKey: event.Task.Destination.ObjectKey,
+    });
+  }
+
+  return result;
 };
