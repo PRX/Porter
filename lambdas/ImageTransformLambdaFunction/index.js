@@ -8,7 +8,6 @@ const s3Client = new S3Client({});
 const stsClient = new STSClient({});
 
 /** @typedef {import('stream')} Readable */
-
 /**
  * @param {*} s3ObjectBody
  * @return {s3ObjectBody is Readable}
@@ -133,11 +132,10 @@ exports.handler = async (event) => {
   );
 
   // Pipe the file data to sharp
-  const transformed = bodyIsReadable(artifactObject.Body)
-    ? artifactObject.Body.pipe(sharpTransformer())
-    : false;
-
-  if (!transformed) {
+  let transformed;
+  if (bodyIsReadable(artifactObject.Body)) {
+    transformed = artifactObject.Body.pipe(sharpTransformer());
+  } else {
     throw new Error('Unexpected S3 object Body type');
   }
 
