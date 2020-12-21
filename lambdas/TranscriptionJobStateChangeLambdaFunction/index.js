@@ -15,7 +15,7 @@ const {
   SendTaskSuccessCommand,
 } = require('@aws-sdk/client-sfn');
 
-const s3client = new S3Client({});
+const s3Client = new S3Client({});
 const sfnClient = new SFNClient({});
 
 exports.handler = async (event) => {
@@ -30,7 +30,7 @@ exports.handler = async (event) => {
   }
 
   try {
-    const file = await s3client.send(
+    const file = await s3Client.send(
       new GetObjectCommand({
         Bucket: process.env.ARTIFACT_BUCKET_NAME,
         Key: `${transcriptionJobName}.TaskToken`,

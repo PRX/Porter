@@ -23,7 +23,7 @@ async function awsS3copyObject(event) {
     }),
   );
 
-  const s3client = new S3Client({
+  const s3Client = new S3Client({
     credentials: {
       accessKeyId: role.Credentials.AccessKeyId,
       secretAccessKey: role.Credentials.SecretAccessKey,
@@ -62,7 +62,7 @@ async function awsS3copyObject(event) {
   }
 
   const start = process.hrtime();
-  await s3client.send(new CopyObjectCommand(params));
+  await s3Client.send(new CopyObjectCommand(params));
   const end = process.hrtime(start);
 
   console.log(

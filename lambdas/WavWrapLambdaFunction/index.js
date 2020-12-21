@@ -2,7 +2,7 @@ const { S3Client, GetObjectCommand } = require('@aws-sdk/client-s3');
 const { STSClient, AssumeRoleCommand } = require('@aws-sdk/client-sts');
 const { Upload } = require('@aws-sdk/lib-storage');
 
-const s3client = new S3Client({});
+const s3Client = new S3Client({});
 const stsClient = new STSClient({});
 
 const wavefile = require('prx-wavefile');
@@ -95,7 +95,7 @@ exports.handler = async (event) => {
 
   const s3start = process.hrtime();
 
-  const s3Object = await s3client.send(
+  const s3Object = await s3Client.send(
     new GetObjectCommand({
       Bucket: event.Artifact.BucketName,
       Key: event.Artifact.ObjectKey,

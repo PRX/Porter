@@ -22,7 +22,7 @@ const {
   StartTranscriptionJobCommand,
 } = require('@aws-sdk/client-transcribe');
 
-const s3client = new S3Client({});
+const s3Client = new S3Client({});
 const transcribeClient = new TranscribeClient({});
 
 exports.handler = async (event) => {
@@ -59,7 +59,7 @@ exports.handler = async (event) => {
   ).pop()}-${event.TaskIteratorIndex}`;
 
   // Write the task token provided by the state machine context to S3
-  await s3client.send(
+  await s3Client.send(
     new PutObjectCommand({
       Bucket: event.Artifact.BucketName,
       Key: `${transcriptionJobName}.TaskToken`,
