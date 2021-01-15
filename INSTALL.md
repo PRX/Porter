@@ -2,6 +2,12 @@
 
 Porter is built using the [AWS Serverless Application Model](https://aws.amazon.com/serverless/sam/) (SAM) framework, and is launched and managed using the associated [AWS SAM CLI](https://docs.aws.amazon.com/serverless-application-model/latest/developerguide/serverless-sam-reference.html#serverless-sam-cli) toolchain. SAM is a layer on top of [AWS CloudFormation](https://aws.amazon.com/cloudformation/).
 
+### Standard deployment
+
+Most deploys will use the included **`make deploy`** command, with a specific target environment, like `make deploy env=prod`. This will build, test, lint, and deploy the application. Continue reading for more details about those steps.
+
+For additional details about setting up a development environment see the [CONTRIBUTING](https://github.com/PRX/Porter/blob/master/CONTRIBUTING.md) documentation.
+
 ## Building
 
 The SAM template defines a number of Lambda [layers](https://docs.aws.amazon.com/serverless-application-model/latest/developerguide/building-layers.html) resources that must build before they can be deployed. The [build](https://docs.aws.amazon.com/serverless-application-model/latest/developerguide/sam-cli-command-reference-sam-build.html) command will execute the Makefile for each layer, and generate build artifacts (in `.aws-sam/build`) from the result. These artifact will be utilized automatically by the CLI during a deploy.
@@ -35,6 +41,8 @@ The options for any `deploy` are controlled using the `samconfig.toml` file, whi
 There are additional template parameters that can be set if needed. Check out the template for a complete list of parameters. See `samconfig.example.toml` for a complete sample of a multi-environment configuration.
 
 Rather than calling `sam deploy` directly, you should use `make deploy env=stag`, where `stag` is a table of parameters that exists in `samconfig`, and can be replaced with any other target you need. `make deploy` will run tests and code checks and build the project prior to deploying. If you are unsure of the age of your build artifacts, you can run `make clean` first to ensure that all artifacts are rebuilt fresh.
+
+The tests that are run as part of the deploy run locally (i.e., not in Docker). They will require project dependencies like Ruby gems being installed (`bundle install`) and Node packages being installed (`npm install`).
 
 Deploying a Porter stack creates a number of AWS resources that will be retained if the stack is deleted. This includes S3 buckets, some VPC components, etc. These are retained for a variety of reasons; see the documentation for each resource type for more information.
 
