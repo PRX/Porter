@@ -3,62 +3,75 @@
 #### Useful Resources
 
 - [AWS Step Functions Developer Guide](https://docs.aws.amazon.com/step-functions/latest/dg/welcome.html)
+- [Amazon States Language](https://states-language.net/)
+- [AWS Serverless Application Model](https://docs.aws.amazon.com/serverless-application-model/latest/developerguide/what-is-sam.html)
+- [AWS SAM CLI Command Reference](https://docs.aws.amazon.com/serverless-application-model/latest/developerguide/serverless-sam-cli-command-reference.html)
+- [FFmpeg Static Builds](https://www.johnvansickle.com/ffmpeg/)
+- [FFmpeg CLI Command Reference](https://ffmpeg.org/ffmpeg.html)
 
-## Development Environment
+## Project Standards & Guidelines
 
-If the IDE you use supports per-repository settings (such as with the `.vscode` directory for VS Code), you should add and check in those settings. Please ensure that the settings match those described in this document.
+Porter integrates a number of different services, technologies, frameworks and programming languages. In order to help with project maintenance and reducing mental overhead when working on the project, please follow the standards and guidelines described in this section. Whenever possible, ensure that any new or changed standards are documented here and are enforced automatically, such as by tests and IDEs.
 
-Any code styles that this repository follows should be described in this document, and should be checked by CI.
+### Security
+
+Take a _least privilege_ approach to all aspects of security. Create discrete IAM roles for each Lambda function, Fargate task, etc, and only give the role the permissions it needs to operate. Use the private VPC subnets with VPC endpoints unless it's absolutely necessary that something have access to the public internet.
+
+### Git & Source Control
+
+Git commits always should follow the [seven rules](https://chris.beams.io/posts/git-commit/#seven-rules).
 
 The `package-lock.json` file is not under version control. The NPM packages it tracks are only used in development, and the versions are largely irrelevant, so ignoring the lock file reduces unnecessary Git churn. The packages listed as `dependencies` are in there only to satisfy ESLint's path resolution checks.
 
-### IDE
-
-There's an expectation that your IDE is set up with the following tools and capabilities:
-
-- [ESLint](https://eslint.org/)
-- [Prettier](https://prettier.io/)
-- [cfn-python-lint](https://github.com/aws-cloudformation/cfn-python-lint)
-- [cnf-nag](https://github.com/stelligent/cfn_nag)
-- [EditorConfig](https://editorconfig.org/)
-
 ### Code Style
 
-This repository contains an [EditorConfig](https://editorconfig.org/) file that dictates some basic code styles. The repository may also contain editor- or IDE-specific settings files, which must follow the styles defined in the EditorConfig file. Any other linters or formatting tools should also follow those styles. You should ensure that your editor is setup to use the EditorConfig styles, regareless of how those settings are installed into program.
+Basic code style guidelines, such as tabs versus spaces, are captured in the project's [`.editorconfig`](https://editorconfig.org/) file. Different file types may follow different style guides. Ensure that you editor or IDE is set up to follow that configuration automatically. If necessary, create an application-specific configuration (such as with the `.vscode` directory for VS Code) that matches `.editorconfig`, and check it in so that others can benefit.
 
-For YAML, JavaScript, and JSON files your editor should be configured to _format on save_, and should use [Prettier](https://prettier.io/) as the formatter, following the settings described in `.prettierrc`. Ensure that the state machine files (`.asl.json`) are also being formatted.
+Language-specific code styles are handled by various libraries, such as [ESLint](https://eslint.org/) for JavaScript. Here's a list of all the linters and code checkers that are used by the project
 
-[ESLint](https://eslint.org/) is used for JavaScript files. The rules are primarily inherited from the Airbnb rules and made to work with the Prettier settings, with some minor project-specific modifications. If possible, it can be helpful to have your editor lint JavaScript files on the fly.
+- [ESLint](https://eslint.org/)
+- [TypeScript](https://www.typescriptlang.org/docs/handbook/compiler-options.html)
+- [Prettier](https://prettier.io/)
+- [cfn-python-lint](https://github.com/aws-cloudformation/cfn-python-lint)
+- [RuboCop](https://rubocop.org)
 
-CloudFormation templates should be run through [cfn-python-lint](https://github.com/aws-cloudformation/cfn-python-lint) and be free of linting errors. Your editor should check your files in realtime if possible; there are plugins available for many popular editors.
+You should set up realtime checking with these tools in your IDE, such as type checking with TypeScript and linting with ESLint. You should also enable Prettier to format in realtime or on save. The test suite will fail if there are rules violations, so it's much easier to be validation code changes as you go.
 
-### AWS
+While the project utilizes TypeScript for type checking and other other JavaScript syntax checking, Node.js-relate code should be written in vanilla JavaScript, and not TypeScript.
 
-There are a number of shell scripts in this repo. They assume you have a profile in `~/.aws/config` called `prx-legacy`, which is configured to access the `prx-legacy` AWS account.
+### Commands & Toolchain
+
+The project includes a `Makefile` to centralize various commands used in development and operation. When new commands are required, be sure to add them to the `Makefile`, even if it calls out to something else, like `npm run-script`.
+
+Besides language runtimes, package managers, and command line programs, tooling should be written to assume that libraries are installed within the package, not globally available on the system. I.e, do not asusme the `eslint` or `prettier` are installed globally.
+
+## Getting Started
+
+After cloning the Git repository for Porter, run `make bootstrap` to install all necessary development dependencies. This requires already having Node.js, Ruby, and Python 3 installed on your system.
 
 ## Deploying
 
-The template is intended to deployed using the [SAM CLI](https://docs.aws.amazon.com/serverless-application-model/latest/developerguide/serverless-sam-cli-command-reference.html). You can run `sam deploy` if you already have a `samconfig.toml`, or `sam deploy -g` if you don't. Additionally, there is a VS Code task that supports deploying various environments (staging, production, etc), which expects files called `samconfig.[stag|prod].toml`, and will use the correct one.
+See the [INSTALL](https://github.com/PRX/Porter/blob/master/INSTALL.md) guide for detailed information about deploying Porter to AWS.
 
-## Misc
+## State Machine Guidelines
 
 Various APIs and SDKs are inconsistent in how they refer to S3 buckets and objects. To be consistent throughout this project, they should be called `BucketName` and `ObjectKey` until they are passed to an API.
 
-For the sake of clarity, when building states always include the `InputPath`, `ResultPath`, and `OutputPath`, even if they are set to the default value.
+For the sake of clarity, when building states in ASL always include the `InputPath`, `ResultPath`, and `OutputPath`, even if they are set to the default value.
 
 Timestamps should always be in seconds.
 
-Create Lambda Layers for external dependencies, rather than including them in the deployment package.
+Create Lambda Layers for external dependencies. Do not include packages and libraries in the deployable Lambda code iteself.
 
-The job input format should generally avoid using input formats specific to particular tools or libraries. The underlying tools used to perform any given task could change over time.
+The job input format should generally avoid using parameters specific to particular tools or libraries. The underlying tools used to perform any given task could change over time. In some cases, such as with FFmpeg where recreating the entire API would be impractical, this rule can be adapted. In these cases, the input format should make it clear that the options or parameters are related specifically to one tool/library/etc.
 
-When a state fails, in general the desired outcome is that the error gets caught by the state machine and a callback is sent with notifying the user of the issue. By catching errors, it is no longer possible to detect or count task errors by looking for state machine execution failures. Instead the resources themselves (Lambdas functions, etc) must be monitored.
+When a state fails, in general the desired outcome is that the error gets caught by the state machine and a callback is sent, notifying the user of the issue. By catching errors, it is no longer possible to detect or count task errors by looking for state machine execution failures. Instead the resources themselves (Lambdas functions, etc) must be monitored.
 
 Fargate tasks (like Transcode) run in a VPC that does not have internet access. Access to AWS APIs is provided by [VPC endpoints](https://docs.aws.amazon.com/vpc/latest/userguide/vpc-endpoints.html). If you have a Fargate task running in the VPC that needs access to a new AWS API, you'll have to add a new endpoint for it.
 
 ### S3 Access Permissions
 
-There are two common reasons that a given state's resource (like a Lambda function or Fargate task) would need access to S3: reading from the artifact bucket, and writing new files to the destination buckets.
+There are two common reasons that a given state's resource (like a Lambda function or Fargate task) would need access to S3: reading from the artifact bucket, and writing new files to the destination buckets. (Reading the source file for the task should only ever be done by the ingest state.)
 
 In the case of reading from the artifact bucket, there is a managed IAM policy that provides the necessary permissions: `ArtifactBucketReadOnlyAccessPolicy`. You can include this in the list of `ManagedPolicyArns` for IAM roles you create for your stack resources.
 
@@ -72,136 +85,44 @@ To recap, when adding new tasks or states to Porter's CloudFormation template:
 
 There's also `ArtifactBucketWriteAccessPolicy`, which provides write access to the artifact bucket. The artifact bucket is primarily used to store the source file for a task execution, but if you have a task that needs to persist metadata somewhere for the duration of an execution (such as to pass a value between decoupled services, or to store a large file that requires further processing), the artifact bucket can be used for those needs as well. Take care to make sure anything you're writing to the artifact bucket can't interfer with another execution's data. Common practice is to prefix any objects you create with the state machine execution ID. Objects in the artifact bucket expire very quickly, so it should never be used as the final destination for any critical data.
 
-## Internal Messaging
+### Internal Messaging
 
-How data is passed between the various states of the Step Function is key to building a reliable state machine, and understanding the flow of data in invaluable when developing this project. The following is a detailed look at the lifecycle of inputs and outputs of the state machine internals. The code examples are meant to demonstrate important structural aspects, and are not necessarily 100% accurate.
+How data is passed into and between between the various states of the Step Function is key to building a reliable state machine, and understanding the flow of data in invaluable when developing this project. The following is a detailed look at the lifecycle of inputs and outputs of the state machine internals. The code examples are meant to demonstrate important structural aspects, and are not necessarily 100% accurate.
 
 [Input and output processsing](https://docs.aws.amazon.com/step-functions/latest/dg/concepts-input-output-filtering.html) is used extensively to ensure that the data being passed between states is clean, and the data being passed to task resources (Lambda functions, etc) is appropriately scoped. A good understanding of how the state I/O and task resource I/O interact is crucial.
 
-In some cases, states will use a result path of `$.Void` if their return values are unwanted. These are largely treated in the documentation below as though they don't exist.
+In some cases, states will use a result path of `$.Void` if their return values are unwanted.
 
-### Execution Input
+### Execution Overview
 
-This is the input provided by the end user as raw JSON. The format is covered in detail in the [README](https://github.com/PRX/Porter/blob/master/README.md). `Job.Id` and `Job.Source` are consider required.
+**Input:** Job execution input is provided by the end user as raw JSON (via SNS, EventBridge, etc). The format is covered in detail in the [README](https://github.com/PRX/Porter/blob/master/README.md). The input is normalized to ensure that certain properties exist. This allows properties to be optional in the job input, even when the state machine definition requires them to exist. Normalization can also be used to support deprecated properties to preserve backwards compatibility. As soon as the input has been normalized, callbacks are sent inform the client that the job was recieved.
 
-```
-{ "Job": { "Id": "1234567890asdfghjkl", "Source": { "Mode": "AWS/S3" } } }
-```
+**Pre-processing:** While the heart of any given job execution is the individual tasks that are passed in, there are a number of things that happen in the state maching prior to the tasks starting (including the previously mentioned normalization). The source file is downloaded and a copy is created in the artifact S3 bucket. This is the file that tasks will do their work against. It's helpful to reliably know what the type of the source file is, so some number of bytes of the artifact are examined to detect the file type with a high degree of accuracy. This information is available to subsequent states as both a MIME type and the common extension of the determined type.
 
-### Input Normalization
+Once all pre-processing has completed, the internal state of the machine is sufficient for task execution. If any pre-processing steps fail, each one is configured to fail to a unique `Pass` state, which injects a paramater into the state indicating where the failure occurred. Any additonal pre-processing states that are added should use their own `Pass` state for failures, with a unique `Result` value output to `$.State`.
 
-Some states in the machine assume that certain properties exist in the input. In order for those properties to be optional for the user providing the input, the execution input it normalized as the first step.
+**Callbacks:** Callbacks can be sent to an arbitrary number of endpoints, determined by the size of the `Job.Callbacks` array in the job input. This can be any combination of various types of endpoints (HTTP, SNS, etc). While there are several differnt flavors of callbacks sent (or not) at various points during job exectuion (job recieved, task completesd, task failed, etc), they are all handled by a single Lambda function. Each function invocation handles a single callback message (i.e., one message being sent to one endpoint).
 
-This state does no input or output processing at the machine level. It takes in the complete execution input, passes the entire input to the Lambda function, and uses the result of the Lambda function as the entire output result.
+The state input sent to the Lambda function (i.e., the `event` sent the Lambda handler) is defined by the `Parameters` property of a `Map` state that wraps the `Task` states which actually invoke the callback Lambda function. The payload sent in each callback message is *always* the JSON (string) representation of the `Message` property on the map's `Parameters`, regardless of callback type or endpoint type. If data needs to be included in a callback message, it must appear in the state machine ASL. The exception to this are the `Time` and `Timestamp` values that get injected at the time the callback messages are sent.
 
-- `InputPath`: `$`, `{ Job: { … } }`
-- `Parameters`: n/a, `{ Job: { … } }`
-- `ResultPath`: `$`, `{ Job: { … } }`
-- `OutputPath`: `$`, `{ Job: { … } }`
+**Task Execution:** For each item in the job input's `Tasks` list, a `Map` state's iterator will run once. This is a complex iterator that is responsible for routing the execution on the correct path based on the task type (and potentially other properties). For example a `Copy` task will be sent to a state with a Lambda function that handles file copying, while a `Transcode` task will be sent to a series of states, including Lambda functions and Fargate tasks, to transcode audio and video. All of that routing logic happens inside the map's iterator.
 
-### Job Received Callbacks
+Within the iterator, the states responsible for execution the tasks have failure handling that also is isolated within the iterator. When a task state fails, it is caught and handled by a task error callback state that exists _within_ the iterator. This means that in a job with multiple tasks, one run of the iterator could fail and another could succeed; they are isolated. This is distinct from the task `Map` state itself failing. If the iterator itself or something within the iterator fail in a way that can't be handled gracefully, the map state fails to a `Pass` state, similar to the pre-processing states.
 
-This pattern is shared by all three callback-sending states in the machine. Callbacks can be sent to an arbitrary number of endpoints, determined by the size of the `Job.Callbacks` array in the input, which is set as the `ItemsPath` of the `Map` state.
+Each task type or subtype will have its own execution path. These paths can be any size and including their own branching if necessary. As described before, they can be as simple as the single-state copy task, or more complex like the transcode task. Regardless of a path's shape, the output for any run of the iterator must be consistent. Task callbacks are always the last thing to happen within the iterator, so the input sent to the callback map state must meet the expected requirements. The task results sent to the callback map must include a `TaskResult` property.
 
-Each iteration receives input based on the `Parameters` of the `Map` state. The input is an object with two properties: `Callback` and `Message`. `Callback` is the current value of the iterator (i.e., an element of the `Job.Callbacks` array). `Message` is the value that will be sent as the callback payload.
+For example, if there's a `Add` task, which adds numbers using a Lambda function, the function would return a value like `{ Sum: 42 }` (not JSON), and the ASL state definition would include `"ResultPath": "$.TaskResult"` to set that value as the task result, along with `"OutputPath": "$"` to ensure the callback map gets all the other state information it needs to do its job. This is true regardless of which resource or services backs the state, even when it's not a Lambda function. Sometimes it's necessary to include an additional Lambda-based state to provide the correct output, such as with Fargate-based tasks, since Faragte does not return any output to the state machine.
 
-Within the iterator, no additional I/O processing is done on the state that sends the callback, so the data that's is available in the Lambda function is the `Callback`/`Message` object. The result of the Lambda function is the output of the inner state.
+By convention, the `TaskResult` should include a `Task` property whose value is set to the task type (e.g., `"Task": "Sum"`), as well as properties that include any relevant data generated by the task (e.g., `"Sum": 42`). The `TaskResult` should also include properties that uniquely identify the specific task that produced the result. For example, if a job includes multiple S3 copy tasks, the bucket name and object key can act to match the result with the original task request. If the result of a `Sum` task is only `{ "Sum": 42 }`, there would be no way for a client to distinguis that result from other `Sum` task results included in the same job. Always assume that a job can include any number of a given task type.
 
-The output of the map state itself is an array whose elements are the results of each iteration. Because the callback Lambda function has no return value, the result of the `Map` will be something like `[null, null, null]`, in the case of a job with three callback endpoints. That array is assigned to `$.Void` in the `ResultPath` and can be ignored.
-
-#### Map
-
-- `InputPath`: `$`, `{ Job: { … } }`
-- `Parameters`: `{ Callback: { … }, Message: { … } }`
-- `ResultPath`: `$.Void`, `{ Job: { … }, Void: [ … ] }`
-- `OutputPath`: `$`, `{ Job: { … }, Void: [ … ] }`
-
-#### Iterator
-
-- `InputPath`: `$`, `{ Callback: { … }, Message: { … } }`
-- `Parameters`: n/a, `{ Callback: { … }, Message: { … } }`
-- `ResultPath`: `$`, `null`
-- `OutputPath`: `$`, `null`
-
-### Ingest Source File
-
-The Ingest function relies on the `Job.Source` data. It also uses the Step Function execution ID to isolate work it's doing. The entire input must remain available to later states, so there's no `InputPath`. The necessary data is passed to the Lambda function as `Parameters`, including the interpolated execution ID.
-
-The result of the Lambda function is inserted into the output under the `Artifact` property, and the entire output (the input with the `Artifact`) is passed to the next state.
-
-- `InputPath`: `$`, `{ Job: { … } }`
-- `Parameters`: `{ Job: { Source }, Execution: { Id }}`
-- `ResultPath`: `$.Artifact`, `{ Job: { … }, Artifact: { … } }`
-- `OutputPath`: `$`, `{ Job: { … }, Artifact: { … } }`
-
-### Source File Type Detection
-
-This Lambda function requires only the `Artifact` from the input, but, as before, the entire input must be maintained in the output.
-
-The output of the Lambda function is added to the `Artifact` object under the `Descriptor` key, and the entire output (the input with the amended `Artifact`) is passed to the next state.
-
-- `InputPath`: `$`, `{ Job: { … }, Artifact: { … } }`
-- `Parameters`: `{ Arifact: {} }`
-- `ResultPath`: `".Artifact.Descriptor`, `{ Job: { … }, Artifact: { … } }`
-- `OutputPath`: `$`, `{ Job: { … }, Artifact: { … } }`
-
-### Execute Tasks
-
-This is another `Map` state, which iterates over every element of the `Job.Tasks` array.
-
-The `Parameters` for each iteration are constructed to provide all the information needed to execute each task. That includes: the job ID, the execution ID, the artifact, the current value of the iterator (i.e., a task), the current index of the iterator, and all the callback endpoints defined on the job.
-
-The result of the iterator (an array of each task's results) is assigned to `$.TaskResults`.
-
-#### Map
-
-- `InputPath`: `$`, `{ Job: { … }, Artifact: { … } }`
-- `Parameters`: `{ Job, Execution, Artifact, Index, Task, Callbacks }`
-- `ResultPath`: `$.TaskResults`, `{ Job: { … }, Artifact: { … }, TaskResults: [ … ] }`
-- `OutputPath`: `$`, `{ Job: { … }, Artifact: { … }, TaskResults: [ … ] }`
-
-#### Iterator
-
-The iterator (unlike the callbacks iterator, which included only a single state), has several components. A `Choice` state is used to inspect the `Task.Type`, which determines the next task-specific state to run. (E.g., When iterating over a task that include `"Type": "Copy"`, the state machine will follow a branch to the copy task state.)
-
-Each task-speicfic state creates a set of parameters determined by the needs of that task, but they all will map their output to `$.TaskResult`.
-
-After a task has completed, callbacks are sent. This follows the same pattern as described above, thus the callback iterator exists within the task iterator. The result of the callback iterator is mapped to `$.Void`, and the `OutputPath` is set to `$.TaskResult`. The effect of this is that even though the callbacks are at the end of the chain, and final output of the entire `Maps` state of tasks is all the individual task results, and only those results.
-
-### Job Callbacks
-
-As with the previous callbacks, this follows a similar iterator pattern. Each job callback contains a complete set of tasks results for all tasks that were run by the job. The results that are included in the callback message are filtered from the entire list of results using the [JsonPath](https://github.com/json-path/JsonPath) query: `$.TaskResults.[?(@.Task && @.Task != 'Null')]`. This removes any null task results, which result from unknown task types being included in a job.
-
-The output of this state should pass along the input. It may contain additional data from the individual callback executions, but because callbacks are optional, those values may not exist.
-
-- `InputPath`: `$`, `{ Job: { … }, Artifact: { … }, TaskResults: [ … ] }`
-- `Parameters`: `{ Callback: { … }, Message: { … } }`
-- `OutputPath`: `$`, `{ Job: { … }, Artifact: { … }, TaskResults: [ … ], Void: [ … ] } }`
-
-### Job Serializer
-
-The job serializer is an iterator that comes into play if a job includes an `SerializedJobs`. It has no impact on the other aspects of the state machine execution, has no meaningful output, and only deals with the `SerializedJobs` that was originally defined on the input job message.
-
-- `InputPath`: `$`, `{ Job: { … }, Artifact: { … }, TaskResults: [ … ] }`
-- `Parameters`: `{ Execution: { … }, ExecutionTrace: [ … ], SerializedJob: { … } }`
-- `ResultPath`: `$.Void`,  `{ Job: { … }, Artifact: { … }, TaskResults: [ … ], Void: [ … ] } }`
-- `OutputPath`: `$`, `{ Job: { … }, Artifact: { … }, TaskResults: [ … ], Void: [ … ] } }`
-
-### Output Normalization
-
-After callbacks have been sent, there's a final step that normalizes the output of the state machine. The resulting value is intended to match the message sent as part of each job callback.
-
-As with the timestamps included in all callbacks, the timestamps in the state machine output represent the time that the output was generated, not the time that any other specific aspect of the state machine occurred. I.e., even if a given execution only has a single callback, the timestamps in the callback message and the execution output will almost certainly be different.
-
-- `InputPath`: `$`, `{ Job: { … }, Artifact: { … }, TaskResults: [ … ] } }`
-- `Parameters`: `{ Message: { … } }`
-- `ResultPath`: `$`, `{ Time, Timestamp, JobResult }`
-- `OutputPath`: `$`, `{ Time, Timestamp, JobResult }`
-
-This state is the true end of the state machine.
+**Post-processing:** After task execution has concluded (regardless of how successful the individual tasks were), there are some additional steps the state machine takes. Callbacks are sent with a complete job result, if there are any serialized jobs they are started asynchronously, and the final state machine output is normalized. This normalization is done so that the execution output of the job in Step Functions matches the payload sent as the `JobResult` callback as closely as possible.
 
 ## Adding Task Types
 
-- Create a new choice matcher in the `RouteTaskType` state to identify the `Type` of the new task, and route it to a new state within the iterator
-- Add the new state with a resource that can execute the task. Look at existing states for examples that use Lambda and Fargate. Construct `Parameters` for the task as necessary, and set the `ResultPath` to `$.TaskResult`. Be sure that `SendTaskCallbacks` is called `Next`.
+Here's a very generalized approach to adding a new task type, which should cover many cases:
+
+- In the state machine ASL, create a new choice matcher in the `Route Task By Type` state to identify the `Type` of the new task (or any other properties), and route it to a new state within the iterator.
+- Add the new state or states with a resource that can execute the task. Look at existing states for examples that use Lambda and Fargate. Construct `Parameters` for the task as necessary, and set the `ResultPath` to `$.TaskResult`. Be sure that `TaskResult Callbacks Map` is called `Next`, and `TaskResult Error Callback Map` is used in the `Catch` definition.
 - For Lambda functions that generate data which needs to be returned through the callbacks, ensure that the return value includes a `Task` property (such as `"Task": "Copy"`). Fargate-backed states cannot currently retun data from their execution environment to the state machine. If necessary, you can write the data to a file in S3, and use a Lambda function state that runs after the Fargate task to fetch and return the data.
+- Update this CONTRIBUTING document if there are any significant changes to the **Execution Overview** or other areas.
+- Add documentation to the README to describe the task input requirementss and the task result output.
