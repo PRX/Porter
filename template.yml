@@ -195,7 +195,7 @@ Resources:
         - !Ref AwsXraySdkLambdaLayer
       MemorySize: 128
       Role: !GetAtt JobExecutionSnsTopicLambdaIamRole.Arn
-      Runtime: nodejs12.x
+      Runtime: nodejs14.x
       Tags:
         Project: Porter
         prx:cloudformation:stack-name: !Ref AWS::StackName
@@ -323,7 +323,7 @@ Resources:
         - !Ref AwsXraySdkLambdaLayer
       MemorySize: 128
       Role: !GetAtt JobExecutionSqsQueueLambdaIamRole.Arn
-      Runtime: nodejs12.x
+      Runtime: nodejs14.x
       Tags:
         Project: Porter
         prx:cloudformation:stack-name: !Ref AWS::StackName
@@ -466,7 +466,7 @@ Resources:
         - !Ref AwsXraySdkLambdaLayer
       MemorySize: 128
       Role: !GetAtt TranscriptionJobStateChangeLambdaIamRole.Arn
-      Runtime: nodejs12.x
+      Runtime: nodejs14.x
       Tags:
         Project: Porter
         prx:cloudformation:stack-name: !Ref AWS::StackName
@@ -1376,7 +1376,7 @@ Resources:
     Properties:
       ContentUri: layers/aws-xray-sdk
       CompatibleRuntimes:
-        - nodejs12.x
+        - nodejs14.x
       Description: aws-xray NPM module
       RetentionPolicy: Delete
   FileTypeLambdaLayer:
@@ -1386,7 +1386,7 @@ Resources:
     Properties:
       ContentUri: layers/file-type
       CompatibleRuntimes:
-        - nodejs12.x
+        - nodejs14.x
       Description: file-type NPM module
       RetentionPolicy: Delete
   SharpLambdaLayer:
@@ -1396,7 +1396,7 @@ Resources:
     Properties:
       ContentUri: layers/sharp
       CompatibleRuntimes:
-        - nodejs12.x
+        - nodejs14.x
       Description: sharp NPM module
       RetentionPolicy: Delete
   WavefileLambdaLayer:
@@ -1407,7 +1407,7 @@ Resources:
       Description: wavefile NPM module
       ContentUri: layers/wavefile
       CompatibleRuntimes:
-        - nodejs12.x
+        - nodejs14.x
       RetentionPolicy: Delete
   FfmpegLambdaLayer:
     Type: AWS::Serverless::LayerVersion
@@ -1416,7 +1416,7 @@ Resources:
     Properties:
       ContentUri: layers/ffmpeg
       CompatibleRuntimes:
-        - nodejs12.x
+        - nodejs14.x
       Description: wavefile NPM module
       RetentionPolicy: Delete
   MpckLambdaLayer:
@@ -1426,7 +1426,7 @@ Resources:
     Properties:
       ContentUri: layers/mpck
       CompatibleRuntimes:
-        - nodejs12.x
+        - nodejs14.x
       Description: wavefile NPM module
       RetentionPolicy: Delete
   # Normalize Input Lambda
@@ -1463,7 +1463,7 @@ Resources:
         - !Ref AwsXraySdkLambdaLayer
       MemorySize: 128
       Role: !GetAtt NormalizeInputLambdaIamRole.Arn
-      Runtime: nodejs12.x
+      Runtime: nodejs14.x
       Tags:
         Project: Porter
         prx:cloudformation:stack-name: !Ref AWS::StackName
@@ -1551,7 +1551,7 @@ Resources:
         - !Ref AwsXraySdkLambdaLayer
       MemorySize: 512
       Role: !GetAtt IngestLambdaIamRole.Arn
-      Runtime: nodejs12.x
+      Runtime: nodejs14.x
       Tags:
         Project: Porter
         prx:cloudformation:stack-name: !Ref AWS::StackName
@@ -1628,7 +1628,7 @@ Resources:
         - !Ref FileTypeLambdaLayer
       MemorySize: 256
       Role: !GetAtt SourceTypeLambdaIamRole.Arn
-      Runtime: nodejs12.x
+      Runtime: nodejs14.x
       Tags:
         Project: Porter
         prx:cloudformation:stack-name: !Ref AWS::StackName
@@ -1703,7 +1703,7 @@ Resources:
         - !Ref SharpLambdaLayer
       MemorySize: 2048
       Role: !GetAtt InspectMediaLambdaIamRole.Arn
-      Runtime: nodejs12.x
+      Runtime: nodejs14.x
       Tags:
         Project: Porter
         prx:cloudformation:stack-name: !Ref AWS::StackName
@@ -1779,7 +1779,7 @@ Resources:
         - !Ref AwsXraySdkLambdaLayer
       MemorySize: 512
       Role: !GetAtt CopyLambdaIamRole.Arn
-      Runtime: nodejs12.x
+      Runtime: nodejs14.x
       Tags:
         Project: Porter
         prx:cloudformation:stack-name: !Ref AWS::StackName
@@ -1851,7 +1851,7 @@ Resources:
         - !Ref AwsXraySdkLambdaLayer
       MemorySize: 128
       Role: !GetAtt FtpCopyTaskOutputLambdaIamRole.Arn
-      Runtime: nodejs12.x
+      Runtime: nodejs14.x
       Tags:
         Project: Porter
         prx:cloudformation:stack-name: !Ref AWS::StackName
@@ -1926,7 +1926,7 @@ Resources:
         - !Ref AwsXraySdkLambdaLayer
       MemorySize: 128
       Role: !GetAtt TranscodeTaskOutputLambdaIamRole.Arn
-      Runtime: nodejs12.x
+      Runtime: nodejs14.x
       Tags:
         Project: Porter
         prx:cloudformation:stack-name: !Ref AWS::StackName
@@ -2003,7 +2003,7 @@ Resources:
         - !Ref SharpLambdaLayer
       MemorySize: 1024
       Role: !GetAtt ImageTransformLambdaIamRole.Arn
-      Runtime: nodejs12.x
+      Runtime: nodejs14.x
       Tags:
         Project: Porter
         prx:cloudformation:stack-name: !Ref AWS::StackName
@@ -2079,7 +2079,7 @@ Resources:
         - !Ref WavefileLambdaLayer
       MemorySize: 3008
       Role: !GetAtt WavWrapLambdaIamRole.Arn
-      Runtime: nodejs12.x
+      Runtime: nodejs14.x
       Tags:
         Project: Porter
         prx:cloudformation:stack-name: !Ref AWS::StackName
@@ -2180,7 +2180,7 @@ Resources:
         - !Ref AwsXraySdkLambdaLayer
       MemorySize: 128
       Role: !GetAtt TranscriptionJobStartLambdaIamRole.Arn
-      Runtime: nodejs12.x
+      Runtime: nodejs14.x
       Tags:
         Project: Porter
         prx:cloudformation:stack-name: !Ref AWS::StackName
@@ -2265,7 +2265,7 @@ Resources:
         - !Ref AwsXraySdkLambdaLayer
       MemorySize: 512
       Role: !GetAtt TranscriptionJobResultsLambdaIamRole.Arn
-      Runtime: nodejs12.x
+      Runtime: nodejs14.x
       Tags:
         Project: Porter
         prx:cloudformation:stack-name: !Ref AWS::StackName
@@ -2371,7 +2371,7 @@ Resources:
         - !Ref AwsXraySdkLambdaLayer
       MemorySize: 128
       Role: !GetAtt CallbackLambdaIamRole.Arn
-      Runtime: nodejs12.x
+      Runtime: nodejs14.x
       Tags:
         Project: Porter
         prx:cloudformation:stack-name: !Ref AWS::StackName
@@ -2481,7 +2481,7 @@ Resources:
         - !Ref AwsXraySdkLambdaLayer
       MemorySize: 128
       Role: !GetAtt JobSerializerLambdaIamRole.Arn
-      Runtime: nodejs12.x
+      Runtime: nodejs14.x
       Tags:
         Project: Porter
         prx:cloudformation:stack-name: !Ref AWS::StackName
@@ -2552,7 +2552,7 @@ Resources:
         - !Ref AwsXraySdkLambdaLayer
       MemorySize: 128
       Role: !GetAtt NormalizeOutputLambdaIamRole.Arn
-      Runtime: nodejs12.x
+      Runtime: nodejs14.x
       Tags:
         Project: Porter
         prx:cloudformation:stack-name: !Ref AWS::StackName
