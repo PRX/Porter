@@ -10,11 +10,9 @@
 // represents the execution IDs of the jobs that serialized other jobs prior to
 // this one.
 
-const AWSXRay = require('aws-xray-sdk');
+const { SNSClient, PublishCommand } = require('@aws-sdk/client-sns');
 
-const AWS = AWSXRay.captureAWS(require('aws-sdk'));
-
-const sns = new AWS.SNS({ apiVersion: '2010-03-31' });
+const snsClient = new SNSClient({});
 
 exports.handler = async (event) => {
   console.log(JSON.stringify({ msg: 'State input', input: event }));
@@ -28,10 +26,10 @@ exports.handler = async (event) => {
     JSON.stringify({ msg: 'Serialized Job', input: event.SerializedJob }),
   );
 
-  await sns
-    .publish({
+  await snsClient.send(
+    new PublishCommand({
       TopicArn: process.env.JOB_EXECUTION_SNS_TOPIC_ARN,
       Message: JSON.stringify(event.SerializedJob),
-    })
-    .promise();
+    }),
+  );
 };

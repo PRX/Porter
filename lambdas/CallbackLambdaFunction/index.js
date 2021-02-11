@@ -1,15 +1,27 @@
 const querystring = require('querystring');
 const AWSXRay = require('aws-xray-sdk');
 
-const AWS = AWSXRay.captureAWS(require('aws-sdk'));
 const http = AWSXRay.captureHTTPs(require('http'), false);
 const https = AWSXRay.captureHTTPs(require('https'), false);
 
-const sns = new AWS.SNS({ apiVersion: '2010-03-31' });
-const sqs = new AWS.SQS({ apiVersion: '2012-11-05' });
-const sts = new AWS.STS({ apiVersion: '2011-06-15' });
-const cloudwatch = new AWS.CloudWatch({ apiVersion: '2010-08-01' });
-const eventbridge = new AWS.EventBridge({ apiVersion: '2015-10-07' });
+const {
+  CloudWatchClient,
+  PutMetricDataCommand,
+} = require('@aws-sdk/client-cloudwatch');
+const {
+  EventBridgeClient,
+  PutEventsCommand,
+} = require('@aws-sdk/client-eventbridge');
+const { S3Client, PutObjectCommand } = require('@aws-sdk/client-s3');
+const { SNSClient, PublishCommand } = require('@aws-sdk/client-sns');
+const { SQSClient, SendMessageCommand } = require('@aws-sdk/client-sqs');
+const { STSClient, AssumeRoleCommand } = require('@aws-sdk/client-sts');
+
+const cloudwatchClient = new CloudWatchClient({});
+const eventbridgeClient = new EventBridgeClient({});
+const snsClient = new SNSClient({});
+const sqsClient = new SQSClient({});
+const stsClient = new STSClient({});
 
 function httpRequest(event, message, redirectCount) {
   return new Promise((resolve, reject) => {
@@ -105,27 +117,28 @@ async function s3Put(event, message) {
     key = `/unknown_${+new Date()}.json`;
   }
 
-  const role = await sts
-    .assumeRole({
+  const role = await stsClient.send(
+    new AssumeRoleCommand({
       RoleArn: process.env.S3_DESTINATION_WRITER_ROLE,
       RoleSessionName: 'porter_s3_callback',
-    })
-    .promise();
+    }),
+  );
 
-  const s3 = new AWS.S3({
-    apiVersion: '2006-03-01',
-    accessKeyId: role.Credentials.AccessKeyId,
-    secretAccessKey: role.Credentials.SecretAccessKey,
-    sessionToken: role.Credentials.SessionToken,
+  const s3Client = new S3Client({
+    credentials: {
+      accessKeyId: role.Credentials.AccessKeyId,
+      secretAccessKey: role.Credentials.SecretAccessKey,
+      sessionToken: role.Credentials.SessionToken,
+    },
   });
 
-  await s3
-    .putObject({
+  await s3Client.send(
+    new PutObjectCommand({
       Bucket: event.Callback.BucketName,
       Key: [event.Callback.ObjectPrefix, id, key].join(''),
       Body: JSON.stringify(message),
-    })
-    .promise();
+    }),
+  );
 }
 
 async function eventBridgePutEvent(event, message, now) {
@@ -140,8 +153,8 @@ async function eventBridgePutEvent(event, message, now) {
     DetailType = 'Porter Job Result Callback';
   }
 
-  await eventbridge
-    .putEvents({
+  await eventbridgeClient.send(
+    new PutEventsCommand({
       Entries: [
         {
           Detail: JSON.stringify(message),
@@ -155,13 +168,13 @@ async function eventBridgePutEvent(event, message, now) {
           Time: now,
         },
       ],
-    })
-    .promise();
+    }),
+  );
 }
 
 async function putErrorMetric() {
-  await cloudwatch
-    .putMetricData({
+  await cloudwatchClient.send(
+    new PutMetricDataCommand({
       Namespace: 'PRX/Porter',
       MetricData: [
         {
@@ -176,8 +189,8 @@ async function putErrorMetric() {
           Unit: 'Count',
         },
       ],
-    })
-    .promise();
+    }),
+  );
 }
 
 /**
@@ -215,12 +228,12 @@ exports.handler = async (event) => {
     const TopicArn = event.Callback.Topic;
     const Message = JSON.stringify(msg);
 
-    await sns.publish({ Message, TopicArn }).promise();
+    await snsClient.send(new PublishCommand({ TopicArn, Message }));
   } else if (event.Callback.Type === 'AWS/SQS') {
     const QueueUrl = event.Callback.Queue;
     const MessageBody = JSON.stringify(msg);
 
-    await sqs.sendMessage({ QueueUrl, MessageBody }).promise();
+    await sqsClient.send(new SendMessageCommand({ QueueUrl, MessageBody }));
   } else if (event.Callback.Type === 'AWS/S3') {
     await s3Put(event, msg);
   } else if (event.Callback.Type === 'AWS/EventBridge') {

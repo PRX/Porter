@@ -2,22 +2,20 @@
 // callback, this function takes the entire task input and builds a better
 // result that gets passed to the callback task.
 
-const AWSXRay = require('aws-xray-sdk');
+const { S3Client, GetObjectCommand } = require('@aws-sdk/client-s3');
 
-const AWS = AWSXRay.captureAWS(require('aws-sdk'));
-
-const s3 = new AWS.S3({ apiVersion: '2006-03-01' });
+const s3Client = new S3Client({});
 
 exports.handler = async (event) => {
   console.log(JSON.stringify({ msg: 'State input', input: event }));
 
-  // Get ffprobe results
-  const file = await s3
-    .getObject({
+  // Get ffprobe
+  const file = await s3Client.send(
+    new GetObjectCommand({
       Bucket: process.env.ARTIFACT_BUCKET_NAME,
       Key: `${event.Execution.Id}/transcode/ffprobe-${event.TaskIteratorIndex}.json`,
-    })
-    .promise();
+    }),
+  );
   const ffprobe = JSON.parse(file.Body.toString());
 
   const now = new Date();
