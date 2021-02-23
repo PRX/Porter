@@ -1,4 +1,4 @@
-version: '3.7'
+version: "3.7"
 networks:
   porternetwork:
     driver: bridge
@@ -8,7 +8,7 @@ services:
     build:
       context: ./
       dockerfile: ci.Dockerfile
-    command: ['-k', 'ci']
+    command: ["-k", "ci"]
     environment:
       - AWS_CONTAINER_CREDENTIALS_RELATIVE_URI
       - PORTER_STATE_MACHINE_ARN
