@@ -1,12 +1,12 @@
-AWSTemplateFormatVersion: '2010-09-09'
+AWSTemplateFormatVersion: "2010-09-09"
 Transform: AWS::Serverless-2016-10-31
 Description: >-
   Creates a Step Function state machine for processing user created content, as
   well as some supporting resources
 Conditions:
   CreateProductionResources: !Equals [!Ref EnvironmentType, Production]
-  CreateSqsEventMapping: !Equals [!Ref EnableSqsJobExecution, 'True']
-  CreateDefaultEventBusRule: !Equals [!Ref EnableDefaultEventBusRule, 'True']
+  CreateSqsEventMapping: !Equals [!Ref EnableSqsJobExecution, "True"]
+  CreateDefaultEventBusRule: !Equals [!Ref EnableDefaultEventBusRule, "True"]
 Parameters:
   EnvironmentType:
     Type: String
@@ -27,15 +27,15 @@ Parameters:
   EnableSqsJobExecution:
     Type: String
     AllowedValues:
-      - 'True'
-      - 'False'
-    Default: 'False'
+      - "True"
+      - "False"
+    Default: "False"
   EnableDefaultEventBusRule:
     Type: String
     AllowedValues:
-      - 'True'
-      - 'False'
-    Default: 'True'
+      - "True"
+      - "False"
+    Default: "True"
   SubnetIPv4CidrBits:
     Default: 14
     Description: >-
@@ -71,7 +71,7 @@ Resources:
         Provides read-only access to the artifact bucket for a particular
         Porter deployment
       PolicyDocument:
-        Version: '2012-10-17'
+        Version: "2012-10-17"
         Statement:
           - Action:
               - s3:GetObject*
@@ -85,7 +85,7 @@ Resources:
         Provides limitedS S3 list and write access to the artifact bucket for a
         particular Porter deployment
       PolicyDocument:
-        Version: '2012-10-17'
+        Version: "2012-10-17"
         Statement:
           - Effect: Allow
             Action:
@@ -104,7 +104,7 @@ Resources:
     Type: AWS::IAM::Role
     Properties:
       AssumeRolePolicyDocument:
-        Version: '2012-10-17'
+        Version: "2012-10-17"
         Statement:
           - Action:
               - sts:AssumeRole
@@ -125,7 +125,7 @@ Resources:
         # permissions that the bucket policy grans to this role
         - PolicyName: S3DestinationWritePolicy
           PolicyDocument:
-            Version: '2012-10-17'
+            Version: "2012-10-17"
             Statement:
               - Effect: Allow
                 Action:
@@ -134,7 +134,7 @@ Resources:
                   - s3:AbortMultipartUpload
                   - s3:ListMultipartUploadParts
                 Resource:
-                  - '*'
+                  - "*"
       Tags:
         - Key: Project
           Value: Porter
@@ -153,7 +153,7 @@ Resources:
     Type: AWS::IAM::Role
     Properties:
       AssumeRolePolicyDocument:
-        Version: '2012-10-17'
+        Version: "2012-10-17"
         Statement:
           - Effect: Allow
             Principal:
@@ -167,7 +167,7 @@ Resources:
       Policies:
         - PolicyName: StepFunctionsPolicy
           PolicyDocument:
-            Version: '2012-10-17'
+            Version: "2012-10-17"
             Statement:
               - Effect: Allow
                 Action:
@@ -224,7 +224,7 @@ Resources:
     Condition: CreateProductionResources
     Properties:
       ActionsEnabled: true
-      AlarmName: '[Porter][SNS][Lambda] Elevated error volume'
+      AlarmName: "[Porter][SNS][Lambda] Elevated error volume"
       AlarmActions:
         - !Ref OpsErrorMessagesSnsTopicArn
       InsufficientDataActions:
@@ -263,7 +263,7 @@ Resources:
     Type: AWS::IAM::Role
     Properties:
       AssumeRolePolicyDocument:
-        Version: '2012-10-17'
+        Version: "2012-10-17"
         Statement:
           - Effect: Allow
             Principal:
@@ -277,7 +277,7 @@ Resources:
       Policies:
         - PolicyName: SqsPolicy
           PolicyDocument:
-            Version: '2012-10-17'
+            Version: "2012-10-17"
             Statement:
               - Effect: Allow
                 Action:
@@ -289,7 +289,7 @@ Resources:
                   - !GetAtt JobExecutionSqsQueue.Arn
         - PolicyName: StepFunctionsPolicy
           PolicyDocument:
-            Version: '2012-10-17'
+            Version: "2012-10-17"
             Statement:
               - Effect: Allow
                 Action:
@@ -339,7 +339,7 @@ Resources:
     Condition: CreateProductionResources
     Properties:
       ActionsEnabled: true
-      AlarmName: '[Porter][SQS][Lambda] Elevated error volume'
+      AlarmName: "[Porter][SQS][Lambda] Elevated error volume"
       AlarmActions:
         - !Ref OpsErrorMessagesSnsTopicArn
       InsufficientDataActions:
@@ -368,7 +368,7 @@ Resources:
     Type: AWS::IAM::Role
     Properties:
       AssumeRolePolicyDocument:
-        Version: '2012-10-17'
+        Version: "2012-10-17"
         Statement:
           - Effect: Allow
             Principal:
@@ -379,7 +379,7 @@ Resources:
       Policies:
         - PolicyName: StepFunctionsPolicy
           PolicyDocument:
-            Version: '2012-10-17'
+            Version: "2012-10-17"
             Statement:
               - Effect: Allow
                 Action:
@@ -429,7 +429,7 @@ Resources:
     Type: AWS::IAM::Role
     Properties:
       AssumeRolePolicyDocument:
-        Version: '2012-10-17'
+        Version: "2012-10-17"
         Statement:
           - Effect: Allow
             Principal:
@@ -444,7 +444,7 @@ Resources:
       Policies:
         - PolicyName: StepFunctions
           PolicyDocument:
-            Version: '2012-10-17'
+            Version: "2012-10-17"
             Statement:
               - Effect: Allow
                 Action:
@@ -482,7 +482,7 @@ Resources:
     Condition: CreateProductionResources
     Properties:
       ActionsEnabled: true
-      AlarmName: '[Porter][Transcribe Change][Lambda] Elevated error volume'
+      AlarmName: "[Porter][Transcribe Change][Lambda] Elevated error volume"
       AlarmActions:
         - !Ref OpsErrorMessagesSnsTopicArn
       InsufficientDataActions:
@@ -637,18 +637,9 @@ Resources:
     Type: AWS::EC2::Subnet
     # UpdateReplacePolicy: Retain
     Properties:
-      AvailabilityZone: !Select [0, !GetAZs '']
-      CidrBlock:
-        !Select [0, !Cidr [!GetAtt VPC.CidrBlock, 1, !Ref SubnetIPv4CidrBits]]
-      Ipv6CidrBlock:
-        !Select [
-          0,
-          !Cidr [
-            !Select [0, !GetAtt VPC.Ipv6CidrBlocks],
-            1,
-            !Ref SubnetIPv6CidrBits,
-          ],
-        ]
+      AvailabilityZone: !Select [0, !GetAZs ""]
+      CidrBlock: !Select [0, !Cidr [!GetAtt VPC.CidrBlock, 1, !Ref SubnetIPv4CidrBits]]
+      Ipv6CidrBlock: !Select [0, !Cidr [!Select [0, !GetAtt VPC.Ipv6CidrBlocks], 1, !Ref SubnetIPv6CidrBits]]
       Tags:
         - Key: Project
           Value: Porter
@@ -670,18 +661,9 @@ Resources:
     Type: AWS::EC2::Subnet
     # UpdateReplacePolicy: Retain
     Properties:
-      AvailabilityZone: !Select [1, !GetAZs '']
-      CidrBlock:
-        !Select [1, !Cidr [!GetAtt VPC.CidrBlock, 2, !Ref SubnetIPv4CidrBits]]
-      Ipv6CidrBlock:
-        !Select [
-          1,
-          !Cidr [
-            !Select [0, !GetAtt VPC.Ipv6CidrBlocks],
-            2,
-            !Ref SubnetIPv6CidrBits,
-          ],
-        ]
+      AvailabilityZone: !Select [1, !GetAZs ""]
+      CidrBlock: !Select [1, !Cidr [!GetAtt VPC.CidrBlock, 2, !Ref SubnetIPv4CidrBits]]
+      Ipv6CidrBlock: !Select [1, !Cidr [!Select [0, !GetAtt VPC.Ipv6CidrBlocks], 2, !Ref SubnetIPv6CidrBits]]
       Tags:
         - Key: Project
           Value: Porter
@@ -868,18 +850,9 @@ Resources:
     Type: AWS::EC2::Subnet
     # UpdateReplacePolicy: Retain
     Properties:
-      AvailabilityZone: !Select [0, !GetAZs '']
-      CidrBlock:
-        !Select [2, !Cidr [!GetAtt VPC.CidrBlock, 3, !Ref SubnetIPv4CidrBits]]
-      Ipv6CidrBlock:
-        !Select [
-          2,
-          !Cidr [
-            !Select [0, !GetAtt VPC.Ipv6CidrBlocks],
-            3,
-            !Ref SubnetIPv6CidrBits,
-          ],
-        ]
+      AvailabilityZone: !Select [0, !GetAZs ""]
+      CidrBlock: !Select [2, !Cidr [!GetAtt VPC.CidrBlock, 3, !Ref SubnetIPv4CidrBits]]
+      Ipv6CidrBlock: !Select [2, !Cidr [!Select [0, !GetAtt VPC.Ipv6CidrBlocks], 3, !Ref SubnetIPv6CidrBits]]
       Tags:
         - Key: Project
           Value: Porter
@@ -901,18 +874,9 @@ Resources:
     Type: AWS::EC2::Subnet
     # UpdateReplacePolicy: Retain
     Properties:
-      AvailabilityZone: !Select [1, !GetAZs '']
-      CidrBlock:
-        !Select [3, !Cidr [!GetAtt VPC.CidrBlock, 4, !Ref SubnetIPv4CidrBits]]
-      Ipv6CidrBlock:
-        !Select [
-          3,
-          !Cidr [
-            !Select [0, !GetAtt VPC.Ipv6CidrBlocks],
-            4,
-            !Ref SubnetIPv6CidrBits,
-          ],
-        ]
+      AvailabilityZone: !Select [1, !GetAZs ""]
+      CidrBlock: !Select [3, !Cidr [!GetAtt VPC.CidrBlock, 4, !Ref SubnetIPv4CidrBits]]
+      Ipv6CidrBlock: !Select [3, !Cidr [!Select [0, !GetAtt VPC.Ipv6CidrBlocks], 4, !Ref SubnetIPv6CidrBits]]
       Tags:
         - Key: Project
           Value: Porter
@@ -1112,7 +1076,7 @@ Resources:
     Type: AWS::IAM::Role
     Properties:
       AssumeRolePolicyDocument:
-        Version: '2012-10-17'
+        Version: "2012-10-17"
         Statement:
           - Action:
               - sts:AssumeRole
@@ -1127,7 +1091,7 @@ Resources:
         # restrics access to a specific VPC and VPC endpoint
         - PolicyName: TaskExecutionPolicy
           PolicyDocument:
-            Version: '2012-10-17'
+            Version: "2012-10-17"
             Statement:
               - Effect: Allow
                 Action:
@@ -1135,7 +1099,7 @@ Resources:
                   - logs:CreateLogStream
                   - logs:PutLogEvents
                 Resource:
-                  - '*'
+                  - "*"
               - Effect: Allow
                 Action:
                   - ecr:BatchCheckLayerAvailability
@@ -1146,7 +1110,7 @@ Resources:
                     aws:sourceVpce: !Ref EcrVpcEndpoint
                     aws:sourceVpc: !Ref VPC
                 Resource:
-                  - '*'
+                  - "*"
       Tags:
         - Key: Project
           Value: Porter
@@ -1158,7 +1122,7 @@ Resources:
     Type: AWS::IAM::Role
     Properties:
       AssumeRolePolicyDocument:
-        Version: '2012-10-17'
+        Version: "2012-10-17"
         Statement:
           - Action:
               - sts:AssumeRole
@@ -1170,13 +1134,13 @@ Resources:
         # Allow it to put CloudWatch Metrics
         - PolicyName: PutCloudWatchMetric
           PolicyDocument:
-            Version: '2012-10-17'
+            Version: "2012-10-17"
             Statement:
               - Effect: Allow
                 Action:
                   - cloudwatch:PutMetricData
                 Resource:
-                  - '*'
+                  - "*"
       ManagedPolicyArns:
         # Transcode operations are always pulling FROM the artifact bucket
         - !Ref ArtifactBucketReadOnlyAccessPolicy
@@ -1203,9 +1167,9 @@ Resources:
               awslogs-region: !Ref AWS::Region
               awslogs-stream-prefix: ecs
           Name: !Sub ${AWS::StackName}-transcode-container
-      Cpu: '4096'
+      Cpu: "4096"
       ExecutionRoleArn: !GetAtt TranscodeEcsTaskExecutionIamRole.Arn
-      Memory: '8192'
+      Memory: "8192"
       NetworkMode: awsvpc
       RequiresCompatibilities:
         - FARGATE
@@ -1226,7 +1190,7 @@ Resources:
     Type: AWS::IAM::Role
     Properties:
       AssumeRolePolicyDocument:
-        Version: '2012-10-17'
+        Version: "2012-10-17"
         Statement:
           - Action:
               - sts:AssumeRole
@@ -1241,7 +1205,7 @@ Resources:
         # restrics access to a specific VPC and VPC endpoint
         - PolicyName: TaskExecutionPolicy
           PolicyDocument:
-            Version: '2012-10-17'
+            Version: "2012-10-17"
             Statement:
               - Effect: Allow
                 Action:
@@ -1249,7 +1213,7 @@ Resources:
                   - logs:CreateLogStream
                   - logs:PutLogEvents
                 Resource:
-                  - '*'
+                  - "*"
               - Effect: Allow
                 Action:
                   - ecr:BatchCheckLayerAvailability
@@ -1260,7 +1224,7 @@ Resources:
                     aws:sourceVpce: !Ref EcrVpcEndpoint
                     aws:sourceVpc: !Ref VPC
                 Resource:
-                  - '*'
+                  - "*"
       Tags:
         - Key: Project
           Value: Porter
@@ -1272,7 +1236,7 @@ Resources:
     Type: AWS::IAM::Role
     Properties:
       AssumeRolePolicyDocument:
-        Version: '2012-10-17'
+        Version: "2012-10-17"
         Statement:
           - Action:
               - sts:AssumeRole
@@ -1284,31 +1248,31 @@ Resources:
         # Allow it to put CloudWatch Metrics
         - PolicyName: PutCloudWatchMetric
           PolicyDocument:
-            Version: '2012-10-17'
+            Version: "2012-10-17"
             Statement:
               - Effect: Allow
                 Action:
                   - cloudwatch:PutMetricData
                 Resource:
-                  - '*'
+                  - "*"
         - PolicyName: EC2DescribeNetworkInterfaces
           PolicyDocument:
-            Version: '2012-10-17'
+            Version: "2012-10-17"
             Statement:
               - Effect: Allow
                 Action:
                   - ec2:DescribeNetworkInterfaces
                 Resource:
-                  - '*'
+                  - "*"
         - PolicyName: ECSDescribeTasks
           PolicyDocument:
-            Version: '2012-10-17'
+            Version: "2012-10-17"
             Statement:
               - Effect: Allow
                 Action:
                   - ecs:DescribeTasks
                 Resource:
-                  - '*'
+                  - "*"
       ManagedPolicyArns:
         - !Ref ArtifactBucketReadOnlyAccessPolicy
         - !Ref ArtifactBucketWriteAccessPolicy
@@ -1332,9 +1296,9 @@ Resources:
               awslogs-region: !Ref AWS::Region
               awslogs-stream-prefix: ecs
           Name: !Sub ${AWS::StackName}-ftp-copy-container
-      Cpu: '4096'
+      Cpu: "4096"
       ExecutionRoleArn: !GetAtt FtpCopyEcsTaskExecutionIamRole.Arn
-      Memory: '8192'
+      Memory: "8192"
       NetworkMode: awsvpc
       RequiresCompatibilities:
         - FARGATE
@@ -1434,7 +1398,7 @@ Resources:
     Type: AWS::IAM::Role
     Properties:
       AssumeRolePolicyDocument:
-        Version: '2012-10-17'
+        Version: "2012-10-17"
         Statement:
           - Effect: Allow
             Principal:
@@ -1480,7 +1444,7 @@ Resources:
     Condition: CreateProductionResources
     Properties:
       ActionsEnabled: true
-      AlarmName: '[Porter][Normalize][Lambda] Elevated error volume'
+      AlarmName: "[Porter][Normalize][Lambda] Elevated error volume"
       AlarmActions:
         - !Ref OpsErrorMessagesSnsTopicArn
       InsufficientDataActions:
@@ -1505,7 +1469,7 @@ Resources:
     Type: AWS::IAM::Role
     Properties:
       AssumeRolePolicyDocument:
-        Version: '2012-10-17'
+        Version: "2012-10-17"
         Statement:
           - Effect: Allow
             Principal:
@@ -1522,13 +1486,13 @@ Resources:
         # Allow GET-only access to any object in S3
         - PolicyName: S3CopySourcePolicy
           PolicyDocument:
-            Version: '2012-10-17'
+            Version: "2012-10-17"
             Statement:
               - Effect: Allow
                 Action:
                   - s3:GetObject*
                 Resource:
-                  - '*'
+                  - "*"
       Tags:
         - Key: Project
           Value: Porter
@@ -1545,7 +1509,7 @@ Resources:
       Environment:
         Variables:
           ARTIFACT_BUCKET_NAME: !Ref ArtifactBucket
-          MAX_HTTP_REDIRECTS: '10'
+          MAX_HTTP_REDIRECTS: "10"
       Handler: index.handler
       Layers:
         - !Ref AwsXraySdkLambdaLayer
@@ -1568,7 +1532,7 @@ Resources:
     Condition: CreateProductionResources
     Properties:
       ActionsEnabled: true
-      AlarmName: '[Porter][Ingest][Lambda] Elevated error volume'
+      AlarmName: "[Porter][Ingest][Lambda] Elevated error volume"
       AlarmActions:
         - !Ref OpsErrorMessagesSnsTopicArn
       InsufficientDataActions:
@@ -1593,7 +1557,7 @@ Resources:
     Type: AWS::IAM::Role
     Properties:
       AssumeRolePolicyDocument:
-        Version: '2012-10-17'
+        Version: "2012-10-17"
         Statement:
           - Effect: Allow
             Principal:
@@ -1621,7 +1585,7 @@ Resources:
       Environment:
         Variables:
           ARTIFACT_BUCKET_NAME: !Ref ArtifactBucket
-          MAX_HTTP_REDIRECTS: '10'
+          MAX_HTTP_REDIRECTS: "10"
       Handler: index.handler
       Layers:
         - !Ref AwsXraySdkLambdaLayer
@@ -1645,7 +1609,7 @@ Resources:
     Condition: CreateProductionResources
     Properties:
       ActionsEnabled: true
-      AlarmName: '[Porter][Type][Lambda] Elevated error volume'
+      AlarmName: "[Porter][Type][Lambda] Elevated error volume"
       AlarmActions:
         - !Ref OpsErrorMessagesSnsTopicArn
       InsufficientDataActions:
@@ -1670,7 +1634,7 @@ Resources:
     Type: AWS::IAM::Role
     Properties:
       AssumeRolePolicyDocument:
-        Version: '2012-10-17'
+        Version: "2012-10-17"
         Statement:
           - Effect: Allow
             Principal:
@@ -1720,7 +1684,7 @@ Resources:
     Condition: CreateProductionResources
     Properties:
       ActionsEnabled: true
-      AlarmName: '[Porter][Inspect][Lambda] Elevated error volume'
+      AlarmName: "[Porter][Inspect][Lambda] Elevated error volume"
       AlarmActions:
         - !Ref OpsErrorMessagesSnsTopicArn
       InsufficientDataActions:
@@ -1745,7 +1709,7 @@ Resources:
     Type: AWS::IAM::Role
     Properties:
       AssumeRolePolicyDocument:
-        Version: '2012-10-17'
+        Version: "2012-10-17"
         Statement:
           - Effect: Allow
             Principal:
@@ -1796,7 +1760,7 @@ Resources:
     Condition: CreateProductionResources
     Properties:
       ActionsEnabled: true
-      AlarmName: '[Porter][Copy][Lambda] Elevated error volume'
+      AlarmName: "[Porter][Copy][Lambda] Elevated error volume"
       AlarmActions:
         - !Ref OpsErrorMessagesSnsTopicArn
       InsufficientDataActions:
@@ -1821,7 +1785,7 @@ Resources:
     Type: AWS::IAM::Role
     Properties:
       AssumeRolePolicyDocument:
-        Version: '2012-10-17'
+        Version: "2012-10-17"
         Statement:
           - Effect: Allow
             Principal:
@@ -1868,7 +1832,7 @@ Resources:
     Condition: CreateProductionResources
     Properties:
       ActionsEnabled: true
-      AlarmName: '[Porter][FTP][Lambda] Elevated error volume'
+      AlarmName: "[Porter][FTP][Lambda] Elevated error volume"
       AlarmActions:
         - !Ref OpsErrorMessagesSnsTopicArn
       InsufficientDataActions:
@@ -1893,7 +1857,7 @@ Resources:
     Type: AWS::IAM::Role
     Properties:
       AssumeRolePolicyDocument:
-        Version: '2012-10-17'
+        Version: "2012-10-17"
         Statement:
           - Effect: Allow
             Principal:
@@ -1943,7 +1907,7 @@ Resources:
     Condition: CreateProductionResources
     Properties:
       ActionsEnabled: true
-      AlarmName: '[Porter][Transcode][Lambda] Elevated error volume'
+      AlarmName: "[Porter][Transcode][Lambda] Elevated error volume"
       AlarmActions:
         - !Ref OpsErrorMessagesSnsTopicArn
       InsufficientDataActions:
@@ -1968,7 +1932,7 @@ Resources:
     Type: AWS::IAM::Role
     Properties:
       AssumeRolePolicyDocument:
-        Version: '2012-10-17'
+        Version: "2012-10-17"
         Statement:
           - Effect: Allow
             Principal:
@@ -2020,7 +1984,7 @@ Resources:
     Condition: CreateProductionResources
     Properties:
       ActionsEnabled: true
-      AlarmName: '[Porter][Image][Lambda] Elevated error volume'
+      AlarmName: "[Porter][Image][Lambda] Elevated error volume"
       AlarmActions:
         - !Ref OpsErrorMessagesSnsTopicArn
       InsufficientDataActions:
@@ -2045,7 +2009,7 @@ Resources:
     Type: AWS::IAM::Role
     Properties:
       AssumeRolePolicyDocument:
-        Version: '2012-10-17'
+        Version: "2012-10-17"
         Statement:
           - Effect: Allow
             Principal:
@@ -2096,7 +2060,7 @@ Resources:
     Condition: CreateProductionResources
     Properties:
       ActionsEnabled: true
-      AlarmName: '[Porter][WAV][Lambda] Elevated error volume'
+      AlarmName: "[Porter][WAV][Lambda] Elevated error volume"
       AlarmActions:
         - !Ref OpsErrorMessagesSnsTopicArn
       InsufficientDataActions:
@@ -2121,7 +2085,7 @@ Resources:
     Type: AWS::IAM::Role
     Properties:
       AssumeRolePolicyDocument:
-        Version: '2012-10-17'
+        Version: "2012-10-17"
         Statement:
           - Effect: Allow
             Principal:
@@ -2150,14 +2114,14 @@ Resources:
         #           - !Sub ${ArtifactBucket.Arn}/*
         - PolicyName: TranscribeJobStartPolicy
           PolicyDocument:
-            Version: '2012-10-17'
+            Version: "2012-10-17"
             Statement:
               - Action:
                   - transcribe:GetTranscriptionJob
                   - transcribe:StartTranscriptionJob
                 Effect: Allow
                 Resource:
-                  - '*'
+                  - "*"
       Tags:
         - Key: Project
           Value: Porter
@@ -2197,7 +2161,7 @@ Resources:
     Condition: CreateProductionResources
     Properties:
       ActionsEnabled: true
-      AlarmName: '[Porter][Transcribe Start][Lambda] Elevated error volume'
+      AlarmName: "[Porter][Transcribe Start][Lambda] Elevated error volume"
       AlarmActions:
         - !Ref OpsErrorMessagesSnsTopicArn
       InsufficientDataActions:
@@ -2222,7 +2186,7 @@ Resources:
     Type: AWS::IAM::Role
     Properties:
       AssumeRolePolicyDocument:
-        Version: '2012-10-17'
+        Version: "2012-10-17"
         Statement:
           - Effect: Allow
             Principal:
@@ -2237,13 +2201,13 @@ Resources:
       Policies:
         - PolicyName: TranscribeJobReadPolicy
           PolicyDocument:
-            Version: '2012-10-17'
+            Version: "2012-10-17"
             Statement:
               - Action:
                   - transcribe:GetTranscriptionJob
                 Effect: Allow
                 Resource:
-                  - '*'
+                  - "*"
       Tags:
         - Key: Project
           Value: Porter
@@ -2282,7 +2246,7 @@ Resources:
     Condition: CreateProductionResources
     Properties:
       ActionsEnabled: true
-      AlarmName: '[Porter][Transcribe Result][Lambda] Elevated error volume'
+      AlarmName: "[Porter][Transcribe Result][Lambda] Elevated error volume"
       AlarmActions:
         - !Ref OpsErrorMessagesSnsTopicArn
       InsufficientDataActions:
@@ -2307,7 +2271,7 @@ Resources:
     Type: AWS::IAM::Role
     Properties:
       AssumeRolePolicyDocument:
-        Version: '2012-10-17'
+        Version: "2012-10-17"
         Statement:
           - Effect: Allow
             Principal:
@@ -2322,33 +2286,33 @@ Resources:
         # Must be able to publish to whatever SNS topics are defined by a job
         - PolicyName: SnsPublish
           PolicyDocument:
-            Version: '2012-10-17'
+            Version: "2012-10-17"
             Statement:
               - Effect: Allow
                 Action:
-                  - 'sns:Publish'
+                  - "sns:Publish"
                 Resource:
-                  - '*'
+                  - "*"
         # Must be able to publish to whatever SQS queues are defined by a job
         - PolicyName: SqsSendMessage
           PolicyDocument:
-            Version: '2012-10-17'
+            Version: "2012-10-17"
             Statement:
               - Effect: Allow
                 Action:
                   - sqs:SendMessage
                 Resource:
-                  - '*'
+                  - "*"
         # Allow it to put CloudWatch Metrics
         - PolicyName: PutCloudWatchMetric
           PolicyDocument:
-            Version: '2012-10-17'
+            Version: "2012-10-17"
             Statement:
               - Effect: Allow
                 Action:
                   - cloudwatch:PutMetricData
                 Resource:
-                  - '*'
+                  - "*"
       Tags:
         - Key: Project
           Value: Porter
@@ -2364,7 +2328,7 @@ Resources:
         Sends a job or task callback message to a single endpoint
       Environment:
         Variables:
-          MAX_HTTP_REDIRECTS: '3'
+          MAX_HTTP_REDIRECTS: "3"
           S3_DESTINATION_WRITER_ROLE: !GetAtt S3DestinationWriterRole.Arn
       Handler: index.handler
       Layers:
@@ -2388,7 +2352,7 @@ Resources:
     Condition: CreateProductionResources
     Properties:
       ActionsEnabled: true
-      AlarmName: '[Porter][Callback][Lambda] Elevated error volume'
+      AlarmName: "[Porter][Callback][Lambda] Elevated error volume"
       AlarmActions:
         - !Ref OpsErrorMessagesSnsTopicArn
       InsufficientDataActions:
@@ -2413,7 +2377,7 @@ Resources:
     Condition: CreateProductionResources
     Properties:
       ActionsEnabled: true
-      AlarmName: '[Porter][Callback][Message] Elevated error message volume'
+      AlarmName: "[Porter][Callback][Message] Elevated error message volume"
       AlarmActions:
         - !Ref OpsWarnMessagesSnsTopicArn
       InsufficientDataActions:
@@ -2439,7 +2403,7 @@ Resources:
     Type: AWS::IAM::Role
     Properties:
       AssumeRolePolicyDocument:
-        Version: '2012-10-17'
+        Version: "2012-10-17"
         Statement:
           - Effect: Allow
             Principal:
@@ -2453,7 +2417,7 @@ Resources:
       Policies:
         - PolicyName: SnsPublishJobExecutionPolicy
           PolicyDocument:
-            Version: '2012-10-17'
+            Version: "2012-10-17"
             Statement:
               - Effect: Allow
                 Action:
@@ -2498,7 +2462,7 @@ Resources:
     Condition: CreateProductionResources
     Properties:
       ActionsEnabled: true
-      AlarmName: '[Porter][Serialize][Lambda] Elevated error volume'
+      AlarmName: "[Porter][Serialize][Lambda] Elevated error volume"
       AlarmActions:
         - !Ref OpsErrorMessagesSnsTopicArn
       InsufficientDataActions:
@@ -2523,7 +2487,7 @@ Resources:
     Type: AWS::IAM::Role
     Properties:
       AssumeRolePolicyDocument:
-        Version: '2012-10-17'
+        Version: "2012-10-17"
         Statement:
           - Effect: Allow
             Principal:
@@ -2569,7 +2533,7 @@ Resources:
     Condition: CreateProductionResources
     Properties:
       ActionsEnabled: true
-      AlarmName: '[Porter][Normalize Out][Lambda] Elevated error volume'
+      AlarmName: "[Porter][Normalize Out][Lambda] Elevated error volume"
       AlarmActions:
         - !Ref OpsErrorMessagesSnsTopicArn
       InsufficientDataActions:
@@ -2594,7 +2558,7 @@ Resources:
     Type: AWS::IAM::Role
     Properties:
       AssumeRolePolicyDocument:
-        Version: '2012-10-17'
+        Version: "2012-10-17"
         Statement:
           - Effect: Allow
             Principal:
@@ -2607,7 +2571,7 @@ Resources:
       Policies:
         - PolicyName: LambdaTaskPolicy
           PolicyDocument:
-            Version: '2012-10-17'
+            Version: "2012-10-17"
             Statement:
               - Effect: Allow
                 Action:
@@ -2629,7 +2593,7 @@ Resources:
                   - !GetAtt FtpCopyTaskOutputLambdaFunction.Arn
         - PolicyName: PassRoleToEcsPolicy
           PolicyDocument:
-            Version: '2012-10-17'
+            Version: "2012-10-17"
             Statement:
               - Effect: Allow
                 Action:
@@ -2642,7 +2606,7 @@ Resources:
         # https://docs.aws.amazon.com/step-functions/latest/dg/ecs-iam.html
         - PolicyName: EcsSyncStaticResourcesPolicy
           PolicyDocument:
-            Version: '2012-10-17'
+            Version: "2012-10-17"
             Statement:
               - Effect: Allow
                 Action:
@@ -2654,7 +2618,7 @@ Resources:
                   - ecs:StopTask
                   - ecs:DescribeTasks
                 Resource:
-                  - '*'
+                  - "*"
               - Effect: Allow
                 Action:
                   - events:PutTargets
@@ -2665,7 +2629,7 @@ Resources:
         # https://docs.aws.amazon.com/step-functions/latest/dg/ecs-iam.html
         - PolicyName: EcsSyncDynamicResourcesPolicy
           PolicyDocument:
-            Version: '2012-10-17'
+            Version: "2012-10-17"
             Statement:
               - Effect: Allow
                 Action:
@@ -2673,7 +2637,7 @@ Resources:
                   - ecs:StopTask
                   - ecs:DescribeTasks
                 Resource:
-                  - '*'
+                  - "*"
               - Effect: Allow
                 Action:
                   - events:PutTargets
@@ -2728,7 +2692,7 @@ Resources:
     Type: AWS::CloudWatch::Alarm
     Properties:
       ActionsEnabled: true
-      AlarmName: !Sub '[Porter][States] Experiencing time outs (${AWS::StackName})'
+      AlarmName: !Sub "[Porter][States] Experiencing time outs (${AWS::StackName})"
       AlarmActions:
         - !Ref OpsWarnMessagesSnsTopicArn
       InsufficientDataActions:
@@ -2752,7 +2716,7 @@ Resources:
     Type: AWS::CloudWatch::Alarm
     Properties:
       ActionsEnabled: true
-      AlarmName: !Sub '[Porter][States] Events being throttled (${AWS::StackName})'
+      AlarmName: !Sub "[Porter][States] Events being throttled (${AWS::StackName})"
       AlarmActions:
         - !Ref OpsWarnMessagesSnsTopicArn
       InsufficientDataActions:
@@ -2776,7 +2740,7 @@ Resources:
     Type: AWS::CloudWatch::Alarm
     Properties:
       ActionsEnabled: true
-      AlarmName: !Sub '[Porter][States] Experiencing failures (${AWS::StackName})'
+      AlarmName: !Sub "[Porter][States] Experiencing failures (${AWS::StackName})"
       AlarmActions:
         - !Ref OpsErrorMessagesSnsTopicArn
       InsufficientDataActions:
