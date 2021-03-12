@@ -40,7 +40,7 @@ function httpRequest(event, message, redirectCount) {
     options.headers['Content-Type'] = event.Callback['Content-Type'];
     options.headers['Content-Length'] = Buffer.byteLength(body);
 
-    const h = options.protocol === 'https:' ? https : http;
+    const h = q.protocol === 'https:' ? https : http;
     const req = h.request(options, (res) => {
       res.setEncoding('utf8');
 
