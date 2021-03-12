@@ -13,7 +13,7 @@ const eventbridge = new AWS.EventBridge({ apiVersion: '2015-10-07' });
 
 function httpRequest(event, message, redirectCount) {
   return new Promise((resolve, reject) => {
-    const q = new URL(event.Callback.URL);
+    const q = new URL(event.Callback.RedirectURL || event.Callback.URL);
 
     const options = {
       host: q.host,
@@ -73,7 +73,8 @@ function httpRequest(event, message, redirectCount) {
             );
 
             const count = redirectCount ? redirectCount + 1 : 1;
-            await httpRequest(res.headers.location, message, count);
+            event.Callback.RedirectURL = res.headers.location;
+            await httpRequest(event, message, count);
             resolve();
           } catch (error) {
             reject(error);
