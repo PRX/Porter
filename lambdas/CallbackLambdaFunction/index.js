@@ -61,6 +61,7 @@ function httpRequest(event, message, redirectCount) {
           try {
             if (redirectCount > +process.env.MAX_HTTP_REDIRECTS) {
               reject(new Error('Too many redirects'));
+              return;
             }
 
             console.log(
