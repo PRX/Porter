@@ -11,9 +11,9 @@ const sts = new AWS.STS({ apiVersion: '2011-06-15' });
 const cloudwatch = new AWS.CloudWatch({ apiVersion: '2010-08-01' });
 const eventbridge = new AWS.EventBridge({ apiVersion: '2015-10-07' });
 
-function httpRequest(event, message, redirectCount) {
+function httpRequest(event, message, redirectCount, redirectUrl) {
   return new Promise((resolve, reject) => {
-    const q = new URL(event.Callback.RedirectURL || event.Callback.URL);
+    const q = new URL(redirectUrl || event.Callback.URL);
 
     const options = {
       host: q.host,
@@ -73,8 +73,7 @@ function httpRequest(event, message, redirectCount) {
             );
 
             const count = redirectCount ? redirectCount + 1 : 1;
-            event.Callback.RedirectURL = res.headers.location;
-            await httpRequest(event, message, count);
+            await httpRequest(event, message, count, res.headers.location);
             resolve();
           } catch (error) {
             reject(error);
