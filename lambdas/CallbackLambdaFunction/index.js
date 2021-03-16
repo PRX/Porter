@@ -11,9 +11,9 @@ const sts = new AWS.STS({ apiVersion: '2011-06-15' });
 const cloudwatch = new AWS.CloudWatch({ apiVersion: '2010-08-01' });
 const eventbridge = new AWS.EventBridge({ apiVersion: '2015-10-07' });
 
-function httpRequest(event, message, redirectCount) {
+function httpRequest(event, message, redirectCount, redirectUrl) {
   return new Promise((resolve, reject) => {
-    const q = new URL(event.Callback.URL);
+    const q = new URL(redirectUrl || event.Callback.URL);
 
     const options = {
       host: q.host,
@@ -40,7 +40,7 @@ function httpRequest(event, message, redirectCount) {
     options.headers['Content-Type'] = event.Callback['Content-Type'];
     options.headers['Content-Length'] = Buffer.byteLength(body);
 
-    const h = options.protocol === 'https:' ? https : http;
+    const h = q.protocol === 'https:' ? https : http;
     const req = h.request(options, (res) => {
       res.setEncoding('utf8');
 
@@ -61,6 +61,7 @@ function httpRequest(event, message, redirectCount) {
           try {
             if (redirectCount > +process.env.MAX_HTTP_REDIRECTS) {
               reject(new Error('Too many redirects'));
+              return;
             }
 
             console.log(
@@ -72,7 +73,7 @@ function httpRequest(event, message, redirectCount) {
             );
 
             const count = redirectCount ? redirectCount + 1 : 1;
-            await httpRequest(res.headers.location, message, count);
+            await httpRequest(event, message, count, res.headers.location);
             resolve();
           } catch (error) {
             reject(error);
