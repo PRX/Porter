@@ -55,7 +55,23 @@ module.exports = {
     // Additional inspection for mpeg streams
     if (['mp2', 'mp3'].includes(inspection.Format)) {
       try {
-        const check = await mpck.inspect(filePath);
+        let check;
+
+        // mpck will occasionally not return any output, even though it doesn't
+        // fail. Let it run a few times if necessary as a workaround.
+        for (let i = 0; i < 5; i += 1) {
+          console.log(JSON.stringify({ msg: 'mpck attempt', attempt: i }));
+          // eslint-disable-next-line no-await-in-loop
+          check = await mpck.inspect(filePath);
+
+          console.log(
+            JSON.stringify({ msg: 'mpck result', mpckResult: check }),
+          );
+
+          if (Object.keys(check).length) {
+            break;
+          }
+        }
 
         if (check) {
           Object.assign(inspection, {
