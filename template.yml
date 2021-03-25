@@ -2682,7 +2682,7 @@ Resources:
         VpcPrivateSubnet1: !Ref PrivateSubnet1
         VpcPrivateSubnet2: !Ref PrivateSubnet2
         WavWrapLambdaFunctionArn: !GetAtt WavWrapLambdaFunction.Arn
-      DefinitionUri: state-machine.asl.json
+      DefinitionUri: state-machine.asl.yml
       Role: !GetAtt StateMachineIamRole.Arn
       Tags:
         Project: Porter
