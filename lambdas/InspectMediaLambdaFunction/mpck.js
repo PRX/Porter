@@ -68,7 +68,7 @@ module.exports = {
         const end = process.hrtime(start);
         console.log(
           JSON.stringify({
-            msg: 'Finished ffprobe',
+            msg: 'Finished mpck',
             duration: `${end[0]} s ${end[1] / 1000000} ms`,
           }),
         );
