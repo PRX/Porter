@@ -16,6 +16,7 @@ const os = require('os');
  * @returns {MpckResult}
  */
 function extract(output) {
+  console.log(JSON.stringify({ msg: 'Raw mpck output', mpckOutput: output }));
   const result = {};
 
   const layer = output.match(/layer\s+([1-3])/);
@@ -38,6 +39,9 @@ function extract(output) {
     result.unidentified = +unidentified[1];
   }
 
+  console.log(
+    JSON.stringify({ msg: 'mpck extraction', mpckExtraction: result }),
+  );
   return result;
 }
 
