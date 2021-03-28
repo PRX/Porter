@@ -2138,7 +2138,7 @@ Resources:
       TreatMissingData: notBreaching
       Dimensions:
         - Name: LambdaFunctionArn
-          Value: !GetAtt TranscriptionJobStartLambdaIamRole.Arn
+          Value: !GetAtt TranscriptionJobStartLambdaFunction.Arn
   # Transcribe Job Results Lambda
   TranscriptionJobResultsLambdaIamRole:
     Type: AWS::IAM::Role
