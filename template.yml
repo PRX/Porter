@@ -71,13 +71,11 @@ Resources:
         Provides read-only access to the artifact bucket for a particular
         Porter deployment
       PolicyDocument:
-        Version: "2012-10-17"
         Statement:
-          - Action:
-              - s3:GetObject*
+          - Action: s3:GetObject*
             Effect: Allow
-            Resource:
-              - !Sub arn:aws:s3:::${ArtifactBucket}/*
+            Resource: !Sub arn:aws:s3:::${ArtifactBucket}/*
+        Version: "2012-10-17"
   ArtifactBucketWriteAccessPolicy:
     Type: AWS::IAM::ManagedPolicy
     Properties:
@@ -85,29 +83,24 @@ Resources:
         Provides limitedS S3 list and write access to the artifact bucket for a
         particular Porter deployment
       PolicyDocument:
-        Version: "2012-10-17"
         Statement:
-          - Effect: Allow
-            Action:
-              - s3:ListBucketMultipartUploads
-            Resource:
-              - !Sub arn:aws:s3:::${ArtifactBucket}
-          - Effect: Allow
-            Action:
+          - Action: s3:ListBucketMultipartUploads
+            Effect: Allow
+            Resource: !Sub arn:aws:s3:::${ArtifactBucket}
+          - Action:
               - s3:PutObject
               - s3:AbortMultipartUpload
               - s3:ListMultipartUploadParts
-            Resource:
-              - !Sub arn:aws:s3:::${ArtifactBucket}/*
+            Effect: Allow
+            Resource: !Sub arn:aws:s3:::${ArtifactBucket}/*
+        Version: "2012-10-17"
   # General-Purpose IAM Roles
   S3DestinationWriterRole:
     Type: AWS::IAM::Role
     Properties:
       AssumeRolePolicyDocument:
-        Version: "2012-10-17"
         Statement:
-          - Action:
-              - sts:AssumeRole
+          - Action: sts:AssumeRole
             Effect: Allow
             Principal:
               AWS:
@@ -117,6 +110,7 @@ Resources:
                 - !GetAtt TranscriptionJobResultsLambdaIamRole.Arn
                 - !GetAtt CallbackLambdaIamRole.Arn
                 - !GetAtt TranscodeEcsTaskIamRole.Arn
+        Version: "2012-10-17"
       ManagedPolicyArns:
         # Calls to s3.copyObject need read access to the artifact bucket
         - !Ref ArtifactBucketReadOnlyAccessPolicy
@@ -125,16 +119,15 @@ Resources:
         # permissions that the bucket policy grans to this role
         - PolicyName: S3DestinationWritePolicy
           PolicyDocument:
-            Version: "2012-10-17"
             Statement:
-              - Effect: Allow
-                Action:
+              - Action:
                   - s3:ListBucketMultipartUploads
                   - s3:PutObject*
                   - s3:AbortMultipartUpload
                   - s3:ListMultipartUploadParts
-                Resource:
-                  - "*"
+                Effect: Allow
+                Resource: "*"
+            Version: "2012-10-17"
       Tags:
         - Key: Project
           Value: Porter
@@ -153,27 +146,23 @@ Resources:
     Type: AWS::IAM::Role
     Properties:
       AssumeRolePolicyDocument:
-        Version: "2012-10-17"
         Statement:
-          - Effect: Allow
+          - Action: sts:AssumeRole
+            Effect: Allow
             Principal:
-              Service:
-                - lambda.amazonaws.com
-            Action:
-              - sts:AssumeRole
+              Service: lambda.amazonaws.com
+        Version: "2012-10-17"
       ManagedPolicyArns:
         - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
         - arn:aws:iam::aws:policy/AWSXrayWriteOnlyAccess
       Policies:
         - PolicyName: StepFunctionsPolicy
           PolicyDocument:
-            Version: "2012-10-17"
             Statement:
-              - Effect: Allow
-                Action:
-                  - states:StartExecution
-                Resource:
-                  - !Ref StateMachine
+              - Action: states:StartExecution
+                Effect: Allow
+                Resource: !Ref StateMachine
+            Version: "2012-10-17"
       Tags:
         - Key: Project
           Value: Porter
@@ -263,39 +252,34 @@ Resources:
     Type: AWS::IAM::Role
     Properties:
       AssumeRolePolicyDocument:
-        Version: "2012-10-17"
         Statement:
-          - Effect: Allow
+          - Action: sts:AssumeRole
+            Effect: Allow
             Principal:
-              Service:
-                - lambda.amazonaws.com
-            Action:
-              - sts:AssumeRole
+              Service: lambda.amazonaws.com
+        Version: "2012-10-17"
       ManagedPolicyArns:
         - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
         - arn:aws:iam::aws:policy/AWSXrayWriteOnlyAccess
       Policies:
         - PolicyName: SqsPolicy
           PolicyDocument:
-            Version: "2012-10-17"
             Statement:
-              - Effect: Allow
-                Action:
+              - Action:
                   - sqs:ChangeMessageVisibility
                   - sqs:DeleteMessage
                   - sqs:GetQueueAttributes
                   - sqs:ReceiveMessage
-                Resource:
-                  - !GetAtt JobExecutionSqsQueue.Arn
+                Effect: Allow
+                Resource: !GetAtt JobExecutionSqsQueue.Arn
+            Version: "2012-10-17"
         - PolicyName: StepFunctionsPolicy
           PolicyDocument:
-            Version: "2012-10-17"
             Statement:
-              - Effect: Allow
-                Action:
-                  - states:StartExecution
-                Resource:
-                  - !Ref StateMachine
+              - Action: states:StartExecution
+                Effect: Allow
+                Resource: !Ref StateMachine
+            Version: "2012-10-17"
       Tags:
         - Key: Project
           Value: Porter
@@ -368,24 +352,20 @@ Resources:
     Type: AWS::IAM::Role
     Properties:
       AssumeRolePolicyDocument:
-        Version: "2012-10-17"
         Statement:
-          - Effect: Allow
+          - Action: sts:AssumeRole
+            Effect: Allow
             Principal:
-              Service:
-                - events.amazonaws.com
-            Action:
-              - sts:AssumeRole
+              Service: events.amazonaws.com
+        Version: "2012-10-17"
       Policies:
         - PolicyName: StepFunctionsPolicy
           PolicyDocument:
-            Version: "2012-10-17"
             Statement:
-              - Effect: Allow
-                Action:
-                  - states:StartExecution
-                Resource:
-                  - !Ref StateMachine
+              - Action: states:StartExecution
+                Effect: Allow
+                Resource: !Ref StateMachine
+            Version: "2012-10-17"
       Tags:
         - Key: Project
           Value: Porter
@@ -429,14 +409,12 @@ Resources:
     Type: AWS::IAM::Role
     Properties:
       AssumeRolePolicyDocument:
-        Version: "2012-10-17"
         Statement:
-          - Effect: Allow
+          - Action: sts:AssumeRole
+            Effect: Allow
             Principal:
-              Service:
-                - lambda.amazonaws.com
-            Action:
-              - sts:AssumeRole
+              Service: lambda.amazonaws.com
+        Version: "2012-10-17"
       ManagedPolicyArns:
         - !Ref ArtifactBucketReadOnlyAccessPolicy
         - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
@@ -444,14 +422,13 @@ Resources:
       Policies:
         - PolicyName: StepFunctions
           PolicyDocument:
-            Version: "2012-10-17"
             Statement:
-              - Effect: Allow
-                Action:
+              - Action:
                   - states:SendTaskFailure
                   - states:SendTaskSuccess
-                Resource:
-                  - !Ref StateMachine
+                Effect: Allow
+                Resource: !Ref StateMachine
+            Version: "2012-10-17"
   TranscriptionJobStateChangeLambdaFunction:
     Type: AWS::Serverless::Function
     Properties:
@@ -1076,32 +1053,26 @@ Resources:
     Type: AWS::IAM::Role
     Properties:
       AssumeRolePolicyDocument:
-        Version: "2012-10-17"
         Statement:
-          - Action:
-              - sts:AssumeRole
+          - Action: sts:AssumeRole
             Effect: Allow
             Principal:
-              Service:
-                - ecs-tasks.amazonaws.com
-      Description: String
+              Service: ecs-tasks.amazonaws.com
+        Version: "2012-10-17"
       Policies:
         # https://docs.aws.amazon.com/AmazonECS/latest/developerguide/task_execution_IAM_role.html#task-execution-ecr-conditionkeys
         # An alternative to the managed AmazonECSTaskExecutionRolePolicy, which
         # restrics access to a specific VPC and VPC endpoint
         - PolicyName: TaskExecutionPolicy
           PolicyDocument:
-            Version: "2012-10-17"
             Statement:
-              - Effect: Allow
-                Action:
+              - Action:
                   - ecr:GetAuthorizationToken
                   - logs:CreateLogStream
                   - logs:PutLogEvents
-                Resource:
-                  - "*"
-              - Effect: Allow
-                Action:
+                Effect: Allow
+                Resource: "*"
+              - Action:
                   - ecr:BatchCheckLayerAvailability
                   - ecr:GetDownloadUrlForLayer
                   - ecr:BatchGetImage
@@ -1109,8 +1080,9 @@ Resources:
                   StringEquals:
                     aws:sourceVpce: !Ref EcrVpcEndpoint
                     aws:sourceVpc: !Ref VPC
-                Resource:
-                  - "*"
+                Effect: Allow
+                Resource: "*"
+            Version: "2012-10-17"
       Tags:
         - Key: Project
           Value: Porter
@@ -1122,25 +1094,21 @@ Resources:
     Type: AWS::IAM::Role
     Properties:
       AssumeRolePolicyDocument:
-        Version: "2012-10-17"
         Statement:
-          - Action:
-              - sts:AssumeRole
+          - Action: sts:AssumeRole
             Effect: Allow
             Principal:
-              Service:
-                - ecs-tasks.amazonaws.com
+              Service: ecs-tasks.amazonaws.com
+        Version: "2012-10-17"
       Policies:
         # Allow it to put CloudWatch Metrics
         - PolicyName: PutCloudWatchMetric
           PolicyDocument:
-            Version: "2012-10-17"
             Statement:
-              - Effect: Allow
-                Action:
-                  - cloudwatch:PutMetricData
-                Resource:
-                  - "*"
+              - Action: cloudwatch:PutMetricData
+                Effect: Allow
+                Resource: "*"
+            Version: "2012-10-17"
       ManagedPolicyArns:
         # Transcode operations are always pulling FROM the artifact bucket
         - !Ref ArtifactBucketReadOnlyAccessPolicy
@@ -1190,32 +1158,26 @@ Resources:
     Type: AWS::IAM::Role
     Properties:
       AssumeRolePolicyDocument:
-        Version: "2012-10-17"
         Statement:
-          - Action:
-              - sts:AssumeRole
+          - Action: sts:AssumeRole
             Effect: Allow
             Principal:
-              Service:
-                - ecs-tasks.amazonaws.com
-      Description: String
+              Service: ecs-tasks.amazonaws.com
+        Version: "2012-10-17"
       Policies:
         # https://docs.aws.amazon.com/AmazonECS/latest/developerguide/task_execution_IAM_role.html#task-execution-ecr-conditionkeys
         # An alternative to the managed AmazonECSTaskExecutionRolePolicy, which
         # restrics access to a specific VPC and VPC endpoint
         - PolicyName: TaskExecutionPolicy
           PolicyDocument:
-            Version: "2012-10-17"
             Statement:
-              - Effect: Allow
-                Action:
+              - Action:
                   - ecr:GetAuthorizationToken
                   - logs:CreateLogStream
                   - logs:PutLogEvents
-                Resource:
-                  - "*"
-              - Effect: Allow
-                Action:
+                Effect: Allow
+                Resource: "*"
+              - Action:
                   - ecr:BatchCheckLayerAvailability
                   - ecr:GetDownloadUrlForLayer
                   - ecr:BatchGetImage
@@ -1223,8 +1185,9 @@ Resources:
                   StringEquals:
                     aws:sourceVpce: !Ref EcrVpcEndpoint
                     aws:sourceVpc: !Ref VPC
-                Resource:
-                  - "*"
+                Effect: Allow
+                Resource: "*"
+            Version: "2012-10-17"
       Tags:
         - Key: Project
           Value: Porter
@@ -1236,43 +1199,35 @@ Resources:
     Type: AWS::IAM::Role
     Properties:
       AssumeRolePolicyDocument:
-        Version: "2012-10-17"
         Statement:
-          - Action:
-              - sts:AssumeRole
+          - Action: sts:AssumeRole
             Effect: Allow
             Principal:
-              Service:
-                - ecs-tasks.amazonaws.com
+              Service: ecs-tasks.amazonaws.com
+        Version: "2012-10-17"
       Policies:
         # Allow it to put CloudWatch Metrics
         - PolicyName: PutCloudWatchMetric
           PolicyDocument:
-            Version: "2012-10-17"
             Statement:
-              - Effect: Allow
-                Action:
-                  - cloudwatch:PutMetricData
-                Resource:
-                  - "*"
+              - Action: cloudwatch:PutMetricData
+                Effect: Allow
+                Resource: "*"
+            Version: "2012-10-17"
         - PolicyName: EC2DescribeNetworkInterfaces
           PolicyDocument:
-            Version: "2012-10-17"
             Statement:
-              - Effect: Allow
-                Action:
-                  - ec2:DescribeNetworkInterfaces
-                Resource:
-                  - "*"
+              - Action: ec2:DescribeNetworkInterfaces
+                Effect: Allow
+                Resource: "*"
+            Version: "2012-10-17"
         - PolicyName: ECSDescribeTasks
           PolicyDocument:
-            Version: "2012-10-17"
             Statement:
-              - Effect: Allow
-                Action:
-                  - ecs:DescribeTasks
-                Resource:
-                  - "*"
+              - Action: ecs:DescribeTasks
+                Effect: Allow
+                Resource: "*"
+            Version: "2012-10-17"
       ManagedPolicyArns:
         - !Ref ArtifactBucketReadOnlyAccessPolicy
         - !Ref ArtifactBucketWriteAccessPolicy
@@ -1394,28 +1349,6 @@ Resources:
       Description: wavefile NPM module
       RetentionPolicy: Delete
   # Normalize Input Lambda
-  NormalizeInputLambdaIamRole:
-    Type: AWS::IAM::Role
-    Properties:
-      AssumeRolePolicyDocument:
-        Version: "2012-10-17"
-        Statement:
-          - Effect: Allow
-            Principal:
-              Service:
-                - lambda.amazonaws.com
-            Action:
-              - sts:AssumeRole
-      ManagedPolicyArns:
-        - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
-        - arn:aws:iam::aws:policy/AWSXrayWriteOnlyAccess
-      Tags:
-        - Key: Project
-          Value: Porter
-        - Key: prx:cloudformation:stack-name
-          Value: !Ref AWS::StackName
-        - Key: prx:cloudformation:stack-id
-          Value: !Ref AWS::StackId
   NormalizeInputLambdaFunction:
     Type: AWS::Serverless::Function
     Properties:
@@ -1426,7 +1359,6 @@ Resources:
       Layers:
         - !Ref AwsXraySdkLambdaLayer
       MemorySize: 128
-      Role: !GetAtt NormalizeInputLambdaIamRole.Arn
       Runtime: nodejs14.x
       Tags:
         Project: Porter
@@ -1466,17 +1398,18 @@ Resources:
           Value: !GetAtt NormalizeInputLambdaFunction.Arn
   # Ingest Lambda
   IngestLambdaIamRole:
+    # This role is granted read-only access by users to S3 buckets in order to
+    # access jobs' source files. The ARN of this role must not change, or that
+    # access will break
     Type: AWS::IAM::Role
     Properties:
       AssumeRolePolicyDocument:
-        Version: "2012-10-17"
         Statement:
-          - Effect: Allow
+          - Action: sts:AssumeRole
+            Effect: Allow
             Principal:
-              Service:
-                - lambda.amazonaws.com
-            Action:
-              - sts:AssumeRole
+              Service: lambda.amazonaws.com
+        Version: "2012-10-17"
       ManagedPolicyArns:
         # For uploading files and file parts to the artifact store
         - !Ref ArtifactBucketWriteAccessPolicy
@@ -1486,13 +1419,11 @@ Resources:
         # Allow GET-only access to any object in S3
         - PolicyName: S3CopySourcePolicy
           PolicyDocument:
-            Version: "2012-10-17"
             Statement:
-              - Effect: Allow
-                Action:
-                  - s3:GetObject*
-                Resource:
-                  - "*"
+              - Action: s3:GetObject*
+                Effect: Allow
+                Resource: "*"
+            Version: "2012-10-17"
       Tags:
         - Key: Project
           Value: Porter
@@ -1553,29 +1484,6 @@ Resources:
         - Name: LambdaFunctionArn
           Value: !GetAtt IngestLambdaFunction.Arn
   # Source Type Lambda
-  SourceTypeLambdaIamRole:
-    Type: AWS::IAM::Role
-    Properties:
-      AssumeRolePolicyDocument:
-        Version: "2012-10-17"
-        Statement:
-          - Effect: Allow
-            Principal:
-              Service:
-                - lambda.amazonaws.com
-            Action:
-              - sts:AssumeRole
-      ManagedPolicyArns:
-        - !Ref ArtifactBucketReadOnlyAccessPolicy
-        - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
-        - arn:aws:iam::aws:policy/AWSXrayWriteOnlyAccess
-      Tags:
-        - Key: Project
-          Value: Porter
-        - Key: prx:cloudformation:stack-name
-          Value: !Ref AWS::StackName
-        - Key: prx:cloudformation:stack-id
-          Value: !Ref AWS::StackId
   SourceTypeLambdaFunction:
     Type: AWS::Serverless::Function
     Properties:
@@ -1591,7 +1499,8 @@ Resources:
         - !Ref AwsXraySdkLambdaLayer
         - !Ref FileTypeLambdaLayer
       MemorySize: 256
-      Role: !GetAtt SourceTypeLambdaIamRole.Arn
+      Policies:
+        - !Ref ArtifactBucketReadOnlyAccessPolicy
       Runtime: nodejs14.x
       Tags:
         Project: Porter
@@ -1630,29 +1539,6 @@ Resources:
         - Name: LambdaFunctionArn
           Value: !GetAtt SourceTypeLambdaFunction.Arn
   # Inspect Lambda
-  InspectMediaLambdaIamRole:
-    Type: AWS::IAM::Role
-    Properties:
-      AssumeRolePolicyDocument:
-        Version: "2012-10-17"
-        Statement:
-          - Effect: Allow
-            Principal:
-              Service:
-                - lambda.amazonaws.com
-            Action:
-              - sts:AssumeRole
-      ManagedPolicyArns:
-        - !Ref ArtifactBucketReadOnlyAccessPolicy
-        - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
-        - arn:aws:iam::aws:policy/AWSXrayWriteOnlyAccess
-      Tags:
-        - Key: Project
-          Value: Porter
-        - Key: prx:cloudformation:stack-name
-          Value: !Ref AWS::StackName
-        - Key: prx:cloudformation:stack-id
-          Value: !Ref AWS::StackId
   InspectMediaLambdaFunction:
     Type: AWS::Serverless::Function
     Properties:
@@ -1666,7 +1552,8 @@ Resources:
         - !Ref MpckLambdaLayer
         - !Ref SharpLambdaLayer
       MemorySize: 2048
-      Role: !GetAtt InspectMediaLambdaIamRole.Arn
+      Policies:
+        - !Ref ArtifactBucketReadOnlyAccessPolicy
       Runtime: nodejs14.x
       Tags:
         Project: Porter
@@ -1709,14 +1596,12 @@ Resources:
     Type: AWS::IAM::Role
     Properties:
       AssumeRolePolicyDocument:
-        Version: "2012-10-17"
         Statement:
-          - Effect: Allow
+          - Action: sts:AssumeRole
+            Effect: Allow
             Principal:
-              Service:
-                - lambda.amazonaws.com
-            Action:
-              - sts:AssumeRole
+              Service: lambda.amazonaws.com
+        Version: "2012-10-17"
       ManagedPolicyArns:
         # Copy operations are always copying FROM the artifact bucket
         - !Ref ArtifactBucketReadOnlyAccessPolicy
@@ -1781,29 +1666,6 @@ Resources:
         - Name: LambdaFunctionArn
           Value: !GetAtt CopyLambdaFunction.Arn
   # FTP Copy Output Lambda
-  FtpCopyTaskOutputLambdaIamRole:
-    Type: AWS::IAM::Role
-    Properties:
-      AssumeRolePolicyDocument:
-        Version: "2012-10-17"
-        Statement:
-          - Effect: Allow
-            Principal:
-              Service:
-                - lambda.amazonaws.com
-            Action:
-              - sts:AssumeRole
-      ManagedPolicyArns:
-        - !Ref ArtifactBucketReadOnlyAccessPolicy
-        - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
-        - arn:aws:iam::aws:policy/AWSXrayWriteOnlyAccess
-      Tags:
-        - Key: Project
-          Value: Porter
-        - Key: prx:cloudformation:stack-name
-          Value: !Ref AWS::StackName
-        - Key: prx:cloudformation:stack-id
-          Value: !Ref AWS::StackId
   FtpCopyTaskOutputLambdaFunction:
     Type: AWS::Serverless::Function
     Properties:
@@ -1814,7 +1676,8 @@ Resources:
       Layers:
         - !Ref AwsXraySdkLambdaLayer
       MemorySize: 128
-      Role: !GetAtt FtpCopyTaskOutputLambdaIamRole.Arn
+      Policies:
+        - !Ref ArtifactBucketReadOnlyAccessPolicy
       Runtime: nodejs14.x
       Tags:
         Project: Porter
@@ -1853,29 +1716,6 @@ Resources:
         - Name: LambdaFunctionArn
           Value: !GetAtt FtpCopyTaskOutputLambdaFunction.Arn
   # Transcode Output Lambda
-  TranscodeTaskOutputLambdaIamRole:
-    Type: AWS::IAM::Role
-    Properties:
-      AssumeRolePolicyDocument:
-        Version: "2012-10-17"
-        Statement:
-          - Effect: Allow
-            Principal:
-              Service:
-                - lambda.amazonaws.com
-            Action:
-              - sts:AssumeRole
-      ManagedPolicyArns:
-        - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
-        - arn:aws:iam::aws:policy/AWSXrayWriteOnlyAccess
-        - !Ref ArtifactBucketReadOnlyAccessPolicy
-      Tags:
-        - Key: Project
-          Value: Porter
-        - Key: prx:cloudformation:stack-name
-          Value: !Ref AWS::StackName
-        - Key: prx:cloudformation:stack-id
-          Value: !Ref AWS::StackId
   TranscodeTaskOutputLambdaFunction:
     Type: AWS::Serverless::Function
     Properties:
@@ -1889,7 +1729,8 @@ Resources:
       Layers:
         - !Ref AwsXraySdkLambdaLayer
       MemorySize: 128
-      Role: !GetAtt TranscodeTaskOutputLambdaIamRole.Arn
+      Policies:
+        - !Ref ArtifactBucketReadOnlyAccessPolicy
       Runtime: nodejs14.x
       Tags:
         Project: Porter
@@ -1932,14 +1773,12 @@ Resources:
     Type: AWS::IAM::Role
     Properties:
       AssumeRolePolicyDocument:
-        Version: "2012-10-17"
         Statement:
-          - Effect: Allow
+          - Action: sts:AssumeRole
+            Effect: Allow
             Principal:
-              Service:
-                - lambda.amazonaws.com
-            Action:
-              - sts:AssumeRole
+              Service: lambda.amazonaws.com
+        Version: "2012-10-17"
       ManagedPolicyArns:
         # Image operations are always fetching from the artifact bucket
         - !Ref ArtifactBucketReadOnlyAccessPolicy
@@ -2009,14 +1848,12 @@ Resources:
     Type: AWS::IAM::Role
     Properties:
       AssumeRolePolicyDocument:
-        Version: "2012-10-17"
         Statement:
-          - Effect: Allow
+          - Action: sts:AssumeRole
+            Effect: Allow
             Principal:
-              Service:
-                - lambda.amazonaws.com
-            Action:
-              - sts:AssumeRole
+              Service: lambda.amazonaws.com
+        Version: "2012-10-17"
       ManagedPolicyArns:
         - !Ref ArtifactBucketReadOnlyAccessPolicy
         - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
@@ -2081,54 +1918,6 @@ Resources:
         - Name: LambdaFunctionArn
           Value: !GetAtt WavWrapLambdaFunction.Arn
   # Transcribe Start Lambda
-  TranscriptionJobStartLambdaIamRole:
-    Type: AWS::IAM::Role
-    Properties:
-      AssumeRolePolicyDocument:
-        Version: "2012-10-17"
-        Statement:
-          - Effect: Allow
-            Principal:
-              Service:
-                - lambda.amazonaws.com
-            Action:
-              - sts:AssumeRole
-      ManagedPolicyArns:
-        - !Ref ArtifactBucketReadOnlyAccessPolicy
-        # For uploading files and file parts to the artifact store
-        - !Ref ArtifactBucketWriteAccessPolicy
-        - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
-        - arn:aws:iam::aws:policy/AWSXrayWriteOnlyAccess
-      Policies:
-        # TODO Need to make sure the ArtifactBucketWriteAccessPolicy policy
-        # is enough for Transcribe to work
-        # - PolicyName: ArtifactBucketWriteAccess
-        #   PolicyDocument:
-        #     Version: "2012-10-17"
-        #     Statement:
-        #       - Effect: Allow
-        #         Action:
-        #           - s3:Get*
-        #           - s3:Put*
-        #         Resource:
-        #           - !Sub ${ArtifactBucket.Arn}/*
-        - PolicyName: TranscribeJobStartPolicy
-          PolicyDocument:
-            Version: "2012-10-17"
-            Statement:
-              - Action:
-                  - transcribe:GetTranscriptionJob
-                  - transcribe:StartTranscriptionJob
-                Effect: Allow
-                Resource:
-                  - "*"
-      Tags:
-        - Key: Project
-          Value: Porter
-        - Key: prx:cloudformation:stack-name
-          Value: !Ref AWS::StackName
-        - Key: prx:cloudformation:stack-id
-          Value: !Ref AWS::StackId
   TranscriptionJobStartLambdaFunction:
     Type: AWS::Serverless::Function
     Properties:
@@ -2143,7 +1932,16 @@ Resources:
       Layers:
         - !Ref AwsXraySdkLambdaLayer
       MemorySize: 128
-      Role: !GetAtt TranscriptionJobStartLambdaIamRole.Arn
+      Policies:
+        - !Ref ArtifactBucketReadOnlyAccessPolicy
+        - !Ref ArtifactBucketWriteAccessPolicy
+        - Statement:
+            - Action:
+                - transcribe:GetTranscriptionJob
+                - transcribe:StartTranscriptionJob
+              Effect: Allow
+              Resource: "*"
+          Version: "2012-10-17"
       Runtime: nodejs14.x
       Tags:
         Project: Porter
@@ -2180,20 +1978,18 @@ Resources:
       TreatMissingData: notBreaching
       Dimensions:
         - Name: LambdaFunctionArn
-          Value: !GetAtt TranscriptionJobStartLambdaIamRole.Arn
+          Value: !GetAtt TranscriptionJobStartLambdaFunction.Arn
   # Transcribe Job Results Lambda
   TranscriptionJobResultsLambdaIamRole:
     Type: AWS::IAM::Role
     Properties:
       AssumeRolePolicyDocument:
-        Version: "2012-10-17"
         Statement:
-          - Effect: Allow
+          - Action: sts:AssumeRole
+            Effect: Allow
             Principal:
-              Service:
-                - lambda.amazonaws.com
-            Action:
-              - sts:AssumeRole
+              Service: lambda.amazonaws.com
+        Version: "2012-10-17"
       ManagedPolicyArns:
         - !Ref ArtifactBucketReadOnlyAccessPolicy
         - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
@@ -2201,13 +1997,11 @@ Resources:
       Policies:
         - PolicyName: TranscribeJobReadPolicy
           PolicyDocument:
-            Version: "2012-10-17"
             Statement:
-              - Action:
-                  - transcribe:GetTranscriptionJob
+              - Action: transcribe:GetTranscriptionJob
                 Effect: Allow
-                Resource:
-                  - "*"
+                Resource: "*"
+            Version: "2012-10-17"
       Tags:
         - Key: Project
           Value: Porter
@@ -2265,20 +2059,18 @@ Resources:
       TreatMissingData: notBreaching
       Dimensions:
         - Name: LambdaFunctionArn
-          Value: !GetAtt TranscriptionJobResultsLambdaIamRole.Arn
+          Value: !GetAtt TranscriptionJobResultsLambdaFunction.Arn
   # Callback Lambda
   CallbackLambdaIamRole:
     Type: AWS::IAM::Role
     Properties:
       AssumeRolePolicyDocument:
-        Version: "2012-10-17"
         Statement:
-          - Effect: Allow
+          - Action: sts:AssumeRole
+            Effect: Allow
             Principal:
-              Service:
-                - lambda.amazonaws.com
-            Action:
-              - sts:AssumeRole
+              Service: lambda.amazonaws.com
+        Version: "2012-10-17"
       ManagedPolicyArns:
         - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
         - arn:aws:iam::aws:policy/AWSXrayWriteOnlyAccess
@@ -2286,33 +2078,27 @@ Resources:
         # Must be able to publish to whatever SNS topics are defined by a job
         - PolicyName: SnsPublish
           PolicyDocument:
-            Version: "2012-10-17"
             Statement:
-              - Effect: Allow
-                Action:
-                  - "sns:Publish"
-                Resource:
-                  - "*"
+              - Action: sns:Publish
+                Effect: Allow
+                Resource: "*"
+            Version: "2012-10-17"
         # Must be able to publish to whatever SQS queues are defined by a job
         - PolicyName: SqsSendMessage
           PolicyDocument:
-            Version: "2012-10-17"
             Statement:
-              - Effect: Allow
-                Action:
-                  - sqs:SendMessage
-                Resource:
-                  - "*"
+              - Action: sqs:SendMessage
+                Effect: Allow
+                Resource: "*"
+            Version: "2012-10-17"
         # Allow it to put CloudWatch Metrics
         - PolicyName: PutCloudWatchMetric
           PolicyDocument:
-            Version: "2012-10-17"
             Statement:
-              - Effect: Allow
-                Action:
-                  - cloudwatch:PutMetricData
-                Resource:
-                  - "*"
+              - Action: cloudwatch:PutMetricData
+                Effect: Allow
+                Resource: "*"
+            Version: "2012-10-17"
       Tags:
         - Key: Project
           Value: Porter
@@ -2399,38 +2185,6 @@ Resources:
         - Name: LambdaFunctionName
           Value: !Ref CallbackLambdaFunction
   # Job Serializer Lambda
-  JobSerializerLambdaIamRole:
-    Type: AWS::IAM::Role
-    Properties:
-      AssumeRolePolicyDocument:
-        Version: "2012-10-17"
-        Statement:
-          - Effect: Allow
-            Principal:
-              Service:
-                - lambda.amazonaws.com
-            Action:
-              - sts:AssumeRole
-      ManagedPolicyArns:
-        - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
-        - arn:aws:iam::aws:policy/AWSXrayWriteOnlyAccess
-      Policies:
-        - PolicyName: SnsPublishJobExecutionPolicy
-          PolicyDocument:
-            Version: "2012-10-17"
-            Statement:
-              - Effect: Allow
-                Action:
-                  - sns:Publish
-                Resource:
-                  - !Ref JobExecutionSnsTopic
-      Tags:
-        - Key: Project
-          Value: Porter
-        - Key: prx:cloudformation:stack-name
-          Value: !Ref AWS::StackName
-        - Key: prx:cloudformation:stack-id
-          Value: !Ref AWS::StackId
   JobSerializerLambdaFunction:
     Type: AWS::Serverless::Function
     Properties:
@@ -2444,7 +2198,12 @@ Resources:
       Layers:
         - !Ref AwsXraySdkLambdaLayer
       MemorySize: 128
-      Role: !GetAtt JobSerializerLambdaIamRole.Arn
+      Policies:
+        - Statement:
+            - Action: sns:Publish
+              Effect: Allow
+              Resource: !Ref JobExecutionSnsTopic
+          Version: "2012-10-17"
       Runtime: nodejs14.x
       Tags:
         Project: Porter
@@ -2483,28 +2242,6 @@ Resources:
         - Name: LambdaFunctionArn
           Value: !GetAtt JobSerializerLambdaFunction.Arn
   # Normalize Output Lambda
-  NormalizeOutputLambdaIamRole:
-    Type: AWS::IAM::Role
-    Properties:
-      AssumeRolePolicyDocument:
-        Version: "2012-10-17"
-        Statement:
-          - Effect: Allow
-            Principal:
-              Service:
-                - lambda.amazonaws.com
-            Action:
-              - sts:AssumeRole
-      ManagedPolicyArns:
-        - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
-        - arn:aws:iam::aws:policy/AWSXrayWriteOnlyAccess
-      Tags:
-        - Key: Project
-          Value: Porter
-        - Key: prx:cloudformation:stack-name
-          Value: !Ref AWS::StackName
-        - Key: prx:cloudformation:stack-id
-          Value: !Ref AWS::StackId
   NormalizeOutputLambdaFunction:
     Type: AWS::Serverless::Function
     Properties:
@@ -2515,7 +2252,6 @@ Resources:
       Layers:
         - !Ref AwsXraySdkLambdaLayer
       MemorySize: 128
-      Role: !GetAtt NormalizeOutputLambdaIamRole.Arn
       Runtime: nodejs14.x
       Tags:
         Project: Porter
@@ -2558,24 +2294,20 @@ Resources:
     Type: AWS::IAM::Role
     Properties:
       AssumeRolePolicyDocument:
-        Version: "2012-10-17"
         Statement:
-          - Effect: Allow
+          - Action: sts:AssumeRole
+            Effect: Allow
             Principal:
-              Service:
-                - !Sub states.${AWS::Region}.amazonaws.com
-            Action:
-              - sts:AssumeRole
+              Service: !Sub states.${AWS::Region}.amazonaws.com
+        Version: "2012-10-17"
       ManagedPolicyArns:
         - arn:aws:iam::aws:policy/AWSXrayWriteOnlyAccess
       Policies:
         - PolicyName: LambdaTaskPolicy
           PolicyDocument:
-            Version: "2012-10-17"
             Statement:
-              - Effect: Allow
-                Action:
-                  - lambda:InvokeFunction
+              - Action: lambda:InvokeFunction
+                Effect: Allow
                 Resource:
                   - !GetAtt NormalizeInputLambdaFunction.Arn
                   - !GetAtt IngestLambdaFunction.Arn
@@ -2591,60 +2323,56 @@ Resources:
                   - !GetAtt NormalizeOutputLambdaFunction.Arn
                   - !GetAtt JobSerializerLambdaFunction.Arn
                   - !GetAtt FtpCopyTaskOutputLambdaFunction.Arn
+            Version: "2012-10-17"
         - PolicyName: PassRoleToEcsPolicy
           PolicyDocument:
-            Version: "2012-10-17"
             Statement:
-              - Effect: Allow
-                Action:
-                  - iam:PassRole
+              - Action: iam:PassRole
+                Effect: Allow
                 Resource:
                   - !GetAtt TranscodeEcsTaskExecutionIamRole.Arn
                   - !GetAtt TranscodeEcsTaskIamRole.Arn
                   - !GetAtt FtpCopyEcsTaskExecutionIamRole.Arn
                   - !GetAtt FtpCopyEcsTaskIamRole.Arn
+            Version: "2012-10-17"
         # https://docs.aws.amazon.com/step-functions/latest/dg/ecs-iam.html
         - PolicyName: EcsSyncStaticResourcesPolicy
           PolicyDocument:
-            Version: "2012-10-17"
             Statement:
-              - Effect: Allow
-                Action:
-                  - ecs:RunTask
+              - Action: ecs:RunTask
+                Effect: Allow
                 Resource:
                   - !Ref TranscodeEcsTaskDefinition
-              - Effect: Allow
-                Action:
+                  - !Ref FtpCopyEcsTaskDefinition
+              - Action:
                   - ecs:StopTask
                   - ecs:DescribeTasks
-                Resource:
-                  - "*"
-              - Effect: Allow
-                Action:
+                Effect: Allow
+                Resource: "*"
+              - Action:
                   - events:PutTargets
                   - events:PutRule
                   - events:DescribeRule
-                Resource:
-                  - !Sub arn:aws:events:${AWS::Region}:${AWS::AccountId}:rule/StepFunctionsGetEventsForECSTaskRule
+                Effect: Allow
+                Resource: !Sub arn:aws:events:${AWS::Region}:${AWS::AccountId}:rule/StepFunctionsGetEventsForECSTaskRule
+            Version: "2012-10-17"
         # https://docs.aws.amazon.com/step-functions/latest/dg/ecs-iam.html
         - PolicyName: EcsSyncDynamicResourcesPolicy
           PolicyDocument:
-            Version: "2012-10-17"
             Statement:
-              - Effect: Allow
-                Action:
+              - Action:
                   - ecs:RunTask
                   - ecs:StopTask
                   - ecs:DescribeTasks
-                Resource:
-                  - "*"
-              - Effect: Allow
-                Action:
+                Effect: Allow
+                Resource: "*"
+              - Action:
                   - events:PutTargets
                   - events:PutRule
                   - events:DescribeRule
-                Resource:
-                  - !Sub arn:aws:events:${AWS::Region}:${AWS::AccountId}:rule/StepFunctionsGetEventsForECSTaskRule
+                Effect: Allow
+                Resource: !Sub arn:aws:events:${AWS::Region}:${AWS::AccountId}:rule/StepFunctionsGetEventsForECSTaskRule
+            Version: "2012-10-17"
       Tags:
         - Key: Project
           Value: Porter
