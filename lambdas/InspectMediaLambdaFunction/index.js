@@ -112,7 +112,7 @@ exports.handler = async (event, context) => {
 
   fs.unlinkSync(artifactFileTmpPath);
 
-  if (!inspection.Audio.Layer) {
+  if (inspection.Audio && !inspection.Audio.Layer) {
     console.log(JSON.stringify({ event, inspection, tag: 'NO_LAYER' }));
   }
 
