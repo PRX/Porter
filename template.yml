@@ -1443,6 +1443,9 @@ Resources:
           Value: !GetAtt NormalizeInputLambdaFunction.Arn
   # Ingest Lambda
   IngestLambdaIamRole:
+    # This role is granted read-only access by users to S3 buckets in order to
+    # access jobs' source files. The ARN of this role must not change, or that
+    # access will break
     Type: AWS::IAM::Role
     Properties:
       AssumeRolePolicyDocument:
