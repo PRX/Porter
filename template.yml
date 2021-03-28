@@ -2223,7 +2223,7 @@ Resources:
       TreatMissingData: notBreaching
       Dimensions:
         - Name: LambdaFunctionArn
-          Value: !GetAtt TranscriptionJobResultsLambdaIamRole.Arn
+          Value: !GetAtt TranscriptionJobResultsLambdaFunction.Arn
   # Callback Lambda
   CallbackLambdaIamRole:
     Type: AWS::IAM::Role
