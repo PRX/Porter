@@ -1394,28 +1394,6 @@ Resources:
       Description: wavefile NPM module
       RetentionPolicy: Delete
   # Normalize Input Lambda
-  NormalizeInputLambdaIamRole:
-    Type: AWS::IAM::Role
-    Properties:
-      AssumeRolePolicyDocument:
-        Version: "2012-10-17"
-        Statement:
-          - Effect: Allow
-            Principal:
-              Service:
-                - lambda.amazonaws.com
-            Action:
-              - sts:AssumeRole
-      ManagedPolicyArns:
-        - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
-        - arn:aws:iam::aws:policy/AWSXrayWriteOnlyAccess
-      Tags:
-        - Key: Project
-          Value: Porter
-        - Key: prx:cloudformation:stack-name
-          Value: !Ref AWS::StackName
-        - Key: prx:cloudformation:stack-id
-          Value: !Ref AWS::StackId
   NormalizeInputLambdaFunction:
     Type: AWS::Serverless::Function
     Properties:
@@ -1426,7 +1404,6 @@ Resources:
       Layers:
         - !Ref AwsXraySdkLambdaLayer
       MemorySize: 128
-      Role: !GetAtt NormalizeInputLambdaIamRole.Arn
       Runtime: nodejs14.x
       Tags:
         Project: Porter
