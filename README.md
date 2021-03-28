@@ -153,17 +153,18 @@ The role's ARN is published as an output on the CloudFormation stack. The follow
 
 ```json
 {
-    "Version": "2012-10-17",
     "Statement": [
         {
+            "Action": "s3:GetObject",
             "Effect": "Allow",
             "Principal": {
                 "AWS": "arn:aws:iam::123456789012:role/porter-prod-IngestLambdaIamRole-TKTKTKTKTK"
             },
-            "Action": "s3:GetObject",
-            "Resource": "arn:aws:s3:::myBucket/*"
+            "Resource": "arn:aws:s3:::myBucket/*",
+            "Sid": "Grant read access to production Porter"
         }
-    ]
+    ],
+    "Version": "2012-10-17"
 }
 ```
 
