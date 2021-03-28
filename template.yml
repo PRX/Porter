@@ -1533,29 +1533,6 @@ Resources:
         - Name: LambdaFunctionArn
           Value: !GetAtt IngestLambdaFunction.Arn
   # Source Type Lambda
-  SourceTypeLambdaIamRole:
-    Type: AWS::IAM::Role
-    Properties:
-      AssumeRolePolicyDocument:
-        Version: "2012-10-17"
-        Statement:
-          - Effect: Allow
-            Principal:
-              Service:
-                - lambda.amazonaws.com
-            Action:
-              - sts:AssumeRole
-      ManagedPolicyArns:
-        - !Ref ArtifactBucketReadOnlyAccessPolicy
-        - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
-        - arn:aws:iam::aws:policy/AWSXrayWriteOnlyAccess
-      Tags:
-        - Key: Project
-          Value: Porter
-        - Key: prx:cloudformation:stack-name
-          Value: !Ref AWS::StackName
-        - Key: prx:cloudformation:stack-id
-          Value: !Ref AWS::StackId
   SourceTypeLambdaFunction:
     Type: AWS::Serverless::Function
     Properties:
@@ -1571,7 +1548,8 @@ Resources:
         - !Ref AwsXraySdkLambdaLayer
         - !Ref FileTypeLambdaLayer
       MemorySize: 256
-      Role: !GetAtt SourceTypeLambdaIamRole.Arn
+      Policies:
+        - !Ref ArtifactBucketReadOnlyAccessPolicy
       Runtime: nodejs14.x
       Tags:
         Project: Porter
