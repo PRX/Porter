@@ -454,6 +454,8 @@ Porter publishes the following CloudWatch Metrics related to job execution. Reme
 
 - `JobsStarted`: The number of jobs that were able to begin execution. If a job's input message is too malformed it may not be able to execute.
 
+The following metrics are available with the `StateMachineArn` dimension:
+
 - `TasksRequested`: The number of tasks included in jobs that were able to begin execution.
 
 - `JobsCompleted`: The number of jobs that completed, regardless of how successful the job was.
@@ -465,6 +467,10 @@ Porter publishes the following CloudWatch Metrics related to job execution. Reme
 - `JobsSucceeded`: The number of jobs that completed successfully, with no failed tasks.
 
 - `JobsFailed`: The number of jobs that completed but were unable to successfully complete all tasks.
+
+The following metrics are available with the `StateMachineArn` and `JobResultState` dimensions:
+
+- `JobsCompleted`: The number of jobs that completed, regardless of how successful the job was, with a specific job result state (such as `DONE`, `SOURCE_FILE_INGEST_ERROR`, etc)
 
 ### Copy
 
