@@ -23,6 +23,21 @@ module.exports = {
           Value: 1,
           Unit: 'Count',
         },
+        {
+          MetricName: 'JobsCompleted',
+          Dimensions: [
+            {
+              Name: 'StateMachineArn',
+              Value: event.StateMachine.Id,
+            },
+            {
+              Name: 'JobResultState',
+              Value: event.Message.JobResult.State,
+            },
+          ],
+          Value: 1,
+          Unit: 'Count',
+        },
         // Count the number of successful tasks
         {
           MetricName: 'TasksSucceeded',
