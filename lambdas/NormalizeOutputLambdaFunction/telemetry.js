@@ -47,7 +47,7 @@ module.exports = {
               Value: event.StateMachine.Id,
             },
           ],
-          Value: event.Message.TaskResults.length,
+          Value: event.Message.JobResult.TaskResults.length,
           Unit: 'Count',
         },
         // Count the number of failed tasks
@@ -59,7 +59,7 @@ module.exports = {
               Value: event.StateMachine.Id,
             },
           ],
-          Value: event.Message.FailedTasks.length,
+          Value: event.Message.JobResult.FailedTasks.length,
           Unit: 'Count',
         },
       ];
