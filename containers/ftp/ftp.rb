@@ -3,6 +3,7 @@
 
 # The following environment variables are passed in as ContainerOverrides when
 # the state machine runs the ECS task
+# STATE_MACHINE_ARN
 # STATE_MACHINE_NAME
 # STATE_MACHINE_EXECUTION_ID
 # STATE_MACHINE_JOB_ID
