@@ -1,12 +1,15 @@
 AWSTemplateFormatVersion: "2010-09-09"
 Transform: AWS::Serverless-2016-10-31
+
 Description: >-
   Creates a Step Function state machine for processing user created content, as
   well as some supporting resources
+
 Conditions:
   CreateProductionResources: !Equals [!Ref EnvironmentType, Production]
   CreateSqsEventMapping: !Equals [!Ref EnableSqsJobExecution, "True"]
   CreateDefaultEventBusRule: !Equals [!Ref EnableDefaultEventBusRule, "True"]
+
 Parameters:
   EnvironmentType:
     Type: String
@@ -62,6 +65,7 @@ Parameters:
     MaxValue: 256
     MinValue: 1
     Type: Number
+
 Resources:
   # Managed IAM Policies
   ArtifactBucketReadOnlyAccessPolicy:
@@ -2164,32 +2168,6 @@ Resources:
       Dimensions:
         - Name: LambdaFunctionArn
           Value: !GetAtt CallbackLambdaFunction.Arn
-  CallbackLambdaErrorMessageSentAlarm:
-    Type: AWS::CloudWatch::Alarm
-    Condition: CreateProductionResources
-    Properties:
-      ActionsEnabled: true
-      AlarmName: "[Porter][Callback][Message] Elevated error message volume"
-      AlarmActions:
-        - !Ref OpsWarnMessagesSnsTopicArn
-      InsufficientDataActions:
-        - !Ref OpsWarnMessagesSnsTopicArn
-      OKActions:
-        - !Ref OpsWarnMessagesSnsTopicArn
-      AlarmDescription: >-
-        An error message callback was sent. The callback executed successfully,
-        but the message indicates that a state failed.
-      ComparisonOperator: GreaterThanThreshold
-      EvaluationPeriods: 1
-      MetricName: ErrorCallbackMessagesSent
-      Namespace: PRX/Porter
-      Period: 60
-      Statistic: Sum
-      Threshold: 0
-      TreatMissingData: notBreaching
-      Dimensions:
-        - Name: LambdaFunctionName
-          Value: !Ref CallbackLambdaFunction
   # Job Serializer Lambda
   JobSerializerLambdaFunction:
     Type: AWS::Serverless::Function
@@ -2500,6 +2478,36 @@ Resources:
       Dimensions:
         - Name: StateMachineArn
           Value: !Ref StateMachine
+  # Job and Task Alarms
+  JobsFailedAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Condition: CreateProductionResources
+    Properties:
+      ActionsEnabled: true
+      AlarmName: !Sub "[Porter][${EnvironmentType}] Job failures"
+      AlarmActions:
+        - !Ref OpsWarnMessagesSnsTopicArn
+      InsufficientDataActions:
+        - !Ref OpsWarnMessagesSnsTopicArn
+      OKActions:
+        - !Ref OpsWarnMessagesSnsTopicArn
+      AlarmDescription: >-
+        A Porter job failure indicates that one or more of the tasks that the
+        job included weren't able to complete successfully. This does not
+        indicate an issue with the state machine execution, and some tasks may
+        have been successful.
+      ComparisonOperator: GreaterThanThreshold
+      Dimensions:
+        - Name: StateMachineArn
+          Value: !Ref StateMachine
+      EvaluationPeriods: 1
+      MetricName: JobsFailed
+      Namespace: PRX/Porter
+      Period: 60
+      Statistic: Sum
+      Threshold: 0
+      TreatMissingData: notBreaching
+
 Outputs:
   JobExecutionSnsTopicArn:
     Value: !Ref JobExecutionSnsTopic
