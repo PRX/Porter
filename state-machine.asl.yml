@@ -656,14 +656,14 @@ States:
     Type: Task
     InputPath: "$"
     Parameters:
+      StateMachine:
+        Id.$: "$$.StateMachine.Id"
       Message:
         JobResult:
           Job:
             Id.$: "$.Job.Id"
           Execution:
             Id.$: "$$.Execution.Id"
-          StateMachine:
-            Id.$: "$$.StateMachine.Id"
           State.$: "$.State"
           TaskResults.$: "$.TaskResults.[?(@.Task && @.Task != 'Null')]"
           FailedTasks.$: "$.TaskResults.[?(@.Type && @.Type != 'Null')]"
