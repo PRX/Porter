@@ -5,6 +5,8 @@ States:
     Type: Task
     InputPath: "$"
     Resource: "${NormalizeInputLambdaFunctionArn}"
+    Parameters:
+      Input.$: "$"
     ResultPath: "$"
     OutputPath: "$"
     Next: JobReceived Callbacks Map

@@ -6,25 +6,29 @@
 // Step Function exist, regardless of if they exist in the original message.
 //
 // The input to this function is the original input to the execution of the
-// state machine, and the input path MUST be that entire input (i.e., "$").
+// state machine under the `input` key, plus some additional data, such as
+// state machine metadata.
 //
-// The function returns the input, plus any required values that were missing.
+// The function returns the normalized Input.
 //
 // The result path and output path MUST both be "$".
 
 exports.handler = async (event) => {
+  // This is the raw Step Functions execution input
+  const { Input } = event;
+
   console.log(JSON.stringify({ msg: 'Unmodified input', event }));
 
   // Set Job.Tasks to an empty array, unless it's already an array.
   if (
-    !Object.prototype.hasOwnProperty.call(event.Job, 'Tasks') ||
-    !Array.isArray(event.Job.Tasks)
+    !Object.prototype.hasOwnProperty.call(Input.Job, 'Tasks') ||
+    !Array.isArray(Input.Job.Tasks)
   ) {
-    event.Job.Tasks = [];
+    Input.Job.Tasks = [];
   }
 
   // Make sure all Transcode tasks have all three FFmpeg options
-  event.Job.Tasks.forEach((task) => {
+  Input.Job.Tasks.forEach((task) => {
     // The state machine definition expects each task to have a Type property,
     // and fails without the error being caught if it's missing. This forces
     // the execution to error out in a way that can be caught and handled as
@@ -57,34 +61,34 @@ exports.handler = async (event) => {
 
   // Set Job.Callbacks to an empty array, unless it's already an array.
   if (
-    !Object.prototype.hasOwnProperty.call(event.Job, 'Callbacks') ||
-    !Array.isArray(event.Job.Callbacks)
+    !Object.prototype.hasOwnProperty.call(Input.Job, 'Callbacks') ||
+    !Array.isArray(Input.Job.Callbacks)
   ) {
-    event.Job.Callbacks = [];
+    Input.Job.Callbacks = [];
   }
 
   // Set Job.SerializedJobs to an empty array, unless it's already an array.
   if (
-    !Object.prototype.hasOwnProperty.call(event.Job, 'SerializedJobs') ||
-    !Array.isArray(event.Job.SerializedJobs)
+    !Object.prototype.hasOwnProperty.call(Input.Job, 'SerializedJobs') ||
+    !Array.isArray(Input.Job.SerializedJobs)
   ) {
-    event.Job.SerializedJobs = [];
+    Input.Job.SerializedJobs = [];
   }
 
   // Set Job.ExecutionTrace to an empty array, unless it's already an array.
   if (
-    !Object.prototype.hasOwnProperty.call(event.Job, 'ExecutionTrace') ||
-    !Array.isArray(event.Job.ExecutionTrace)
+    !Object.prototype.hasOwnProperty.call(Input.Job, 'ExecutionTrace') ||
+    !Array.isArray(Input.Job.ExecutionTrace)
   ) {
-    event.Job.ExecutionTrace = [];
+    Input.Job.ExecutionTrace = [];
   }
 
-  console.log(JSON.stringify({ msg: 'Normalized input', event }));
+  console.log(JSON.stringify({ msg: 'Normalized input', Input }));
 
   // These values are required to exist in the state machine definition at some
   // point, but are not guaranteed to be inserted during every execution, so
   // we pre-create them now to be safe.
-  event.State = 'DONE';
+  Input.State = 'DONE';
 
-  return event;
+  return Input;
 };
