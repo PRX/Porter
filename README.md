@@ -452,9 +452,9 @@ Porter publishes the following CloudWatch Metrics related to job execution. Reme
 
 ## Tasks
 
-- `JobsStarted`: The number of jobs that were able to begin execution. If a job's input message is too malformed it may not be able to execute.
-
 The following metrics are available with the `StateMachineArn` dimension:
+
+- `JobsStarted`: The number of jobs that were able to begin execution. If a job's input message is too malformed it may not be able to execute.
 
 - `TasksRequested`: The number of tasks included in jobs that were able to begin execution.
 
