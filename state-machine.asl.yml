@@ -9,7 +9,6 @@ States:
       Input.$: "$"
       StateMachine:
         Id.$: "$$.StateMachine.Id"
-        Name.$: "$$.StateMachine.Name"
     ResultPath: "$"
     OutputPath: "$"
     Next: JobReceived Callbacks Map
@@ -665,7 +664,6 @@ States:
             Id.$: "$$.Execution.Id"
           StateMachine:
             Id.$: "$$.StateMachine.Id"
-            Name.$: "$$.StateMachine.Name"
           State.$: "$.State"
           TaskResults.$: "$.TaskResults.[?(@.Task && @.Task != 'Null')]"
           FailedTasks.$: "$.TaskResults.[?(@.Type && @.Type != 'Null')]"
