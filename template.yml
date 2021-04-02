@@ -1359,6 +1359,12 @@ Resources:
       Layers:
         - !Ref AwsXraySdkLambdaLayer
       MemorySize: 128
+      Policies:
+        - Statement:
+            - Action: cloudwatch:PutMetricData
+              Effect: Allow
+              Resource: "*"
+          Version: "2012-10-17"
       Runtime: nodejs14.x
       Tags:
         Project: Porter
@@ -2252,6 +2258,12 @@ Resources:
       Layers:
         - !Ref AwsXraySdkLambdaLayer
       MemorySize: 128
+      Policies:
+        - Statement:
+            - Action: cloudwatch:PutMetricData
+              Effect: Allow
+              Resource: "*"
+          Version: "2012-10-17"
       Runtime: nodejs14.x
       Tags:
         Project: Porter
