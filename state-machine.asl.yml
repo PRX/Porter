@@ -229,7 +229,7 @@ States:
               ContainerOverrides:
                 - Environment:
                     - Name: STATE_MACHINE_ARN
-                      Value.$: "$$.StateMachine.ID"
+                      Value.$: "$$.StateMachine.Id"
                     - Name: STATE_MACHINE_NAME
                       Value.$: "$$.StateMachine.Name"
                     - Name: STATE_MACHINE_EXECUTION_ID
@@ -306,7 +306,7 @@ States:
               ContainerOverrides:
                 - Environment:
                     - Name: STATE_MACHINE_ARN
-                      Value.$: "$$.StateMachine.ID"
+                      Value.$: "$$.StateMachine.Id"
                     - Name: STATE_MACHINE_NAME
                       Value.$: "$$.StateMachine.Name"
                     - Name: STATE_MACHINE_EXECUTION_ID
