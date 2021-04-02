@@ -20,6 +20,7 @@ Many input and output methods are supported to allow flexibility with other appl
     -   [Starting a Job](#starting-a-job)
     -   [Input Message Format](#input-message-format)
     -   [Callback Messages](#callback-messages)
+-   [Telemetry](#telemetry)
 -   [Tasks](#tasks)
     -   [Inspect](#inspect)
     -   [Copy](#copy)
@@ -288,7 +289,7 @@ Each job result will include a `State`, which will be one of the following value
 -   `"SOURCE_FILE_TYPE_DETECTION_ERROR"`
 -   `"ITERATOR_ERROR"`
 
-`Done` indicates that the job was able to attempt all the tasks. This is **not** an indication that all the tasks were successful. The other states will appear if an execution step prior to the tasks running fails. `SOURCE_FILE_INGEST_ERROR`, for example, indicates that the artifact copy of the source file couldn't be created.
+`DONE` indicates that the job was able to attempt all the tasks. This is **not** an indication that all the tasks were successful. The other states will appear if an execution step prior to the tasks running fails. `SOURCE_FILE_INGEST_ERROR`, for example, indicates that the artifact copy of the source file couldn't be created.
 
 The list of possible states may change over time.
 
@@ -388,6 +389,10 @@ This is an example of a job that included two tasks, but whose source file could
 
 **Example:** If you have a job with three copy tasks, and two callbacks, you would expect to get a total of six `TaskResult` and two `JobResult` messages, across all of the endpoints.
 
+### Job Success and Failure
+
+A job is considered successful when it completes to a `DONE` state and zero tasks failed. All other jobs are considered to have failed.
+
 ## Serialized Jobs
 
 A job can include any number of additional jobs that will be started after all tasks have succeeded. This allows you to easily perform tasks on files that resulted from an initial job.
@@ -441,7 +446,25 @@ All jobs included directly as members of `SerializedJobs` are started simultaneo
 }
 ```
 
+## Telemetry
+
+Porter publishes the following CloudWatch Metrics related to job execution. Remember that job metrics and Step Function execution metrics are tracking different things. A Step Function execution, for example, can succeed while the Porter job it's running fails, and the metrics will reflect that.
+
 ## Tasks
+
+- `JobsStarted`: The number of jobs that were able to begin execution. If a job's input message is too malformed it may not be able to execute.
+
+- `TasksRequested`: The number of tasks included in jobs that were able to begin execution.
+
+- `JobsCompleted`: The number of jobs that completed, regardless of how successful the job was.
+
+- `TasksSucceeded`: The total number of tasks that completed successfully.
+
+- `TasksFailed`: The total number of tasks that failed.
+
+- `JobsSucceeded`: The number of jobs that completed successfully, with no failed tasks.
+
+- `JobsFailed`: The number of jobs that completed but were unable to successfully complete all tasks.
 
 ### Copy
 

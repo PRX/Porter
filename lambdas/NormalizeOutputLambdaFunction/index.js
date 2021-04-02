@@ -1,6 +1,8 @@
 // Returns a value that should be identical to the JobResults message
 // that is sent with job callbacks.
 
+const Telemetry = require('./telemetry');
+
 exports.handler = async (event) => {
   console.log(JSON.stringify({ msg: 'State input', event }));
 
@@ -12,6 +14,8 @@ exports.handler = async (event) => {
   }
 
   console.log(JSON.stringify({ msg: 'Normalized output', body: msg }));
+
+  await Telemetry.send(event);
 
   return msg;
 };

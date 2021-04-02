@@ -13,6 +13,8 @@
 //
 // The result path and output path MUST both be "$".
 
+const Telemetry = require('./telemetry');
+
 exports.handler = async (event) => {
   // This is the raw Step Functions execution input
   const { Input } = event;
@@ -89,6 +91,8 @@ exports.handler = async (event) => {
   // point, but are not guaranteed to be inserted during every execution, so
   // we pre-create them now to be safe.
   Input.State = 'DONE';
+
+  await Telemetry.send(event);
 
   return Input;
 };
