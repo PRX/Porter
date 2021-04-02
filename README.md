@@ -450,8 +450,6 @@ All jobs included directly as members of `SerializedJobs` are started simultaneo
 
 Porter publishes the following CloudWatch Metrics related to job execution. Remember that job metrics and Step Function execution metrics are tracking different things. A Step Function execution, for example, can succeed while the Porter job it's running fails, and the metrics will reflect that.
 
-## Tasks
-
 The following metrics are available with the `StateMachineArn` dimension:
 
 - `JobsStarted`: The number of jobs that were able to begin execution. If a job's input message is too malformed it may not be able to execute.
@@ -471,6 +469,8 @@ The following metrics are available with the `StateMachineArn` dimension:
 The following metrics are available with the `StateMachineArn` and `JobResultState` dimensions:
 
 - `JobsCompleted`: The number of jobs that completed, regardless of how successful the job was, with a specific job result state (such as `DONE`, `SOURCE_FILE_INGEST_ERROR`, etc)
+
+## Tasks
 
 ### Copy
 
