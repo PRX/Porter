@@ -17,6 +17,12 @@ Parameters:
       - Testing
       - Staging
       - Production
+  EnvironmentTypeAbbreviation:
+    Type: String
+    AllowedValues:
+      - test
+      - stag
+      - prod
   TranscodeJobNamePrefix:
     Type: String
   OpsWarnMessagesSnsTopicArn:
