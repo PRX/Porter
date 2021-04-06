@@ -22,21 +22,21 @@ describe :porter do
                                                 },
                                                 Tasks: [
                                                   {
-                                                    "Type": "Transcode",
-                                                    "Format": "flac",
-                                                    "Destination": {
-                                                      "Mode": "AWS/S3",
-                                                      "BucketName": CONFIG.PORTER_TEST_BUCKET_NAME,
-                                                      "ObjectKey": "test/transcode-options/transcode.flac",
-                                                      "Parameters": {
-                                                        "CacheControl": "max-age=604800",
-                                                        "ContentDisposition": "attachment; filename=\"download.flac\"",
-                                                        "ContentType": "audio/flac"
+                                                    'Type': 'Transcode',
+                                                    'Format': 'flac',
+                                                    'Destination': {
+                                                      'Mode': 'AWS/S3',
+                                                      'BucketName': CONFIG.PORTER_TEST_BUCKET_NAME,
+                                                      'ObjectKey': 'test/transcode-options/transcode.flac',
+                                                      'Parameters': {
+                                                        'CacheControl': 'max-age=604800',
+                                                        'ContentDisposition': 'attachment; filename=\'download.flac\'',
+                                                        'ContentType': 'audio/flac'
                                                       }
                                                     },
-                                                    "FFmpeg": {
-                                                      "InputFileOptions": "-t 1",
-                                                      "OutputFileOptions": "-metadata title=some_title"
+                                                    'FFmpeg': {
+                                                      'InputFileOptions': '-t 1',
+                                                      'OutputFileOptions': '-metadata title=some_title'
                                                     }
                                                   }
                                                 ]
