@@ -44,7 +44,7 @@ describe :porter do
                                             }.to_json
                                           })
 
-      max_retries = 60
+      max_retries = 80
       retries = 0
 
       begin
@@ -56,7 +56,7 @@ describe :porter do
       rescue RuntimeError => e
         if retries <= max_retries
           retries += 1
-          sleep 2
+          sleep 5
           retry
         else
           raise "Timeout: #{e.message}"
