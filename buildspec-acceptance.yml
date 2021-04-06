@@ -1,0 +1,17 @@
+version: 0.2
+env:
+  variables:
+    PRX_ECR_REGION: "us-east-1"
+  parameter-store:
+    PORTER_STATE_MACHINE_ARN: "/prx/stag/meta.prx.org/PORTER_STATE_MACHINE_ARN"
+    PORTER_TEST_BUCKET_NAME: "/prx/stag/meta.prx.org/PORTER_TEST_BUCKET_NAME"
+phases:
+  install:
+    runtime-versions:
+      ruby: latest
+  pre_build:
+    commands:
+      - make bootstrap
+  build:
+    commands:
+      - make minitest
