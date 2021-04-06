@@ -1,5 +1,9 @@
 Layout/LineLength:
   Enabled: false
+Layout/FirstArgumentIndentation:
+  Enabled: false
+Layout/FirstHashElementIndentation:
+  Enabled: false
 Metrics/AbcSize:
   Enabled: false
 Metrics/BlockLength:
