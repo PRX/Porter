@@ -12,30 +12,30 @@ describe :porter do
   describe :inspect do
     it 'returns execution output for an inspect task' do
       req = step_functions.start_execution({
-                                             state_machine_arn: CONFIG.PORTER_STATE_MACHINE_ARN,
-                                             input: {
-                                               Job: {
-                                                 Id: 'porter-test-inspect',
-                                                 Source: {
-                                                   Mode: 'HTTP',
-                                                   URL: 'https://media.prx.org/emailimages/ieeespectrum.png'
-                                                 },
-                                                 Tasks: [
-                                                   {
-                                                     Type: 'Inspect'
-                                                   }
-                                                 ]
-                                               }
-                                             }.to_json
-                                           })
+                                            state_machine_arn: CONFIG.PORTER_STATE_MACHINE_ARN,
+                                            input: {
+                                              Job: {
+                                                Id: 'porter-test-inspect',
+                                                Source: {
+                                                  Mode: 'HTTP',
+                                                  URL: 'https://media.prx.org/emailimages/ieeespectrum.png'
+                                                },
+                                                Tasks: [
+                                                  {
+                                                    Type: 'Inspect'
+                                                  }
+                                                ]
+                                              }
+                                            }.to_json
+                                          })
 
       max_retries = 60
       retries = 0
 
       begin
         desc = step_functions.describe_execution({
-                                                   execution_arn: req.execution_arn
-                                                 })
+                                                  execution_arn: req.execution_arn
+                                                })
 
         raise RuntimeError if desc.status == 'RUNNING'
       rescue RuntimeError => e

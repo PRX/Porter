@@ -12,25 +12,25 @@ describe :porter do
   describe :ingesterror do
     it 'correctly handles an ingest error' do
       req = step_functions.start_execution({
-                                             state_machine_arn: CONFIG.PORTER_STATE_MACHINE_ARN,
-                                             input: {
-                                               Job: {
-                                                 Id: 'porter-test-ingest-error',
-                                                 Source: {
-                                                   Mode: 'HTTP',
-                                                   URL: 'http://example.com/404'
-                                                 }
-                                               }
-                                             }.to_json
-                                           })
+                                            state_machine_arn: CONFIG.PORTER_STATE_MACHINE_ARN,
+                                            input: {
+                                              Job: {
+                                                Id: 'porter-test-ingest-error',
+                                                Source: {
+                                                  Mode: 'HTTP',
+                                                  URL: 'http://example.com/404'
+                                                }
+                                              }
+                                            }.to_json
+                                          })
 
       max_retries = 60
       retries = 0
 
       begin
         desc = step_functions.describe_execution({
-                                                   execution_arn: req.execution_arn
-                                                 })
+                                                  execution_arn: req.execution_arn
+                                                })
 
         raise RuntimeError if desc.status == 'RUNNING'
       rescue RuntimeError => e

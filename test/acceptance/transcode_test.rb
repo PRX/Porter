@@ -21,24 +21,24 @@ describe :porter do
                                                   URL: 'https://dovetail.prxu.org/152/245d0fe2-4171-4ebf-bea3-69deff3e9336/short.mp3'
                                                 },
                                                 Tasks: [
-                                                {
-                                                  "Type": "Transcode",
-                                                  "Format": "flac",
-                                                  "Destination": {
-                                                    "Mode": "AWS/S3",
-                                                    "BucketName": CONFIG.PORTER_TEST_BUCKET_NAME,
-                                                    "ObjectKey": "test/transcode-options/transcode.flac",
-                                                    "Parameters": {
-                                                      "CacheControl": "max-age=604800",
-                                                      "ContentDisposition": "attachment; filename=\"download.flac\"",
-                                                      "ContentType": "audio/flac"
+                                                  {
+                                                    "Type": "Transcode",
+                                                    "Format": "flac",
+                                                    "Destination": {
+                                                      "Mode": "AWS/S3",
+                                                      "BucketName": CONFIG.PORTER_TEST_BUCKET_NAME,
+                                                      "ObjectKey": "test/transcode-options/transcode.flac",
+                                                      "Parameters": {
+                                                        "CacheControl": "max-age=604800",
+                                                        "ContentDisposition": "attachment; filename=\"download.flac\"",
+                                                        "ContentType": "audio/flac"
+                                                      }
+                                                    },
+                                                    "FFmpeg": {
+                                                      "InputFileOptions": "-t 1",
+                                                      "OutputFileOptions": "-metadata title=some_title"
                                                     }
-                                                  },
-                                                  "FFmpeg": {
-                                                    "InputFileOptions": "-t 1",
-                                                    "OutputFileOptions": "-metadata title=some_title"
                                                   }
-                                                }
                                                 ]
                                               }
                                             }.to_json
@@ -49,8 +49,8 @@ describe :porter do
 
       begin
         desc = step_functions.describe_execution({
-                                                   execution_arn: req.execution_arn
-                                                 })
+                                                  execution_arn: req.execution_arn
+                                                })
 
         raise RuntimeError if desc.status == 'RUNNING'
       rescue RuntimeError => e
