@@ -56,7 +56,7 @@ s3.meta.client.download_file(
 
 # Execute the transcode
 ffmpeg_cmd = ' '.join([
-    "./ffmpeg-git-20201128-amd64-static/ffmpeg",
+    "./ffmpeg-git-20210405-amd64-static/ffmpeg",
     os.environ['STATE_MACHINE_FFMPEG_GLOBAL_OPTIONS'],
     "{i} -i artifact.file".format(
         i=os.environ['STATE_MACHINE_FFMPEG_INPUT_FILE_OPTIONS']
@@ -78,7 +78,7 @@ duration = end_time - start_time
 
 # Probe the output of the transcode
 ffprobe_cmd = ' '.join([
-    "./ffmpeg-git-20201128-amd64-static/ffprobe",
+    "./ffmpeg-git-20210405-amd64-static/ffprobe",
     "-v error",
     "-show_streams",
     "-show_format",
