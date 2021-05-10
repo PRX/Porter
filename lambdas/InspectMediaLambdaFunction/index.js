@@ -91,15 +91,13 @@ exports.handler = async (event, context) => {
 
   const stat = fs.statSync(artifactFileTmpPath);
 
-  const [
-    audioInspection,
-    videoInspection,
-    imageInspection,
-  ] = await Promise.all([
-    audio.inspect(event.Task, artifactFileTmpPath),
-    video.inspect(event.Task, artifactFileTmpPath),
-    image.inspect(event.Task, artifactFileTmpPath),
-  ]);
+  const [audioInspection, videoInspection, imageInspection] = await Promise.all(
+    [
+      audio.inspect(event.Task, artifactFileTmpPath),
+      video.inspect(event.Task, artifactFileTmpPath),
+      image.inspect(event.Task, artifactFileTmpPath),
+    ],
+  );
 
   /** @type Inspection */
   const inspection = {
