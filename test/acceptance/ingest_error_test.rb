@@ -5,7 +5,7 @@ require 'aws-sdk-states'
 require 'json'
 
 step_functions = Aws::States::Client.new(
-  region: ENV['AWS_REGION']
+  region: CONFIG.PORTER_STATE_MACHINE_ARN.split(':')[3]
 )
 
 describe :porter do
