@@ -150,7 +150,6 @@ async function eventBridgePutEvent(event, message, now) {
           ...(event.Callback.EventBusName && {
             EventBusName: event.Callback.EventBusName,
           }),
-          EventBusName: 'STRING_VALUE',
           Resources: [event.StateMachine.Id, event.Execution.Id],
           Source: 'org.prx.porter',
           Time: now,
