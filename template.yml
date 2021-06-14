@@ -222,7 +222,7 @@ Resources:
     Type: AWS::CloudWatch::Alarm
     Condition: CreateProductionResources
     Properties:
-      AlarmName: !Sub MAJOR [Porter] Job execution SNS Lambda <Lambda::${EnvironmentTypeAbbreviation}> INVOCATION FAILED (${AWS::StackName})
+      AlarmName: !Sub MAJOR [Porter] Job execution SNS Lambda <${EnvironmentTypeAbbreviation}> INVOCATION FAILED (${AWS::StackName})
       AlarmDescription: !Sub >-
         The AWS Lambda function resource subscribed to the ${EnvironmentType}
         job execution SNS topic failed. This likely means that a job that was
@@ -327,7 +327,7 @@ Resources:
     Type: AWS::CloudWatch::Alarm
     Condition: CreateProductionResources
     Properties:
-      AlarmName: !Sub MAJOR [Porter] Job execution SQS Lambda <Lambda::${EnvironmentTypeAbbreviation}> INVOCATION FAILED (${AWS::StackName})
+      AlarmName: !Sub MAJOR [Porter] Job execution SQS Lambda <${EnvironmentTypeAbbreviation}> INVOCATION FAILED (${AWS::StackName})
       AlarmDescription: !Sub >-
         The AWS Lambda function resource subscribed to the ${EnvironmentType}
         job execution SQS queue failed. This likely means that a job that was
@@ -458,7 +458,7 @@ Resources:
     Type: AWS::CloudWatch::Alarm
     Condition: CreateProductionResources
     Properties:
-      AlarmName: !Sub MINOR [Porter] Transcription state Lambda <Lambda::${EnvironmentTypeAbbreviation}> INVOCATION FAILED (${AWS::StackName})
+      AlarmName: !Sub MINOR [Porter] Transcription state Lambda <${EnvironmentTypeAbbreviation}> INVOCATION FAILED (${AWS::StackName})
       AlarmDescription: >-
         The AWS Lambda function resource that watches for AWS Transcribe job
         state changes failed. A Porter job could become stuck when this
