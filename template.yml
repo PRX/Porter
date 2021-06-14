@@ -222,14 +222,7 @@ Resources:
     Type: AWS::CloudWatch::Alarm
     Condition: CreateProductionResources
     Properties:
-      ActionsEnabled: true
-      AlarmName: !Sub Porter::Job_create_topic <Lambda::${EnvironmentTypeAbbreviation}> INVOCATION FAILED (${AWS::StackName})
-      AlarmActions:
-        - !Ref OpsErrorMessagesSnsTopicArn
-      InsufficientDataActions:
-        - !Ref OpsErrorMessagesSnsTopicArn
-      OKActions:
-        - !Ref OpsErrorMessagesSnsTopicArn
+      AlarmName: !Sub MAJOR [Porter] Job execution SNS Lambda <Lambda::${EnvironmentTypeAbbreviation}> INVOCATION FAILED (${AWS::StackName})
       AlarmDescription: !Sub >-
         The AWS Lambda function resource subscribed to the ${EnvironmentType}
         job execution SNS topic failed. This likely means that a job that was
@@ -334,14 +327,7 @@ Resources:
     Type: AWS::CloudWatch::Alarm
     Condition: CreateProductionResources
     Properties:
-      ActionsEnabled: true
-      AlarmName: !Sub Porter::Job_create_queue <Lambda::${EnvironmentTypeAbbreviation}> INVOCATION FAILED (${AWS::StackName})
-      AlarmActions:
-        - !Ref OpsErrorMessagesSnsTopicArn
-      InsufficientDataActions:
-        - !Ref OpsErrorMessagesSnsTopicArn
-      OKActions:
-        - !Ref OpsErrorMessagesSnsTopicArn
+      AlarmName: !Sub MAJOR [Porter] Job execution SQS Lambda <Lambda::${EnvironmentTypeAbbreviation}> INVOCATION FAILED (${AWS::StackName})
       AlarmDescription: !Sub >-
         The AWS Lambda function resource subscribed to the ${EnvironmentType}
         job execution SQS queue failed. This likely means that a job that was
@@ -472,16 +458,12 @@ Resources:
     Type: AWS::CloudWatch::Alarm
     Condition: CreateProductionResources
     Properties:
-      ActionsEnabled: true
-      AlarmName: "[Porter][Transcribe Change][Lambda] Elevated error volume"
-      AlarmActions:
-        - !Ref OpsErrorMessagesSnsTopicArn
-      InsufficientDataActions:
-        - !Ref OpsErrorMessagesSnsTopicArn
-      OKActions:
-        - !Ref OpsErrorMessagesSnsTopicArn
+      AlarmName: !Sub MINOR [Porter] Transcription state Lambda <Lambda::${EnvironmentTypeAbbreviation}> INVOCATION FAILED (${AWS::StackName})
       AlarmDescription: >-
-        Trascription job start function has encountered an invocation error
+        The AWS Lambda function resource that watches for AWS Transcribe job
+        state changes failed. A Porter job could become stuck when this
+        happens, since it will wait a long time for the transcription to
+        complete
       ComparisonOperator: GreaterThanThreshold
       EvaluationPeriods: 1
       MetricName: LambdaFunctionsFailed
@@ -1391,34 +1373,6 @@ Resources:
     Properties:
       LogGroupName: !Sub /aws/lambda/${NormalizeInputLambdaFunction}
       RetentionInDays: 30
-  NormalizeInputLambdaErrorAlarm:
-    Type: AWS::CloudWatch::Alarm
-    Condition: CreateProductionResources
-    Properties:
-      ActionsEnabled: true
-      AlarmName: !Sub Porter::Normalize_input_state <Lambda::${EnvironmentTypeAbbreviation}> INVOCATION FAILED (${AWS::StackName})
-      AlarmActions:
-        - !Ref OpsErrorMessagesSnsTopicArn
-      InsufficientDataActions:
-        - !Ref OpsErrorMessagesSnsTopicArn
-      OKActions:
-        - !Ref OpsErrorMessagesSnsTopicArn
-      AlarmDescription: !Sub >-
-        The AWS Lambda function resource invoked by the ${EnvironmentType}
-        Normalize Input state failed. This does not indicate that all retries
-        of the state failed; only that a single invocation of the Lambda
-        function failed.
-      ComparisonOperator: GreaterThanThreshold
-      EvaluationPeriods: 1
-      MetricName: LambdaFunctionsFailed
-      Namespace: AWS/States
-      Period: 60
-      Statistic: Sum
-      Threshold: 0
-      TreatMissingData: notBreaching
-      Dimensions:
-        - Name: LambdaFunctionArn
-          Value: !GetAtt NormalizeInputLambdaFunction.Arn
   # Ingest Lambda
   IngestLambdaIamRole:
     # This role is granted read-only access by users to S3 buckets in order to
@@ -1485,14 +1439,7 @@ Resources:
     Type: AWS::CloudWatch::Alarm
     Condition: CreateProductionResources
     Properties:
-      ActionsEnabled: true
-      AlarmName: !Sub Porter::Ingest_state <Lambda::${EnvironmentTypeAbbreviation}> INVOCATION FAILED (${AWS::StackName})
-      AlarmActions:
-        - !Ref OpsErrorMessagesSnsTopicArn
-      InsufficientDataActions:
-        - !Ref OpsErrorMessagesSnsTopicArn
-      OKActions:
-        - !Ref OpsErrorMessagesSnsTopicArn
+      AlarmName: !Sub MINOR [Porter] Ingest Lambda <${EnvironmentTypeAbbreviation}> INVOCATION FAILED (${AWS::StackName})
       AlarmDescription: !Sub >-
         The AWS Lambda function resource invoked by the ${EnvironmentType}
         Ingest state failed. This does not indicate that all retries
@@ -1542,34 +1489,6 @@ Resources:
     Properties:
       LogGroupName: !Sub /aws/lambda/${SourceTypeLambdaFunction}
       RetentionInDays: 30
-  SourceTypeLambdaErrorAlarm:
-    Type: AWS::CloudWatch::Alarm
-    Condition: CreateProductionResources
-    Properties:
-      ActionsEnabled: true
-      AlarmName: !Sub Porter::Detect_source_type_state <Lambda::${EnvironmentTypeAbbreviation}> INVOCATION FAILED (${AWS::StackName})
-      AlarmActions:
-        - !Ref OpsErrorMessagesSnsTopicArn
-      InsufficientDataActions:
-        - !Ref OpsErrorMessagesSnsTopicArn
-      OKActions:
-        - !Ref OpsErrorMessagesSnsTopicArn
-      AlarmDescription: !Sub >-
-        The AWS Lambda function resource invoked by the ${EnvironmentType}
-        source type state failed. This does not indicate that all retries
-        of the state failed; only that a single invocation of the Lambda
-        function failed.
-      ComparisonOperator: GreaterThanThreshold
-      EvaluationPeriods: 1
-      MetricName: LambdaFunctionsFailed
-      Namespace: AWS/States
-      Period: 60
-      Statistic: Sum
-      Threshold: 0
-      TreatMissingData: notBreaching
-      Dimensions:
-        - Name: LambdaFunctionArn
-          Value: !GetAtt SourceTypeLambdaFunction.Arn
   # Inspect Lambda
   InspectMediaLambdaFunction:
     Type: AWS::Serverless::Function
@@ -1598,31 +1517,6 @@ Resources:
     Properties:
       LogGroupName: !Sub /aws/lambda/${InspectMediaLambdaFunction}
       RetentionInDays: 30
-  InspectMediaLambdaErrorAlarm:
-    Type: AWS::CloudWatch::Alarm
-    Condition: CreateProductionResources
-    Properties:
-      ActionsEnabled: true
-      AlarmName: "[Porter][Inspect][Lambda] Elevated error volume"
-      AlarmActions:
-        - !Ref OpsErrorMessagesSnsTopicArn
-      InsufficientDataActions:
-        - !Ref OpsErrorMessagesSnsTopicArn
-      OKActions:
-        - !Ref OpsErrorMessagesSnsTopicArn
-      AlarmDescription: >-
-        Inspect media function has encountered an invocation error
-      ComparisonOperator: GreaterThanThreshold
-      EvaluationPeriods: 1
-      MetricName: LambdaFunctionsFailed
-      Namespace: AWS/States
-      Period: 60
-      Statistic: Sum
-      Threshold: 0
-      TreatMissingData: notBreaching
-      Dimensions:
-        - Name: LambdaFunctionArn
-          Value: !GetAtt InspectMediaLambdaFunction.Arn
   # Copy Lambda
   CopyLambdaIamRole:
     Type: AWS::IAM::Role
@@ -1672,36 +1566,6 @@ Resources:
     Properties:
       LogGroupName: !Sub /aws/lambda/${CopyLambdaFunction}
       RetentionInDays: 30
-  CopyLambdaErrorAlarm:
-    Type: AWS::CloudWatch::Alarm
-    Condition: CreateProductionResources
-    Properties:
-      ActionsEnabled: true
-      AlarmName: !Sub Porter::Copy_state <Lambda::${EnvironmentTypeAbbreviation}> INVOCATION FAILED (${AWS::StackName})
-      AlarmActions:
-        - !Ref OpsErrorMessagesSnsTopicArn
-      InsufficientDataActions:
-        - !Ref OpsErrorMessagesSnsTopicArn
-      OKActions:
-        - !Ref OpsErrorMessagesSnsTopicArn
-      AlarmDescription: !Sub >-
-        The AWS Lambda function resource invoked by the ${EnvironmentType}
-        Ingest state failed. This does not indicate that all retries
-        of the state failed; only that a single invocation of the Lambda
-        function failed.
-
-        This can occur when a destination location is not accessible.
-      ComparisonOperator: GreaterThanThreshold
-      EvaluationPeriods: 1
-      MetricName: LambdaFunctionsFailed
-      Namespace: AWS/States
-      Period: 60
-      Statistic: Sum
-      Threshold: 0
-      TreatMissingData: notBreaching
-      Dimensions:
-        - Name: LambdaFunctionArn
-          Value: !GetAtt CopyLambdaFunction.Arn
   # FTP Copy Output Lambda
   FtpCopyTaskOutputLambdaFunction:
     Type: AWS::Serverless::Function
@@ -1731,14 +1595,7 @@ Resources:
     Type: AWS::CloudWatch::Alarm
     Condition: CreateProductionResources
     Properties:
-      ActionsEnabled: true
-      AlarmName: "[Porter][FTP][Lambda] Elevated error volume"
-      AlarmActions:
-        - !Ref OpsErrorMessagesSnsTopicArn
-      InsufficientDataActions:
-        - !Ref OpsErrorMessagesSnsTopicArn
-      OKActions:
-        - !Ref OpsErrorMessagesSnsTopicArn
+      AlarmName: !Sub MINOR [Porter] FTP output Lambda <${EnvironmentTypeAbbreviation}> INVOCATION FAILED (${AWS::StackName})
       AlarmDescription: >-
         FTP copy output format function has encountered an invocation error
       ComparisonOperator: GreaterThanThreshold
@@ -1784,14 +1641,7 @@ Resources:
     Type: AWS::CloudWatch::Alarm
     Condition: CreateProductionResources
     Properties:
-      ActionsEnabled: true
-      AlarmName: "[Porter][Transcode][Lambda] Elevated error volume"
-      AlarmActions:
-        - !Ref OpsErrorMessagesSnsTopicArn
-      InsufficientDataActions:
-        - !Ref OpsErrorMessagesSnsTopicArn
-      OKActions:
-        - !Ref OpsErrorMessagesSnsTopicArn
+      AlarmName: !Sub MINOR [Porter] Transcode output Lambda <${EnvironmentTypeAbbreviation}> INVOCATION FAILED (${AWS::StackName})
       AlarmDescription: >-
         Transcode output format function has encountered an invocation error
       ComparisonOperator: GreaterThanThreshold
@@ -1855,34 +1705,6 @@ Resources:
     Properties:
       LogGroupName: !Sub /aws/lambda/${ImageTransformLambdaFunction}
       RetentionInDays: 30
-  ImageTransformLambdaErrorAlarm:
-    Type: AWS::CloudWatch::Alarm
-    Condition: CreateProductionResources
-    Properties:
-      ActionsEnabled: true
-      AlarmName: !Sub Porter::Image_state <Lambda::${EnvironmentTypeAbbreviation}> INVOCATION FAILED (${AWS::StackName})
-      AlarmActions:
-        - !Ref OpsErrorMessagesSnsTopicArn
-      InsufficientDataActions:
-        - !Ref OpsErrorMessagesSnsTopicArn
-      OKActions:
-        - !Ref OpsErrorMessagesSnsTopicArn
-      AlarmDescription: !Sub >-
-        The AWS Lambda function resource invoked by the ${EnvironmentType}
-        source type state failed. This does not indicate that all retries
-        of the state failed; only that a single invocation of the Lambda
-        function failed.
-      ComparisonOperator: GreaterThanThreshold
-      EvaluationPeriods: 1
-      MetricName: LambdaFunctionsFailed
-      Namespace: AWS/States
-      Period: 60
-      Statistic: Sum
-      Threshold: 0
-      TreatMissingData: notBreaching
-      Dimensions:
-        - Name: LambdaFunctionArn
-          Value: !GetAtt ImageTransformLambdaFunction.Arn
   # WAV Wrap Lambda
   WavWrapLambdaIamRole:
     Type: AWS::IAM::Role
@@ -1932,34 +1754,6 @@ Resources:
     Properties:
       LogGroupName: !Sub /aws/lambda/${WavWrapLambdaFunction}
       RetentionInDays: 30
-  WavWrapLambdaErrorAlarm:
-    Type: AWS::CloudWatch::Alarm
-    Condition: CreateProductionResources
-    Properties:
-      ActionsEnabled: true
-      AlarmName: !Sub Porter::WavWrap_state <Lambda::${EnvironmentTypeAbbreviation}> INVOCATION FAILED (${AWS::StackName})
-      AlarmActions:
-        - !Ref OpsErrorMessagesSnsTopicArn
-      InsufficientDataActions:
-        - !Ref OpsErrorMessagesSnsTopicArn
-      OKActions:
-        - !Ref OpsErrorMessagesSnsTopicArn
-      AlarmDescription: !Sub >-
-        The AWS Lambda function resource invoked by the ${EnvironmentType}
-        source type state failed. This does not indicate that all retries
-        of the state failed; only that a single invocation of the Lambda
-        function failed.
-      ComparisonOperator: GreaterThanThreshold
-      EvaluationPeriods: 1
-      MetricName: LambdaFunctionsFailed
-      Namespace: AWS/States
-      Period: 60
-      Statistic: Sum
-      Threshold: 0
-      TreatMissingData: notBreaching
-      Dimensions:
-        - Name: LambdaFunctionArn
-          Value: !GetAtt WavWrapLambdaFunction.Arn
   # Transcribe Start Lambda
   TranscriptionJobStartLambdaFunction:
     Type: AWS::Serverless::Function
@@ -1997,31 +1791,6 @@ Resources:
     Properties:
       LogGroupName: !Sub /aws/lambda/${TranscriptionJobStartLambdaFunction}
       RetentionInDays: 30
-  TranscriptionJobStartLambdaErrorAlarm:
-    Type: AWS::CloudWatch::Alarm
-    Condition: CreateProductionResources
-    Properties:
-      ActionsEnabled: true
-      AlarmName: "[Porter][Transcribe Start][Lambda] Elevated error volume"
-      AlarmActions:
-        - !Ref OpsErrorMessagesSnsTopicArn
-      InsufficientDataActions:
-        - !Ref OpsErrorMessagesSnsTopicArn
-      OKActions:
-        - !Ref OpsErrorMessagesSnsTopicArn
-      AlarmDescription: >-
-        Trascription job start function has encountered an invocation error
-      ComparisonOperator: GreaterThanThreshold
-      EvaluationPeriods: 1
-      MetricName: LambdaFunctionsFailed
-      Namespace: AWS/States
-      Period: 60
-      Statistic: Sum
-      Threshold: 0
-      TreatMissingData: notBreaching
-      Dimensions:
-        - Name: LambdaFunctionArn
-          Value: !GetAtt TranscriptionJobStartLambdaFunction.Arn
   # Transcribe Job Results Lambda
   TranscriptionJobResultsLambdaIamRole:
     Type: AWS::IAM::Role
@@ -2078,31 +1847,6 @@ Resources:
     Properties:
       LogGroupName: !Sub /aws/lambda/${TranscriptionJobResultsLambdaFunction}
       RetentionInDays: 30
-  TranscriptionJobResultsLambdaErrorAlarm:
-    Type: AWS::CloudWatch::Alarm
-    Condition: CreateProductionResources
-    Properties:
-      ActionsEnabled: true
-      AlarmName: "[Porter][Transcribe Result][Lambda] Elevated error volume"
-      AlarmActions:
-        - !Ref OpsErrorMessagesSnsTopicArn
-      InsufficientDataActions:
-        - !Ref OpsErrorMessagesSnsTopicArn
-      OKActions:
-        - !Ref OpsErrorMessagesSnsTopicArn
-      AlarmDescription: >-
-        Trascription job results function has encountered an invocation error
-      ComparisonOperator: GreaterThanThreshold
-      EvaluationPeriods: 1
-      MetricName: LambdaFunctionsFailed
-      Namespace: AWS/States
-      Period: 60
-      Statistic: Sum
-      Threshold: 0
-      TreatMissingData: notBreaching
-      Dimensions:
-        - Name: LambdaFunctionArn
-          Value: !GetAtt TranscriptionJobResultsLambdaFunction.Arn
   # Callback Lambda
   CallbackLambdaIamRole:
     Type: AWS::IAM::Role
@@ -2176,37 +1920,6 @@ Resources:
     Properties:
       LogGroupName: !Sub /aws/lambda/${CallbackLambdaFunction}
       RetentionInDays: 30
-  CallbackLambdaErrorAlarm:
-    Type: AWS::CloudWatch::Alarm
-    Condition: CreateProductionResources
-    Properties:
-      ActionsEnabled: true
-      AlarmName: !Sub Porter::Callback_state <Lambda::${EnvironmentTypeAbbreviation}> INVOCATION FAILED (${AWS::StackName})
-      AlarmActions:
-        - !Ref OpsErrorMessagesSnsTopicArn
-      InsufficientDataActions:
-        - !Ref OpsErrorMessagesSnsTopicArn
-      OKActions:
-        - !Ref OpsErrorMessagesSnsTopicArn
-      AlarmDescription: !Sub >-
-        The AWS Lambda function resource invoked by the ${EnvironmentType}
-        Job Serializer state failed. This does not indicate that all retries
-        of the state failed; only that a single invocation of the Lambda
-        function failed.
-
-        This Lambda function handles all callbacks for the state machine, not
-        only those at the end of a job execution.
-      ComparisonOperator: GreaterThanThreshold
-      EvaluationPeriods: 1
-      MetricName: LambdaFunctionsFailed
-      Namespace: AWS/States
-      Period: 60
-      Statistic: Sum
-      Threshold: 0
-      TreatMissingData: notBreaching
-      Dimensions:
-        - Name: LambdaFunctionArn
-          Value: !GetAtt CallbackLambdaFunction.Arn
   # Job Serializer Lambda
   JobSerializerLambdaFunction:
     Type: AWS::Serverless::Function
@@ -2239,34 +1952,6 @@ Resources:
     Properties:
       LogGroupName: !Sub /aws/lambda/${JobSerializerLambdaFunction}
       RetentionInDays: 30
-  JobSerializerLambdaErrorAlarm:
-    Type: AWS::CloudWatch::Alarm
-    Condition: CreateProductionResources
-    Properties:
-      ActionsEnabled: true
-      AlarmName: !Sub Porter::Job_serializer_state <Lambda::${EnvironmentTypeAbbreviation}> INVOCATION FAILED (${AWS::StackName})
-      AlarmActions:
-        - !Ref OpsErrorMessagesSnsTopicArn
-      InsufficientDataActions:
-        - !Ref OpsErrorMessagesSnsTopicArn
-      OKActions:
-        - !Ref OpsErrorMessagesSnsTopicArn
-      AlarmDescription: !Sub >-
-        The AWS Lambda function resource invoked by the ${EnvironmentType}
-        Job Serializer state failed. This does not indicate that all retries
-        of the state failed; only that a single invocation of the Lambda
-        function failed.
-      ComparisonOperator: GreaterThanThreshold
-      EvaluationPeriods: 1
-      MetricName: LambdaFunctionsFailed
-      Namespace: AWS/States
-      Period: 60
-      Statistic: Sum
-      Threshold: 0
-      TreatMissingData: notBreaching
-      Dimensions:
-        - Name: LambdaFunctionArn
-          Value: !GetAtt JobSerializerLambdaFunction.Arn
   # Normalize Output Lambda
   NormalizeOutputLambdaFunction:
     Type: AWS::Serverless::Function
@@ -2296,34 +1981,6 @@ Resources:
     Properties:
       LogGroupName: !Sub /aws/lambda/${NormalizeOutputLambdaFunction}
       RetentionInDays: 30
-  NormalizeOutputLambdaErrorAlarm:
-    Type: AWS::CloudWatch::Alarm
-    Condition: CreateProductionResources
-    Properties:
-      ActionsEnabled: true
-      AlarmName: !Sub Porter::Normalize_output_state <Lambda::${EnvironmentTypeAbbreviation}> INVOCATION FAILED (${AWS::StackName})
-      AlarmActions:
-        - !Ref OpsErrorMessagesSnsTopicArn
-      InsufficientDataActions:
-        - !Ref OpsErrorMessagesSnsTopicArn
-      OKActions:
-        - !Ref OpsErrorMessagesSnsTopicArn
-      AlarmDescription: !Sub >-
-        The AWS Lambda function resource invoked by the ${EnvironmentType}
-        Normalize Output state failed. This does not indicate that all retries
-        of the state failed; only that a single invocation of the Lambda
-        function failed.
-      ComparisonOperator: GreaterThanThreshold
-      EvaluationPeriods: 1
-      MetricName: LambdaFunctionsFailed
-      Namespace: AWS/States
-      Period: 60
-      Statistic: Sum
-      Threshold: 0
-      TreatMissingData: notBreaching
-      Dimensions:
-        - Name: LambdaFunctionArn
-          Value: !GetAtt NormalizeOutputLambdaFunction.Arn
   # Step Functions
   StateMachineIamRole:
     Type: AWS::IAM::Role
@@ -2454,14 +2111,7 @@ Resources:
   StateMachineTimedOutAlarm:
     Type: AWS::CloudWatch::Alarm
     Properties:
-      ActionsEnabled: true
-      AlarmName: !Sub Porter::State_machine <${EnvironmentTypeAbbreviation}> EXECUTION TIMED OUT (${AWS::StackName})
-      AlarmActions:
-        - !Ref OpsWarnMessagesSnsTopicArn
-      InsufficientDataActions:
-        - !Ref OpsWarnMessagesSnsTopicArn
-      OKActions:
-        - !Ref OpsWarnMessagesSnsTopicArn
+      AlarmName: !Sub MAJOR [Porter] State machine <${EnvironmentTypeAbbreviation}> EXECUTION TIMED OUT (${AWS::StackName})
       AlarmDescription: !Sub >-
         ${EnvironmentType} Porter state machine has had an execution time out.
         This could be for any reason, but the maximum execution time is 1 year.
@@ -2479,14 +2129,7 @@ Resources:
   StateMachineThrottleAlarm:
     Type: AWS::CloudWatch::Alarm
     Properties:
-      ActionsEnabled: true
-      AlarmName: !Sub Porter::State_machine <${EnvironmentTypeAbbreviation}> STATE TRANSISITON THROTTLED (${AWS::StackName})
-      AlarmActions:
-        - !Ref OpsWarnMessagesSnsTopicArn
-      InsufficientDataActions:
-        - !Ref OpsWarnMessagesSnsTopicArn
-      OKActions:
-        - !Ref OpsWarnMessagesSnsTopicArn
+      AlarmName: !Sub MAJOR [Porter] State machine <${EnvironmentTypeAbbreviation}> STATE TRANSISITON THROTTLED (${AWS::StackName})
       AlarmDescription: !Sub >-
         ${EnvironmentType} Porter state machine has had state transitions
         throttled. This is a limit imposed by AWS Step Functions itself within
@@ -2506,18 +2149,11 @@ Resources:
   StateMachineFailureAlarm:
     Type: AWS::CloudWatch::Alarm
     Properties:
-      ActionsEnabled: true
-      AlarmName: !Sub Porter::State_machine <${EnvironmentTypeAbbreviation}> EXECUTION FAILED (${AWS::StackName})
-      AlarmActions:
-        - !Ref OpsErrorMessagesSnsTopicArn
-      InsufficientDataActions:
-        - !Ref OpsErrorMessagesSnsTopicArn
-      OKActions:
-        - !Ref OpsErrorMessagesSnsTopicArn
+      AlarmName: !Sub MAJOR [Porter] State machine <${EnvironmentTypeAbbreviation}> EXECUTION FAILED (${AWS::StackName})
       AlarmDescription: >-
-        A state machine execution failure indicates that an error occurred but
-        was able to be caught and handled gracefully. This likely means the job
-        failed in some way and that some or all callbacks were unsuccessful.
+        A state machine execution failure indicates that an error occurred and
+        was unable to be caught and handled gracefully. This likely means the
+        job failed in some way and that some or all callbacks were unsuccessful.
       ComparisonOperator: GreaterThanThreshold
       EvaluationPeriods: 1
       MetricName: ExecutionsFailed
@@ -2534,14 +2170,7 @@ Resources:
     Type: AWS::CloudWatch::Alarm
     Condition: CreateProductionResources
     Properties:
-      ActionsEnabled: true
-      AlarmName: !Sub Porter <${EnvironmentTypeAbbreviation}> EXPERIENCED JOB FAILURE (${AWS::StackName})
-      AlarmActions:
-        - !Ref OpsWarnMessagesSnsTopicArn
-      InsufficientDataActions:
-        - !Ref OpsWarnMessagesSnsTopicArn
-      OKActions:
-        - !Ref OpsWarnMessagesSnsTopicArn
+      AlarmName: !Sub MINOR [Porter] State machine <${EnvironmentTypeAbbreviation}> EXPERIENCED JOB FAILURE (${AWS::StackName})
       AlarmDescription: >-
         A Porter job failure indicates that one or more of the tasks that the
         job included weren't able to complete successfully. This does not
