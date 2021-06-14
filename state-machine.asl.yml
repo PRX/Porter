@@ -655,6 +655,12 @@ States:
     Comment: Normalizes output data
     Type: Task
     InputPath: "$"
+    Retry:
+      - ErrorEquals:
+          - States.ALL
+        IntervalSeconds: 1
+        MaxAttempts: 2
+        BackoffRate: 1
     Parameters:
       StateMachine:
         Id.$: "$$.StateMachine.Id"
