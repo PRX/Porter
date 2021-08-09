@@ -11,28 +11,12 @@ Conditions:
   CreateDefaultEventBusRule: !Equals [!Ref EnableDefaultEventBusRule, "True"]
 
 Parameters:
-  EnvironmentType:
-    Type: String
-    AllowedValues:
-      - Testing
-      - Staging
-      - Production
-  EnvironmentTypeAbbreviation:
-    Type: String
-    AllowedValues:
-      - test
-      - stag
-      - prod
-  TranscodeJobNamePrefix:
-    Type: String
-  OpsWarnMessagesSnsTopicArn:
-    Type: String
-  OpsErrorMessagesSnsTopicArn:
-    Type: String
+  # Generally set by the deploy pipeline
   TranscodeEcsTaskDefinitionImage:
     Type: String
   FtpCopyEcsTaskDefinitionImage:
     Type: String
+  # Optional
   EnableSqsJobExecution:
     Type: String
     AllowedValues:
@@ -71,6 +55,21 @@ Parameters:
     MaxValue: 256
     MinValue: 1
     Type: Number
+  # Required
+  EnvironmentType:
+    Type: String
+    AllowedValues:
+      - Testing
+      - Staging
+      - Production
+  EnvironmentTypeAbbreviation:
+    Type: String
+    AllowedValues:
+      - test
+      - stag
+      - prod
+  TranscodeJobNamePrefix:
+    Type: String
 
 Resources:
   # Managed IAM Policies
@@ -934,7 +933,7 @@ Resources:
     Type: AWS::EC2::SecurityGroup
     Properties:
       VpcId: !Ref VPC
-      GroupDescription: Allow ECS traffic
+      GroupDescription: Allow all inbound HTTPS traffic to the endpoints
       SecurityGroupIngress:
         - CidrIp: 0.0.0.0/0
           IpProtocol: tcp
@@ -961,6 +960,9 @@ Resources:
       VpcId: !Ref VPC
   # Interface VPC endpoints
   # https://docs.aws.amazon.com/vpc/latest/userguide/vpce-interface.html
+  # The endpoint security group allows all inbound traffic, and currently the
+  # Fargate tasks use the default VPC security group, which allows all outbound
+  # traffic.
   EcrVpcEndpoint:
     # https://docs.aws.amazon.com/AmazonECR/latest/userguide/vpc-endpoints.html#ecr-vpc-endpoint-considerations
     Type: AWS::EC2::VPCEndpoint
