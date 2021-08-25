@@ -1779,6 +1779,7 @@ Resources:
           TRANSCODE_JOB_NAME_PREFIX: !Ref TranscodeJobNamePrefix
       Handler: index.handler
       Layers:
+        - !Ref AwsSdkLambdaLayer
         - !Ref AwsXraySdkLambdaLayer
       MemorySize: 128
       Policies:
