@@ -1776,6 +1776,7 @@ Resources:
       Environment:
         Variables:
           ARTIFACT_BUCKET_NAME: !Ref ArtifactBucket
+          ENVIRONMENT_TYPE: !Ref EnvironmentType
           TRANSCODE_JOB_NAME_PREFIX: !Ref TranscodeJobNamePrefix
       Handler: index.handler
       Layers:

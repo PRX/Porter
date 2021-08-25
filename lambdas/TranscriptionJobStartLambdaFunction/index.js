@@ -77,6 +77,16 @@ exports.handler = async (event) => {
       // Valid Values: mp3 | mp4 | wav | flac | ogg | amr | webm
       MediaFormat: mediaFormat,
       OutputBucketName: event.Artifact.BucketName,
+      Tags: [
+        {
+          Key: 'prx:ops:environment',
+          Value: process.env.ENVIRONMENT_TYPE,
+        },
+        {
+          Key: 'prx:dev:application',
+          Value: 'Porter',
+        },
+      ],
     })
     .promise();
 };
