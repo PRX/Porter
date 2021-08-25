@@ -7,7 +7,7 @@
     "url": "git://github.com/PRX/Porter.git"
   },
   "dependencies": {
-    "aws-sdk": "^2.663.0",
+    "aws-sdk": "^2.975.0",
     "aws-xray-sdk": "^3.0.0",
     "file-type": "^15.0.0",
     "prx-wavefile": "^11.0.0-prx.1",
