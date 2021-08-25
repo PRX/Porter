@@ -1790,6 +1790,7 @@ Resources:
             - Action:
                 - transcribe:GetTranscriptionJob
                 - transcribe:StartTranscriptionJob
+                - transcribe:TagResource
               Effect: Allow
               Resource: "*"
           Version: "2012-10-17"
