@@ -50,7 +50,8 @@ States:
       States:
         Send JobReceived Callback:
           Type: Task
-          Comment: Sends a job received message for a single callback endpoint in
+          Comment: >-
+            Sends a job received message for a single callback endpoint in
             the iterator
           InputPath: "$"
           Resource: "${CallbackLambdaFunctionArn}"
@@ -131,7 +132,8 @@ States:
       States:
         Route Task By Type:
           Type: Choice
-          Comment: For the current task being iterated, routes to the appropriate
+          Comment: >-
+            For the current task being iterated, routes to the appropriate
             state
           Default: Unknown Task Type
           Choices:
@@ -489,7 +491,8 @@ States:
               Next: TaskResult Error Callback Map
         TaskResult Callbacks Map:
           Type: Map
-          Comment: Iterates over all callback endpoints to send messages when tasks
+          Comment: >-
+            Iterates over all callback endpoints to send messages when tasks
             are successful
           InputPath: "$"
           ItemsPath: "$.Callbacks"
@@ -517,7 +520,8 @@ States:
             States:
               Send TaskResult Callback:
                 Type: Task
-                Comment: Sends a callback message to a single endpoint when tasks
+                Comment: >-
+                  Sends a callback message to a single endpoint when tasks
                   are successful
                 InputPath: "$"
                 Resource: "${CallbackLambdaFunctionArn}"
@@ -532,7 +536,8 @@ States:
                     BackoffRate: 2
         TaskResult Error Callback Map:
           Type: Map
-          Comment: Iterates over all callback endpoints to send messages when tasks
+          Comment: >-
+            Iterates over all callback endpoints to send messages when tasks
             fail
           InputPath: "$"
           ItemsPath: "$.Callbacks"
@@ -560,7 +565,8 @@ States:
             States:
               Send TaskResult Error Callback:
                 Type: Task
-                Comment: Sends a callback message to a single endpoint when tasks
+                Comment: >-
+                  Sends a callback message to a single endpoint when tasks
                   fail
                 InputPath: "$"
                 Resource: "${CallbackLambdaFunctionArn}"
@@ -607,7 +613,8 @@ States:
       States:
         Send JobResult Callback:
           Type: Task
-          Comment: Sends a callback message to a single endpoint in the iterator with
+          Comment: >-
+            Sends a callback message to a single endpoint in the iterator with
             a job result
           InputPath: "$"
           Resource: "${CallbackLambdaFunctionArn}"
@@ -684,7 +691,7 @@ States:
     Result: NORMALIZE_INPUT_ERROR
     ResultPath: "$.State"
     OutputPath: "$"
-    Next: JobResult Callback Map
+    Next: Add Empty TaskResults
   Ingest Source File Catcher:
     Comment: Add a parameter so ingest errors can be identified
     Type: Pass
@@ -692,7 +699,7 @@ States:
     Result: SOURCE_FILE_INGEST_ERROR
     ResultPath: "$.State"
     OutputPath: "$"
-    Next: JobResult Callback Map
+    Next: Add Empty TaskResults
   Detect Source File Type Catcher:
     Comment: Add a parameter so type detection errors can be identified
     Type: Pass
@@ -700,12 +707,23 @@ States:
     Result: SOURCE_FILE_TYPE_DETECTION_ERROR
     ResultPath: "$.State"
     OutputPath: "$"
-    Next: JobResult Callback Map
+    Next: Add Empty TaskResults
   Tasks Map Catcher:
     Comment: Add a parameter so task execution errors can be identified
     Type: Pass
     InputPath: "$"
     Result: ITERATOR_ERROR
     ResultPath: "$.State"
+    OutputPath: "$"
+    Next: Add Empty TaskResults
+
+  Add Empty TaskResults:
+    Comment: >-
+      Add a TaskResults key with an empty array value, for cases where the task
+      iterator does not succeed and it's not otherwise added
+    Type: Pass
+    InputPath: "$"
+    Result: []
+    ResultPath: "$.TaskResults"
     OutputPath: "$"
     Next: JobResult Callback Map
