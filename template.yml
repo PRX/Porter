@@ -867,7 +867,7 @@ Resources:
           Value:
             Fn::Sub:
               - ${AWS::StackName}_private-2_${ZoneName}
-              - ZoneName: !Select [0, !GetAZs ""]
+              - ZoneName: !Select [1, !GetAZs ""]
       VpcId: !Ref VPC
   PrivateSubnet2RouteTableAssociation:
     Type: AWS::EC2::SubnetRouteTableAssociation
