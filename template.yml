@@ -138,12 +138,11 @@ Resources:
                 Resource: "*"
             Version: "2012-10-17"
       Tags:
-        - Key: Project
-          Value: Porter
-        - Key: prx:cloudformation:stack-name
-          Value: !Ref AWS::StackName
-        - Key: prx:cloudformation:stack-id
-          Value: !Ref AWS::StackId
+        - { Key: prx:meta:tagging-version, Value: "2021-04-07" }
+        - { Key: prx:cloudformation:stack-name, Value: !Ref AWS::StackName }
+        - { Key: prx:cloudformation:stack-id, Value: !Ref AWS::StackId }
+        - { Key: prx:ops:environment, Value: !Ref EnvironmentType }
+        - { Key: prx:dev:application, Value: Porter }
   # SNS
   ## Messages sent to this topic will be handled by a Lambda function which
   ## executes the Step Functions state machine. The `input` to the state machine
@@ -151,6 +150,13 @@ Resources:
   ## valic JSON.
   JobExecutionSnsTopic:
     Type: AWS::SNS::Topic
+    Properties:
+      Tags:
+        - { Key: prx:meta:tagging-version, Value: "2021-04-07" }
+        - { Key: prx:cloudformation:stack-name, Value: !Ref AWS::StackName }
+        - { Key: prx:cloudformation:stack-id, Value: !Ref AWS::StackId }
+        - { Key: prx:ops:environment, Value: !Ref EnvironmentType }
+        - { Key: prx:dev:application, Value: Porter }
   JobExecutionSnsTopicLambdaIamRole:
     Type: AWS::IAM::Role
     Properties:
@@ -173,12 +179,11 @@ Resources:
                 Resource: !Ref StateMachine
             Version: "2012-10-17"
       Tags:
-        - Key: Project
-          Value: Porter
-        - Key: prx:cloudformation:stack-name
-          Value: !Ref AWS::StackName
-        - Key: prx:cloudformation:stack-id
-          Value: !Ref AWS::StackId
+        - { Key: prx:meta:tagging-version, Value: "2021-04-07" }
+        - { Key: prx:cloudformation:stack-name, Value: !Ref AWS::StackName }
+        - { Key: prx:cloudformation:stack-id, Value: !Ref AWS::StackId }
+        - { Key: prx:ops:environment, Value: !Ref EnvironmentType }
+        - { Key: prx:dev:application, Value: Porter }
   JobExecutionSnsTopicLambdaFunction:
     Type: AWS::Serverless::Function
     Properties:
@@ -195,9 +200,11 @@ Resources:
       Role: !GetAtt JobExecutionSnsTopicLambdaIamRole.Arn
       Runtime: nodejs14.x
       Tags:
-        Project: Porter
+        prx:meta:tagging-version: "2021-04-07"
         prx:cloudformation:stack-name: !Ref AWS::StackName
         prx:cloudformation:stack-id: !Ref AWS::StackId
+        prx:ops:environment: !Ref EnvironmentType
+        prx:dev:application: Porter
       Timeout: 8
   JobExecutionSnsTopicLambdaLogGroup:
     Type: AWS::Logs::LogGroup
@@ -246,12 +253,11 @@ Resources:
     Type: AWS::SQS::Queue
     Properties:
       Tags:
-        - Key: Project
-          Value: Porter
-        - Key: prx:cloudformation:stack-name
-          Value: !Ref AWS::StackName
-        - Key: prx:cloudformation:stack-id
-          Value: !Ref AWS::StackId
+        - { Key: prx:meta:tagging-version, Value: "2021-04-07" }
+        - { Key: prx:cloudformation:stack-name, Value: !Ref AWS::StackName }
+        - { Key: prx:cloudformation:stack-id, Value: !Ref AWS::StackId }
+        - { Key: prx:ops:environment, Value: !Ref EnvironmentType }
+        - { Key: prx:dev:application, Value: Porter }
   JobExecutionSqsQueueLambdaIamRole:
     Type: AWS::IAM::Role
     Properties:
@@ -285,12 +291,11 @@ Resources:
                 Resource: !Ref StateMachine
             Version: "2012-10-17"
       Tags:
-        - Key: Project
-          Value: Porter
-        - Key: prx:cloudformation:stack-name
-          Value: !Ref AWS::StackName
-        - Key: prx:cloudformation:stack-id
-          Value: !Ref AWS::StackId
+        - { Key: prx:meta:tagging-version, Value: "2021-04-07" }
+        - { Key: prx:cloudformation:stack-name, Value: !Ref AWS::StackName }
+        - { Key: prx:cloudformation:stack-id, Value: !Ref AWS::StackId }
+        - { Key: prx:ops:environment, Value: !Ref EnvironmentType }
+        - { Key: prx:dev:application, Value: Porter }
   JobExecutionSqsQueueLambdaFunction:
     Type: AWS::Serverless::Function
     Properties:
@@ -313,9 +318,11 @@ Resources:
       Role: !GetAtt JobExecutionSqsQueueLambdaIamRole.Arn
       Runtime: nodejs14.x
       Tags:
-        Project: Porter
+        prx:meta:tagging-version: "2021-04-07"
         prx:cloudformation:stack-name: !Ref AWS::StackName
         prx:cloudformation:stack-id: !Ref AWS::StackId
+        prx:ops:environment: !Ref EnvironmentType
+        prx:dev:application: Porter
       Timeout: 8
   JobExecutionSqsQueueLambdaLogGroup:
     Type: AWS::Logs::LogGroup
@@ -366,12 +373,11 @@ Resources:
                 Resource: !Ref StateMachine
             Version: "2012-10-17"
       Tags:
-        - Key: Project
-          Value: Porter
-        - Key: prx:cloudformation:stack-name
-          Value: !Ref AWS::StackName
-        - Key: prx:cloudformation:stack-id
-          Value: !Ref AWS::StackId
+        - { Key: prx:meta:tagging-version, Value: "2021-04-07" }
+        - { Key: prx:cloudformation:stack-name, Value: !Ref AWS::StackName }
+        - { Key: prx:cloudformation:stack-id, Value: !Ref AWS::StackId }
+        - { Key: prx:ops:environment, Value: !Ref EnvironmentType }
+        - { Key: prx:dev:application, Value: Porter }
   CustomEventBusJobExecutionEventRule:
     Type: AWS::Events::Rule
     Properties:
@@ -428,6 +434,12 @@ Resources:
                 Effect: Allow
                 Resource: !Ref StateMachine
             Version: "2012-10-17"
+      Tags:
+        - { Key: prx:meta:tagging-version, Value: "2021-04-07" }
+        - { Key: prx:cloudformation:stack-name, Value: !Ref AWS::StackName }
+        - { Key: prx:cloudformation:stack-id, Value: !Ref AWS::StackId }
+        - { Key: prx:ops:environment, Value: !Ref EnvironmentType }
+        - { Key: prx:dev:application, Value: Porter }
   TranscriptionJobStateChangeLambdaFunction:
     Type: AWS::Serverless::Function
     Properties:
@@ -444,9 +456,11 @@ Resources:
       Role: !GetAtt TranscriptionJobStateChangeLambdaIamRole.Arn
       Runtime: nodejs14.x
       Tags:
-        Project: Porter
+        prx:meta:tagging-version: "2021-04-07"
         prx:cloudformation:stack-name: !Ref AWS::StackName
         prx:cloudformation:stack-id: !Ref AWS::StackId
+        prx:ops:environment: !Ref EnvironmentType
+        prx:dev:application: Porter
       Timeout: 4
   TranscriptionJobStateChangeLambdaLogGroup:
     Type: AWS::Logs::LogGroup
@@ -522,14 +536,12 @@ Resources:
       EnableDnsHostnames: true
       InstanceTenancy: default
       Tags:
-        - Key: Project
-          Value: Porter
-        - Key: Name
-          Value: !Sub ${AWS::StackName}-VPC
-        - Key: prx:cloudformation:stack-name
-          Value: !Ref AWS::StackName
-        - Key: prx:cloudformation:stack-id
-          Value: !Ref AWS::StackId
+        - { Key: Name, Value: !Sub "${AWS::StackName}" }
+        - { Key: prx:meta:tagging-version, Value: "2021-04-07" }
+        - { Key: prx:cloudformation:stack-name, Value: !Ref AWS::StackName }
+        - { Key: prx:cloudformation:stack-id, Value: !Ref AWS::StackId }
+        - { Key: prx:ops:environment, Value: !Ref EnvironmentType }
+        - { Key: prx:dev:application, Value: Porter }
   # IPv6
   IPv6VpcCidrBlock:
     Type: AWS::EC2::VPCCidrBlock
@@ -544,14 +556,12 @@ Resources:
       DomainNameServers:
         - AmazonProvidedDNS
       Tags:
-        - Key: Project
-          Value: Porter
-        - Key: Name
-          Value: !Sub ${AWS::StackName}-DhcpOptions
-        - Key: prx:cloudformation:stack-name
-          Value: !Ref AWS::StackName
-        - Key: prx:cloudformation:stack-id
-          Value: !Ref AWS::StackId
+        - { Key: Name, Value: !Sub "${AWS::StackName}" }
+        - { Key: prx:meta:tagging-version, Value: "2021-04-07" }
+        - { Key: prx:cloudformation:stack-name, Value: !Ref AWS::StackName }
+        - { Key: prx:cloudformation:stack-id, Value: !Ref AWS::StackId }
+        - { Key: prx:ops:environment, Value: !Ref EnvironmentType }
+        - { Key: prx:dev:application, Value: Porter }
   DhcpOptionsAssociation:
     Type: AWS::EC2::VPCDHCPOptionsAssociation
     Properties:
@@ -562,14 +572,12 @@ Resources:
     Type: AWS::EC2::InternetGateway
     Properties:
       Tags:
-        - Key: Project
-          Value: Porter
-        - Key: Name
-          Value: !Sub ${AWS::StackName}-IG
-        - Key: prx:cloudformation:stack-name
-          Value: !Ref AWS::StackName
-        - Key: prx:cloudformation:stack-id
-          Value: !Ref AWS::StackId
+        - { Key: Name, Value: !Sub "${AWS::StackName}_public" }
+        - { Key: prx:meta:tagging-version, Value: "2021-04-07" }
+        - { Key: prx:cloudformation:stack-name, Value: !Ref AWS::StackName }
+        - { Key: prx:cloudformation:stack-id, Value: !Ref AWS::StackId }
+        - { Key: prx:ops:environment, Value: !Ref EnvironmentType }
+        - { Key: prx:dev:application, Value: Porter }
   VpcGatewayAttachment:
     Type: AWS::EC2::VPCGatewayAttachment
     Properties:
@@ -580,14 +588,12 @@ Resources:
     Type: AWS::EC2::RouteTable
     Properties:
       Tags:
-        - Key: Project
-          Value: Porter
-        - Key: Name
-          Value: !Sub ${AWS::StackName}-PublicRouteTable
-        - Key: prx:cloudformation:stack-name
-          Value: !Ref AWS::StackName
-        - Key: prx:cloudformation:stack-id
-          Value: !Ref AWS::StackId
+        - { Key: Name, Value: !Sub "${AWS::StackName}_public" }
+        - { Key: prx:meta:tagging-version, Value: "2021-04-07" }
+        - { Key: prx:cloudformation:stack-name, Value: !Ref AWS::StackName }
+        - { Key: prx:cloudformation:stack-id, Value: !Ref AWS::StackId }
+        - { Key: prx:ops:environment, Value: !Ref EnvironmentType }
+        - { Key: prx:dev:application, Value: Porter }
       VpcId: !Ref VPC
   IPv4Route:
     DependsOn: VpcGatewayAttachment
@@ -613,14 +619,16 @@ Resources:
       CidrBlock: !Select [0, !Cidr [!GetAtt VPC.CidrBlock, 1, !Ref SubnetIPv4CidrBits]]
       Ipv6CidrBlock: !Select [0, !Cidr [!Select [0, !GetAtt VPC.Ipv6CidrBlocks], 1, !Ref SubnetIPv6CidrBits]]
       Tags:
-        - Key: Project
-          Value: Porter
+        - { Key: prx:meta:tagging-version, Value: "2021-04-07" }
+        - { Key: prx:cloudformation:stack-name, Value: !Ref AWS::StackName }
+        - { Key: prx:cloudformation:stack-id, Value: !Ref AWS::StackId }
+        - { Key: prx:ops:environment, Value: !Ref EnvironmentType }
+        - { Key: prx:dev:application, Value: Porter }
         - Key: Name
-          Value: !Sub ${AWS::StackName}-PublicSubnet1
-        - Key: prx:cloudformation:stack-name
-          Value: !Ref AWS::StackName
-        - Key: prx:cloudformation:stack-id
-          Value: !Ref AWS::StackId
+          Value:
+            Fn::Sub:
+              - ${AWS::StackName}_public-1_${ZoneName}
+              - ZoneName: !Select [0, !GetAZs ""]
       VpcId: !Ref VPC
   PublicSubnet1RouteTableAssociation:
     Type: AWS::EC2::SubnetRouteTableAssociation
@@ -637,14 +645,16 @@ Resources:
       CidrBlock: !Select [1, !Cidr [!GetAtt VPC.CidrBlock, 2, !Ref SubnetIPv4CidrBits]]
       Ipv6CidrBlock: !Select [1, !Cidr [!Select [0, !GetAtt VPC.Ipv6CidrBlocks], 2, !Ref SubnetIPv6CidrBits]]
       Tags:
-        - Key: Project
-          Value: Porter
+        - { Key: prx:meta:tagging-version, Value: "2021-04-07" }
+        - { Key: prx:cloudformation:stack-name, Value: !Ref AWS::StackName }
+        - { Key: prx:cloudformation:stack-id, Value: !Ref AWS::StackId }
+        - { Key: prx:ops:environment, Value: !Ref EnvironmentType }
+        - { Key: prx:dev:application, Value: Porter }
         - Key: Name
-          Value: !Sub ${AWS::StackName}-PublicSubnet2
-        - Key: prx:cloudformation:stack-name
-          Value: !Ref AWS::StackName
-        - Key: prx:cloudformation:stack-id
-          Value: !Ref AWS::StackId
+          Value:
+            Fn::Sub:
+              - ${AWS::StackName}_public-2_${ZoneName}
+              - ZoneName: !Select [1, !GetAZs ""]
       VpcId: !Ref VPC
   PublicSubnet2RouteTableAssociation:
     Type: AWS::EC2::SubnetRouteTableAssociation
@@ -656,14 +666,12 @@ Resources:
     Type: AWS::EC2::NetworkAcl
     Properties:
       Tags:
-        - Key: Project
-          Value: Porter
-        - Key: Name
-          Value: !Sub ${AWS::StackName}-PublicSubnetNetworkAcl
-        - Key: prx:cloudformation:stack-name
-          Value: !Ref AWS::StackName
-        - Key: prx:cloudformation:stack-id
-          Value: !Ref AWS::StackId
+        - { Key: Name, Value: !Sub "${AWS::StackName}_public" }
+        - { Key: prx:meta:tagging-version, Value: "2021-04-07" }
+        - { Key: prx:cloudformation:stack-name, Value: !Ref AWS::StackName }
+        - { Key: prx:cloudformation:stack-id, Value: !Ref AWS::StackId }
+        - { Key: prx:ops:environment, Value: !Ref EnvironmentType }
+        - { Key: prx:dev:application, Value: Porter }
       VpcId: !Ref VPC
   ##
   PublicSubnetIPv4AllowFtpControlConnectionOutboundTrafficNetworkAclEntry:
@@ -807,14 +815,12 @@ Resources:
     Properties:
       VpcId: !Ref VPC
       Tags:
-        - Key: Project
-          Value: Porter
-        - Key: Name
-          Value: !Sub ${AWS::StackName}-PrivateRouteTable
-        - Key: prx:cloudformation:stack-name
-          Value: !Ref AWS::StackName
-        - Key: prx:cloudformation:stack-id
-          Value: !Ref AWS::StackId
+        - { Key: Name, Value: !Sub "${AWS::StackName}_private" }
+        - { Key: prx:meta:tagging-version, Value: "2021-04-07" }
+        - { Key: prx:cloudformation:stack-name, Value: !Ref AWS::StackName }
+        - { Key: prx:cloudformation:stack-id, Value: !Ref AWS::StackId }
+        - { Key: prx:ops:environment, Value: !Ref EnvironmentType }
+        - { Key: prx:dev:application, Value: Porter }
   # Private subnets
   PrivateSubnet1:
     # DeletionPolicy: Retain
@@ -826,14 +832,16 @@ Resources:
       CidrBlock: !Select [2, !Cidr [!GetAtt VPC.CidrBlock, 3, !Ref SubnetIPv4CidrBits]]
       Ipv6CidrBlock: !Select [2, !Cidr [!Select [0, !GetAtt VPC.Ipv6CidrBlocks], 3, !Ref SubnetIPv6CidrBits]]
       Tags:
-        - Key: Project
-          Value: Porter
+        - { Key: prx:meta:tagging-version, Value: "2021-04-07" }
+        - { Key: prx:cloudformation:stack-name, Value: !Ref AWS::StackName }
+        - { Key: prx:cloudformation:stack-id, Value: !Ref AWS::StackId }
+        - { Key: prx:ops:environment, Value: !Ref EnvironmentType }
+        - { Key: prx:dev:application, Value: Porter }
         - Key: Name
-          Value: !Sub ${AWS::StackName}-PrivateSubnet1
-        - Key: prx:cloudformation:stack-name
-          Value: !Ref AWS::StackName
-        - Key: prx:cloudformation:stack-id
-          Value: !Ref AWS::StackId
+          Value:
+            Fn::Sub:
+              - ${AWS::StackName}_private-1_${ZoneName}
+              - ZoneName: !Select [0, !GetAZs ""]
       VpcId: !Ref VPC
   PrivateSubnet1RouteTableAssociation:
     Type: AWS::EC2::SubnetRouteTableAssociation
@@ -850,14 +858,16 @@ Resources:
       CidrBlock: !Select [3, !Cidr [!GetAtt VPC.CidrBlock, 4, !Ref SubnetIPv4CidrBits]]
       Ipv6CidrBlock: !Select [3, !Cidr [!Select [0, !GetAtt VPC.Ipv6CidrBlocks], 4, !Ref SubnetIPv6CidrBits]]
       Tags:
-        - Key: Project
-          Value: Porter
+        - { Key: prx:meta:tagging-version, Value: "2021-04-07" }
+        - { Key: prx:cloudformation:stack-name, Value: !Ref AWS::StackName }
+        - { Key: prx:cloudformation:stack-id, Value: !Ref AWS::StackId }
+        - { Key: prx:ops:environment, Value: !Ref EnvironmentType }
+        - { Key: prx:dev:application, Value: Porter }
         - Key: Name
-          Value: !Sub ${AWS::StackName}-PrivateSubnet2
-        - Key: prx:cloudformation:stack-name
-          Value: !Ref AWS::StackName
-        - Key: prx:cloudformation:stack-id
-          Value: !Ref AWS::StackId
+          Value:
+            Fn::Sub:
+              - ${AWS::StackName}_private-2_${ZoneName}
+              - ZoneName: !Select [0, !GetAZs ""]
       VpcId: !Ref VPC
   PrivateSubnet2RouteTableAssociation:
     Type: AWS::EC2::SubnetRouteTableAssociation
@@ -870,14 +880,12 @@ Resources:
     Type: AWS::EC2::NetworkAcl
     Properties:
       Tags:
-        - Key: Project
-          Value: Porter
-        - Key: Name
-          Value: !Sub ${AWS::StackName}-PrivateSubnetNetworkAcl
-        - Key: prx:cloudformation:stack-name
-          Value: !Ref AWS::StackName
-        - Key: prx:cloudformation:stack-id
-          Value: !Ref AWS::StackId
+        - { Key: Name, Value: !Sub "${AWS::StackName}_private" }
+        - { Key: prx:meta:tagging-version, Value: "2021-04-07" }
+        - { Key: prx:cloudformation:stack-name, Value: !Ref AWS::StackName }
+        - { Key: prx:cloudformation:stack-id, Value: !Ref AWS::StackId }
+        - { Key: prx:ops:environment, Value: !Ref EnvironmentType }
+        - { Key: prx:dev:application, Value: Porter }
       VpcId: !Ref VPC
   ##
   PrivateSubnetIPv4AllowAllInboundTrafficNetworkAclEntry:
@@ -940,14 +948,12 @@ Resources:
           FromPort: 443
           ToPort: 443
       Tags:
-        - Key: Project
-          Value: Porter
-        - Key: Name
-          Value: !Sub ${AWS::StackName}-EcsEndpointsSecurityGroup
-        - Key: prx:cloudformation:stack-name
-          Value: !Ref AWS::StackName
-        - Key: prx:cloudformation:stack-id
-          Value: !Ref AWS::StackId
+        - { Key: Name, Value: !Sub "${AWS::StackName}_vpce-interface" }
+        - { Key: prx:meta:tagging-version, Value: "2021-04-07" }
+        - { Key: prx:cloudformation:stack-name, Value: !Ref AWS::StackName }
+        - { Key: prx:cloudformation:stack-id, Value: !Ref AWS::StackId }
+        - { Key: prx:ops:environment, Value: !Ref EnvironmentType }
+        - { Key: prx:dev:application, Value: Porter }
   # Gateway VPC endpoints
   # https://docs.aws.amazon.com/vpc/latest/userguide/vpce-gateway.html
   S3VpcEndpoint:
@@ -1036,12 +1042,11 @@ Resources:
     Type: AWS::ECS::Cluster
     Properties:
       Tags:
-        - Key: Project
-          Value: Porter
-        - Key: prx:cloudformation:stack-name
-          Value: !Ref AWS::StackName
-        - Key: prx:cloudformation:stack-id
-          Value: !Ref AWS::StackId
+        - { Key: prx:meta:tagging-version, Value: "2021-04-07" }
+        - { Key: prx:cloudformation:stack-name, Value: !Ref AWS::StackName }
+        - { Key: prx:cloudformation:stack-id, Value: !Ref AWS::StackId }
+        - { Key: prx:ops:environment, Value: !Ref EnvironmentType }
+        - { Key: prx:dev:application, Value: Porter }
   # Transcode ECS Service
   TranscodeEcsTaskLogGroup:
     Type: AWS::Logs::LogGroup
@@ -1082,12 +1087,11 @@ Resources:
                 Resource: "*"
             Version: "2012-10-17"
       Tags:
-        - Key: Project
-          Value: Porter
-        - Key: prx:cloudformation:stack-name
-          Value: !Ref AWS::StackName
-        - Key: prx:cloudformation:stack-id
-          Value: !Ref AWS::StackId
+        - { Key: prx:meta:tagging-version, Value: "2021-04-07" }
+        - { Key: prx:cloudformation:stack-name, Value: !Ref AWS::StackName }
+        - { Key: prx:cloudformation:stack-id, Value: !Ref AWS::StackId }
+        - { Key: prx:ops:environment, Value: !Ref EnvironmentType }
+        - { Key: prx:dev:application, Value: Porter }
   TranscodeEcsTaskIamRole:
     Type: AWS::IAM::Role
     Properties:
@@ -1114,12 +1118,11 @@ Resources:
         # to read from
         - !Ref ArtifactBucketWriteAccessPolicy
       Tags:
-        - Key: Project
-          Value: Porter
-        - Key: prx:cloudformation:stack-name
-          Value: !Ref AWS::StackName
-        - Key: prx:cloudformation:stack-id
-          Value: !Ref AWS::StackId
+        - { Key: prx:meta:tagging-version, Value: "2021-04-07" }
+        - { Key: prx:cloudformation:stack-name, Value: !Ref AWS::StackName }
+        - { Key: prx:cloudformation:stack-id, Value: !Ref AWS::StackId }
+        - { Key: prx:ops:environment, Value: !Ref EnvironmentType }
+        - { Key: prx:dev:application, Value: Porter }
   TranscodeEcsTaskDefinition:
     Type: AWS::ECS::TaskDefinition
     Properties:
@@ -1140,12 +1143,11 @@ Resources:
       RequiresCompatibilities:
         - FARGATE
       Tags:
-        - Key: Project
-          Value: Porter
-        - Key: prx:cloudformation:stack-name
-          Value: !Ref AWS::StackName
-        - Key: prx:cloudformation:stack-id
-          Value: !Ref AWS::StackId
+        - { Key: prx:meta:tagging-version, Value: "2021-04-07" }
+        - { Key: prx:cloudformation:stack-name, Value: !Ref AWS::StackName }
+        - { Key: prx:cloudformation:stack-id, Value: !Ref AWS::StackId }
+        - { Key: prx:ops:environment, Value: !Ref EnvironmentType }
+        - { Key: prx:dev:application, Value: Porter }
       TaskRoleArn: !GetAtt TranscodeEcsTaskIamRole.Arn
   # FTP Copy ECS Service
   FtpCopyEcsTaskLogGroup:
@@ -1187,12 +1189,11 @@ Resources:
                 Resource: "*"
             Version: "2012-10-17"
       Tags:
-        - Key: Project
-          Value: Porter
-        - Key: prx:cloudformation:stack-name
-          Value: !Ref AWS::StackName
-        - Key: prx:cloudformation:stack-id
-          Value: !Ref AWS::StackId
+        - { Key: prx:meta:tagging-version, Value: "2021-04-07" }
+        - { Key: prx:cloudformation:stack-name, Value: !Ref AWS::StackName }
+        - { Key: prx:cloudformation:stack-id, Value: !Ref AWS::StackId }
+        - { Key: prx:ops:environment, Value: !Ref EnvironmentType }
+        - { Key: prx:dev:application, Value: Porter }
   FtpCopyEcsTaskIamRole:
     Type: AWS::IAM::Role
     Properties:
@@ -1230,12 +1231,11 @@ Resources:
         - !Ref ArtifactBucketReadOnlyAccessPolicy
         - !Ref ArtifactBucketWriteAccessPolicy
       Tags:
-        - Key: Project
-          Value: Porter
-        - Key: prx:cloudformation:stack-name
-          Value: !Ref AWS::StackName
-        - Key: prx:cloudformation:stack-id
-          Value: !Ref AWS::StackId
+        - { Key: prx:meta:tagging-version, Value: "2021-04-07" }
+        - { Key: prx:cloudformation:stack-name, Value: !Ref AWS::StackName }
+        - { Key: prx:cloudformation:stack-id, Value: !Ref AWS::StackId }
+        - { Key: prx:ops:environment, Value: !Ref EnvironmentType }
+        - { Key: prx:dev:application, Value: Porter }
   FtpCopyEcsTaskDefinition:
     Type: AWS::ECS::TaskDefinition
     Properties:
@@ -1256,12 +1256,11 @@ Resources:
       RequiresCompatibilities:
         - FARGATE
       Tags:
-        - Key: Project
-          Value: Porter
-        - Key: prx:cloudformation:stack-name
-          Value: !Ref AWS::StackName
-        - Key: prx:cloudformation:stack-id
-          Value: !Ref AWS::StackId
+        - { Key: prx:meta:tagging-version, Value: "2021-04-07" }
+        - { Key: prx:cloudformation:stack-name, Value: !Ref AWS::StackName }
+        - { Key: prx:cloudformation:stack-id, Value: !Ref AWS::StackId }
+        - { Key: prx:ops:environment, Value: !Ref EnvironmentType }
+        - { Key: prx:dev:application, Value: Porter }
       TaskRoleArn: !GetAtt FtpCopyEcsTaskIamRole.Arn
   # Artifact Bucket
   ArtifactBucket:
@@ -1279,12 +1278,11 @@ Resources:
         IgnorePublicAcls: true
         RestrictPublicBuckets: true
       Tags:
-        - Key: Project
-          Value: Porter
-        - Key: prx:cloudformation:stack-name
-          Value: !Ref AWS::StackName
-        - Key: prx:cloudformation:stack-id
-          Value: !Ref AWS::StackId
+        - { Key: prx:meta:tagging-version, Value: "2021-04-07" }
+        - { Key: prx:cloudformation:stack-name, Value: !Ref AWS::StackName }
+        - { Key: prx:cloudformation:stack-id, Value: !Ref AWS::StackId }
+        - { Key: prx:ops:environment, Value: !Ref EnvironmentType }
+        - { Key: prx:dev:application, Value: Porter }
   # Lambda Layers
   AwsSdkLambdaLayer:
     Type: AWS::Serverless::LayerVersion
@@ -1375,9 +1373,11 @@ Resources:
           Version: "2012-10-17"
       Runtime: nodejs14.x
       Tags:
-        Project: Porter
+        prx:meta:tagging-version: "2021-04-07"
         prx:cloudformation:stack-name: !Ref AWS::StackName
         prx:cloudformation:stack-id: !Ref AWS::StackId
+        prx:ops:environment: !Ref EnvironmentType
+        prx:dev:application: Porter
       Timeout: 4
       Tracing: Active
   NormalizeInputLambdaLogGroup:
@@ -1414,12 +1414,11 @@ Resources:
                 Resource: "*"
             Version: "2012-10-17"
       Tags:
-        - Key: Project
-          Value: Porter
-        - Key: prx:cloudformation:stack-name
-          Value: !Ref AWS::StackName
-        - Key: prx:cloudformation:stack-id
-          Value: !Ref AWS::StackId
+        - { Key: prx:meta:tagging-version, Value: "2021-04-07" }
+        - { Key: prx:cloudformation:stack-name, Value: !Ref AWS::StackName }
+        - { Key: prx:cloudformation:stack-id, Value: !Ref AWS::StackId }
+        - { Key: prx:ops:environment, Value: !Ref EnvironmentType }
+        - { Key: prx:dev:application, Value: Porter }
   IngestLambdaFunction:
     Type: AWS::Serverless::Function
     Properties:
@@ -1437,9 +1436,11 @@ Resources:
       Role: !GetAtt IngestLambdaIamRole.Arn
       Runtime: nodejs14.x
       Tags:
-        Project: Porter
+        prx:meta:tagging-version: "2021-04-07"
         prx:cloudformation:stack-name: !Ref AWS::StackName
         prx:cloudformation:stack-id: !Ref AWS::StackId
+        prx:ops:environment: !Ref EnvironmentType
+        prx:dev:application: Porter
       Timeout: 90
       Tracing: Active
   IngestLambdaLogGroup:
@@ -1491,9 +1492,11 @@ Resources:
         - !Ref ArtifactBucketReadOnlyAccessPolicy
       Runtime: nodejs14.x
       Tags:
-        Project: Porter
+        prx:meta:tagging-version: "2021-04-07"
         prx:cloudformation:stack-name: !Ref AWS::StackName
         prx:cloudformation:stack-id: !Ref AWS::StackId
+        prx:ops:environment: !Ref EnvironmentType
+        prx:dev:application: Porter
       Timeout: 8
       Tracing: Active
   SourceTypeLambdaLogGroup:
@@ -1519,9 +1522,11 @@ Resources:
         - !Ref ArtifactBucketReadOnlyAccessPolicy
       Runtime: nodejs14.x
       Tags:
-        Project: Porter
+        prx:meta:tagging-version: "2021-04-07"
         prx:cloudformation:stack-name: !Ref AWS::StackName
         prx:cloudformation:stack-id: !Ref AWS::StackId
+        prx:ops:environment: !Ref EnvironmentType
+        prx:dev:application: Porter
       Timeout: 900
       Tracing: Active
   InspectMediaLambdaLogGroup:
@@ -1546,12 +1551,11 @@ Resources:
         - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
         - arn:aws:iam::aws:policy/AWSXrayWriteOnlyAccess
       Tags:
-        - Key: Project
-          Value: Porter
-        - Key: prx:cloudformation:stack-name
-          Value: !Ref AWS::StackName
-        - Key: prx:cloudformation:stack-id
-          Value: !Ref AWS::StackId
+        - { Key: prx:meta:tagging-version, Value: "2021-04-07" }
+        - { Key: prx:cloudformation:stack-name, Value: !Ref AWS::StackName }
+        - { Key: prx:cloudformation:stack-id, Value: !Ref AWS::StackId }
+        - { Key: prx:ops:environment, Value: !Ref EnvironmentType }
+        - { Key: prx:dev:application, Value: Porter }
   CopyLambdaFunction:
     Type: AWS::Serverless::Function
     Properties:
@@ -1568,9 +1572,11 @@ Resources:
       Role: !GetAtt CopyLambdaIamRole.Arn
       Runtime: nodejs14.x
       Tags:
-        Project: Porter
+        prx:meta:tagging-version: "2021-04-07"
         prx:cloudformation:stack-name: !Ref AWS::StackName
         prx:cloudformation:stack-id: !Ref AWS::StackId
+        prx:ops:environment: !Ref EnvironmentType
+        prx:dev:application: Porter
       Timeout: 32
       Tracing: Active
   CopyLambdaLogGroup:
@@ -1593,9 +1599,11 @@ Resources:
         - !Ref ArtifactBucketReadOnlyAccessPolicy
       Runtime: nodejs14.x
       Tags:
-        Project: Porter
+        prx:meta:tagging-version: "2021-04-07"
         prx:cloudformation:stack-name: !Ref AWS::StackName
         prx:cloudformation:stack-id: !Ref AWS::StackId
+        prx:ops:environment: !Ref EnvironmentType
+        prx:dev:application: Porter
       Timeout: 4
       Tracing: Active
   FtpCopyTaskOutputLambdaLogGroup:
@@ -1639,9 +1647,11 @@ Resources:
         - !Ref ArtifactBucketReadOnlyAccessPolicy
       Runtime: nodejs14.x
       Tags:
-        Project: Porter
+        prx:meta:tagging-version: "2021-04-07"
         prx:cloudformation:stack-name: !Ref AWS::StackName
         prx:cloudformation:stack-id: !Ref AWS::StackId
+        prx:ops:environment: !Ref EnvironmentType
+        prx:dev:application: Porter
       Timeout: 4
       Tracing: Active
   TranscodeTaskOutputLambdaLogGroup:
@@ -1684,12 +1694,11 @@ Resources:
         - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
         - arn:aws:iam::aws:policy/AWSXrayWriteOnlyAccess
       Tags:
-        - Key: Project
-          Value: Porter
-        - Key: prx:cloudformation:stack-name
-          Value: !Ref AWS::StackName
-        - Key: prx:cloudformation:stack-id
-          Value: !Ref AWS::StackId
+        - { Key: prx:meta:tagging-version, Value: "2021-04-07" }
+        - { Key: prx:cloudformation:stack-name, Value: !Ref AWS::StackName }
+        - { Key: prx:cloudformation:stack-id, Value: !Ref AWS::StackId }
+        - { Key: prx:ops:environment, Value: !Ref EnvironmentType }
+        - { Key: prx:dev:application, Value: Porter }
   ImageTransformLambdaFunction:
     Type: AWS::Serverless::Function
     Properties:
@@ -1707,9 +1716,11 @@ Resources:
       Role: !GetAtt ImageTransformLambdaIamRole.Arn
       Runtime: nodejs14.x
       Tags:
-        Project: Porter
+        prx:meta:tagging-version: "2021-04-07"
         prx:cloudformation:stack-name: !Ref AWS::StackName
         prx:cloudformation:stack-id: !Ref AWS::StackId
+        prx:ops:environment: !Ref EnvironmentType
+        prx:dev:application: Porter
       Timeout: 16
       Tracing: Active
   ImageTransformLambdaLogGroup:
@@ -1733,12 +1744,11 @@ Resources:
         - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
         - arn:aws:iam::aws:policy/AWSXrayWriteOnlyAccess
       Tags:
-        - Key: Project
-          Value: Porter
-        - Key: prx:cloudformation:stack-name
-          Value: !Ref AWS::StackName
-        - Key: prx:cloudformation:stack-id
-          Value: !Ref AWS::StackId
+        - { Key: prx:meta:tagging-version, Value: "2021-04-07" }
+        - { Key: prx:cloudformation:stack-name, Value: !Ref AWS::StackName }
+        - { Key: prx:cloudformation:stack-id, Value: !Ref AWS::StackId }
+        - { Key: prx:ops:environment, Value: !Ref EnvironmentType }
+        - { Key: prx:dev:application, Value: Porter }
   WavWrapLambdaFunction:
     Type: AWS::Serverless::Function
     Properties:
@@ -1756,9 +1766,11 @@ Resources:
       Role: !GetAtt WavWrapLambdaIamRole.Arn
       Runtime: nodejs14.x
       Tags:
-        Project: Porter
+        prx:meta:tagging-version: "2021-04-07"
         prx:cloudformation:stack-name: !Ref AWS::StackName
         prx:cloudformation:stack-id: !Ref AWS::StackId
+        prx:ops:environment: !Ref EnvironmentType
+        prx:dev:application: Porter
       Timeout: 900
       Tracing: Active
   WavWrapLambdaLogGroup:
@@ -1796,9 +1808,11 @@ Resources:
           Version: "2012-10-17"
       Runtime: nodejs14.x
       Tags:
-        Project: Porter
+        prx:meta:tagging-version: "2021-04-07"
         prx:cloudformation:stack-name: !Ref AWS::StackName
         prx:cloudformation:stack-id: !Ref AWS::StackId
+        prx:ops:environment: !Ref EnvironmentType
+        prx:dev:application: Porter
       Timeout: 4
       Tracing: Active
   TranscriptionJobStartLambdaLogGroup:
@@ -1830,12 +1844,11 @@ Resources:
                 Resource: "*"
             Version: "2012-10-17"
       Tags:
-        - Key: Project
-          Value: Porter
-        - Key: prx:cloudformation:stack-name
-          Value: !Ref AWS::StackName
-        - Key: prx:cloudformation:stack-id
-          Value: !Ref AWS::StackId
+        - { Key: prx:meta:tagging-version, Value: "2021-04-07" }
+        - { Key: prx:cloudformation:stack-name, Value: !Ref AWS::StackName }
+        - { Key: prx:cloudformation:stack-id, Value: !Ref AWS::StackId }
+        - { Key: prx:ops:environment, Value: !Ref EnvironmentType }
+        - { Key: prx:dev:application, Value: Porter }
   TranscriptionJobResultsLambdaFunction:
     Type: AWS::Serverless::Function
     Properties:
@@ -1852,9 +1865,11 @@ Resources:
       Role: !GetAtt TranscriptionJobResultsLambdaIamRole.Arn
       Runtime: nodejs14.x
       Tags:
-        Project: Porter
+        prx:meta:tagging-version: "2021-04-07"
         prx:cloudformation:stack-name: !Ref AWS::StackName
         prx:cloudformation:stack-id: !Ref AWS::StackId
+        prx:ops:environment: !Ref EnvironmentType
+        prx:dev:application: Porter
       Timeout: 8
       Tracing: Active
   TranscriptionJobResultsLambdaLogGroup:
@@ -1902,12 +1917,11 @@ Resources:
                 Resource: "*"
             Version: "2012-10-17"
       Tags:
-        - Key: Project
-          Value: Porter
-        - Key: prx:cloudformation:stack-name
-          Value: !Ref AWS::StackName
-        - Key: prx:cloudformation:stack-id
-          Value: !Ref AWS::StackId
+        - { Key: prx:meta:tagging-version, Value: "2021-04-07" }
+        - { Key: prx:cloudformation:stack-name, Value: !Ref AWS::StackName }
+        - { Key: prx:cloudformation:stack-id, Value: !Ref AWS::StackId }
+        - { Key: prx:ops:environment, Value: !Ref EnvironmentType }
+        - { Key: prx:dev:application, Value: Porter }
   CallbackLambdaFunction:
     Type: AWS::Serverless::Function
     Properties:
@@ -1925,9 +1939,11 @@ Resources:
       Role: !GetAtt CallbackLambdaIamRole.Arn
       Runtime: nodejs14.x
       Tags:
-        Project: Porter
+        prx:meta:tagging-version: "2021-04-07"
         prx:cloudformation:stack-name: !Ref AWS::StackName
         prx:cloudformation:stack-id: !Ref AWS::StackId
+        prx:ops:environment: !Ref EnvironmentType
+        prx:dev:application: Porter
       Timeout: 4
       Tracing: Active
   CallbackLambdaLogGroup:
@@ -1957,9 +1973,11 @@ Resources:
           Version: "2012-10-17"
       Runtime: nodejs14.x
       Tags:
-        Project: Porter
+        prx:meta:tagging-version: "2021-04-07"
         prx:cloudformation:stack-name: !Ref AWS::StackName
         prx:cloudformation:stack-id: !Ref AWS::StackId
+        prx:ops:environment: !Ref EnvironmentType
+        prx:dev:application: Porter
       Timeout: 4
       Tracing: Active
   JobSerializerLambdaLogGroup:
@@ -1986,9 +2004,11 @@ Resources:
           Version: "2012-10-17"
       Runtime: nodejs14.x
       Tags:
-        Project: Porter
+        prx:meta:tagging-version: "2021-04-07"
         prx:cloudformation:stack-name: !Ref AWS::StackName
         prx:cloudformation:stack-id: !Ref AWS::StackId
+        prx:ops:environment: !Ref EnvironmentType
+        prx:dev:application: Porter
       Timeout: 4
       Tracing: Active
   NormalizeOutputLambdaLogGroup:
@@ -2081,12 +2101,11 @@ Resources:
                 Resource: !Sub arn:aws:events:${AWS::Region}:${AWS::AccountId}:rule/StepFunctionsGetEventsForECSTaskRule
             Version: "2012-10-17"
       Tags:
-        - Key: Project
-          Value: Porter
-        - Key: prx:cloudformation:stack-name
-          Value: !Ref AWS::StackName
-        - Key: prx:cloudformation:stack-id
-          Value: !Ref AWS::StackId
+        - { Key: prx:meta:tagging-version, Value: "2021-04-07" }
+        - { Key: prx:cloudformation:stack-name, Value: !Ref AWS::StackName }
+        - { Key: prx:cloudformation:stack-id, Value: !Ref AWS::StackId }
+        - { Key: prx:ops:environment, Value: !Ref EnvironmentType }
+        - { Key: prx:dev:application, Value: Porter }
   StateMachine:
     Type: AWS::Serverless::StateMachine
     Properties:
@@ -2120,9 +2139,11 @@ Resources:
       DefinitionUri: state-machine.asl.yml
       Role: !GetAtt StateMachineIamRole.Arn
       Tags:
-        Project: Porter
+        prx:meta:tagging-version: "2021-04-07"
         prx:cloudformation:stack-name: !Ref AWS::StackName
         prx:cloudformation:stack-id: !Ref AWS::StackId
+        prx:ops:environment: !Ref EnvironmentType
+        prx:dev:application: Porter
   StateMachineTimedOutAlarm:
     Type: AWS::CloudWatch::Alarm
     Properties:
