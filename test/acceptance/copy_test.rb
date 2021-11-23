@@ -19,7 +19,7 @@ describe :porter do
                                                   Id: 'porter-test-copy-http-spaces-to-spaces',
                                                   Source: {
                                                     Mode: 'HTTP',
-                                                    URL: 'https://dovetail-cdn-staging.prxu.org/test_feeder/WbkcIwpHg63xyeokAqCnDex5swtA5oQPbZctDdAQKZI/input file with spaces.mp3'
+                                                    URL: 'https://dovetail.prxu.org/152/245d0fe2-4171-4ebf-bea3-69deff3e9336/input file with spaces.mp3'
                                                   },
                                                   Tasks: [
                                                     {
@@ -68,7 +68,7 @@ describe :porter do
                                                   Id: 'porter-test-copy-http-encoded-spaces-to-spaces',
                                                   Source: {
                                                     Mode: 'HTTP',
-                                                    URL: 'https://dovetail-cdn-staging.prxu.org/test_feeder/WbkcIwpHg63xyeokAqCnDex5swtA5oQPbZctDdAQKZI/input%20file%20with%20spaces.mp3'
+                                                    URL: 'https://dovetail.prxu.org/152/245d0fe2-4171-4ebf-bea3-69deff3e9336/input%20file%20with%20spaces.mp3'
                                                   },
                                                   Tasks: [
                                                     {
@@ -117,7 +117,7 @@ describe :porter do
                                                   Id: 'porter-test-copy-http-plus-to-spaces',
                                                   Source: {
                                                     Mode: 'HTTP',
-                                                    URL: 'https://dovetail-cdn-staging.prxu.org/test_feeder/WbkcIwpHg63xyeokAqCnDex5swtA5oQPbZctDdAQKZI/input+file+with+spaces.mp3'
+                                                    URL: 'https://dovetail.prxu.org/152/245d0fe2-4171-4ebf-bea3-69deff3e9336/input+file+with+spaces.mp3'
                                                   },
                                                   Tasks: [
                                                     {
@@ -166,7 +166,7 @@ describe :porter do
                                                   Id: 'porter-test-copy-http-encoded-plus-to-spaces',
                                                   Source: {
                                                     Mode: 'HTTP',
-                                                    URL: 'https://dovetail-cdn-staging.prxu.org/test_feeder/WbkcIwpHg63xyeokAqCnDex5swtA5oQPbZctDdAQKZI/input%2Bfile%2Bwith%2Bspaces.mp3'
+                                                    URL: 'https://dovetail.prxu.org/152/245d0fe2-4171-4ebf-bea3-69deff3e9336/input%2Bfile%2Bwith%2Bspaces.mp3'
                                                   },
                                                   Tasks: [
                                                     {
@@ -215,7 +215,7 @@ describe :porter do
                                                   Id: 'porter-test-copy-http-encoded-percent-to-spaces',
                                                   Source: {
                                                     Mode: 'HTTP',
-                                                    URL: 'https://dovetail-cdn-staging.prxu.org/test_feeder/WbkcIwpHg63xyeokAqCnDex5swtA5oQPbZctDdAQKZI/input%25file%25with%25spaces.mp3'
+                                                    URL: 'https://dovetail.prxu.org/152/245d0fe2-4171-4ebf-bea3-69deff3e9336/input%25file%25with%25spaces.mp3'
                                                   },
                                                   Tasks: [
                                                     {
@@ -266,7 +266,7 @@ describe :porter do
                                                   Id: 'porter-test-copy-http-spaces-to-plus',
                                                   Source: {
                                                     Mode: 'HTTP',
-                                                    URL: 'https://dovetail-cdn-staging.prxu.org/test_feeder/WbkcIwpHg63xyeokAqCnDex5swtA5oQPbZctDdAQKZI/input file with spaces.mp3'
+                                                    URL: 'https://dovetail.prxu.org/152/245d0fe2-4171-4ebf-bea3-69deff3e9336/input file with spaces.mp3'
                                                   },
                                                   Tasks: [
                                                     {
@@ -315,7 +315,7 @@ describe :porter do
                                                   Id: 'porter-test-copy-http-encoded-spaces-to-plus',
                                                   Source: {
                                                     Mode: 'HTTP',
-                                                    URL: 'https://dovetail-cdn-staging.prxu.org/test_feeder/WbkcIwpHg63xyeokAqCnDex5swtA5oQPbZctDdAQKZI/input%20file%20with%20spaces.mp3'
+                                                    URL: 'https://dovetail.prxu.org/152/245d0fe2-4171-4ebf-bea3-69deff3e9336/input%20file%20with%20spaces.mp3'
                                                   },
                                                   Tasks: [
                                                     {
@@ -364,7 +364,7 @@ describe :porter do
                                                   Id: 'porter-test-copy-http-plus-to-plus',
                                                   Source: {
                                                     Mode: 'HTTP',
-                                                    URL: 'https://dovetail-cdn-staging.prxu.org/test_feeder/WbkcIwpHg63xyeokAqCnDex5swtA5oQPbZctDdAQKZI/input+file+with+spaces.mp3'
+                                                    URL: 'https://dovetail.prxu.org/152/245d0fe2-4171-4ebf-bea3-69deff3e9336/input+file+with+spaces.mp3'
                                                   },
                                                   Tasks: [
                                                     {
@@ -413,7 +413,7 @@ describe :porter do
                                                   Id: 'porter-test-copy-http-encoded-plus-to-plus',
                                                   Source: {
                                                     Mode: 'HTTP',
-                                                    URL: 'https://dovetail-cdn-staging.prxu.org/test_feeder/WbkcIwpHg63xyeokAqCnDex5swtA5oQPbZctDdAQKZI/input%2Bfile%2Bwith%2Bspaces.mp3'
+                                                    URL: 'https://dovetail.prxu.org/152/245d0fe2-4171-4ebf-bea3-69deff3e9336/input%2Bfile%2Bwith%2Bspaces.mp3'
                                                   },
                                                   Tasks: [
                                                     {
@@ -462,7 +462,7 @@ describe :porter do
                                                   Id: 'porter-test-copy-http-encoded-percent-to-plus',
                                                   Source: {
                                                     Mode: 'HTTP',
-                                                    URL: 'https://dovetail-cdn-staging.prxu.org/test_feeder/WbkcIwpHg63xyeokAqCnDex5swtA5oQPbZctDdAQKZI/input%25file%25with%25spaces.mp3'
+                                                    URL: 'https://dovetail.prxu.org/152/245d0fe2-4171-4ebf-bea3-69deff3e9336/input%25file%25with%25spaces.mp3'
                                                   },
                                                   Tasks: [
                                                     {
