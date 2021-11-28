@@ -255,6 +255,7 @@ States:
                 Subnets:
                   - "${VpcPublicSubnet1}"
                   - "${VpcPublicSubnet2}"
+            PropagateTags: TASK_DEFINITION
             TaskDefinition: "${FtpCopyEcsTaskDefinitionArn}"
           ResultPath: "$.Void"
           OutputPath: "$"
@@ -348,6 +349,7 @@ States:
                 Subnets:
                   - "${VpcPrivateSubnet1}"
                   - "${VpcPrivateSubnet2}"
+            PropagateTags: TASK_DEFINITION
             TaskDefinition: "${TranscodeEcsTaskDefinitionArn}"
           ResultPath: "$.Void"
           OutputPath: "$"
