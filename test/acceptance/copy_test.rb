@@ -215,7 +215,7 @@ describe :porter do
                                                   Id: 'porter-test-copy-http-encoded-percent-to-spaces',
                                                   Source: {
                                                     Mode: 'HTTP',
-                                                    URL: 'https://dovetail.prxu.org/152/245d0fe2-4171-4ebf-bea3-69deff3e9336/input%25file%25with%25spaces.mp3'
+                                                    URL: 'https://placeimg.com/5/5/input%25file%25with%25spaces'
                                                   },
                                                   Tasks: [
                                                     {
@@ -462,7 +462,7 @@ describe :porter do
                                                   Id: 'porter-test-copy-http-encoded-percent-to-plus',
                                                   Source: {
                                                     Mode: 'HTTP',
-                                                    URL: 'https://dovetail.prxu.org/152/245d0fe2-4171-4ebf-bea3-69deff3e9336/input%25file%25with%25spaces.mp3'
+                                                    URL: 'https://placeimg.com/5/5/input%25file%25with%25spaces'
                                                   },
                                                   Tasks: [
                                                     {
