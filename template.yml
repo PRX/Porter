@@ -981,10 +981,6 @@ Resources:
                   - ecr:BatchCheckLayerAvailability
                   - ecr:GetDownloadUrlForLayer
                   - ecr:BatchGetImage
-                Condition:
-                  StringEquals:
-                    aws:sourceVpce: !Ref EcrVpcEndpoint
-                    aws:sourceVpc: !Ref VPC
                 Effect: Allow
                 Resource: "*"
             Version: "2012-10-17"
@@ -1083,10 +1079,6 @@ Resources:
                   - ecr:BatchCheckLayerAvailability
                   - ecr:GetDownloadUrlForLayer
                   - ecr:BatchGetImage
-                Condition:
-                  StringEquals:
-                    aws:sourceVpce: !Ref EcrVpcEndpoint
-                    aws:sourceVpc: !Ref VPC
                 Effect: Allow
                 Resource: "*"
             Version: "2012-10-17"
