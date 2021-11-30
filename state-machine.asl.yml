@@ -347,8 +347,8 @@ States:
               AwsvpcConfiguration:
                 AssignPublicIp: ENABLED
                 Subnets:
-                  - "${VpcPrivateSubnet1}"
-                  - "${VpcPrivateSubnet2}"
+                  - "${VpcPublicSubnet1}"
+                  - "${VpcPublicSubnet2}"
             PropagateTags: TASK_DEFINITION
             TaskDefinition: "${TranscodeEcsTaskDefinitionArn}"
           ResultPath: "$.Void"

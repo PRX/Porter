@@ -2133,8 +2133,6 @@ Resources:
         TranscriptionJobStartLambdaFunctionArn: !GetAtt TranscriptionJobStartLambdaFunction.Arn
         VpcPublicSubnet1: !Ref PublicSubnet1
         VpcPublicSubnet2: !Ref PublicSubnet2
-        VpcPrivateSubnet1: !Ref PrivateSubnet1
-        VpcPrivateSubnet2: !Ref PrivateSubnet2
         WavWrapLambdaFunctionArn: !GetAtt WavWrapLambdaFunction.Arn
       DefinitionUri: state-machine.asl.yml
       Role: !GetAtt StateMachineIamRole.Arn
