@@ -1148,9 +1148,12 @@ Resources:
     Metadata:
       BuildMethod: makefile
     Properties:
-      ContentUri: layers/aws-sdk
+      CompatibleArchitectures:
+        - x86_64
+        - arm64
       CompatibleRuntimes:
         - nodejs14.x
+      ContentUri: layers/aws-sdk
       Description: aws-sdk NPM module
       RetentionPolicy: Delete
   AwsXraySdkLambdaLayer:
@@ -1158,9 +1161,12 @@ Resources:
     Metadata:
       BuildMethod: makefile
     Properties:
-      ContentUri: layers/aws-xray-sdk
+      CompatibleArchitectures:
+        - x86_64
+        - arm64
       CompatibleRuntimes:
         - nodejs14.x
+      ContentUri: layers/aws-xray-sdk
       Description: aws-xray NPM module
       RetentionPolicy: Delete
   FileTypeLambdaLayer:
@@ -1168,9 +1174,12 @@ Resources:
     Metadata:
       BuildMethod: makefile
     Properties:
-      ContentUri: layers/file-type
+      CompatibleArchitectures:
+        - x86_64
+        - arm64
       CompatibleRuntimes:
         - nodejs14.x
+      ContentUri: layers/file-type
       Description: file-type NPM module
       RetentionPolicy: Delete
   SharpLambdaLayer:
@@ -1188,10 +1197,13 @@ Resources:
     Metadata:
       BuildMethod: makefile
     Properties:
-      Description: wavefile NPM module
-      ContentUri: layers/wavefile
+      CompatibleArchitectures:
+        - x86_64
+        - arm64
       CompatibleRuntimes:
         - nodejs14.x
+      ContentUri: layers/wavefile
+      Description: wavefile NPM module
       RetentionPolicy: Delete
   FfmpegLambdaLayer:
     Type: AWS::Serverless::LayerVersion
