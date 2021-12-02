@@ -306,6 +306,12 @@ Resources:
     Properties:
       LogGroupName: !Sub /aws/lambda/${JobExecutionSqsQueueLambdaFunction}
       RetentionInDays: 30
+      Tags:
+        - { Key: prx:meta:tagging-version, Value: "2021-04-07" }
+        - { Key: prx:cloudformation:stack-name, Value: !Ref AWS::StackName }
+        - { Key: prx:cloudformation:stack-id, Value: !Ref AWS::StackId }
+        - { Key: prx:ops:environment, Value: !Ref EnvironmentType }
+        - { Key: prx:dev:application, Value: Porter }
   JobExecutionSqsQueueLambdaErrorAlarm:
     Type: AWS::CloudWatch::Alarm
     Condition: CreateProductionResources
@@ -444,6 +450,12 @@ Resources:
     Properties:
       LogGroupName: !Sub /aws/lambda/${TranscriptionJobStateChangeLambdaFunction}
       RetentionInDays: 30
+      Tags:
+        - { Key: prx:meta:tagging-version, Value: "2021-04-07" }
+        - { Key: prx:cloudformation:stack-name, Value: !Ref AWS::StackName }
+        - { Key: prx:cloudformation:stack-id, Value: !Ref AWS::StackId }
+        - { Key: prx:ops:environment, Value: !Ref EnvironmentType }
+        - { Key: prx:dev:application, Value: Porter }
   TranscriptionJobStateChangeLambdaErrorAlarm:
     Type: AWS::CloudWatch::Alarm
     Condition: CreateProductionResources
@@ -931,6 +943,12 @@ Resources:
     Type: AWS::Logs::LogGroup
     Properties:
       RetentionInDays: 14
+      Tags:
+        - { Key: prx:meta:tagging-version, Value: "2021-04-07" }
+        - { Key: prx:cloudformation:stack-name, Value: !Ref AWS::StackName }
+        - { Key: prx:cloudformation:stack-id, Value: !Ref AWS::StackId }
+        - { Key: prx:ops:environment, Value: !Ref EnvironmentType }
+        - { Key: prx:dev:application, Value: Porter }
   TranscodeEcsTaskExecutionIamRole:
     Type: AWS::IAM::Role
     Properties:
@@ -1029,6 +1047,12 @@ Resources:
     Type: AWS::Logs::LogGroup
     Properties:
       RetentionInDays: 14
+      Tags:
+        - { Key: prx:meta:tagging-version, Value: "2021-04-07" }
+        - { Key: prx:cloudformation:stack-name, Value: !Ref AWS::StackName }
+        - { Key: prx:cloudformation:stack-id, Value: !Ref AWS::StackId }
+        - { Key: prx:ops:environment, Value: !Ref EnvironmentType }
+        - { Key: prx:dev:application, Value: Porter }
   FtpCopyEcsTaskExecutionIamRole:
     Type: AWS::IAM::Role
     Properties:
@@ -1256,6 +1280,12 @@ Resources:
     Properties:
       LogGroupName: !Sub /aws/lambda/${NormalizeInputLambdaFunction}
       RetentionInDays: 30
+      Tags:
+        - { Key: prx:meta:tagging-version, Value: "2021-04-07" }
+        - { Key: prx:cloudformation:stack-name, Value: !Ref AWS::StackName }
+        - { Key: prx:cloudformation:stack-id, Value: !Ref AWS::StackId }
+        - { Key: prx:ops:environment, Value: !Ref EnvironmentType }
+        - { Key: prx:dev:application, Value: Porter }
   # Ingest Lambda
   IngestLambdaIamRole:
     # This role is granted read-only access by users to S3 buckets in order to
@@ -1319,6 +1349,12 @@ Resources:
     Properties:
       LogGroupName: !Sub /aws/lambda/${IngestLambdaFunction}
       RetentionInDays: 30
+      Tags:
+        - { Key: prx:meta:tagging-version, Value: "2021-04-07" }
+        - { Key: prx:cloudformation:stack-name, Value: !Ref AWS::StackName }
+        - { Key: prx:cloudformation:stack-id, Value: !Ref AWS::StackId }
+        - { Key: prx:ops:environment, Value: !Ref EnvironmentType }
+        - { Key: prx:dev:application, Value: Porter }
   IngestLambdaErrorAlarm:
     Type: AWS::CloudWatch::Alarm
     Condition: CreateProductionResources
@@ -1375,6 +1411,12 @@ Resources:
     Properties:
       LogGroupName: !Sub /aws/lambda/${SourceTypeLambdaFunction}
       RetentionInDays: 30
+      Tags:
+        - { Key: prx:meta:tagging-version, Value: "2021-04-07" }
+        - { Key: prx:cloudformation:stack-name, Value: !Ref AWS::StackName }
+        - { Key: prx:cloudformation:stack-id, Value: !Ref AWS::StackId }
+        - { Key: prx:ops:environment, Value: !Ref EnvironmentType }
+        - { Key: prx:dev:application, Value: Porter }
   # Inspect Lambda
   InspectMediaLambdaFunction:
     Type: AWS::Serverless::Function
@@ -1405,6 +1447,12 @@ Resources:
     Properties:
       LogGroupName: !Sub /aws/lambda/${InspectMediaLambdaFunction}
       RetentionInDays: 30
+      Tags:
+        - { Key: prx:meta:tagging-version, Value: "2021-04-07" }
+        - { Key: prx:cloudformation:stack-name, Value: !Ref AWS::StackName }
+        - { Key: prx:cloudformation:stack-id, Value: !Ref AWS::StackId }
+        - { Key: prx:ops:environment, Value: !Ref EnvironmentType }
+        - { Key: prx:dev:application, Value: Porter }
   # Copy Lambda
   CopyLambdaIamRole:
     Type: AWS::IAM::Role
@@ -1455,6 +1503,12 @@ Resources:
     Properties:
       LogGroupName: !Sub /aws/lambda/${CopyLambdaFunction}
       RetentionInDays: 30
+      Tags:
+        - { Key: prx:meta:tagging-version, Value: "2021-04-07" }
+        - { Key: prx:cloudformation:stack-name, Value: !Ref AWS::StackName }
+        - { Key: prx:cloudformation:stack-id, Value: !Ref AWS::StackId }
+        - { Key: prx:ops:environment, Value: !Ref EnvironmentType }
+        - { Key: prx:dev:application, Value: Porter }
   # FTP Copy Output Lambda
   FtpCopyTaskOutputLambdaFunction:
     Type: AWS::Serverless::Function
@@ -1482,6 +1536,12 @@ Resources:
     Properties:
       LogGroupName: !Sub /aws/lambda/${FtpCopyTaskOutputLambdaFunction}
       RetentionInDays: 30
+      Tags:
+        - { Key: prx:meta:tagging-version, Value: "2021-04-07" }
+        - { Key: prx:cloudformation:stack-name, Value: !Ref AWS::StackName }
+        - { Key: prx:cloudformation:stack-id, Value: !Ref AWS::StackId }
+        - { Key: prx:ops:environment, Value: !Ref EnvironmentType }
+        - { Key: prx:dev:application, Value: Porter }
   FtpCopyTaskOutputLambdaErrorAlarm:
     Type: AWS::CloudWatch::Alarm
     Condition: CreateProductionResources
@@ -1530,6 +1590,12 @@ Resources:
     Properties:
       LogGroupName: !Sub /aws/lambda/${TranscodeTaskOutputLambdaFunction}
       RetentionInDays: 30
+      Tags:
+        - { Key: prx:meta:tagging-version, Value: "2021-04-07" }
+        - { Key: prx:cloudformation:stack-name, Value: !Ref AWS::StackName }
+        - { Key: prx:cloudformation:stack-id, Value: !Ref AWS::StackId }
+        - { Key: prx:ops:environment, Value: !Ref EnvironmentType }
+        - { Key: prx:dev:application, Value: Porter }
   TranscodeTaskOutputLambdaErrorAlarm:
     Type: AWS::CloudWatch::Alarm
     Condition: CreateProductionResources
@@ -1599,6 +1665,12 @@ Resources:
     Properties:
       LogGroupName: !Sub /aws/lambda/${ImageTransformLambdaFunction}
       RetentionInDays: 30
+      Tags:
+        - { Key: prx:meta:tagging-version, Value: "2021-04-07" }
+        - { Key: prx:cloudformation:stack-name, Value: !Ref AWS::StackName }
+        - { Key: prx:cloudformation:stack-id, Value: !Ref AWS::StackId }
+        - { Key: prx:ops:environment, Value: !Ref EnvironmentType }
+        - { Key: prx:dev:application, Value: Porter }
   # WAV Wrap Lambda
   WavWrapLambdaIamRole:
     Type: AWS::IAM::Role
@@ -1649,6 +1721,12 @@ Resources:
     Properties:
       LogGroupName: !Sub /aws/lambda/${WavWrapLambdaFunction}
       RetentionInDays: 30
+      Tags:
+        - { Key: prx:meta:tagging-version, Value: "2021-04-07" }
+        - { Key: prx:cloudformation:stack-name, Value: !Ref AWS::StackName }
+        - { Key: prx:cloudformation:stack-id, Value: !Ref AWS::StackId }
+        - { Key: prx:ops:environment, Value: !Ref EnvironmentType }
+        - { Key: prx:dev:application, Value: Porter }
   # Transcribe Start Lambda
   TranscriptionJobStartLambdaFunction:
     Type: AWS::Serverless::Function
@@ -1691,6 +1769,12 @@ Resources:
     Properties:
       LogGroupName: !Sub /aws/lambda/${TranscriptionJobStartLambdaFunction}
       RetentionInDays: 30
+      Tags:
+        - { Key: prx:meta:tagging-version, Value: "2021-04-07" }
+        - { Key: prx:cloudformation:stack-name, Value: !Ref AWS::StackName }
+        - { Key: prx:cloudformation:stack-id, Value: !Ref AWS::StackId }
+        - { Key: prx:ops:environment, Value: !Ref EnvironmentType }
+        - { Key: prx:dev:application, Value: Porter }
   # Transcribe Job Results Lambda
   TranscriptionJobResultsLambdaIamRole:
     Type: AWS::IAM::Role
@@ -1748,6 +1832,12 @@ Resources:
     Properties:
       LogGroupName: !Sub /aws/lambda/${TranscriptionJobResultsLambdaFunction}
       RetentionInDays: 30
+      Tags:
+        - { Key: prx:meta:tagging-version, Value: "2021-04-07" }
+        - { Key: prx:cloudformation:stack-name, Value: !Ref AWS::StackName }
+        - { Key: prx:cloudformation:stack-id, Value: !Ref AWS::StackId }
+        - { Key: prx:ops:environment, Value: !Ref EnvironmentType }
+        - { Key: prx:dev:application, Value: Porter }
   # Callback Lambda
   CallbackLambdaIamRole:
     Type: AWS::IAM::Role
@@ -1822,6 +1912,12 @@ Resources:
     Properties:
       LogGroupName: !Sub /aws/lambda/${CallbackLambdaFunction}
       RetentionInDays: 30
+      Tags:
+        - { Key: prx:meta:tagging-version, Value: "2021-04-07" }
+        - { Key: prx:cloudformation:stack-name, Value: !Ref AWS::StackName }
+        - { Key: prx:cloudformation:stack-id, Value: !Ref AWS::StackId }
+        - { Key: prx:ops:environment, Value: !Ref EnvironmentType }
+        - { Key: prx:dev:application, Value: Porter }
   # Job Serializer Lambda
   JobSerializerLambdaFunction:
     Type: AWS::Serverless::Function
@@ -1856,6 +1952,12 @@ Resources:
     Properties:
       LogGroupName: !Sub /aws/lambda/${JobSerializerLambdaFunction}
       RetentionInDays: 30
+      Tags:
+        - { Key: prx:meta:tagging-version, Value: "2021-04-07" }
+        - { Key: prx:cloudformation:stack-name, Value: !Ref AWS::StackName }
+        - { Key: prx:cloudformation:stack-id, Value: !Ref AWS::StackId }
+        - { Key: prx:ops:environment, Value: !Ref EnvironmentType }
+        - { Key: prx:dev:application, Value: Porter }
   # Normalize Output Lambda
   NormalizeOutputLambdaFunction:
     Type: AWS::Serverless::Function
@@ -1887,6 +1989,12 @@ Resources:
     Properties:
       LogGroupName: !Sub /aws/lambda/${NormalizeOutputLambdaFunction}
       RetentionInDays: 30
+      Tags:
+        - { Key: prx:meta:tagging-version, Value: "2021-04-07" }
+        - { Key: prx:cloudformation:stack-name, Value: !Ref AWS::StackName }
+        - { Key: prx:cloudformation:stack-id, Value: !Ref AWS::StackId }
+        - { Key: prx:ops:environment, Value: !Ref EnvironmentType }
+        - { Key: prx:dev:application, Value: Porter }
   # Step Functions
   StateMachineIamRole:
     Type: AWS::IAM::Role
