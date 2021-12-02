@@ -157,33 +157,6 @@ Resources:
         - { Key: prx:cloudformation:stack-id, Value: !Ref AWS::StackId }
         - { Key: prx:ops:environment, Value: !Ref EnvironmentType }
         - { Key: prx:dev:application, Value: Porter }
-  JobExecutionSnsTopicLambdaIamRole:
-    Type: AWS::IAM::Role
-    Properties:
-      AssumeRolePolicyDocument:
-        Statement:
-          - Action: sts:AssumeRole
-            Effect: Allow
-            Principal:
-              Service: lambda.amazonaws.com
-        Version: "2012-10-17"
-      ManagedPolicyArns:
-        - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
-        - arn:aws:iam::aws:policy/AWSXrayWriteOnlyAccess
-      Policies:
-        - PolicyName: StepFunctionsPolicy
-          PolicyDocument:
-            Statement:
-              - Action: states:StartExecution
-                Effect: Allow
-                Resource: !Ref StateMachine
-            Version: "2012-10-17"
-      Tags:
-        - { Key: prx:meta:tagging-version, Value: "2021-04-07" }
-        - { Key: prx:cloudformation:stack-name, Value: !Ref AWS::StackName }
-        - { Key: prx:cloudformation:stack-id, Value: !Ref AWS::StackId }
-        - { Key: prx:ops:environment, Value: !Ref EnvironmentType }
-        - { Key: prx:dev:application, Value: Porter }
   JobExecutionSnsTopicLambdaFunction:
     Type: AWS::Serverless::Function
     Properties:
@@ -193,11 +166,22 @@ Resources:
       Environment:
         Variables:
           STATE_MACHINE_ARN: !Ref StateMachine
+      Events:
+        JobExecution:
+          Properties:
+            Topic: !Ref JobExecutionSnsTopic
+          Type: SNS
       Handler: index.handler
       Layers:
         - !Ref AwsXraySdkLambdaLayer
       MemorySize: 128
-      Role: !GetAtt JobExecutionSnsTopicLambdaIamRole.Arn
+      Policies:
+        - Statement:
+            - Action: states:StartExecution
+              Effect: Allow
+              Resource: !Ref StateMachine
+              Sid: AllowJobExecution
+          Version: "2012-10-17"
       Runtime: nodejs14.x
       Tags:
         prx:meta:tagging-version: "2021-04-07"
@@ -211,19 +195,12 @@ Resources:
     Properties:
       LogGroupName: !Sub /aws/lambda/${JobExecutionSnsTopicLambdaFunction}
       RetentionInDays: 30
-  JobExecutionSnsTopicLambdaPermission:
-    Type: AWS::Lambda::Permission
-    Properties:
-      Action: lambda:InvokeFunction
-      FunctionName: !GetAtt JobExecutionSnsTopicLambdaFunction.Arn
-      Principal: sns.amazonaws.com
-      SourceArn: !Ref JobExecutionSnsTopic
-  JobExecutionSnsTopicLambdaSubscription:
-    Type: AWS::SNS::Subscription
-    Properties:
-      Endpoint: !GetAtt JobExecutionSnsTopicLambdaFunction.Arn
-      Protocol: lambda
-      TopicArn: !Ref JobExecutionSnsTopic
+      Tags:
+        - { Key: prx:meta:tagging-version, Value: "2021-04-07" }
+        - { Key: prx:cloudformation:stack-name, Value: !Ref AWS::StackName }
+        - { Key: prx:cloudformation:stack-id, Value: !Ref AWS::StackId }
+        - { Key: prx:ops:environment, Value: !Ref EnvironmentType }
+        - { Key: prx:dev:application, Value: Porter }
   JobExecutionSnsTopicLambdaErrorAlarm:
     Type: AWS::CloudWatch::Alarm
     Condition: CreateProductionResources
