@@ -414,6 +414,8 @@ Resources:
                 - Transcribe Job State Change
               source:
                 - aws.transcribe
+            Target:
+              Id: !Sub ${AWS::StackName}.Transcribe-JobState
           Type: EventBridgeRule
       Handler: index.handler
       Layers:
