@@ -432,6 +432,19 @@ Resources:
         Variables:
           ARTIFACT_BUCKET_NAME: !Ref ArtifactBucket
           TRANSCODE_JOB_NAME_PREFIX: !Ref TranscodeJobNamePrefix
+      Events:
+        TranscribeJobStateChange:
+          Properties:
+            Pattern:
+              detail:
+                TranscriptionJobStatus:
+                  - COMPLETED
+                  - FAILED
+              detail-type:
+                - Transcribe Job State Change
+              source:
+                - aws.transcribe
+          Type: EventBridgeRule
       Handler: index.handler
       Layers:
         - !Ref AwsXraySdkLambdaLayer
@@ -477,36 +490,6 @@ Resources:
       Dimensions:
         - Name: LambdaFunctionArn
           Value: !GetAtt TranscriptionJobStateChangeLambdaFunction.Arn
-  TranscriptionJobEventsRuleLambdaPermission:
-    Type: AWS::Lambda::Permission
-    Properties:
-      Action: lambda:InvokeFunction
-      FunctionName: !GetAtt TranscriptionJobStateChangeLambdaFunction.Arn
-      Principal: events.amazonaws.com
-      SourceArn: !GetAtt TranscriptionJobEventsRule.Arn
-  TranscriptionJobEventsRule:
-    Type: AWS::Events::Rule
-    Properties:
-      Description: Monitors Amazon Transcribe for job state changes
-      EventPattern: |
-        {
-          "source": [
-            "aws.transcribe"
-          ],
-          "detail-type": [
-            "Transcribe Job State Change"
-          ],
-          "detail": {
-            "TranscriptionJobStatus": [
-              "COMPLETED",
-              "FAILED"
-            ]
-          }
-        }
-      State: ENABLED
-      Targets:
-        - Arn: !GetAtt TranscriptionJobStateChangeLambdaFunction.Arn
-          Id: !Sub ${AWS::StackName}.Transcribe.JobState
   ##############################################################################
   ##############################################################################
   ##############################################################################
