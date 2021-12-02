@@ -125,7 +125,7 @@ Resources:
         - !Ref ArtifactBucketReadOnlyAccessPolicy
       Policies:
         # For cross-account S3 buckets, the IAM role needs the same
-        # permissions that the bucket policy grans to this role
+        # permissions that the bucket policy grants to this role
         - PolicyName: S3DestinationWritePolicy
           PolicyDocument:
             Statement:
@@ -1367,7 +1367,7 @@ Resources:
       Architectures: [arm64]
       CodeUri: lambdas/SourceTypeLambdaFunction/
       Description: >-
-        Detect the file type of the source fiel
+        Detect the file type of the source file
       Environment:
         Variables:
           ARTIFACT_BUCKET_NAME: !Ref ArtifactBucket
