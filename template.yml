@@ -393,36 +393,6 @@ Resources:
   # call. The job watcher function is triggered by changes to transcribe jobs,
   # and sends the appropriate task result based on the result of the job, at
   # which point the execution of the state machine will proceed.
-  TranscriptionJobStateChangeLambdaIamRole:
-    Type: AWS::IAM::Role
-    Properties:
-      AssumeRolePolicyDocument:
-        Statement:
-          - Action: sts:AssumeRole
-            Effect: Allow
-            Principal:
-              Service: lambda.amazonaws.com
-        Version: "2012-10-17"
-      ManagedPolicyArns:
-        - !Ref ArtifactBucketReadOnlyAccessPolicy
-        - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
-        - arn:aws:iam::aws:policy/AWSXrayWriteOnlyAccess
-      Policies:
-        - PolicyName: StepFunctions
-          PolicyDocument:
-            Statement:
-              - Action:
-                  - states:SendTaskFailure
-                  - states:SendTaskSuccess
-                Effect: Allow
-                Resource: !Ref StateMachine
-            Version: "2012-10-17"
-      Tags:
-        - { Key: prx:meta:tagging-version, Value: "2021-04-07" }
-        - { Key: prx:cloudformation:stack-name, Value: !Ref AWS::StackName }
-        - { Key: prx:cloudformation:stack-id, Value: !Ref AWS::StackId }
-        - { Key: prx:ops:environment, Value: !Ref EnvironmentType }
-        - { Key: prx:dev:application, Value: Porter }
   TranscriptionJobStateChangeLambdaFunction:
     Type: AWS::Serverless::Function
     Properties:
@@ -449,7 +419,16 @@ Resources:
       Layers:
         - !Ref AwsXraySdkLambdaLayer
       MemorySize: 128
-      Role: !GetAtt TranscriptionJobStateChangeLambdaIamRole.Arn
+      Policies:
+        - !Ref ArtifactBucketReadOnlyAccessPolicy
+        - Statement:
+            - Action:
+                - states:SendTaskFailure
+                - states:SendTaskSuccess
+              Effect: Allow
+              Resource: !Ref StateMachine
+              Sid: AllowSendTaskResults
+          Version: "2012-10-17"
       Runtime: nodejs14.x
       Tags:
         prx:meta:tagging-version: "2021-04-07"
