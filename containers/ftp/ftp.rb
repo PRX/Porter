@@ -60,7 +60,7 @@ ftp_files = FtpFiles.new(logger, recorder)
 used_mode = ftp_files.upload_file(uri, file, md5: md5, public_ip: ip, mode: task['Mode'], timeout: timeout)
 
 if used_mode
-  result_key = "#{EVN['STATE_MACHINE_EXECUTION_ID']}/copy/ftp-result-#{ENV['STATE_MACHINE_TASK_INDEX']}.json"
+  result_key = "#{ENV['STATE_MACHINE_EXECUTION_ID']}/copy/ftp-result-#{ENV['STATE_MACHINE_TASK_INDEX']}.json"
   logger.debug("Creating results file : '#{result_key}'")
   ftp_files.s3.put_object(
     bucket: bucket,
