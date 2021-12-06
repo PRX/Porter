@@ -8,9 +8,8 @@
     "Tasks": [
       {
         "Type": "Copy",
-        "Mode": "FTP",
+        "Mode": "FTP/Auto",
         "URL": "ftp://usr:pwd@ftp.example.com:21/path/to/file.ext",
-        "Passive": true,
         "MD5": true
       }
     ]
