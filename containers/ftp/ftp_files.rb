@@ -285,3 +285,4 @@ class FtpFiles
     md5_digest_file
   end
 end
+# rubocop:enable Metrics/ClassLength
