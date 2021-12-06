@@ -175,19 +175,17 @@ class FtpFiles
       end
     end
 
-    unless result
+    if result
+      used_mode = passive ? 'FTP/Passive' : 'FTP/Active'
+      logger.debug("Finished sending file using #{used_mode}")
+      used_mode
+    else
       # this records final fail (no more retries)
       recorder.record('FtpFail', 'Count', 1.0)
       raise "FTP failed, no more retries: from '#{local_file}' to '#{cstr}'"
     end
   ensure
     delete_temp_file(md5_file)
-
-    if result
-      used_mode = passive ? 'FTP/Passive' : 'FTP/Active'
-      logger.debug("Finished sending file using #{used_mode}")
-      used_mode
-    end
   end
   # rubocop:enable Metrics/CyclomaticComplexity
   # rubocop:enable Metrics/MethodLength
