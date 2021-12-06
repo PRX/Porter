@@ -61,7 +61,7 @@ class FtpFiles
     result = false
 
     # Start with passive mode for both FTP/Passive and FTP/Auto
-    passive = options[:mode] != "FTP/Active"
+    passive = options[:mode] != 'FTP/Active'
 
     while !result && (retry_count < retry_max)
       ftp = Net::FTP.new
