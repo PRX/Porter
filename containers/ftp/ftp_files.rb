@@ -97,6 +97,7 @@ class FtpFiles
               rescue StandardError => e
                 logger.warn("FTP mkdir failed: #{cstr}: #{e.message}")
               end
+              logger.debug("FTP Changing directory to: #{remote_directory}")
               ftp.chdir(remote_directory)
             end
           rescue StandardError => e
