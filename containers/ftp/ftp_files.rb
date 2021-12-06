@@ -184,7 +184,7 @@ class FtpFiles
     delete_temp_file(md5_file)
 
     if result
-      return passive ? 'FTP/Passive' : 'FTP/Active'
+      passive ? 'FTP/Passive' : 'FTP/Active'
     end
   end
   # rubocop:enable Metrics/CyclomaticComplexity
