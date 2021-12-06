@@ -1500,6 +1500,9 @@ Resources:
       CodeUri: lambdas/FtpCopyTaskOutputLambdaFunction/
       Description: >-
         Formats the output of a transcode task result
+      Environment:
+        Variables:
+          ARTIFACT_BUCKET_NAME: !Ref ArtifactBucket
       Handler: index.handler
       Layers:
         - !Ref AwsXraySdkLambdaLayer
