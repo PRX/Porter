@@ -251,7 +251,7 @@ States:
                     - Name: STATE_MACHINE_JOB_ID
                       Value.$: "$.Job.Id"
                     - Name: STATE_MACHINE_TASK_INDEX
-                      Value.$: "$.TaskIndex"
+                      Value.$: States.Format('{}', $.TaskIndex)
                     - Name: STATE_MACHINE_AWS_REGION
                       Value: "${AwsRegion}"
                     - Name: STATE_MACHINE_ARTIFACT_BUCKET_NAME
