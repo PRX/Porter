@@ -77,3 +77,6 @@ end_time = Time.now
 duration = start_time - end_time
 
 recorder.record('FtpTransferDuration', 'Seconds', duration)
+
+logger.debug("Task duration: #{duration}")
+logger.debug('ftp.rb end')
