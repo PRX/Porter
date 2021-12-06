@@ -4,6 +4,7 @@ load './ftp_patch.rb'
 load './utils.rb'
 
 # Class to act as FTP client for uploading files to FTP servers
+# rubocop:disable Metrics/ClassLength
 class FtpFiles
   include Utils
   attr_reader :logger, :recorder
