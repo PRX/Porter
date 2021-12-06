@@ -535,6 +535,8 @@ Output:
 
 FTP operations are handled in the FTP container, using Ruby's `Net::FTP` module.
 
+The `Mode` property can be one of `FTP/Passive`, `FTP/Active`, or `FTP/Auto`. When `FTP/Auto` is used, both passive and active modes will be used if necessary, in order to try to complete the transfer.
+
 The `URL` property is required. It should be formatted as follows:
 
 ```
@@ -550,18 +552,19 @@ If set to `true` Porter will write an md5 file, containing the md5 hash of the i
 This is useful both as a semaphore file, as it is written after the primary file is written successfully,
 and useful to validate the file was transferred without error by checking the md5 signature.
 
-`Passive`: the default mode is passive, but if this option is set to `false`, it will use active mode.
-The system also includes retry logic, and will try active mode if passive mode fails several times.
+`Timeout`: The default is `1800` (30 minutes). The number of seconds that each FTP transfer should be given to complete. Note that the FTP copy task will internally make multiple attempts to transfer a file, and this is the timeout for each attempt, not for the task itself.
+
+The task output will include a `Mode` value, which may not match the `Mode` value from the input. The output will indicate the FTP transfer mode that was actually used to sucessfully transfer the file. When `FTP/Auto` is selected for a task, this allows you to inspect which mode was used internally to complete the transfer.
 
 Input:
 
 ```json
 {
     "Type": "Copy",
-    "Mode": "FTP",
+    "Mode": "FTP/Auto",
     "URL": "ftp://usr:pwd@ftp.example.com:21/path/to/file.ext",
     "MD5": false,
-    "Passive": true
+    "Timeout": 500
 }
 ```
 
@@ -571,6 +574,7 @@ Output:
 {
     "Type": "Copy",
     "URL": "ftp://usr:pwd@ftp.example.com:21/path/to/file.ext",
+    "Mode": "FTP/Passive",
     "Time": "2012-12-21T12:34:56Z",
     "Timestamp": 1356093296.123
 }
