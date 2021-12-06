@@ -97,7 +97,7 @@ class FtpFiles
           end
         rescue StandardError => e
           logger.error(JSON.dump({
-            msg: "FTP connect/login failed",
+            msg: 'FTP connect/login failed',
             error: e.message,
             remote_host: remote_host,
             remote_port: remote_port,
@@ -118,7 +118,7 @@ class FtpFiles
                 # This might be okay if the dir already exist, which we'll
                 # find out when we chdir
                 logger.warn(JSON.dump({
-                  msg: "FTP mkdir failed",
+                  msg: 'FTP mkdir failed',
                   error: e.message,
                   remote_directory: remote_directory,
                   passive: passive,
@@ -127,7 +127,7 @@ class FtpFiles
               end
 
               logger.debug(JSON.dump({
-                msg: "FTP chdir",
+                msg: 'FTP chdir',
                 remote_directory: remote_directory,
                 passive: passive,
                 retry_count: retry_count
@@ -138,7 +138,7 @@ class FtpFiles
             # Can't recover from this because we can't put the file where the
             # job wants it
             logger.error(JSON.dump({
-              msg: "FTP chdir failed",
+              msg: 'FTP chdir failed',
               error: e.message,
               remote_directory: remote_directory,
               passive: passive,
@@ -153,7 +153,7 @@ class FtpFiles
         begin
           Timeout.timeout(options[:timeout]) do
             logger.debug(JSON.dump({
-              msg: "FTP put starting",
+              msg: 'FTP put starting',
               local_file: local_file.path,
               remote_file_name: remote_file_name,
               passive: passive,
@@ -184,7 +184,7 @@ class FtpFiles
             end
 
             logger.debug(JSON.dump({
-              msg: "FTP put complete",
+              msg: 'FTP put complete',
               local_file: local_file.path,
               remote_file_name: remote_file_name,
               passive: passive,
@@ -194,7 +194,7 @@ class FtpFiles
             if md5
               ftp.puttextfile(md5_file.path, "#{remote_file_name}.md5")
               logger.debug(JSON.dump({
-                msg: "FTP MD5 put complete",
+                msg: 'FTP MD5 put complete',
                 local_file: md5_file.path,
                 remote_file_name: remote_file_name,
                 passive: passive,
@@ -204,7 +204,7 @@ class FtpFiles
           end
         rescue StandardError => e
           logger.error(JSON.dump({
-            msg: "FTP put failed",
+            msg: 'FTP put failed',
             error: e.message,
             reason: e.backtrace[0, 3].join("\n\t"),
             local_file: local_file.path,
@@ -239,7 +239,7 @@ class FtpFiles
           ftp.close if ftp && !ftp.closed?
         rescue Object => e
           logger.warn(JSON.dump({
-            msg: "FTP close failed",
+            msg: 'FTP close failed',
             error: e.message,
             passive: passive,
             retry_count: retry_count
@@ -252,7 +252,7 @@ class FtpFiles
       used_mode = passive ? 'FTP/Passive' : 'FTP/Active'
 
       logger.warn(JSON.dump({
-        msg: "FTP transfer complete",
+        msg: 'FTP transfer complete',
         used_mode: used_mode,
         passive: passive,
         retry_count: retry_count
