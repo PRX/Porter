@@ -60,6 +60,18 @@ class FtpFiles
     retry_count = 0
     result = false
 
+    logger.debug(JSON.dump({
+      msg: 'FTP transfer setup',
+      task_mode: options[:mode],
+      public_ip: public_ip,
+      md5: md5,
+      remote_host: remote_host,
+      remote_port: remote_port,
+      remote_directory: remote_directory,
+      remote_file_name: remote_file_name,
+      remote_user: remote_user
+    }))
+
     # Start with passive mode for both FTP/Passive and FTP/Auto
     passive = options[:mode] != 'FTP/Active'
 
@@ -84,7 +96,15 @@ class FtpFiles
             ftp.login(remote_user, remote_password) if uri.userinfo
           end
         rescue StandardError => e
-          logger.error "FTP connect failed: #{cstr}: #{e.message}"
+          logger.error(JSON.dump({
+            msg: "FTP connect/login failed",
+            error: e.message,
+            remote_host: remote_host,
+            remote_port: remote_port,
+            remote_user: remote_user,
+            passive: passive,
+            retry_count: retry_count
+          }))
           raise e
         end
 
@@ -95,13 +115,35 @@ class FtpFiles
               begin
                 ftp.mkdir(remote_directory)
               rescue StandardError => e
-                logger.warn("FTP mkdir failed: #{cstr}: #{e.message}")
+                # This might be okay if the dir already exist, which we'll
+                # find out when we chdir
+                logger.warn(JSON.dump({
+                  msg: "FTP mkdir failed",
+                  error: e.message,
+                  remote_directory: remote_directory,
+                  passive: passive,
+                  retry_count: retry_count
+                }))
               end
-              logger.debug("FTP Changing directory to: #{remote_directory}")
+
+              logger.debug(JSON.dump({
+                msg: "FTP chdir",
+                remote_directory: remote_directory,
+                passive: passive,
+                retry_count: retry_count
+              }))
               ftp.chdir(remote_directory)
             end
           rescue StandardError => e
-            logger.error "FTP chdir failed: #{cstr}: #{e.message}"
+            # Can't recover from this because we can't put the file where the
+            # job wants it
+            logger.error(JSON.dump({
+              msg: "FTP chdir failed",
+              error: e.message,
+              remote_directory: remote_directory,
+              passive: passive,
+              retry_count: retry_count
+            }))
             raise e
           end
         end
@@ -110,7 +152,13 @@ class FtpFiles
         # give each file some time to get ftp'd
         begin
           Timeout.timeout(options[:timeout]) do
-            logger.debug("FTP start #{local_file.path} -> #{remote_file_name}")
+            logger.debug(JSON.dump({
+              msg: "FTP put starting",
+              local_file: local_file.path,
+              remote_file_name: remote_file_name,
+              passive: passive,
+              retry_count: retry_count
+            }))
 
             last_noop = Time.now.to_i
             bytes_uploaded = 0
@@ -135,15 +183,36 @@ class FtpFiles
               end
             end
 
-            logger.debug "FTP put #{local_file.path} as #{remote_file_name}"
+            logger.debug(JSON.dump({
+              msg: "FTP put complete",
+              local_file: local_file.path,
+              remote_file_name: remote_file_name,
+              passive: passive,
+              retry_count: retry_count
+            }))
 
             if md5
               ftp.puttextfile(md5_file.path, "#{remote_file_name}.md5")
-              logger.debug("FTP put #{md5_file.path} as #{remote_file_name}.md5")
+              logger.debug(JSON.dump({
+                msg: "FTP MD5 put complete",
+                local_file: md5_file.path,
+                remote_file_name: remote_file_name,
+                passive: passive,
+                retry_count: retry_count
+              }))
             end
           end
         rescue StandardError => e
-          logger.error "FTP failed from '#{local_file.path}' to '#{cstr}'\n#{e.message}\n\t" + e.backtrace[0, 3].join("\n\t")
+          logger.error(JSON.dump({
+            msg: "FTP put failed",
+            error: e.message,
+            reason: e.backtrace[0, 3].join("\n\t"),
+            local_file: local_file.path,
+            remote_file_name: remote_file_name,
+            passive: passive,
+            retry_count: retry_count
+          }))
+
           raise e
         end
 
@@ -161,9 +230,7 @@ class FtpFiles
         if options[:mode] == 'FTP/Auto' && ((retry_count + 1) >= ((retry_max || 0) / 2).to_i)
           passive = false
           retry_count = 0
-          logger.error "FTP retry as active (#{retry_count}): #{e.message}"
         else
-          logger.error "FTP retry (#{retry_count}): #{e.message}"
           retry_count += 1
         end
         sleep(retry_wait)
@@ -171,14 +238,26 @@ class FtpFiles
         begin
           ftp.close if ftp && !ftp.closed?
         rescue Object => e
-          logger.error "FTP failed on close: #{e.message}"
+          logger.warn(JSON.dump({
+            msg: "FTP close failed",
+            error: e.message,
+            passive: passive,
+            retry_count: retry_count
+          }))
         end
       end
     end
 
     if result
       used_mode = passive ? 'FTP/Passive' : 'FTP/Active'
-      logger.debug("Finished sending file using #{used_mode}")
+
+      logger.warn(JSON.dump({
+        msg: "FTP transfer complete",
+        used_mode: used_mode,
+        passive: passive,
+        retry_count: retry_count
+      }))
+
       used_mode
     else
       # this records final fail (no more retries)
@@ -194,7 +273,6 @@ class FtpFiles
 
   def create_md5_digest(file)
     digest = Digest::MD5.hexdigest(File.read(file))
-    logger.debug "File md5 digest = #{digest}"
 
     md5_digest_file = create_temp_file("#{file}.md5", false)
     md5_digest_file.write digest

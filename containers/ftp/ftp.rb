@@ -28,10 +28,12 @@ load './s3_files.rb'
 load './recorder.rb'
 
 logger = Logger.new($stdout)
-logger.debug('ftp.rb start')
-
 start_time = Time.now
-logger.debug("start_time: #{start_time}")
+
+logger.debug(JSON.dump({
+  msg: 'ftp.rb start',
+  start_time: start_time
+}))
 
 # Count the transfers in CloudWatch Metrics
 recorder =
@@ -45,12 +47,15 @@ recorder.record('FtpTransfers', 'Count', 1.0)
 
 bucket = ENV['STATE_MACHINE_ARTIFACT_BUCKET_NAME']
 key = ENV['STATE_MACHINE_ARTIFACT_OBJECT_KEY']
-logger.debug("Downloading artifact: '#{bucket}/#{key}'")
+logger.debug(JSON.dump({
+  msg: 'Downloading artifact',
+  bucket_name: bucket,
+  object_key: key
+}))
 s3 = Aws::S3::Client.new
 s3_files = S3Files.new(s3, logger)
 file = s3_files.download_file(bucket, key)
 
-logger.debug("Transferring artifact: '#{bucket}/#{key}'")
 ip = ENV['PUBLIC_IP']
 task = JSON.parse(ENV['STATE_MACHINE_TASK_JSON'])
 uri = URI.parse(task['URL'])
@@ -78,5 +83,7 @@ duration = end_time - start_time
 
 recorder.record('FtpTransferDuration', 'Seconds', duration)
 
-logger.debug("Task duration: #{duration}")
-logger.debug('ftp.rb end')
+logger.debug(JSON.dump({
+  msg: 'ftp.rb end',
+  duration: duration
+}))
