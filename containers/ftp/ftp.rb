@@ -46,7 +46,8 @@ recorder.record('FtpTransfers', 'Count', 1.0)
 bucket = ENV['STATE_MACHINE_ARTIFACT_BUCKET_NAME']
 key = ENV['STATE_MACHINE_ARTIFACT_OBJECT_KEY']
 logger.debug("Downloading artifact: '#{bucket}/#{key}'")
-s3_files = S3Files.new(Aws::S3::Client.new, logger)
+s3 = Aws::S3::Client.new
+s3_files = S3Files.new(s3, logger)
 file = s3_files.download_file(bucket, key)
 
 logger.debug("Transferring artifact: '#{bucket}/#{key}'")
@@ -62,7 +63,7 @@ used_mode = ftp_files.upload_file(uri, file, md5: md5, public_ip: ip, mode: task
 if used_mode
   result_key = "#{ENV['STATE_MACHINE_EXECUTION_ID']}/copy/ftp-result-#{ENV['STATE_MACHINE_TASK_INDEX']}.json"
   logger.debug("Creating results file : '#{result_key}'")
-  ftp_files.s3.put_object(
+  s3.put_object(
     bucket: bucket,
     key: result_key,
     body: JSON.dump({
