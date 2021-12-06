@@ -74,7 +74,7 @@ end
 
 # Count the transfers in CloudWatch Metrics
 end_time = Time.now
-duration =  end_time - start_time
+duration = end_time - start_time
 
 recorder.record('FtpTransferDuration', 'Seconds', duration)
 
