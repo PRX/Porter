@@ -150,7 +150,19 @@ States:
                 - Variable: "$.Task.Type"
                   StringEquals: Copy
                 - Variable: "$.Task.Mode"
-                  StringEquals: FTP
+                  StringEquals: FTP/Passive
+              Next: FTP Copy Task Fargate Execution
+            - And:
+                - Variable: "$.Task.Type"
+                  StringEquals: Copy
+                - Variable: "$.Task.Mode"
+                  StringEquals: FTP/Active
+              Next: FTP Copy Task Fargate Execution
+            - And:
+                - Variable: "$.Task.Type"
+                  StringEquals: Copy
+                - Variable: "$.Task.Mode"
+                  StringEquals: FTP/Auto
               Next: FTP Copy Task Fargate Execution
             - Variable: "$.Task.Type"
               StringEquals: Transcode

@@ -25,8 +25,9 @@ class FtpFiles
   # - retry_max: when there is retry, defaults to 6 tries
   # - md5: will write an md5 by default, defaults to false
   # - keep_alive: will attempt to keep connections alive by default, true
-  # - passive: use passive mode, true by default
+  # - mode: FTP/Active, FTP/Passive, or FTP/Auto
   # - binary: binary transfer, true by default
+  # - timeout: how long to spend trying to transfer the file
 
   # rubocop:disable Metrics/CyclomaticComplexity
   # rubocop:disable Metrics/MethodLength
@@ -50,9 +51,6 @@ class FtpFiles
     md5 = options[:md5].nil? ? false : options[:md5]
     md5_file = create_md5_digest(local_file.path) if md5
 
-    # this may be turned to active on error
-    passive = options[:passive].nil? ? true : options[:passive]
-
     # this may be turned to 0 on error
     keep_alive = options[:keep_alive].nil? ? 10 : options[:keep_alive].to_i
 
@@ -61,6 +59,9 @@ class FtpFiles
     retry_wait = retry_ftp ? (options[:retry_wait] || 10) : 0
     retry_count = 0
     result = false
+
+    # Start with passive mode for both FTP/Passive and FTP/Auto
+    passive = options[:mode] != "FTP/Active"
 
     while !result && (retry_count < retry_max)
       ftp = Net::FTP.new
@@ -105,9 +106,9 @@ class FtpFiles
         end
 
         # deliver the file, catch errors and log when they occur
-        # give each file 1/2 hour to get ftp'd
+        # give each file some time to get ftp'd
         begin
-          Timeout.timeout(1800) do
+          Timeout.timeout(options[:timeout]) do
             logger.debug("FTP start #{local_file.path} -> #{remote_file_name}")
 
             last_noop = Time.now.to_i
@@ -156,7 +157,7 @@ class FtpFiles
 
         # this can happen when this should be an active, not passive mode
         # only try half the retry attempts in this case
-        if passive && ((retry_count + 1) >= ((retry_max || 0) / 2).to_i)
+        if options[:mode] == 'FTP/Auto' && ((retry_count + 1) >= ((retry_max || 0) / 2).to_i)
           passive = false
           retry_count = 0
           logger.error "FTP retry as active (#{retry_count}): #{e.message}"
@@ -181,6 +182,10 @@ class FtpFiles
     end
   ensure
     delete_temp_file(md5_file)
+
+    if result
+      return passive ? 'FTP/Passive' : 'FTP/Active'
+    end
   end
   # rubocop:enable Metrics/CyclomaticComplexity
   # rubocop:enable Metrics/MethodLength

@@ -54,10 +54,20 @@ ip = ENV['PUBLIC_IP']
 task = JSON.parse(ENV['STATE_MACHINE_TASK_JSON'])
 uri = URI.parse(task['URL'])
 md5 = task['MD5'].nil? ? false : task['MD5']
-passive = task['Passive'].nil? ? true : task['Passive']
+timeout = task['Timeout'].nil? ? 1800 : task['Timeout']
 
 ftp_files = FtpFiles.new(logger, recorder)
-ftp_files.upload_file(uri, file, md5: md5, public_ip: ip, passive: passive)
+used_mode = ftp_files.upload_file(uri, file, md5: md5, public_ip: ip, mode: task['Mode'])
+
+if used_mode
+  ftp_files.s3.put_object(
+    bucket: bucket,
+    key: "#{EVN['STATE_MACHINE_EXECUTION_ID']}/copy/ftp-result-#{ENV['STATE_MACHINE_TASK_INDEX']}.json",
+    body: JSON.dump({
+      Mode: used_mode
+    })
+  )
+end
 
 # Count the transfers in CloudWatch Metrics
 end_time = Time.now
