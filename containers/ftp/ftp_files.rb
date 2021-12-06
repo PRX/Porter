@@ -184,7 +184,9 @@ class FtpFiles
     delete_temp_file(md5_file)
 
     if result
-      passive ? 'FTP/Passive' : 'FTP/Active'
+      used_mode = passive ? 'FTP/Passive' : 'FTP/Active'
+      logger.debug("Finished sending file using #{used_mode}")
+      used_mode
     end
   end
   # rubocop:enable Metrics/CyclomaticComplexity
