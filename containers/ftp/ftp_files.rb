@@ -141,7 +141,7 @@ class FtpFiles
               logger.debug("FTP put #{md5_file.path} as #{remote_file_name}.md5")
             end
           end
-        rescue StandardError => e
+        rescue StandardError => ex
           logger.error "FTP failed from '#{local_file.path}' to '#{cstr}'\n#{e.message}\n\t" + e.backtrace[0, 3].join("\n\t")
           raise ex
         end
