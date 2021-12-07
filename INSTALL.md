@@ -12,7 +12,7 @@ For additional details about setting up a development environment see the [CONTR
 
 The SAM template defines a number of Lambda [layers](https://docs.aws.amazon.com/serverless-application-model/latest/developerguide/building-layers.html) resources that must build before they can be deployed. The [build](https://docs.aws.amazon.com/serverless-application-model/latest/developerguide/sam-cli-command-reference-sam-build.html) command will execute the Makefile for each layer, and generate build artifacts (in `.aws-sam/build`) from the result. These artifact will be utilized automatically by the CLI during a deploy.
 
-The build command will also create a new version of the template, with file references updated to point to the build artifacts. For example, in the source template the `AwsXraySdkLambdaLayer` resource includes `ContentUri: layers/aws-xray-sdk`. The rebuilt template (which also lives in `.aws-sam/build`) replaces that with `ContentUri: AwsXraySdkLambdaLayer` to reference the build artifact.
+The build command will also create a new version of the template, with file references updated to point to the build artifacts. For example, in the source template the `AwsXraySdkLambdaLayer` resource includes `ContentUri: lib/aws-xray-sdk`. The rebuilt template (which also lives in `.aws-sam/build`) replaces that with `ContentUri: AwsXraySdkLambdaLayer` to reference the build artifact.
 
 The SAM build command does not publish anything to S3 or elsewhere. It only creates local artifacts.
 
@@ -26,7 +26,7 @@ If you need to build the project without deploying, you should use `make build` 
 
 Deploying Porter is handled largely by the SAM CLI [deploy](https://docs.aws.amazon.com/serverless-application-model/latest/developerguide/sam-cli-command-reference-sam-deploy.html) command. It will inspect the template being deployed for any local file references (such as for Lambda function code or Lambda layer content), upload those files to S3, and transparently deploy a version of the template with the local references replaced by the resulting S3 URIs.
 
-**Be aware** that the `deploy` command _will_ deploy either the source template or a build artifact template. Both templates are perfectly valid SAM templates, but deploying the source template **will not produce the results you expect**. This is because the source template references unbuilt files for the included Lambda layers. Deploying the source template will create Lambda layers that include only a Makefile (like the one found in `layers/ffmpeg`), rather than the library, package, or npm module that's expected.
+**Be aware** that the `deploy` command _will_ deploy either the source template or a build artifact template. Both templates are perfectly valid SAM templates, but deploying the source template **will not produce the results you expect**. This is because the source template references unbuilt files for the included Lambda layers. Deploying the source template will create Lambda layers that include only a Makefile (like the one found in `lib/ffmpeg`), rather than the library, package, or npm module that's expected.
 
 Be sure to always run `deploy` only once build artifacts have been created.
 

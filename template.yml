@@ -1156,7 +1156,7 @@ Resources:
         - arm64
       CompatibleRuntimes:
         - nodejs14.x
-      ContentUri: layers/aws-sdk
+      ContentUri: lib/aws-sdk
       Description: aws-sdk NPM module
       RetentionPolicy: Delete
   AwsXraySdkLambdaLayer:
@@ -1169,7 +1169,7 @@ Resources:
         - arm64
       CompatibleRuntimes:
         - nodejs14.x
-      ContentUri: layers/aws-xray-sdk
+      ContentUri: lib/aws-xray-sdk
       Description: aws-xray NPM module
       RetentionPolicy: Delete
   FileTypeLambdaLayer:
@@ -1182,7 +1182,7 @@ Resources:
         - arm64
       CompatibleRuntimes:
         - nodejs14.x
-      ContentUri: layers/file-type
+      ContentUri: lib/file-type
       Description: file-type NPM module
       RetentionPolicy: Delete
   SharpLambdaLayer:
@@ -1190,7 +1190,7 @@ Resources:
     Metadata:
       BuildMethod: makefile
     Properties:
-      ContentUri: layers/sharp
+      ContentUri: lib/sharp
       CompatibleRuntimes:
         - nodejs14.x
       Description: sharp NPM module
@@ -1205,7 +1205,7 @@ Resources:
         - arm64
       CompatibleRuntimes:
         - nodejs14.x
-      ContentUri: layers/wavefile
+      ContentUri: lib/wavefile
       Description: wavefile NPM module
       RetentionPolicy: Delete
   FfmpegLambdaLayer:
@@ -1213,7 +1213,7 @@ Resources:
     Metadata:
       BuildMethod: makefile
     Properties:
-      ContentUri: layers/ffmpeg
+      ContentUri: lib/ffmpeg
       CompatibleRuntimes:
         - nodejs14.x
       Description: FFmpeg binary
@@ -1223,7 +1223,7 @@ Resources:
     Metadata:
       BuildMethod: makefile
     Properties:
-      ContentUri: layers/mpck
+      ContentUri: lib/mpck
       CompatibleRuntimes:
         - nodejs14.x
       Description: mpck binary
