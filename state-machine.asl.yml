@@ -276,7 +276,7 @@ States:
             - ErrorEquals:
                 - States.ALL
               IntervalSeconds: 5
-              MaxAttempts: 3
+              MaxAttempts: 1
               BackoffRate: 2
           Catch:
             - ErrorEquals:

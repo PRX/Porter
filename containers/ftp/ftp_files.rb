@@ -21,9 +21,8 @@ class FtpFiles
   # @param uri [URI] the uri for where to FTP the file to
   # @param local_file
   # @param options [Hash]
-  # - retry: retries by default, so this is true by default
   # - retry_wait: defaults to 10 seconds
-  # - retry_max: when there is retry, defaults to 6 tries, this includes the initial try
+  # - max_attempts: the number of times to try the transfer
   # - md5: will write an md5 by default, defaults to false
   # - keep_alive: will attempt to keep connections alive by default, true
   # - mode: FTP/Active, FTP/Passive, or FTP/Auto
@@ -55,15 +54,13 @@ class FtpFiles
     # this may be turned to 0 on error
     keep_alive = options[:keep_alive].nil? ? 10 : options[:keep_alive].to_i
 
-    retry_ftp = options[:retry].nil? ? true : options[:retry]
-    # retry_max of 1 mean 1 total attempts, i.e., do not retry
-    retry_max = retry_ftp ? (options[:retry_max] || 6) : 1
-    retry_wait = retry_ftp ? (options[:retry_wait] || 10) : 0
-    retry_count = 0
+    max_attempts = options[:max_attempts] ? options[:max_attempts] || 6 : 1
+    retry_wait = options[:retry_wait] || 10
+    attempt = 0
     result = false
 
     # Always make at least two total attempts with Auto mode, one for each
-    retry_max = 2 if options[:mode] == 'FTP/Auto' && retry_max < 2
+    max_attempts = 2 if options[:mode] == 'FTP/Auto' && max_attempts < 2
 
     logger.debug(JSON.dump({
       msg: 'FTP transfer setup',
@@ -80,18 +77,19 @@ class FtpFiles
     # Start with passive mode for both FTP/Passive and FTP/Auto
     passive = options[:mode] != 'FTP/Active'
 
-    while !result && (retry_count < retry_max)
+    while !result && (attempt < max_attempts)
+      sleep(retry_wait) if attempt > 1
+
       ftp = Net::FTP.new
 
       begin
-        ftp.passive = passive
-
         # this makes active mode work by sending the public ip of the client
         ftp.local_host = public_ip if public_ip
 
         # this works around when a remote server doesn't send its public IP
         ftp.override_local = true
 
+        ftp.passive = passive
         ftp.binary = options[:binary].nil? ? true : options[:binary]
         ftp.open_timeout = nil # default is nil
         ftp.read_timeout = 60 # default is 60
@@ -109,7 +107,7 @@ class FtpFiles
             remote_port: remote_port,
             remote_user: remote_user,
             passive: passive,
-            retry_count: retry_count
+            attempt: attempt
           }))
           raise e
         end
@@ -128,7 +126,7 @@ class FtpFiles
                   error: e.message,
                   remote_directory: remote_directory,
                   passive: passive,
-                  retry_count: retry_count
+                  attempt: attempt
                 }))
               end
 
@@ -136,7 +134,7 @@ class FtpFiles
                 msg: 'FTP chdir',
                 remote_directory: remote_directory,
                 passive: passive,
-                retry_count: retry_count
+                attempt: attempt
               }))
               ftp.chdir(remote_directory)
             end
@@ -148,7 +146,7 @@ class FtpFiles
               error: e.message,
               remote_directory: remote_directory,
               passive: passive,
-              retry_count: retry_count
+              attempt: attempt
             }))
             raise e
           end
@@ -164,7 +162,7 @@ class FtpFiles
               remote_directory: remote_directory,
               remote_file_name: remote_file_name,
               passive: passive,
-              retry_count: retry_count
+              attempt: attempt
             }))
 
             last_noop = Time.now.to_i
@@ -181,7 +179,7 @@ class FtpFiles
                 rescue StandardError => e
                   # if they don't support this, and throw an error just keep going.
                   logger.warn("FTP noop error, off and retry: #{e.message}")
-                  retry_count = [(retry_count - 1), 0].max
+                  attempt = [(attempt - 1), 0].max
                   keep_alive = 0
                   raise e
                 end
@@ -196,7 +194,7 @@ class FtpFiles
               remote_directory: remote_directory,
               remote_file_name: remote_file_name,
               passive: passive,
-              retry_count: retry_count
+              attempt: attempt
             }))
 
             if md5
@@ -207,7 +205,7 @@ class FtpFiles
                 remote_directory: remote_directory,
                 remote_file_name: remote_file_name,
                 passive: passive,
-                retry_count: retry_count
+                attempt: attempt
               }))
             end
           end
@@ -220,7 +218,7 @@ class FtpFiles
             remote_directory: remote_directory,
             remote_file_name: remote_file_name,
             passive: passive,
-            retry_count: retry_count
+            attempt: attempt
           }))
 
           raise e
@@ -237,11 +235,9 @@ class FtpFiles
 
         # When using FTP/Auto, failover to active mode after exhausting half
         # of the max retries
-        passive = false if options[:mode] == 'FTP/Auto' && ((retry_count + 1) == (retry_max / 2).to_i)
+        passive = false if options[:mode] == 'FTP/Auto' && ((attempt + 1) == (max_attempts / 2).to_i)
 
-        retry_count += 1
-
-        sleep(retry_wait)
+        attempt += 1
       ensure
         begin
           ftp.close if ftp && !ftp.closed?
@@ -250,7 +246,7 @@ class FtpFiles
             msg: 'FTP close failed',
             error: e.message,
             passive: passive,
-            retry_count: retry_count
+            attempt: attempt
           }))
         end
       end
@@ -263,7 +259,7 @@ class FtpFiles
         msg: 'FTP transfer complete',
         used_mode: used_mode,
         passive: passive,
-        retry_count: retry_count
+        attempt: attempt
       }))
 
       used_mode
