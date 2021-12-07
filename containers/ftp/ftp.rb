@@ -63,7 +63,7 @@ md5 = task['MD5'].nil? ? false : task['MD5']
 timeout = task['Timeout'].nil? ? 1800 : task['Timeout']
 
 ftp_files = FtpFiles.new(logger, recorder)
-used_mode = ftp_files.upload_file(uri, file, md5: md5, public_ip: ip, mode: task['Mode'], timeout: timeout)
+used_mode = ftp_files.upload_file(uri, file, md5: md5, public_ip: ip, mode: task['Mode'], timeout: timeout, max_attempts: 6)
 
 if used_mode
   result_key = "#{ENV['STATE_MACHINE_EXECUTION_ID']}/copy/ftp-result-#{ENV['STATE_MACHINE_TASK_INDEX']}.json"

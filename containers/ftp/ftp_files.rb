@@ -54,7 +54,7 @@ class FtpFiles
     # this may be turned to 0 on error
     keep_alive = options[:keep_alive].nil? ? 10 : options[:keep_alive].to_i
 
-    max_attempts = options[:max_attempts] ? options[:max_attempts] || 6 : 1
+    max_attempts = options[:max_attempts] || 1
     retry_wait = options[:retry_wait] || 10
     attempt = 1
     result = false
