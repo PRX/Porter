@@ -7,3 +7,7 @@ gem 'aws-sdk-ec2', '~> 1'
 gem 'aws-sdk-ecs', '~> 1'
 gem 'aws-sdk-s3', '~> 1'
 gem 'net-sftp'
+
+group :development do
+  gem 'rubocop'
+end
