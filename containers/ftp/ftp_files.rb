@@ -80,6 +80,11 @@ class FtpFiles
     while !result && (attempt <= max_attempts)
       sleep(retry_wait) if attempt > 1
 
+      # When using FTP/Auto, failover to active mode after exhausting half
+      # of the max retries. When max attempts is odd, passive mode will be
+      # attempted one more time than active mode
+      passive = false if options[:mode] == 'FTP/Auto' && (attempt > (max_attempts / 2).ceil)
+
       ftp = Net::FTP.new
 
       begin
@@ -232,10 +237,6 @@ class FtpFiles
       rescue StandardError => e
         # this records retried fails - open, login, mkdir, or put
         recorder.record('FtpError', 'Count', 1.0)
-
-        # When using FTP/Auto, failover to active mode after exhausting half
-        # of the max retries
-        passive = false if options[:mode] == 'FTP/Auto' && ((attempt + 1) == (max_attempts / 2).to_i)
 
         attempt += 1
       ensure
