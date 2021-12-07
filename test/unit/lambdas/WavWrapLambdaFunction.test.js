@@ -1,7 +1,7 @@
 const AWS = require('aws-sdk-mock');
 const fs = require('fs');
 
-const { handler } = require('../../../src/lambdas/WavWrapLambdaFunction/index');
+const { handler } = require('../../../src/lambdas/wav-wrap/index');
 
 test('wraps an mp2', async () => {
   AWS.mock('S3', 'getObject', {

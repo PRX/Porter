@@ -161,7 +161,7 @@ Resources:
     Type: AWS::Serverless::Function
     Properties:
       Architectures: [arm64]
-      CodeUri: src/lambdas/JobExecutionSnsTopicLambdaFunction/
+      CodeUri: src/lambdas/job-execution-sns/
       Description: >-
         Relays SNS messages sent to a subscribed topic to a State Machine
       Environment:
@@ -278,7 +278,7 @@ Resources:
     Type: AWS::Serverless::Function
     Properties:
       Architectures: [arm64]
-      CodeUri: src/lambdas/JobExecutionSqsQueueLambdaFunction/
+      CodeUri: src/lambdas/job-execution-sqs/
       Description: >-
         Relays SQS messages sent to a subscribed queue to a State Machine
       Environment:
@@ -399,7 +399,7 @@ Resources:
     Type: AWS::Serverless::Function
     Properties:
       Architectures: [arm64]
-      CodeUri: src/lambdas/TranscriptionJobStateChangeLambdaFunction/
+      CodeUri: src/lambdas/transcription-job-state-change/
       Description: Handles transcription job state change events
       Environment:
         Variables:
@@ -1233,7 +1233,7 @@ Resources:
     Type: AWS::Serverless::Function
     Properties:
       Architectures: [arm64]
-      CodeUri: src/lambdas/NormalizeInputLambdaFunction/
+      CodeUri: src/lambdas/normalize-input/
       Description: >-
         Normalizes Porter job input
       Handler: index.handler
@@ -1304,7 +1304,7 @@ Resources:
     Type: AWS::Serverless::Function
     Properties:
       Architectures: [arm64]
-      CodeUri: src/lambdas/IngestLambdaFunction/
+      CodeUri: src/lambdas/ingest/
       Description: >-
         Ingests a source file to a predefined S3 artifact bucket
       Environment:
@@ -1365,7 +1365,7 @@ Resources:
     Type: AWS::Serverless::Function
     Properties:
       Architectures: [arm64]
-      CodeUri: src/lambdas/SourceTypeLambdaFunction/
+      CodeUri: src/lambdas/source-type/
       Description: >-
         Detect the file type of the source file
       Environment:
@@ -1403,7 +1403,7 @@ Resources:
   InspectMediaLambdaFunction:
     Type: AWS::Serverless::Function
     Properties:
-      CodeUri: src/lambdas/InspectMediaLambdaFunction/
+      CodeUri: src/lambdas/inspect/
       Description: >-
         Inspects (ffprobe, etc) the source file
       Handler: index.handler
@@ -1461,7 +1461,7 @@ Resources:
     Type: AWS::Serverless::Function
     Properties:
       Architectures: [arm64]
-      CodeUri: src/lambdas/CopyLambdaFunction/
+      CodeUri: src/lambdas/s3-copy-task/
       Description: >-
         Copies an object in S3 to another location in S3
       Environment:
@@ -1497,7 +1497,7 @@ Resources:
     Type: AWS::Serverless::Function
     Properties:
       Architectures: [arm64]
-      CodeUri: src/lambdas/FtpCopyTaskOutputLambdaFunction/
+      CodeUri: src/lambdas/ftp-copy-task-output/
       Description: >-
         Formats the output of a transcode task result
       Environment:
@@ -1552,7 +1552,7 @@ Resources:
     Type: AWS::Serverless::Function
     Properties:
       Architectures: [arm64]
-      CodeUri: src/lambdas/TranscodeTaskOutputLambdaFunction/
+      CodeUri: src/lambdas/transcode-task-output/
       Description: >-
         Formats the output of a transcode task result
       Environment:
@@ -1627,7 +1627,7 @@ Resources:
   ImageTransformLambdaFunction:
     Type: AWS::Serverless::Function
     Properties:
-      CodeUri: src/lambdas/ImageTransformLambdaFunction/
+      CodeUri: src/lambdas/image-transform/
       Description: >-
         Performs image manipulation operations on a source file
       Environment:
@@ -1684,7 +1684,7 @@ Resources:
     Type: AWS::Serverless::Function
     Properties:
       Architectures: [arm64]
-      CodeUri: src/lambdas/WavWrapLambdaFunction/
+      CodeUri: src/lambdas/wav-wrap/
       Description: >-
         WAV wrap a source audio file
       Environment:
@@ -1721,7 +1721,7 @@ Resources:
     Type: AWS::Serverless::Function
     Properties:
       Architectures: [arm64]
-      CodeUri: src/lambdas/TranscriptionJobStartLambdaFunction/
+      CodeUri: src/lambdas/transcription-job-start/
       Description: >-
         Starts a transcription job for an artifact file
       Environment:
@@ -1798,7 +1798,7 @@ Resources:
     Type: AWS::Serverless::Function
     Properties:
       Architectures: [arm64]
-      CodeUri: src/lambdas/TranscriptionJobResultsLambdaFunction/
+      CodeUri: src/lambdas/transcription-job-results/
       Description: >-
         Gets the results of a transcribe job and generates task state output
       Environment:
@@ -1878,7 +1878,7 @@ Resources:
     Type: AWS::Serverless::Function
     Properties:
       Architectures: [arm64]
-      CodeUri: src/lambdas/CallbackLambdaFunction/
+      CodeUri: src/lambdas/callbacks/
       Description: >-
         Sends a job or task callback message to a single endpoint
       Environment:
@@ -1915,7 +1915,7 @@ Resources:
     Type: AWS::Serverless::Function
     Properties:
       Architectures: [arm64]
-      CodeUri: src/lambdas/JobSerializerLambdaFunction/
+      CodeUri: src/lambdas/job-serializer/
       Description: >-
         Serialized Porter jobs
       Environment:
@@ -1956,7 +1956,7 @@ Resources:
     Type: AWS::Serverless::Function
     Properties:
       Architectures: [arm64]
-      CodeUri: src/lambdas/NormalizeOutputLambdaFunction/
+      CodeUri: src/lambdas/normalize-output/
       Description: >-
         Normalizes Porter job output
       Handler: index.handler

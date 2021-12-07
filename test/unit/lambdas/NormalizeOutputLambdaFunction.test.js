@@ -1,6 +1,4 @@
-const {
-  handler,
-} = require('../../../src/lambdas/NormalizeOutputLambdaFunction/index');
+const { handler } = require('../../../src/lambdas/normalize-output/index');
 
 test('includes Timestamp', async () => {
   const result = await handler({ Job: {} });

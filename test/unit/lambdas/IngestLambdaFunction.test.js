@@ -1,6 +1,4 @@
-const {
-  filenameFromSource,
-} = require('../../../src/lambdas/IngestLambdaFunction/index');
+const { filenameFromSource } = require('../../../src/lambdas/ingest/index');
 
 test('extracts filenames from flat S3 objects', async () => {
   const filename = await filenameFromSource({
