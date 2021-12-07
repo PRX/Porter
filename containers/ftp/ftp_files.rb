@@ -237,9 +237,7 @@ class FtpFiles
 
         # When using FTP/Auto, failover to active mode after exhausting half
         # of the max retries
-        if options[:mode] == 'FTP/Auto' && ((retry_count + 1) == (retry_max / 2).to_i)
-          passive = false
-        end
+        passive = false if options[:mode] == 'FTP/Auto' && ((retry_count + 1) == (retry_max / 2).to_i)
 
         retry_count += 1
 
