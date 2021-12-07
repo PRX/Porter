@@ -23,7 +23,7 @@ class FtpFiles
   # @param options [Hash]
   # - retry: retries by default, so this is true by default
   # - retry_wait: defaults to 10 seconds
-  # - retry_max: when there is retry, defaults to 6 tries
+  # - retry_max: when there is retry, defaults to 6 tries, this includes the initial try
   # - md5: will write an md5 by default, defaults to false
   # - keep_alive: will attempt to keep connections alive by default, true
   # - mode: FTP/Active, FTP/Passive, or FTP/Auto
@@ -56,10 +56,14 @@ class FtpFiles
     keep_alive = options[:keep_alive].nil? ? 10 : options[:keep_alive].to_i
 
     retry_ftp = options[:retry].nil? ? true : options[:retry]
+    # retry_max of 1 mean 1 total attempts, i.e., do not retry
     retry_max = retry_ftp ? (options[:retry_max] || 6) : 1
     retry_wait = retry_ftp ? (options[:retry_wait] || 10) : 0
     retry_count = 0
     result = false
+
+    # Always make at least two total attempts with Auto mode, one for each
+    retry_max = 2 if options[:mode] == 'FTP/Auto' && retry_max < 2
 
     logger.debug(JSON.dump({
       msg: 'FTP transfer setup',
@@ -80,13 +84,14 @@ class FtpFiles
       ftp = Net::FTP.new
 
       begin
+        ftp.passive = passive
+
         # this makes active mode work by sending the public ip of the client
         ftp.local_host = public_ip if public_ip
 
         # this works around when a remote server doesn't send its public IP
         ftp.override_local = true
 
-        ftp.passive = passive
         ftp.binary = options[:binary].nil? ? true : options[:binary]
         ftp.open_timeout = nil # default is nil
         ftp.read_timeout = 60 # default is 60
@@ -156,6 +161,7 @@ class FtpFiles
             logger.debug(JSON.dump({
               msg: 'FTP put starting',
               local_file: local_file.path,
+              remote_directory: remote_directory,
               remote_file_name: remote_file_name,
               passive: passive,
               retry_count: retry_count
@@ -187,6 +193,7 @@ class FtpFiles
             logger.debug(JSON.dump({
               msg: 'FTP put complete',
               local_file: local_file.path,
+              remote_directory: remote_directory,
               remote_file_name: remote_file_name,
               passive: passive,
               retry_count: retry_count
@@ -197,6 +204,7 @@ class FtpFiles
               logger.debug(JSON.dump({
                 msg: 'FTP MD5 put complete',
                 local_file: md5_file.path,
+                remote_directory: remote_directory,
                 remote_file_name: remote_file_name,
                 passive: passive,
                 retry_count: retry_count
@@ -209,6 +217,7 @@ class FtpFiles
             error: e.message,
             reason: e.backtrace[0, 3].join("\n\t"),
             local_file: local_file.path,
+            remote_directory: remote_directory,
             remote_file_name: remote_file_name,
             passive: passive,
             retry_count: retry_count
@@ -226,14 +235,14 @@ class FtpFiles
         # this records retried fails - open, login, mkdir, or put
         recorder.record('FtpError', 'Count', 1.0)
 
-        # this can happen when this should be an active, not passive mode
-        # only try half the retry attempts in this case
-        if options[:mode] == 'FTP/Auto' && ((retry_count + 1) >= ((retry_max || 0) / 2).to_i)
+        # When using FTP/Auto, failover to active mode after exhausting half
+        # of the max retries
+        if options[:mode] == 'FTP/Auto' && ((retry_count + 1) == (retry_max / 2).to_i)
           passive = false
-          retry_count = 0
-        else
-          retry_count += 1
         end
+
+        retry_count += 1
+
         sleep(retry_wait)
       ensure
         begin
@@ -252,7 +261,7 @@ class FtpFiles
     if result
       used_mode = passive ? 'FTP/Passive' : 'FTP/Active'
 
-      logger.warn(JSON.dump({
+      logger.debug(JSON.dump({
         msg: 'FTP transfer complete',
         used_mode: used_mode,
         passive: passive,
