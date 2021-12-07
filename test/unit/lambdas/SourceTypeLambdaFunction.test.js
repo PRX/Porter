@@ -1,7 +1,9 @@
 const AWS = require('aws-sdk-mock');
 const fs = require('fs');
 
-const { handler } = require('../../../lambdas/SourceTypeLambdaFunction/index');
+const {
+  handler,
+} = require('../../../src/lambdas/SourceTypeLambdaFunction/index');
 
 test('detects type for S3 objects', async () => {
   AWS.mock(

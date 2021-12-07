@@ -1,6 +1,6 @@
 const {
   handler,
-} = require('../../../lambdas/NormalizeInputLambdaFunction/index');
+} = require('../../../src/lambdas/NormalizeInputLambdaFunction/index');
 
 test('inserts Tasks array when not included', async () => {
   const result = await handler({ Input: { Job: {} } });
