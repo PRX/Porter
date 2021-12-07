@@ -56,7 +56,7 @@ class FtpFiles
 
     max_attempts = options[:max_attempts] ? options[:max_attempts] || 6 : 1
     retry_wait = options[:retry_wait] || 10
-    attempt = 0
+    attempt = 1
     result = false
 
     # Always make at least two total attempts with Auto mode, one for each
@@ -77,7 +77,7 @@ class FtpFiles
     # Start with passive mode for both FTP/Passive and FTP/Auto
     passive = options[:mode] != 'FTP/Active'
 
-    while !result && (attempt < max_attempts)
+    while !result && (attempt <= max_attempts)
       sleep(retry_wait) if attempt > 1
 
       ftp = Net::FTP.new
