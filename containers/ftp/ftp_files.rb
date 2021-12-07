@@ -179,7 +179,7 @@ class FtpFiles
                 rescue StandardError => e
                   # if they don't support this, and throw an error just keep going.
                   logger.warn("FTP noop error, off and retry: #{e.message}")
-                  attempt = [(attempt - 1), 0].max
+                  attempt = [(attempt - 1), 1].max
                   keep_alive = 0
                   raise e
                 end
