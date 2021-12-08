@@ -29,6 +29,7 @@ Many input and output methods are supported to allow flexibility with other appl
     -   [Transcribe](#transcribe)
     -   [WAV Wrap](#wav-wrap)
 -   [Serialized Jobs](#serialized-jobs)
+-   [S3 Read Permissions](#s3-read-permissions)
 -   [S3 Destination Permissions](#s3-destination-permissions)
 
 ## Execution Model
@@ -156,18 +157,20 @@ The role's ARN is published as an output on the CloudFormation stack. The follow
 {
     "Statement": [
         {
+            "Sid": "Grant object read access to Porter",
             "Action": "s3:GetObject",
             "Effect": "Allow",
             "Principal": {
                 "AWS": "arn:aws:iam::123456789012:role/porter-prod-IngestLambdaIamRole-TKTKTKTKTK"
             },
-            "Resource": "arn:aws:s3:::myBucket/*",
-            "Sid": "Grant read access to production Porter"
+            "Resource": "arn:aws:s3:::myBucket/*"
         }
     ],
     "Version": "2012-10-17"
 }
 ```
+
+See also: [S3 Destination Permissions](#s3-destination-permissions)
 
 #### Job Tasks
 
@@ -845,6 +848,7 @@ The following is an example of the bucket policy used for granting Porter access
     "Version": "2012-10-17",
     "Statement": [
         {
+            "Sid": "Grant bucket-level list access to Porter",
             "Effect": "Allow",
             "Principal": {
                 "AWS": "arn:aws:iam::123456789012:role/porter-prod-S3DestinationWriterRole-TKTKTKTKTK"
@@ -853,6 +857,7 @@ The following is an example of the bucket policy used for granting Porter access
             "Resource": "arn:aws:s3:::myBucket"
         },
         {
+            "Sid": "Grant object-level write access to Porter",
             "Effect": "Allow",
             "Principal": {
                 "AWS": "arn:aws:iam::123456789012:role/porter-prod-S3DestinationWriterRole-TKTKTKTKTK"
@@ -867,3 +872,5 @@ The following is an example of the bucket policy used for granting Porter access
     ]
 }
 ```
+
+See also: [S3 Read Permissions](#s3-read-permissions)
