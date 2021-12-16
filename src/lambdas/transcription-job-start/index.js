@@ -50,6 +50,21 @@ exports.handler = async (event) => {
     throw new Error('Artifact format not supported');
   }
 
+  // Only start the job if the subtitle formats provided are supported
+  if (
+    // If SubtitleFormats was included…
+    event.Task.SubtitleFormats &&
+    // Fail if it's not an array
+    (!Array.isArray(event.Task.SubtitleFormats) ||
+      // Fail if it's empty
+      !event.Task.SubtitleFormats.length ||
+      // Fail if it includes unsupported formats
+      event.Task.SubtitleFormats.filter((f) => !['srt', 'vtt'].includes(f))
+        .length)
+  ) {
+    throw new Error('Subtitle format not supported');
+  }
+
   // Should be unique, even if an execution includes multiple transcribe jobs
   const prefix = process.env.TRANSCODE_JOB_NAME_PREFIX;
   const transcriptionJobName = `${prefix}${event.Execution.Id.split(
@@ -77,6 +92,11 @@ exports.handler = async (event) => {
       // Valid Values: mp3 | mp4 | wav | flac | ogg | amr | webm
       MediaFormat: mediaFormat,
       OutputBucketName: event.Artifact.BucketName,
+      ...(event.Task?.SubtitleFormats?.length && {
+        Subtitles: {
+          Formats: event.Task.SubtitleFormats,
+        },
+      }),
       Tags: [
         {
           Key: 'prx:ops:environment',

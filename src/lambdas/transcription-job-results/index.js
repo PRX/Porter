@@ -21,16 +21,22 @@ const transcribe = new AWS.TranscribeService({ apiVersion: '2017-10-26' });
 // https://docs.aws.amazon.com/AmazonS3/latest/API/RESTObjectCOPY.html
 // CopySource expects: "/sourcebucket/path/to/object.extension"
 // CopySource expects "/sourcebucket/path/to/object.extension" to be URI-encoded
-async function awsS3copyObject(event, transcriptionJob) {
+async function awsS3copyObject(
+  sourceFileUri,
+  destinationBucketName,
+  destinationObjectKey,
+) {
+  // fileUri
   // e.g., https://s3.amazonaws.com/artifact-bucket/transcribe_job_name.json
-  const fileUri = transcriptionJob.Transcript.TranscriptFileUri;
-  const s3path = url.parse(fileUri).pathname;
+  const s3path = url.parse(sourceFileUri).pathname;
+  // s3path
+  // e.g., /artifact-bucket/transcribe_job_name.json
 
   console.log(
     JSON.stringify({
       msg: 'S3 Copy',
       source: s3path,
-      destination: `${event.Task.Destination.BucketName}/${event.Task.Destination.ObjectKey}`,
+      destination: `${destinationBucketName}/${destinationObjectKey}`,
     }),
   );
 
@@ -50,11 +56,13 @@ async function awsS3copyObject(event, transcriptionJob) {
 
   const params = {
     CopySource: encodeURI(s3path),
-    Bucket: event.Task.Destination.BucketName,
-    Key: event.Task.Destination.ObjectKey,
+    Bucket: destinationBucketName,
+    Key: destinationObjectKey,
   };
 
   const start = process.hrtime();
+  // TODO Detect if the source file is > 5 GB and do a multipart upload to
+  // create the copy
   await s3.copyObject(params).promise();
   const end = process.hrtime(start);
 
@@ -79,9 +87,23 @@ exports.handler = async (event) => {
   const transcriptionJob = res.TranscriptionJob;
 
   if (event.Task.Destination.Mode === 'AWS/S3') {
-    // TODO Detect if the source file is > 5 GB and do a multipart upload to
-    // create the copy
-    await awsS3copyObject(event, transcriptionJob);
+    const bucketName = event.Task.Destination.BucketName;
+
+    // Copy the JSON transcript
+    const transcriptFileUri = transcriptionJob.Transcript.TranscriptFileUri;
+    const jsonKey = event.Task.Destination.ObjectKey;
+    await awsS3copyObject(transcriptFileUri, bucketName, jsonKey);
+
+    // If any subtitles were included, copy those as well
+    const subtitleFileUris = transcriptionJob.Subtitles?.SubtitleFileUris;
+    if (subtitleFileUris?.length) {
+      for (let i = 0; i < subtitleFileUris.length; i++) {
+        const subtitleFileUri = subtitleFileUris[i];
+        const subtitleFormat = transcriptionJob.Subtitles.Formats[i];
+        const subtitleKey = `${jsonKey}/subtitles.${subtitleFormat}`;
+        await awsS3copyObject(subtitleFileUri, bucketName, subtitleKey);
+      }
+    }
   } else {
     throw new Error('Unexpected destination mode');
   }
@@ -93,6 +115,9 @@ exports.handler = async (event) => {
     Mode: event.Task.Destination.Mode,
     BucketName: event.Task.Destination.BucketName,
     ObjectKey: event.Task.Destination.ObjectKey,
+    ...(transcriptionJob.Subtitles?.Formats?.length && {
+      SubtitleFormats: transcriptionJob.Subtitles.Formats,
+    }),
     Time: now.toISOString(),
     Timestamp: +now / 1000,
   };
