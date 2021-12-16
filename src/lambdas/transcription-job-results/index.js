@@ -97,12 +97,13 @@ exports.handler = async (event) => {
     // If any subtitles were included, copy those as well
     const subtitleFileUris = transcriptionJob.Subtitles?.SubtitleFileUris;
     if (subtitleFileUris?.length) {
-      for (let i = 0; i < subtitleFileUris.length; i++) {
-        const subtitleFileUri = subtitleFileUris[i];
-        const subtitleFormat = transcriptionJob.Subtitles.Formats[i];
-        const subtitleKey = `${jsonKey}/subtitles.${subtitleFormat}`;
-        await awsS3copyObject(subtitleFileUri, bucketName, subtitleKey);
-      }
+      await Promise.all(
+        subtitleFileUris.map((uri, idx) => {
+          const subtitleFormat = transcriptionJob.Subtitles.Formats[idx];
+          const subtitleKey = `${jsonKey}/subtitles.${subtitleFormat}`;
+          return awsS3copyObject(uri, bucketName, subtitleKey);
+        }),
+      );
     }
   } else {
     throw new Error('Unexpected destination mode');
