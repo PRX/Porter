@@ -1,6 +1,6 @@
 .aws-sam
 .config
 .deploy
-.npm
-node_modules
-vendor/bundle
+**/.npm
+**/node_modules
+**/vendor/bundle
