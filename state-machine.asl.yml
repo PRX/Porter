@@ -14,6 +14,9 @@ States:
     Next: JobReceived Callbacks Map
     Retry:
       - ErrorEquals:
+          - MissingTaskTypeError
+        MaxAttempts: 0
+      - ErrorEquals:
           - States.ALL
         IntervalSeconds: 1
         MaxAttempts: 2
@@ -78,6 +81,9 @@ States:
     OutputPath: "$"
     Next: Detect Source File Type
     Retry:
+      - ErrorEquals:
+          - UnknownSourceModeError
+        MaxAttempts: 0
       - ErrorEquals:
           - States.ALL
         IntervalSeconds: 5
@@ -221,6 +227,9 @@ States:
           OutputPath: "$"
           Next: TaskResult Callbacks Map
           Retry:
+            - ErrorEquals:
+                - UnknownCopyTaskModeError
+              MaxAttempts: 0
             - ErrorEquals:
                 - States.ALL
               IntervalSeconds: 5
@@ -471,6 +480,10 @@ States:
           OutputPath: "$"
           Next: Transcribe Task Job Success Handler
           Retry:
+            - ErrorEquals:
+                - InvalidTranscribeTaskInputError
+                - UnknownDestinationModeError
+              MaxAttempts: 0
             - ErrorEquals:
                 - States.ALL
               IntervalSeconds: 5

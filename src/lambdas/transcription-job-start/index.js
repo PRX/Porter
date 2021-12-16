@@ -1,3 +1,4 @@
+/* eslint-disable max-classes-per-file */
 // Starts a transcription job in Amazon Transcribe for the artifact. This is
 // called with the waitForTaskToken pattern, so once the job has finished
 // something (not this function), will need to send a SendTaskSuccess message
@@ -23,6 +24,20 @@ const AWS = AWSXRay.captureAWS(require('aws-sdk'));
 const s3 = new AWS.S3({ apiVersion: '2006-03-01' });
 const transcribe = new AWS.TranscribeService({ apiVersion: '2017-10-26' });
 
+class InvalidTranscribeTaskInputError extends Error {
+  constructor(...params) {
+    super(...params);
+    this.name = 'InvalidTranscribeTaskInputError';
+  }
+}
+
+class UnknownDestinationModeError extends Error {
+  constructor(...params) {
+    super(...params);
+    this.name = 'UnknownDestinationModeError';
+  }
+}
+
 exports.handler = async (event) => {
   console.log(JSON.stringify({ msg: 'State input', input: event }));
 
@@ -43,11 +58,18 @@ exports.handler = async (event) => {
     mediaFormat = event.Task.MediaFormat;
   }
 
+  // Check destination type before spending any time doing the work
+  if (['AWS/S3'].includes(event.Task.Destination.Mode)) {
+    throw new UnknownDestinationModeError(
+      `Unexpected destination mode: ${event.Task.Destination.Mode}`,
+    );
+  }
+
   // Only start the job if the artifact type (or passed in MediaFormat) is supported
   if (
     !['mp3', 'mp4', 'wav', 'flac', 'ogg', 'amr', 'webm'].includes(mediaFormat)
   ) {
-    throw new Error('Artifact format not supported');
+    throw new InvalidTranscribeTaskInputError('Artifact format not supported');
   }
 
   // Only start the job if the subtitle formats provided are supported
@@ -62,7 +84,7 @@ exports.handler = async (event) => {
       event.Task.SubtitleFormats.filter((f) => !['srt', 'vtt'].includes(f))
         .length)
   ) {
-    throw new Error('Subtitle format not supported');
+    throw new InvalidTranscribeTaskInputError('Subtitle format not supported');
   }
 
   // Should be unique, even if an execution includes multiple transcribe jobs

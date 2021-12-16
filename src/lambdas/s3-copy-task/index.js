@@ -4,6 +4,13 @@ const AWS = AWSXRay.captureAWS(require('aws-sdk'));
 
 const sts = new AWS.STS({ apiVersion: '2011-06-15' });
 
+class UnknownCopyTaskModeError extends Error {
+  constructor(...params) {
+    super(...params);
+    this.name = 'UnknownCopyTaskModeError';
+  }
+}
+
 // https://docs.aws.amazon.com/AWSJavaScriptSDK/latest/AWS/S3.html#copyObject-property
 // https://docs.aws.amazon.com/AmazonS3/latest/API/RESTObjectCOPY.html
 // CopySource expects: "/sourcebucket/path/to/object.extension"
@@ -81,7 +88,7 @@ exports.handler = async (event) => {
     // create the copy
     await awsS3copyObject(event);
   } else {
-    throw new Error('Unexpected copy mode');
+    throw new UnknownCopyTaskModeError('Unexpected copy mode');
   }
 
   const now = new Date();

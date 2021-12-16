@@ -27,6 +27,13 @@ const AWS = AWSXRay.captureAWS(require('aws-sdk'));
 
 const s3 = new AWS.S3({ apiVersion: '2006-03-01' });
 
+class UnknownSourceModeError extends Error {
+  constructor(...params) {
+    super(...params);
+    this.name = 'UnknownSourceModeError';
+  }
+}
+
 // Requests a file over HTTP and writes it to disk
 function httpGet(uri, file, redirectCount) {
   return new Promise((resolve, reject) => {
@@ -170,7 +177,7 @@ exports.handler = async (event, context) => {
       }),
     );
   } else {
-    throw new Error('Unexpected source mode');
+    throw new UnknownSourceModeError('Unexpected source mode');
   }
 
   return artifact;

@@ -15,6 +15,13 @@
 
 const Telemetry = require('./telemetry');
 
+class MissingTaskTypeError extends Error {
+  constructor(...params) {
+    super(...params);
+    this.name = 'MissingTaskTypeError';
+  }
+}
+
 exports.handler = async (event) => {
   // This is the raw Step Functions execution input
   const { Input } = event;
@@ -36,7 +43,7 @@ exports.handler = async (event) => {
     // the execution to error out in a way that can be caught and handled as
     // expected. (Choice states don't support Catch)
     if (!Object.prototype.hasOwnProperty.call(task, 'Type')) {
-      throw new Error('Job included a task without a Type');
+      throw new MissingTaskTypeError('Job included a task without a Type');
     }
 
     if (task.Type !== 'Transcode') {
