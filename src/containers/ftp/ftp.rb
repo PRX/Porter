@@ -64,14 +64,11 @@ begin
   uri = URI.parse(task['URL'])
   md5 = task['MD5'].nil? ? false : task['MD5']
   timeout = task['Timeout'].nil? ? 1800 : task['Timeout']
+  # This value is not guaranteed to be honored, so it's undocumented
   max_attempts = task['MaxAttempts'].nil? ? 6 : task['MaxAttempts']
 
   ftp_files = FtpFiles.new(logger, recorder)
   used_mode = ftp_files.upload_file(uri, file, md5: md5, public_ip: ip, mode: task['Mode'], timeout: timeout, max_attempts: max_attempts)
-
-  # Count the transfers in CloudWatch Metrics
-  end_time = Time.now
-  duration = end_time - start_time
 
   recorder.record('FtpTransferDuration', 'Seconds', duration)
 
@@ -102,6 +99,10 @@ rescue StandardError => e
     })
   )
 end
+
+# Count the transfers in CloudWatch Metrics
+end_time = Time.now
+duration = end_time - start_time
 
 logger.debug(JSON.dump({
   msg: 'ftp.rb end',
