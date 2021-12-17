@@ -77,7 +77,7 @@ begin
     logger.debug(JSON.dump({
       msg: 'Copying state machine results file',
       bucket_name: bucket,
-      object_key: result_key
+      object_key: RESULT_KEY
     }))
     s3.put_object(
       bucket: bucket,
@@ -90,6 +90,11 @@ begin
     )
   end
 rescue StandardError => e
+  logger.debug(JSON.dump({
+    msg: 'Copying state machine results file for error',
+    bucket_name: bucket,
+    object_key: RESULT_KEY
+  }))
   s3.put_object(
     bucket: bucket,
     key: RESULT_KEY,
