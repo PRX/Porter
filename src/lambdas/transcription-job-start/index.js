@@ -59,7 +59,7 @@ exports.handler = async (event) => {
   }
 
   // Check destination type before spending any time doing the work
-  if (['AWS/S3'].includes(event.Task.Destination.Mode)) {
+  if (!['AWS/S3'].includes(event.Task.Destination.Mode)) {
     throw new UnknownDestinationModeError(
       `Unexpected destination mode: ${event.Task.Destination.Mode}`,
     );
