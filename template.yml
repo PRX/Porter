@@ -413,6 +413,8 @@ Resources:
                 TranscriptionJobStatus:
                   - COMPLETED
                   - FAILED
+                TranscriptionJobName:
+                  - prefix: !Ref TranscodeJobNamePrefix
               detail-type:
                 - Transcribe Job State Change
               source:
