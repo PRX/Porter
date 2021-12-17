@@ -365,7 +365,6 @@ States:
                 - FtpOperationError
               MaxAttempts: 0
             - ErrorEquals:
-                - MissingFtpResultsError
                 - States.ALL
               IntervalSeconds: 5
               MaxAttempts: 3
