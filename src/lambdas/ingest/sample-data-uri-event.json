@@ -1,0 +1,11 @@
+{
+  "Job": {
+    "Source": {
+      "Mode": "Data/URI",
+      "URI": "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7"
+    }
+  },
+  "Execution": {
+    "Id": "x85a61ed-1111-aaaa-2222-616797212639"
+  }
+}

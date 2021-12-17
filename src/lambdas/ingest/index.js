@@ -1,3 +1,4 @@
+/* eslint-disable max-classes-per-file */
 // This function is invoked at the start of a state machine execution, and
 // ingests the source file declared in the job to a short-term S3 bucket.
 // Subsequent states in the step function access the file from that location.
@@ -31,6 +32,13 @@ class UnknownSourceModeError extends Error {
   constructor(...params) {
     super(...params);
     this.name = 'UnknownSourceModeError';
+  }
+}
+
+class InvalidDataUriError extends Error {
+  constructor(...params) {
+    super(...params);
+    this.name = 'InvalidDataUriError';
   }
 }
 
@@ -174,6 +182,32 @@ exports.handler = async (event, context) => {
       JSON.stringify({
         msg: 'Finished S3 Copy',
         duration: `${end[0]} s ${end[1] / 1000000} ms`,
+      }),
+    );
+  } else if (event.Job.Source.Mode === 'Data/URI') {
+    // e.g., data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7
+    const uri = event.Job.Source.URI;
+
+    if (!/^data:[\w/+-]+;base64,/.test(uri)) {
+      throw new InvalidDataUriError('Invalid Data URI');
+    }
+
+    const base64Data = uri.split(';base64,')[1];
+
+    const s3start = process.hrtime();
+    await s3
+      .upload({
+        Bucket: artifact.BucketName,
+        Key: artifact.ObjectKey,
+        Body: Buffer.from(base64Data, 'base64'),
+      })
+      .promise();
+
+    const s3end = process.hrtime(s3start);
+    console.log(
+      JSON.stringify({
+        msg: 'Finished S3 upload',
+        duration: `${s3end[0]} s ${s3end[1] / 1000000} ms`,
       }),
     );
   } else {
