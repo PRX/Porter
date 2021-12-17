@@ -1,5 +1,6 @@
 StartAt: Normalize Input
 States:
+  # Start of pre-processing
   Normalize Input:
     Comment: Normalizes input data
     Type: Task
@@ -26,6 +27,15 @@ States:
           - States.ALL
         ResultPath: "$.Error"
         Next: Normalize Input Catcher
+  Normalize Input Catcher:
+    Comment: Add a parameter so normalize errors can be identified
+    Type: Pass
+    InputPath: "$"
+    Result: NORMALIZE_INPUT_ERROR
+    ResultPath: "$.State"
+    OutputPath: "$"
+    Next: Add Empty TaskResults
+
   JobReceived Callbacks Map:
     Type: Map
     Comment: Iterates over all callback endpoints to indicate the job was received
@@ -37,14 +47,14 @@ States:
         Id.$: "$$.StateMachine.Id"
       Execution:
         Id.$: "$$.Execution.Id"
-      Message:
+      Message: # The JSON of this value will be sent to endpoints
         JobReceived:
           Job:
             Id.$: "$.Job.Id"
           Execution:
             Id.$: "$$.Execution.Id"
           State: RECEIVED
-    ResultPath: "$.Void"
+    ResultPath: "$.Void" # The output of the iterator states is discarded
     OutputPath: "$"
     Next: Ingest Source File
     MaxConcurrency: 0
@@ -67,6 +77,7 @@ States:
               IntervalSeconds: 5
               MaxAttempts: 3
               BackoffRate: 2
+
   Ingest Source File:
     Comment: Creates an artifact of the source file in S3
     Type: Task
@@ -94,6 +105,15 @@ States:
           - States.ALL
         ResultPath: "$.Error"
         Next: Ingest Source File Catcher
+  Ingest Source File Catcher:
+    Comment: Add a parameter so ingest errors can be identified
+    Type: Pass
+    InputPath: "$"
+    Result: SOURCE_FILE_INGEST_ERROR
+    ResultPath: "$.State"
+    OutputPath: "$"
+    Next: Add Empty TaskResults
+
   Detect Source File Type:
     Comment: Detects the file type of the source file artifact
     Type: Task
@@ -115,19 +135,39 @@ States:
           - States.ALL
         ResultPath: "$.Error"
         Next: Detect Source File Type Catcher
+  Detect Source File Type Catcher:
+    Comment: Add a parameter so type detection errors can be identified
+    Type: Pass
+    InputPath: "$"
+    Result: SOURCE_FILE_TYPE_DETECTION_ERROR
+    ResultPath: "$.State"
+    OutputPath: "$"
+    Next: Add Empty TaskResults
+  # End of pre-processing
+
+  # Start of task execution
   Tasks Map:
+    # The key output of this map state is the TaskResults array. There will
+    # be one element for each task, whether it succeeded or failed. Successful
+    # task elements will have a `Task` property, and failed tasks will have a
+    # `Type` property.
     Type: Map
     Comment: Iterates over all tasks included in the job
     InputPath: "$"
     ItemsPath: "$.Job.Tasks"
     Parameters:
+      # Parameters' value is what is passed to each state within the iterator,
+      # but each state decides independetly what is passed to it's backing
+      # resource (Lambda, etc). For example, Callbacks is available to each
+      # state, but usually not passed into Lambdas, since most tasks don't
+      # utilize that data.
       Job:
         Id.$: "$.Job.Id"
       Execution:
         Id.$: "$$.Execution.Id"
       Artifact.$: "$.Artifact"
       TaskIndex.$: "$$.Map.Item.Index"
-      Task.$: "$$.Map.Item.Value"
+      Task.$: "$$.Map.Item.Value" # This value is a task defined in the job input, e.g., { "Type": "Copy" }
       Callbacks.$: "$.Job.Callbacks"
     ResultPath: "$.TaskResults"
     OutputPath: "$"
@@ -182,6 +222,9 @@ States:
             - Variable: "$.Task.Type"
               StringEquals: WavWrap
               Next: WAV Wrap Task Handler
+
+        # This is a no-op. No callbacks are sent, and any record of this task
+        # will be filtered out of the job result callbacks
         Unknown Task Type:
           Type: Pass
           Comment: Handles and blackholes tasks with an unknown type
@@ -189,6 +232,16 @@ States:
           ResultPath: "$"
           Result:
             Task: "Null"
+
+        # Task operations
+        # - The InputPath and OutputPath of all of these must be $, so that
+        #   all data is available to states down the line.
+        # - The ResultPath for states that are returning the final output of a
+        #   task's operation (i.e., states immediately prior to the callbacks
+        #   map) must be $.TaskResult, and their return value must be the
+        #   expected standard task output (e.g., { Task: 'Copy' })
+        # - All task operation states, not just the final state, should catch
+        #   to the TaskResult Error Callback Map.
         Inspect Task Handler:
           Type: Task
           Comment: Inspects the artifact file
@@ -516,6 +569,19 @@ States:
                 - States.ALL
               ResultPath: "$.Error"
               Next: TaskResult Error Callback Map
+
+        # Task callbacks
+        # All tasks operations end up at one of these callback states,
+        # depending on whether the task was successful or not. The value for
+        # a given task in the TaskResults array coming out of the Tasks Map
+        # will be the output whichever of these callback states is used.
+        #
+        # For failed tasks, the task callback will include information about
+        # the error. This information is not included in the job result
+        # callback.
+        #
+        # The output for a successful task is the result of the task.
+        # The output for a failed task is the original input task definition.
         TaskResult Callbacks Map:
           Type: Map
           Comment: >-
@@ -530,7 +596,7 @@ States:
             Execution:
               Id.$: "$$.Execution.Id"
             TaskIteratorIndex.$: "$.TaskIndex"
-            Message:
+            Message: # The JSON of this value will be sent to endpoints
               Task.$: "$.Task"
               TaskResult:
                 Job:
@@ -538,7 +604,7 @@ States:
                 Execution:
                   Id.$: "$$.Execution.Id"
                 Result.$: "$.TaskResult"
-          ResultPath: "$.Void"
+          ResultPath: "$.Void" # The output of the iterator states is discarded
           OutputPath: "$.TaskResult"
           End: true
           MaxConcurrency: 0
@@ -575,7 +641,7 @@ States:
             Execution:
               Id.$: "$$.Execution.Id"
             TaskIteratorIndex.$: "$.TaskIndex"
-            Message:
+            Message: # The JSON of this value will be sent to endpoints
               Task.$: "$.Task"
               TaskResult:
                 Job:
@@ -583,7 +649,7 @@ States:
                 Execution:
                   Id.$: "$$.Execution.Id"
                 Error.$: "$.Error"
-          ResultPath: "$.Void"
+          ResultPath: "$.Void" # The output of the iterator states is discarded
           OutputPath: "$.Task"
           End: true
           MaxConcurrency: 0
@@ -611,6 +677,31 @@ States:
           - States.ALL
         ResultPath: "$.Error"
         Next: Tasks Map Catcher
+  Tasks Map Catcher:
+    Comment: >-
+      Add a parameter so task map errors can be identified. Is NOT responsible
+      for catching individual task execution errors (like if a Copy task fails)
+    Type: Pass
+    InputPath: "$"
+    Result: ITERATOR_ERROR
+    ResultPath: "$.State"
+    OutputPath: "$"
+    Next: Add Empty TaskResults
+  # End of task execution
+
+  # States below this will expect $.TaskResults to exist
+  Add Empty TaskResults:
+    Comment: >-
+      Add a TaskResults key with an empty array value, for cases where the task
+      iterator does not succeed and it's not otherwise added
+    Type: Pass
+    InputPath: "$"
+    Result: []
+    ResultPath: "$.TaskResults"
+    OutputPath: "$"
+    Next: JobResult Callback Map
+
+  # Start of post-processing
   JobResult Callback Map:
     Type: Map
     Comment: Iterates over all callback endpoints to send job results
@@ -622,16 +713,19 @@ States:
         Id.$: "$$.StateMachine.Id"
       Execution:
         Id.$: "$$.Execution.Id"
-      Message:
+      Message: # The JSON of this value will be sent to endpoints
         JobResult:
           Job:
             Id.$: "$.Job.Id"
           Execution:
             Id.$: "$$.Execution.Id"
           State.$: "$.State"
+          # Task/Type = Null elements are filtered out.
+          # Successful tasks will have a Task property
           TaskResults.$: "$.TaskResults.[?(@.Task && @.Task != 'Null')]"
+          # Failed tasks will have a Type property
           FailedTasks.$: "$.TaskResults.[?(@.Type && @.Type != 'Null')]"
-    ResultPath: "$.Void"
+    ResultPath: "$.Void" # The output of the iterator states is discarded
     OutputPath: "$"
     Next: Serialized Jobs Map
     MaxConcurrency: 0
@@ -654,6 +748,7 @@ States:
               IntervalSeconds: 5
               MaxAttempts: 3
               BackoffRate: 2
+
   Serialized Jobs Map:
     Type: Map
     Comment: Iterates over all serialized jobs and sends them to SNS
@@ -664,7 +759,7 @@ States:
         Id.$: "$$.Execution.Id"
       ExecutionTrace.$: "$.Job.ExecutionTrace"
       SerializedJob.$: "$$.Map.Item.Value"
-    ResultPath: "$.Void"
+    ResultPath: "$.Void" # The output of the iterator states is discarded
     OutputPath: "$"
     Next: Normalize Output
     MaxConcurrency: 0
@@ -685,6 +780,7 @@ States:
               IntervalSeconds: 5
               MaxAttempts: 3
               BackoffRate: 2
+
   Normalize Output:
     Comment: Normalizes output data
     Type: Task
@@ -711,46 +807,4 @@ States:
     ResultPath: "$"
     OutputPath: "$"
     End: true
-  Normalize Input Catcher:
-    Comment: Add a parameter so normalize errors can be identified
-    Type: Pass
-    InputPath: "$"
-    Result: NORMALIZE_INPUT_ERROR
-    ResultPath: "$.State"
-    OutputPath: "$"
-    Next: Add Empty TaskResults
-  Ingest Source File Catcher:
-    Comment: Add a parameter so ingest errors can be identified
-    Type: Pass
-    InputPath: "$"
-    Result: SOURCE_FILE_INGEST_ERROR
-    ResultPath: "$.State"
-    OutputPath: "$"
-    Next: Add Empty TaskResults
-  Detect Source File Type Catcher:
-    Comment: Add a parameter so type detection errors can be identified
-    Type: Pass
-    InputPath: "$"
-    Result: SOURCE_FILE_TYPE_DETECTION_ERROR
-    ResultPath: "$.State"
-    OutputPath: "$"
-    Next: Add Empty TaskResults
-  Tasks Map Catcher:
-    Comment: Add a parameter so task execution errors can be identified
-    Type: Pass
-    InputPath: "$"
-    Result: ITERATOR_ERROR
-    ResultPath: "$.State"
-    OutputPath: "$"
-    Next: Add Empty TaskResults
-
-  Add Empty TaskResults:
-    Comment: >-
-      Add a TaskResults key with an empty array value, for cases where the task
-      iterator does not succeed and it's not otherwise added
-    Type: Pass
-    InputPath: "$"
-    Result: []
-    ResultPath: "$.TaskResults"
-    OutputPath: "$"
-    Next: JobResult Callback Map
+  # End of post-processing
