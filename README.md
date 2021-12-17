@@ -302,7 +302,7 @@ The list of possible states may change over time.
 
 ##### Failed Task
 
-`JobResult.FailedTasks` is an array of tasks (from the job input) that did not complete successfully. If there were no unsuccessful tasks in a job, the array will be empty. Please note that error information related to individual failed tasks is **not** included in job result callbacks. In order to capture task error details, they must be captured from the task callbacks.
+`JobResult.FailedTasks` is an array of tasks (from the job input) that did not complete successfully. If there were no unsuccessful tasks in a job, the array will be empty. Please note that error information related to individual failed tasks is **not** included in job result callbacks. In order to capture task error details, they must be captured from the [task callbacks](#task-callbacks).
 
 ##### Job Result Examples
 
