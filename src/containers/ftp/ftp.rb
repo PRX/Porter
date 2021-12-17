@@ -70,10 +70,7 @@ begin
   ftp_files = FtpFiles.new(logger, recorder)
   used_mode = ftp_files.upload_file(uri, file, md5: md5, public_ip: ip, mode: task['Mode'], timeout: timeout, max_attempts: max_attempts)
 
-  recorder.record('FtpTransferDuration', 'Seconds', duration)
-
   if used_mode
-
     logger.debug(JSON.dump({
       msg: 'Copying state machine results file',
       bucket_name: bucket,
@@ -108,6 +105,8 @@ end
 # Count the transfers in CloudWatch Metrics
 end_time = Time.now
 duration = end_time - start_time
+
+recorder.record('FtpTransferDuration', 'Seconds', duration)
 
 logger.debug(JSON.dump({
   msg: 'ftp.rb end',
