@@ -4,7 +4,7 @@ require 'test_helper'
 require 'json'
 
 describe :porter do
-  describe :copy do
+  describe :s3_copy do
     describe :to_key_with_spaces do
       it 'handles HTTP source files with spaces' do
         job = {
@@ -275,6 +275,62 @@ describe :porter do
           _(output['JobResult']['FailedTasks']).must_equal []
           _(output['JobResult']['TaskResults'].length).must_equal 1
         end
+      end
+    end
+  end
+
+  describe :ftp_copy do
+    it 'fails with bad address' do
+      job = {
+        Job: {
+          Id: 'porter-test-copy-ftp-bad-hostname',
+          Source: {
+            Mode: 'HTTP',
+            URL: 'https://dovetail.prxu.org/152/245d0fe2-4171-4ebf-bea3-69deff3e9336/input file with spaces.mp3'
+          },
+          Tasks: [
+            {
+              Type: 'Copy',
+              Mode: 'FTP/Passive',
+              URL: 'ftp://anonymous:anonymous@prx.org:21/upload/file.ext',
+              MaxAttempts: 1
+            }
+          ]
+        }
+      }
+
+      job_test(job, 10) do |output|
+        _(output['JobResult']['Job']['Id']).must_equal 'porter-test-copy-ftp-bad-hostname'
+        _(output['JobResult']['State']).must_equal 'DONE'
+        _(output['JobResult']['TaskResults']).must_equal []
+        _(output['JobResult']['FailedTasks'].length).must_equal 1
+      end
+    end
+
+    it 'returns execution output for a passive FTP copy task' do
+      job = {
+        Job: {
+          Id: 'porter-test-copy-ftp',
+          Source: {
+            Mode: 'HTTP',
+            URL: 'https://dovetail.prxu.org/152/245d0fe2-4171-4ebf-bea3-69deff3e9336/input file with spaces.mp3'
+          },
+          Tasks: [
+            {
+              Type: 'Copy',
+              Mode: 'FTP/Passive',
+              URL: 'ftp://dlpuser:rNrKYTX9g7z3RgJRmxWuGHbeu@ftp.dlptest.com/file.ext',
+              MaxAttempts: 1
+            }
+          ]
+        }
+      }
+
+      job_test(job, 10) do |output|
+        _(output['JobResult']['Job']['Id']).must_equal 'porter-test-copy-ftp'
+        _(output['JobResult']['State']).must_equal 'DONE'
+        _(output['JobResult']['FailedTasks']).must_equal []
+        _(output['JobResult']['TaskResults'].length).must_equal 1
       end
     end
   end

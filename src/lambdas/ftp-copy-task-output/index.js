@@ -43,6 +43,8 @@ exports.handler = async (event) => {
   if (!ftpResult) {
     throw new MissingFtpResultsError('No Fargate results file found');
   } else if (ftpResult.Error) {
+    // If the Fargate experienced an issue, reraise it here so it's visible
+    // within the state machine
     // TODO Possible to throw the actual error class?
     throw new FtpOperationError(
       `${ftpResult.Error}: ${ftpResult.ErrorMessage}`,
