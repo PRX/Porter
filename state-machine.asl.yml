@@ -157,7 +157,7 @@ States:
     ItemsPath: "$.Job.Tasks"
     Parameters:
       # Parameters' value is what is passed to each state within the iterator,
-      # but each state decides independetly what is passed to it's backing
+      # but each state decides independetly what is passed to its backing
       # resource (Lambda, etc). For example, Callbacks is available to each
       # state, but usually not passed into Lambdas, since most tasks don't
       # utilize that data.
