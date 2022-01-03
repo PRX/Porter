@@ -1,16 +1,16 @@
 # Porter
 
-Porter is a general-purpose file processing system. It is designed to work asynchronously – jobs are sent to Porter from other applications, and the results can be returned to the applications via callbacks. It supports a variety of tasks that can be run on the files included in each job. Some are generic tasks (such as copying a file to a new location), and some are specific to certain file types (such as resizing an image, or transcoding an audio file).
+Porter is a general-purpose file processing system. It is designed to work asynchronously – jobs are sent to Porter from other applications, and the results can be returned to the applications via callbacks. It supports a variety of tasks that can be run on the file included in each job. Some are generic tasks (such as copying a file to a new location), and some are specific to certain file types (such as resizing an image, or transcoding an audio file).
 
 Porter is built on top of [AWS Step Functions](https://aws.amazon.com/step-functions/), as well a number of other AWS services. Each job that is sent to Porter for processing corresponds to a single state machine [execution](https://docs.aws.amazon.com/step-functions/latest/dg/concepts-state-machine-executions.html) of the Step Function. Each Porter job represents one (and only one) input file, which is considered the job's _source file_. Every task that the job definition includes is run against that original source file in parallel.
 
-The system is design to be highly scalable, both in terms of the number of jobs that can be processed, as well as the number of tasks an individual job can include. Many of the states that the Step Function orchestrates are built on [AWS Lambda](https://aws.amazon.com/lambda/) and [AWS Fargate](https://aws.amazon.com/fargate/), which are serverless compute platforms and support that scalability. As such, there are no prioritization options or explicit queueing controls available. It can be assumed that jobs begin to execute as soon as they are received by Porter.
+The system is designed to be highly scalable, both in terms of the number of jobs that can be processed, as well as the number of tasks an individual job can include. Many of the states that the Step Function orchestrates are built on [AWS Lambda](https://aws.amazon.com/lambda/) and [AWS Fargate](https://aws.amazon.com/fargate/), which are serverless compute platforms and support that scalability. As such, there are no prioritization options or explicit queueing controls available. It can be assumed that jobs begin to execute as soon as they are received by Porter.
 
 Porter utilizes the robust [error handling](https://docs.aws.amazon.com/step-functions/latest/dg/concepts-error-handling.html) and retry logic that Step Functions offer to ensure that tasks are resilient to transient service issues. In cases where a job execution is not able to complete all its tasks, Porter sends callbacks to indicate the failure, and the application must decide how to attempt to retry the work.
 
 Job executions within Porter are not intended to be inspected directly or in real time by other applications. An application that's submitting jobs should be designed to track the state of its jobs based on the callback messages that it has or has not received. Callback messages are sent at various points during a job execution, which is explained in more detail [below](#callback-messages).
 
-Many input and output methods are supported to allow flexibility with other applications. For example, source files can come from HTTP or S3 endpoints, and callback messages can be sent via HTTP, [SNS](https://aws.amazon.com/sns/), and [SQS](https://aws.amazon.com/sqs/). The list of supported source and destination methods will grow over time; see below for a more complete list of methods that each aspect of the job execution support.
+Many input and output methods are supported to allow flexibility with other applications. For example, [source files](#job-source) can come from HTTP or S3 endpoints, and callback messages can be sent via HTTP, [SNS](https://aws.amazon.com/sns/), and [SQS](https://aws.amazon.com/sqs/). The list of supported source and destination methods will grow over time; see below for a more complete list of methods that each aspect of the job execution support.
 
 ### Table of Contents
 
@@ -36,7 +36,7 @@ Many input and output methods are supported to allow flexibility with other appl
 
 A Porter job represents a set of work (tasks) to be done for a source file. Each job has only a single source file, and that file is immutable in the context of the job execution. If a task does work to copy, transform, or otherwise manipulate the source file, the result of that operation will be a new file, leaving the source file unchanged. Individual tasks define the locations for those resulting files to be persisted.
 
-Job tasks are isolated and independent from each other. They are run in parallel, and the output of one task cannot be used as the input for another task. The order in which tasks are started is not guaranteed. A job will run until all its tasks have either succeeded or failed. If a job includes multiple tasks and one task fails, that will not cause the rest of the execution to halt or fail.
+Job tasks are isolated and independent from each other. They are run in parallel, and the output of one task **cannot** be used as the input for another task. The order in which tasks are started is not guaranteed. A job will run until all its tasks have either succeeded or failed. If a job includes multiple tasks and one task fails, that will not cause the rest of the execution to halt or fail.
 
 In some cases, a job may encounter an issue before it can start any of its tasks, such as if the source file is unavailable.
 
@@ -182,7 +182,7 @@ See also: [S3 Destination Permissions](#s3-destination-permissions)
 
 `HTTP` callbacks using methods like `POST` or `PUT` require a `Content-Type`. Possible values are `application/json` and `application/x-www-form-urlencoded`. The endpoint should respond with an HTTP `200` to acknowledge receipt of the callback.
 
-`AWS/SNS` callbacks must include a `Topic`, and `AWS/SQS` callbacks must include a `Queue` in the form of a URL. An `AWS/EventBridge` callback can optionally include an `EventBusName`; if excluded the callback will be sent to the default event bus.
+`AWS/SNS` callbacks must include a `Topic` ARN, and `AWS/SQS` callbacks must include a `Queue` in the form of a URL. An `AWS/EventBridge` callback can optionally include an `EventBusName`; if excluded the callback will be sent to the default event bus.
 
 `AWS/S3` callbacks require both the `BucketName` and `ObjectPrefix` properties. Each callback result will be written to S3 individually (i.e., one file for each task result, and one file for the job result). The object name will be one of the following:
 
@@ -251,7 +251,7 @@ The JSON message for a successful `Copy` task callback looks like this:
 }
 ```
 
-The JSON message for a failed task will have an `Error` key rather than a `Result` key, like this:
+The JSON message for a failed task will have an `TaskResult.Error` key rather than a `TaskResult.Result` key, like this:
 
 ```json
 {
@@ -284,7 +284,7 @@ Callbacks are also sent when the job completes. Job callbacks can be identified 
 
 ##### Job State
 
-Each job result will include a `State`, which will be one of the following values:
+Each job result will include a `JobResult.State`, which will be one of the following values:
 
 -   `"DONE"`
 -   `"NORMALIZE_INPUT_ERROR"`
@@ -406,7 +406,7 @@ Serialized jobs are **not** called recursively as part of the initial job execut
 
 If a job includes any serialized jobs, they are executed after all job result callbacks have been sent. Each serialized job is sent to the SNS topic mentioned previously. As such, the serialized executions are entirely decoupled from the initial execution. It will do nothing to ensure, and have no visibility into, the progress or success of the serialized jobs. Aside from this, including serialized jobs in a job has no impact on the job itself; callbacks will not indicate in any way that a job included serialized jobs, and individual tasks will not be aware of any of the future work that is expected to occur.
 
-When constructing jobs that include serialized jobs, it is constructor's responsibility to build sequential jobs with meaningful values. If the serialized job needs to do work on the result of the initial job's task, the two job definitions must be explicitly constructed in such a way that the resulting file of the task and the source file of the serialized job align.
+When constructing jobs that include serialized jobs, it's the constructor's responsibility to build sequential jobs with meaningful values. If the serialized job needs to do work on the result of the initial job's task, the two job definitions must be explicitly constructed in such a way that the resulting file of the task and the source file of the serialized job align.
 
 In some cases it could be acceptable or beneficial for a job and some of its serialized jobs to share a job ID, but this would depend enitrely on how the app that sent the job works, and how it handles the callbacks.
 
@@ -451,11 +451,11 @@ All jobs included directly as members of `SerializedJobs` are started simultaneo
 
 ## Telemetry
 
-Porter publishes the following CloudWatch Metrics related to job execution. Remember that job metrics and Step Function execution metrics are tracking different things. A Step Function execution, for example, can succeed while the Porter job it's running fails, and the metrics will reflect that.
+Porter publishes the following CloudWatch Metrics related to job executions. Remember that job metrics and Step Function execution metrics are tracking different things. A Step Function execution, for example, can succeed while the Porter job it's running fails, and the metrics will reflect that.
 
 The following metrics are available with the `StateMachineArn` dimension:
 
-- `JobsStarted`: The number of jobs that were able to begin execution. If a job's input message is too malformed it may not be able to execute.
+- `JobsStarted`: The number of jobs that were able to begin execution. If a job's input message is too malformed it may not be able to execute and will not be counted.
 
 - `TasksRequested`: The number of tasks included in jobs that were able to begin execution.
 
@@ -477,7 +477,7 @@ The following metrics are available with the `StateMachineArn` and `JobResultSta
 
 ### Copy
 
-`Copy` tasks create copies of the job's source file. Each copy task creates one copy, but a job can include any number of copy tasks. Currently the only supported destination mode is `AWS/S3`. Copy tasks **do not** check if an object already exists in the given location.
+`Copy` tasks create copies of the job's source file. Each copy task creates one copy, but a job can include any number of copy tasks. Currently supported destination modes are `AWS/S3` and `FTP`. Copy tasks **do not** check if an object already exists in the given location.
 
 The `Time` and `Timestamp` in the output represent approximately when the file finished being copied.
 
@@ -585,7 +585,7 @@ Output:
 
 ### Image Transform
 
-`Image` tasks perform image manipulations on the source file. These are intended for static image files (eg, jpeg, png, webp, gif, svg. Currently the only supported destination mode is `AWS/S3`. A job can include any number of image tasks; each will perform the operation against the original state of the source file.
+`Image` tasks perform image manipulations on the source file. These are intended for static image files (eg, jpeg, png, webp, gif, svg). Currently the only supported destination mode is `AWS/S3`. A job can include any number of image tasks; each will perform the operation against the original state of the source file.
 
 Resize supports the following parameters: `Fit`, `Height`, `Position`, and `Width`. These follow the same rules as [sharp's](http://sharp.pixelplumbing.com/en/stable/api-resize/#parameters) parameters. The `Resize` property is optional; if excluded the task will not attempt to resize the image. All child properties of the `Resize` object are optional.
 
@@ -595,7 +595,7 @@ By default all image metadata (EXIF, XMP, IPTC, etc) is stripped away during pro
 
 #### AWS/S3
 
-S3 image destinations are done by the [upload()](https://docs.aws.amazon.com/AWSJavaScriptSDK/latest/AWS/S3.html#upload-property) method in the AWS Node SDK.
+S3 image destinations are handled by the [upload()](https://docs.aws.amazon.com/AWSJavaScriptSDK/latest/AWS/S3.html#upload-property) method in the AWS Node SDK.
 
 The `BucketName` and `ObjectKey` properties are required.
 
@@ -717,13 +717,13 @@ Output:
 
 ### Transcribe
 
-`Transcribe` tasks use [Amazon Transcribe](https://aws.amazon.com/transcribe/) speech-to-text functionality to generate transcriptions from audio and video files. The artifact must be an mp3, mp4, wav, ogg, amr, webm or flac file for transcriptions to work. The `LanguageCode` property is required. The destination property is required, and the only mode currently supported is `AWS/S3`. The output of this task is a JSON file, and it's recommended that the destination file uses a `.json` extension, though it's not required.
+`Transcribe` tasks use [Amazon Transcribe](https://aws.amazon.com/transcribe/) speech-to-text functionality to generate transcriptions from audio and video files. The source file must be an mp3, mp4, wav, ogg, amr, webm or flac file for transcriptions to work. The `LanguageCode` property is required. The destination property is required, and the only mode currently supported is `AWS/S3`. The output of this task is a JSON file, and it's recommended that the destination file uses a `.json` extension, though it's not required.
 
 By default, the `MediaFormat` is set based on the [heuristically-determined](https://www.npmjs.com/package/file-type) file type extension of the source file, which may not match the source file's actual extension. For example, an Ogg source file with a `.oga` extension may have a default `MediaFormat` of `ogg`. Some common detected `MediaFormat` values are automatically remapped to a valid value, such as `m4a` to `mp4`. If necessary, you can override this to a different valid format by setting the optional `MediaFormat` property of the `Task`.
 
 `SubtitleFormats` is optional. If included, it must be an array that includes one or more of these values: `vtt`, `srt`. When any `SubtitleFormats` are included in the task, additional files will be created, alongside the default JSON transcription file. If the JSON file is named `myTranscript.json`, the subtitle files would be named `myTranscript.json/subtitles.vtt` or `myTranscript.json/subtitles.srt` (i.e., `[JSON file name]/subtitles.[subtitle format]`).
 
-Additional transcribe job settings are not supported at this time.
+Additional transcribe task settings are not supported at this time.
 
 Input:
 
@@ -757,9 +757,9 @@ Output:
 
 `WavWrap` tasks create a [WAV](https://en.wikipedia.org/wiki/WAV) file from an audio artifact, and apply data to specific chunks of the WAV wrapper.
 
-It accepts MPEG audio files, and any of the chunks supported by [prx-wavefile](https://github.com/PRX/prx-wavefile) including all Broadcast Wave Format chunks and `cart` chunks.
+It accepts MPEG audio files, and any of the chunks supported by [prx-wavefile](https://github.com/PRX/prx-wavefile), including all Broadcast Wave Format chunks and `cart` chunks.
 
-`prx-wavefile` will attempt to set the `fmt`, `mext`, `bext`, `fact`, and `data` chunks from the source file, e.g. analyzing the mpeg audio to set the `fmt` sample rate, bit rate, and number of channels.
+`prx-wavefile` will attempt to set the `fmt`, `mext`, `bext`, `fact`, and `data` chunks from the source file, e.g. analyzing the MPEG audio to set the `fmt` sample rate, bit rate, and number of channels.
 
 The `cart` chunk is optional, and won't be set unless it's included in the `Task.Chunks` array, as in the example below.
 
@@ -834,17 +834,17 @@ Output:
 
 #### AWS/S3
 
-S3 destinations are done by the [upload()](https://docs.aws.amazon.com/AWSJavaScriptSDK/latest/AWS/S3.html#upload-property) method in the AWS Node SDK.
+S3 destinations are handled by the [upload()](https://docs.aws.amazon.com/AWSJavaScriptSDK/latest/AWS/S3.html#upload-property) method in the AWS Node SDK.
 
 The `BucketName` and `ObjectKey` properties are required.
 
 To set metadata on the new audio file object, use the optional `Parameters` property on the destination. The contents of `Parameters` are passed directly to the [upload()](https://docs.aws.amazon.com/AWSJavaScriptSDK/latest/AWS/S3.html#upload-property) method.
 
-If you set the optional `ContentType` property to `REPLACE`, the content type of the newly created audio file will be set to a [heuristically-determined](https://www.npmjs.com/package/file-type) value from the job's source file. If the content type could not be determined heuristically, this property has no effect. If a `ContentType` value is explicitly defined in `Parameters` that value will take precedence.
-
 ## S3 Destination Permissions
 
-Several tasks types produce new files, and [Amazon S3](https://aws.amazon.com/s3/) is a supported destination. When a task includes S3 as a destination, the destination bucket must grant access via its [bucket policy](https://docs.aws.amazon.com/AmazonS3/latest/dev/using-iam-policies.html). Porter creates a IAM role that is always used to perform S3 actions on destination buckets, so the bucket policies must allow the necessary actions for that policy. The role's ARN is published as an output on the CloudFormation stack.
+Several task types produce new files, and [Amazon S3](https://aws.amazon.com/s3/) is a supported destination. When a task includes S3 as a destination, the destination bucket must grant access via its [bucket policy](https://docs.aws.amazon.com/AmazonS3/latest/dev/using-iam-policies.html). Porter creates a IAM role that is always used to perform S3 actions on destination buckets, so the bucket policies must allow the necessary actions for that policy. The role's ARN is published as an output on the CloudFormation stack.
+
+Generally, for buckets in the same AWS account where Porter is deployed, this permission is granted implicitly by default, so the bucket policy is not required.
 
 The following is an example of the bucket policy used for granting Porter access to a bucket called `myBucket`:
 
