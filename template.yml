@@ -1389,7 +1389,7 @@ Resources:
           MAX_HTTP_REDIRECTS: "10"
       Handler: index.handler
       Layers:
-        - !Ref AwsSdkJsV3LambdaLayer
+        - !Ref AwsXraySdkLambdaLayer
         - !Ref FileTypeLambdaLayer
       MemorySize: 256
       Policies:
