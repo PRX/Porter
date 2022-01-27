@@ -2227,9 +2227,9 @@ Resources:
               "properties": {
                 "metrics": [
                   [ "PRX/Porter", "JobsStarted", "StateMachineArn", "${StateMachine}", { "label": "Started" } ],
-                  [ "PRX/Porter, "JobsCompleted", "StateMachineArn", "${StateMachine}", { "label": "Completed" } ],
-                  [ "PRX/Porter, "JobsSucceeded", "StateMachineArn", "${StateMachine}", { "label": "Succeeded" } ],
-                  [ "PRX/Porter, "JobsFailed", "StateMachineArn", "${StateMachine}", { "label": "Failed" } ]
+                  [ "PRX/Porter", "JobsCompleted", "StateMachineArn", "${StateMachine}", { "label": "Completed" } ],
+                  [ "PRX/Porter", "JobsSucceeded", "StateMachineArn", "${StateMachine}", { "label": "Succeeded" } ],
+                  [ "PRX/Porter", "JobsFailed", "StateMachineArn", "${StateMachine}", { "label": "Failed" } ]
                 ],
                 "view": "timeSeries",
                 "stacked": false,
