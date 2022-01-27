@@ -2414,7 +2414,7 @@ Resources:
             }
           ]
         }
-      DashboardName: !Sub ${AWS::StackName}-Overview
+      DashboardName: !Sub ${AWS::StackName}-${AWS::Region}-Overview
 
 Outputs:
   JobExecutionSnsTopicArn:
