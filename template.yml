@@ -2211,6 +2211,211 @@ Resources:
       Threshold: 0
       TreatMissingData: notBreaching
 
+  # CloudWatch Dashboard
+  Dashboard:
+    Type: AWS::CloudWatch::Dashboard
+    Properties:
+      DashboardBody: !Sub |-
+        {
+          "widgets": [
+            {
+              "height": 3,
+              "width": 9,
+              "y": 0,
+              "x": 15,
+              "type": "metric",
+              "properties": {
+                "metrics": [
+                  [ "PRX/Porter", "JobsStarted", "StateMachineArn", "${StateMachine}", { "label": "Started" } ],
+                  [ "PRX/Porter, "JobsCompleted", "StateMachineArn", "${StateMachine}", { "label": "Completed" } ],
+                  [ "PRX/Porter, "JobsSucceeded", "StateMachineArn", "${StateMachine}", { "label": "Succeeded" } ],
+                  [ "PRX/Porter, "JobsFailed", "StateMachineArn", "${StateMachine}", { "label": "Failed" } ]
+                ],
+                "view": "timeSeries",
+                "stacked": false,
+                "region": "${AWS::Region}",
+                "stat": "Sum",
+                "period": 900,
+                "title": "Jobs",
+                "yAxis": {
+                  "right": {
+                    "min": 0,
+                    "showUnits": false
+                  },
+                  "left": {
+                    "min": 0,
+                    "showUnits": false
+                  }
+                }
+              }
+            },
+            {
+              "height": 3,
+              "width": 12,
+              "y": 0,
+              "x": 0,
+              "type": "metric",
+              "properties": {
+                "metrics": [
+                  [ "PRX/Porter", "JobsStarted", "StateMachineArn", "${StateMachine}", { "label": "Started" } ],
+                  [ "PRX/Porter", "JobsCompleted", "StateMachineArn", "${StateMachine}", { "label": "Completed" } ],
+                  [ "PRX/Porter", "JobsSucceeded", "StateMachineArn", "${StateMachine}", { "label": "Succeeded", "visible": false } ],
+                  [ "PRX/Porter", "JobsFailed", "StateMachineArn", "${StateMachine}", { "label": "Failed" } ]
+                ],
+                "view": "singleValue",
+                "stacked": false,
+                "region": "${AWS::Region}",
+                "stat": "Sum",
+                "period": 900,
+                "title": "Jobs",
+                "setPeriodToTimeRange": true
+              }
+            },
+            {
+              "height": 3,
+              "width": 9,
+              "y": 3,
+              "x": 15,
+              "type": "metric",
+              "properties": {
+                "metrics": [
+                  [ "PRX/Porter", "TasksRequested", "StateMachineArn", "${StateMachine}", { "label": "Requested" } ],
+                  [ "PRX/Porter", "TasksSucceeded", "StateMachineArn", "${StateMachine}", { "color": "#2ca02c", "label": "Succeeded" } ],
+                  [ "PRX/Porter", "TasksFailed", "StateMachineArn", "${StateMachine}", { "color": "#d62728", "label": "Failed" } ]
+                ],
+                "view": "timeSeries",
+                "stacked": false,
+                "region": "${AWS::Region}",
+                "period": 900,
+                "stat": "Sum",
+                "title": "Tasks",
+                "yAxis": {
+                  "left": {
+                    "showUnits": false,
+                    "min": 0
+                  },
+                  "right": {
+                    "min": 0,
+                    "showUnits": false
+                  }
+                }
+              }
+            },
+            {
+              "height": 3,
+              "width": 12,
+              "y": 3,
+              "x": 0,
+              "type": "metric",
+              "properties": {
+                "metrics": [
+                  [ "PRX/Porter", "TasksRequested", "StateMachineArn", "${StateMachine}", { "label": "Requested" } ],
+                  [ "PRX/Porter", "TasksSucceeded", "StateMachineArn", "${StateMachine}", { "color": "#2ca02c", "label": "Succeeded" } ],
+                  [ "PRX/Porter", "TasksFailed", "StateMachineArn", "${StateMachine}", { "color": "#d62728", "label": "Failed" } ]
+                ],
+                "view": "singleValue",
+                "stacked": false,
+                "region": "${AWS::Region}",
+                "period": 900,
+                "stat": "Sum",
+                "title": "Tasks",
+                "setPeriodToTimeRange": true,
+                "singleValueFullPrecision": false
+              }
+            },
+            {
+              "height": 6,
+              "width": 3,
+              "y": 0,
+              "x": 12,
+              "type": "text",
+              "properties": {
+                "markdown": "\n[Step Functions Console](https://console.aws.amazon.com/states/home?region=${AWS::Region}#/statemachines/view/${StateMachine})\n"
+              }
+            },
+            {
+              "height": 3,
+              "width": 9,
+              "y": 6,
+              "x": 15,
+              "type": "metric",
+              "properties": {
+                "metrics": [
+                  [ "AWS/States", "ExecutionsStarted", "StateMachineArn", "${StateMachine}", { "label": "Started" } ],
+                  [ "AWS/States", "ExecutionsSucceeded", "StateMachineArn", "${StateMachine}", { "color": "#2ca02c", "label": "Succeeded" } ],
+                  [ "AWS/States", "ExecutionsAborted", "StateMachineArn", "${StateMachine}", { "yAxis": "right", "color": "#ff9896", "label": "Aborted" } ],
+                  [ "AWS/States", "ExecutionsTimedOut", "StateMachineArn", "${StateMachine}", { "yAxis": "right", "color": "#ff9896", "label": "Timed Out" } ],
+                  [ "AWS/States", "ExecutionThrottled", "StateMachineArn", "${StateMachine}", { "yAxis": "right", "color": "#ff9896", "label": "Throttled" } ],
+                  [ "AWS/States", "ExecutionsFailed", "StateMachineArn", "${StateMachine}", { "color": "#d62728", "yAxis": "right", "label": "Failed" } ]
+                ],
+                "view": "timeSeries",
+                "stacked": false,
+                "region": "${AWS::Region}",
+                "stat": "Sum",
+                "period": 900,
+                "title": "Executions"
+              }
+            },
+            {
+              "height": 3,
+              "width": 12,
+              "y": 6,
+              "x": 0,
+              "type": "metric",
+              "properties": {
+                "metrics": [
+                  [ "AWS/States", "ExecutionsStarted", "StateMachineArn", "${StateMachine}", { "label": "Started" } ],
+                  [ "AWS/States", "ExecutionsSucceeded", "StateMachineArn", "${StateMachine}", { "color": "#2ca02c", "label": "Succeeded" } ],
+                  [ "AWS/States", "ExecutionsAborted", "StateMachineArn", "${StateMachine}", { "yAxis": "right", "color": "#ff9896", "label": "Aborted", "visible": false } ],
+                  [ "AWS/States", "ExecutionsTimedOut", "StateMachineArn", "${StateMachine}", { "yAxis": "right", "color": "#ff9896", "label": "Timed Out", "visible": false } ],
+                  [ "AWS/States", "ExecutionThrottled", "StateMachineArn", "${StateMachine}", { "yAxis": "right", "color": "#ff9896", "label": "Throttled", "visible": false } ],
+                  [ "AWS/States", "ExecutionsFailed", "StateMachineArn", "${StateMachine}", { "color": "#d62728", "yAxis": "right", "label": "Failed" } ]
+                ],
+                "view": "singleValue",
+                "stacked": false,
+                "region": "${AWS::Region}",
+                "stat": "Sum",
+                "period": 900,
+                "title": "Executions",
+                "setPeriodToTimeRange": true,
+                "singleValueFullPrecision": false
+              }
+            },
+            {
+              "height": 3,
+              "width": 9,
+              "y": 9,
+              "x": 15,
+              "type": "metric",
+              "properties": {
+                "metrics": [
+                  [ { "expression": "m1/1000/60", "label": "p50 Duration (minutes)", "id": "e1", "region": "${AWS::Region}" } ],
+                  [ { "expression": "m2/1000/60", "label": "p90 Duration (minutes)", "id": "e2", "region": "${AWS::Region}" } ],
+                  [ "AWS/States", "ExecutionTime", "StateMachineArn", "${StateMachine}", { "id": "m1", "visible": false } ],
+                  [ "AWS/States", "ExecutionTime", "StateMachineArn", "${StateMachine}", { "id": "m2", "visible": false, "stat": "p90" } ]
+                ],
+                "view": "timeSeries",
+                "stacked": false,
+                "region": "${AWS::Region}",
+                "period": 300,
+                "stat": "p50",
+                "title": "Execution Time",
+                "yAxis": {
+                  "left": {
+                    "showUnits": false,
+                    "min": 0
+                  },
+                  "right": {
+                    "showUnits": false,
+                    "min": 0
+                  }
+                }
+              }
+            }
+          ]
+        }
+      DashboardName: !Sub ${AWS::StackName}-Overview
+
 Outputs:
   JobExecutionSnsTopicArn:
     Value: !Ref JobExecutionSnsTopic
