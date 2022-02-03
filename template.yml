@@ -2330,7 +2330,7 @@ Resources:
               "x": 12,
               "type": "text",
               "properties": {
-                "markdown": "\n[Step Functions Console](https://console.aws.amazon.com/states/home?region=${AWS::Region}#/statemachines/view/${StateMachine})\n"
+                "markdown": "\n[Step Functions Console](https://console.aws.amazon.com/states/home?region=${AWS::Region}#/statemachines/view/${StateMachine})\n[Unsuccessful jobs Insights](https://console.aws.amazon.com/cloudwatch/home?region=us-east-1#logsV2:logs-insights$3FqueryDetail$3D$257E$2528end$257E0$257Estart$257E-3600$257EtimeType$257E$2527RELATIVE$257Eunit$257E$2527seconds$257EeditorString$257E$2527sort*20*40timestamp*20desc*0a*7c*20fields*20ispresent*28input.Message.JobResult.FailedTasks.0.Type*29*20as*20HasFailedTasks*0a*7c*20fields*20input.Message.JobResult.State*20as*20FailureReason*0a*7c*20fields*20input.Execution.Id*20as*20StepFunctionExecutionId*0a*7c*20display*20FailureReason*2c*20HasFailedTasks*2c*20StepFunctionExecutionId*0a*7c*20filter*20*28HasFailedTasks*20*3d*3d*201*29*20or*20*28FailureReason*20in*20*5b*22NORMALIZE_INPUT_ERROR*22*2c*20*22SOURCE_FILE_INGEST_ERROR*22*2c*20*22SOURCE_FILE_TYPE_DETECTION_ERROR*22*2c*20*22ITERATOR_ERROR*22*5d*29*0a*0a*23*20fields*20*40requestId*0a*23*20*7c*20filter*20input.Message.JobResult.Execution.Id*20like*20*2f___SOME_EXECUTION_ID___*2f*0a*23*20*7c*20sort*20*40timestamp*20desc*0a*0a*23*20fields*20*40message*20*7c*20filter*20*40requestId*20like*20*2f___SOME_REQUEST_ID___*2f*20*7c*20sort*20*40timestamp*20asc$257EisLiveTail$257Efalse$257EqueryId$257E$2527d0048a1b-70cb-4010-9051-4ecab7d78a13$257Esource$257E$2528$257E$2527*2faws*2flambda*2f${CallbackLambdaLogGroup}$2529$2529)\n"
               }
             },
             {
