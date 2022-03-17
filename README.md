@@ -180,7 +180,7 @@ See also: [S3 Destination Permissions](#s3-destination-permissions)
 
 `Callbacks` is an array of endpoints to which callback messages about the job execution will be sent. Each endpoint object has a `Type` (supported types are `AWS/SNS`, `AWS/SQS`, `AWS/S3`, `AWS/EventBridge`, and `HTTP`). Different modes will have additional required properties.
 
-`HTTP` callbacks using methods like `POST` or `PUT` require a `Content-Type`. Possible values are `application/json` and `application/x-www-form-urlencoded`. The endpoint should respond with an HTTP `200` to acknowledge receipt of the callback.
+`HTTP` callbacks require a 'URL' property. When using methods like `POST` or `PUT`, they also require a `Content-Type`. Possible values are `application/json` and `application/x-www-form-urlencoded`. When using HTTP `GET`, the entire callback message is sent as a URL query parameter value. The `QueryParameterName` property is required and determines the name of the query parameter used to send the message. Other query parameters on the callback URL are preserved, but the chosen parameter is replaced if it exists. There is no guarantee that callback messages will fit within the normal limits of a URL's length, therefore `GET` callbacks are not recommended. The endpoint should respond with an HTTP `200` to acknowledge receipt of the callback.
 
 `AWS/SNS` callbacks must include a `Topic` ARN, and `AWS/SQS` callbacks must include a `Queue` in the form of a URL. An `AWS/EventBridge` callback can optionally include an `EventBusName`; if excluded the callback will be sent to the default event bus.
 
