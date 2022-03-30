@@ -2171,6 +2171,7 @@ Resources:
         CopyLambdaFunctionArn: !GetAtt CopyLambdaFunction.Arn
         EcsClusterArn: !GetAtt EcsCluster.Arn
         ImageTransformLambdaFunctionArn: !GetAtt ImageTransformLambdaFunction.Arn
+        SilenceDetectionLambdaFunctionArn: !GetAtt SilenceDetectionLambdaFunction.Arn
         IngestLambdaFunctionArn: !GetAtt IngestLambdaFunction.Arn
         InspectMediaLambdaFunctionArn: !GetAtt InspectMediaLambdaFunction.Arn
         JobSerializerLambdaFunctionArn: !GetAtt JobSerializerLambdaFunction.Arn
