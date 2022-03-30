@@ -225,6 +225,9 @@ States:
             - Variable: "$.Task.Type"
               StringEquals: DetectSilence
               Next: Detect Silence Task Handler
+            - Variable: "$.Task.Type"
+              StringEquals: DetectTone
+              Next: Detect Tone Task Handler
 
         # This is a no-op. No callbacks are sent, and any record of this task
         # will be filtered out of the job result callbacks
@@ -523,6 +526,30 @@ States:
           Type: Task
           Comment: Detects silence in audio files
           Resource: "${SilenceDetectionLambdaFunctionArn}"
+          InputPath: "$"
+          Parameters:
+            Job:
+              Id.$: "$.Job.Id"
+            Artifact.$: "$.Artifact"
+            Task.$: "$.Task"
+          ResultPath: "$.TaskResult"
+          OutputPath: "$"
+          Next: TaskResult Callbacks Map
+          Retry:
+            - ErrorEquals:
+                - States.ALL
+              IntervalSeconds: 5
+              MaxAttempts: 3
+              BackoffRate: 2
+          Catch:
+            - ErrorEquals:
+                - States.ALL
+              ResultPath: "$.Error"
+              Next: TaskResult Error Callback Map
+        Detect Tone Task Handler:
+          Type: Task
+          Comment: Detects tones in audio files
+          Resource: "${ToneDetectionLambdaFunctionArn}"
           InputPath: "$"
           Parameters:
             Job:
