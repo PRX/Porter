@@ -2105,7 +2105,7 @@ Resources:
                   - !GetAtt NormalizeOutputLambdaFunction.Arn
                   - !GetAtt JobSerializerLambdaFunction.Arn
                   - !GetAtt FtpCopyTaskOutputLambdaFunction.Arn
-                  - !GetAtt SilenceDetectionLambdaFunctionArn.Arn
+                  - !GetAtt SilenceDetectionLambdaFunction.Arn
             Version: "2012-10-17"
         - PolicyName: PassRoleToEcsPolicy
           PolicyDocument:
