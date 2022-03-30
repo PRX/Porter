@@ -29,6 +29,7 @@ Many input and output methods are supported to allow flexibility with other appl
     -   [Transcribe](#transcribe)
     -   [WAV Wrap](#wav-wrap)
     -   [Detect Silence](#detect-silence)
+    -   [Detect Tone](#detect-tone)
 -   [Serialized Jobs](#serialized-jobs)
 -   [S3 Read Permissions](#s3-read-permissions)
 -   [S3 Destination Permissions](#s3-destination-permissions)
@@ -856,7 +857,7 @@ Input:
     "Type": "DetectSilence",
     "Threshold": {
       "Duration": "1.0",
-      "Value": "0.005",
+      "Value": "0.005"
     }
 }
 ```
@@ -867,6 +868,41 @@ Output:
 {
     "Task": "DetectSilence",
     "Silence": {
+      "Ranges": [
+        { "Start": 10.105, "End": 19.988, "Minimum": 0, "Maximum": 0.00098160235211 }
+      ]
+    }
+}
+```
+
+### Detect Tone
+
+`DetectTone` tasks identify periods of tones in audio files. All source audio files are mixed down to a single channel prior to detection. The `Frequency` property determines which tone is being detected and is required.
+
+`Threshold.Duration` and `Threshold.Value` are optional. They determine what sample data will be considered tone. Only samples that are above (i.e., louder than) `Threshold.Value` will be considered tone. Periods of tone shorter than `Threshold.Duration` (in seconds) will not be included in the output. If both properties are excluded, the `Threshold` property can also be excluded.
+
+The default values are `0.2` for `Duration` and `0.01` for `Value`.
+
+Input:
+
+```json
+{
+    "Type": "DetectTone",
+    "Frequency": 440,
+    "Threshold": {
+      "Duration": "1.0",
+      "Value": "0.005"
+    }
+}
+```
+
+Output:
+
+```json
+{
+    "Task": "DetectTone",
+    "Tone": {
+      "Frequency": 440,
       "Ranges": [
         { "Start": 10.105, "End": 19.988, "Minimum": 0, "Maximum": 0.00098160235211 }
       ]
