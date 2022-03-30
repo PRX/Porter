@@ -845,7 +845,7 @@ To set metadata on the new audio file object, use the optional `Parameters` prop
 
 `DetectSilence` tasks identify periods of silence in audio files. All source audio files are mixed down to a single channel prior to detection.
 
-`Threshold.Duration` and `Threshold.Value` are optional. They determine what sample data will be considered silence. Samples that are above `Threshold.Value` will never be considered silence. Periods of silence shorter than `Threshold.Duration` (in seconds) will not be included in the output. If both properties are excluded, the `Threshold` property can also be excluded.
+`Threshold.Duration` and `Threshold.Value` are optional. They determine what sample data will be considered silence. Samples that are above (i.e., louder than) `Threshold.Value` will never be considered silence. Periods of silence shorter than `Threshold.Duration` (in seconds) will not be included in the output. If both properties are excluded, the `Threshold` property can also be excluded.
 
 The default values are `0.2` for `Duration` and `0.001` for `Value`.
 
@@ -855,8 +855,8 @@ Input:
 {
     "Type": "DetectSilence",
     "Threshold": {
-      "Duration": "",
-      "Value": "",
+      "Duration": "1.0",
+      "Value": "0.005",
     }
 }
 ```
