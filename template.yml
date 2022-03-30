@@ -1768,8 +1768,8 @@ Resources:
       CodeUri: src/lambdas/silence-detection/
       Description: >-
         Detect silence timings in an audio file
-      EphemeralStorage:
-        Size: 2048
+      # EphemeralStorage:
+      #   Size: 2048
       Environment:
         Variables:
           S3_DESTINATION_WRITER_ROLE: !GetAtt S3DestinationWriterRole.Arn
