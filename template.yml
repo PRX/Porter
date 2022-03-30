@@ -1233,6 +1233,16 @@ Resources:
         - nodejs14.x
       Description: FFmpeg binary
       RetentionPolicy: Delete
+  SoxLambdaLayer:
+    Type: AWS::Serverless::LayerVersion
+    Metadata:
+      BuildMethod: makefile
+    Properties:
+      ContentUri: lib/sox
+      CompatibleRuntimes:
+        - nodejs14.x
+      Description: SoX binary
+      RetentionPolicy: Delete
   MpckLambdaLayer:
     Type: AWS::Serverless::LayerVersion
     Metadata:
