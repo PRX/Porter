@@ -1765,7 +1765,7 @@ Resources:
     Type: AWS::Serverless::Function
     Properties:
       Architectures: [x86_64]
-      CodeUri: src/lambdas/silence-detection/
+      CodeUri: src/lambdas/detect-silence/
       Description: >-
         Detect silence timings in an audio file
       # EphemeralStorage:

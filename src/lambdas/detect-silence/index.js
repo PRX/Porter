@@ -108,6 +108,12 @@ function createDatFile(event, inputFilePath, outputFilePath) {
   });
 }
 
+/**
+ * @param {string} filePath
+ * @param {number} maxValue
+ * @param {number} minDuration
+ * @returns
+ */
 async function findSilentRanges(filePath, maxValue, minDuration) {
   const ranges = [];
 
