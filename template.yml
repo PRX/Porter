@@ -1822,7 +1822,7 @@ Resources:
     Type: AWS::Serverless::Function
     Properties:
       Architectures: [x86_64]
-      CodeUri: src/lambdas/tone-tone/
+      CodeUri: src/lambdas/detect-tone/
       Description: >-
         Detect tone timings in an audio file
       # EphemeralStorage:
