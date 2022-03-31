@@ -869,7 +869,7 @@ Output:
     "Task": "DetectSilence",
     "Silence": {
       "Ranges": [
-        { "Start": 10.105, "End": 19.988, "Minimum": 0, "Maximum": 0.00098160235211 }
+        { "Start": 10.105, "End": 19.988 }
       ]
     }
 }
@@ -881,7 +881,7 @@ Output:
 
 `Threshold.Duration` and `Threshold.Value` are optional. They determine what sample data will be considered tone. Only samples that are above (i.e., louder than) `Threshold.Value` will be considered tone. Periods of tone shorter than `Threshold.Duration` (in seconds) will not be included in the output. If both properties are excluded, the `Threshold` property can also be excluded.
 
-The default values are `0.2` for `Duration` and `0.01` for `Value`.
+The default values are `0.2` for `Duration` and `0.025` for `Value`.
 
 Input:
 
