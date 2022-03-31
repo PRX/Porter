@@ -8,7 +8,7 @@ const aws = require('aws-sdk');
 
 const s3 = new aws.S3();
 
-const DEFAULT_MIN_VALUE = 0.075;
+const DEFAULT_MIN_VALUE = 0.025;
 const DEFAULT_MIN_DURATION = 0.2;
 
 /**
@@ -68,14 +68,14 @@ async function fetchArtifact(event, filePath) {
   );
 }
 
-function createMetadataFile(inputFilePath, outputFilePath) {
+function createMetadataFile(inputFilePath, outputFilePath, frequency) {
   return new Promise((resolve, reject) => {
     const start = process.hrtime();
 
     const filterString = [
       'pan=mono|c0=.5*c0+.5*c1',
       'volume=volume=1.0',
-      'bandpass=frequency=25:width_type=q:width=3',
+      `bandpass=frequency=${frequency}:width_type=q:width=3`,
       'asetnsamples=2000',
       'astats=metadata=1:reset=1',
       `ametadata=key=lavfi.astats.Overall.Max_level:mode=print:file=${outputFilePath}`,
@@ -137,7 +137,6 @@ async function getRangesFromMetadataFile(filePath, minValue, minDuration) {
           // Start a new range with sensible default values
           rangeBuffer = {
             Start: timeBuffer,
-            StartS: new Date(timeBuffer * 1000).toISOString().substr(11, 12),
             End: timeBuffer,
             Minimum: level,
             Maximum: level,
@@ -145,9 +144,6 @@ async function getRangesFromMetadataFile(filePath, minValue, minDuration) {
         } else {
           // Update values when working on a continuous range
           rangeBuffer.End = timeBuffer;
-          rangeBuffer.EndS = new Date(timeBuffer * 1000)
-            .toISOString()
-            .substr(11, 12);
           rangeBuffer.Minimum = Math.min(rangeBuffer.Minimum, level);
           rangeBuffer.Maximum = Math.max(rangeBuffer.Maximum, level);
         }
@@ -192,7 +188,7 @@ exports.handler = async (event, context) => {
     os.tmpdir(),
     `${context.awsRequestId}.meta`,
   );
-  await createMetadataFile(artifactFileTmpPath, metadataFileTmpPath);
+  await createMetadataFile(artifactFileTmpPath, metadataFileTmpPath, frequency);
 
   const ranges = await getRangesFromMetadataFile(
     metadataFileTmpPath,
