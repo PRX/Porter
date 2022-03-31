@@ -1,7 +1,9 @@
 const path = require('path');
 const os = require('os');
 const fs = require('fs');
+// eslint-disable-next-line import/no-extraneous-dependencies
 const AWS = require('aws-sdk');
+// eslint-disable-next-line import/no-extraneous-dependencies
 const { Storage } = require('@google-cloud/storage');
 
 const s3 = new AWS.S3({ apiVersion: '2006-03-01' });
