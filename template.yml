@@ -1776,7 +1776,7 @@ Resources:
           LD_LIBRARY_PATH: /opt/lib64:$LD_PRIMARY_PATH
       Handler: index.handler
       Layers:
-        - !Ref SoxLambdaLayer
+        - !Ref FfmpegLambdaLayer
       MemorySize: 3008
       Role: !GetAtt SilenceDetectionLambdaIamRole.Arn
       Runtime: nodejs14.x

@@ -68,19 +68,20 @@ async function fetchArtifact(event, filePath) {
   );
 }
 
-/**
- * Creates a SoX dat file
- * @param {object} event
- * @param {string} inputFilePath
- * @param {string} outputFilePath
- */
-function createDatFile(event, inputFilePath, outputFilePath) {
+function createMetadataFile(
+  inputFilePath,
+  outputFilePath,
+  maxValue,
+  minDuration,
+) {
   return new Promise((resolve, reject) => {
     const start = process.hrtime();
 
+    const filterString = `silencedetect=noise=${maxValue}:duration=${minDuration},ametadata=mode=print:file=${outputFilePath}`;
+
     const childProc = childProcess.spawn(
-      '/opt/bin/sox',
-      [inputFilePath, outputFilePath, 'channels', '1', 'rate', '1000', 'norm'],
+      '/opt/bin/ffmpeg',
+      ['-i', inputFilePath, '-af', filterString, '-f', 'null', '-'],
       {
         env: process.env,
         cwd: os.tmpdir(),
@@ -94,13 +95,13 @@ function createDatFile(event, inputFilePath, outputFilePath) {
       const end = process.hrtime(start);
       console.log(
         JSON.stringify({
-          msg: 'Finished SoX',
+          msg: 'Finished FFmpeg silencedetect',
           duration: `${end[0]} s ${end[1] / 1000000} ms`,
         }),
       );
 
       if (code || signal) {
-        reject(new Error(`SoX failed with ${code || signal}`));
+        reject(new Error(`FFmpeg failed with ${code || signal}`));
       } else {
         resolve();
       }
@@ -108,13 +109,7 @@ function createDatFile(event, inputFilePath, outputFilePath) {
   });
 }
 
-/**
- * @param {string} filePath
- * @param {number} maxValue
- * @param {number} minDuration
- * @returns
- */
-async function findSilentRanges(filePath, maxValue, minDuration) {
+async function getRangesFromMetadataFile(filePath) {
   const ranges = [];
 
   const reader = readline.createInterface({
@@ -124,60 +119,15 @@ async function findSilentRanges(filePath, maxValue, minDuration) {
 
   let rangeBuffer;
 
-  // Read the dat file line-by-line
   reader.on('line', (line) => {
-    // The first few lines are descriptors that can be ignored
-    if (line.startsWith(';')) {
-      return;
-    }
-
-    // Each line contains the time and an energy value
-    const sampleData = line
-      .trim()
-      .split(/\s+/)
-      .map((v) => +v);
-    const time = sampleData[0];
-    const energy = Math.abs(sampleData[1]);
-
-    if (energy < maxValue) {
-      // This line represents some silence
-
-      if (!rangeBuffer) {
-        // Start a new range with sensible default values
-        rangeBuffer = {
-          Start: time,
-          End: time,
-          Minimum: energy,
-          Maximum: energy,
-        };
-      } else {
-        // Update values when working on a continuous range
-        rangeBuffer.End = time;
-        rangeBuffer.Minimum = Math.min(rangeBuffer.Minimum, energy);
-        rangeBuffer.Maximum = Math.max(rangeBuffer.Maximum, energy);
-      }
-    } else {
-      // This line is not silence
-
-      // If there's no active range, do nothing
-      if (!rangeBuffer) {
-        return;
-      }
-
-      // If the range is long enough to record, add it
-      if (rangeBuffer.End - rangeBuffer.Start > minDuration) {
-        ranges.push(rangeBuffer);
-      }
-
-      // Start a new range for the next line
-      rangeBuffer = undefined;
-    }
-  });
-
-  reader.on('close', () => {
-    // At the end of the file, flush any remaining buffer if necessary
-    if (rangeBuffer && rangeBuffer.End - rangeBuffer.Start > minDuration) {
+    if (line.startsWith('lavfi.silence_start=')) {
+      rangeBuffer = {
+        Start: Number(line.split('=')[1]),
+      };
+    } else if (line.startsWith('lavfi.silence_end=')) {
+      rangeBuffer.End = Number(line.split('=')[1]);
       ranges.push(rangeBuffer);
+      rangeBuffer = undefined;
     }
   });
 
@@ -195,16 +145,27 @@ exports.handler = async (event, context) => {
   );
   await fetchArtifact(event, artifactFileTmpPath);
 
-  const datFileTmpPath = path.join(os.tmpdir(), `${context.awsRequestId}.dat`);
-  await createDatFile(event, artifactFileTmpPath, datFileTmpPath);
-
   const maxValue = event.Task?.Threshold?.Value || DEFAULT_MAX_VALUE;
   const minDuration = event.Task?.Threshold?.Duration || DEFAULT_MIN_DURATION;
 
-  const ranges = await findSilentRanges(datFileTmpPath, maxValue, minDuration);
+  const metadataFileTmpPath = path.join(
+    os.tmpdir(),
+    `${context.awsRequestId}.meta`,
+  );
+  await createMetadataFile(
+    artifactFileTmpPath,
+    metadataFileTmpPath,
+    maxValue,
+    minDuration,
+  );
+
+  const ranges = await getRangesFromMetadataFile(metadataFileTmpPath);
 
   fs.unlinkSync(artifactFileTmpPath);
-  fs.unlinkSync(datFileTmpPath);
+  fs.unlinkSync(metadataFileTmpPath);
 
-  return { Task: 'DetectSilence', Silence: { Ranges: ranges } };
+  return {
+    Task: 'DetectSilence',
+    Silence: { Ranges: ranges },
+  };
 };
