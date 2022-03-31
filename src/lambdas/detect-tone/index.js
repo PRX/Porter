@@ -145,8 +145,10 @@ async function getRangesFromMetadataFile(filePath, minValue, minDuration) {
         } else {
           // Update values when working on a continuous range
           rangeBuffer.End = timeBuffer;
-          EndS: new Date(timeBuffer * 1000).toISOString().substr(11, 12),
-            (rangeBuffer.Minimum = Math.min(rangeBuffer.Minimum, level));
+          rangeBuffer.EndS = new Date(timeBuffer * 1000)
+            .toISOString()
+            .substr(11, 12);
+          rangeBuffer.Minimum = Math.min(rangeBuffer.Minimum, level);
           rangeBuffer.Maximum = Math.max(rangeBuffer.Maximum, level);
         }
       } else {
