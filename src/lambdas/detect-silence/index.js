@@ -184,6 +184,10 @@ exports.handler = async (event, context) => {
 
   return {
     Task: 'DetectSilence',
+    Threshold: {
+      Value: maxValue,
+      Duration: minDuration,
+    },
     Silence: { Ranges: ranges },
   };
 };

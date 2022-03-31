@@ -199,5 +199,12 @@ exports.handler = async (event, context) => {
   fs.unlinkSync(artifactFileTmpPath);
   fs.unlinkSync(metadataFileTmpPath);
 
-  return { Task: 'DetectTone', Tone: { Frequency: frequency, Ranges: ranges } };
+  return {
+    Task: 'DetectTone',
+    Threshold: {
+      Value: minValue,
+      Duration: minDuration,
+    },
+    Tone: { Frequency: frequency, Ranges: ranges },
+  };
 };
