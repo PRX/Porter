@@ -1,0 +1,43 @@
+{
+  "Job": {
+    "Id": "porter-sample-transcode-multi-split",
+    "Source": {
+      "Mode": "HTTP",
+      "URL": "https://dts.podtrac.com/redirect.mp3/dovetail.prxu.org/232/2005da8d-34e6-4b1b-bb0b-d9f34a6e8f77/PL_PREVIEW_V1_COMING_SEP_JOHN_NEW_VERSION_PREMIERES_SUBSCRIBE_NOW_1_.mp3"
+    },
+    "Tasks": [
+      {
+        "Type": "Transcode",
+        "Format": "mp3",
+        "Destination": {
+          "Mode": "AWS/S3",
+          "BucketName": "prx-porter-sandbox",
+          "ObjectKey": "dev/sample/transcode-multi-split/part1.mp3",
+          "Parameters": {
+            "ContentType": "audio/mp3"
+          }
+        },
+        "FFmpeg": {
+          "InputFileOptions": "-ss 47.51",
+          "OutputFileOptions": "-t 12.5"
+        }
+      },
+      {
+        "Type": "Transcode",
+        "Format": "mp3",
+        "Destination": {
+          "Mode": "AWS/S3",
+          "BucketName": "prx-porter-sandbox",
+          "ObjectKey": "dev/sample/transcode-multi-split/part2.mp3",
+          "Parameters": {
+            "ContentType": "audio/mp3"
+          }
+        },
+        "FFmpeg": {
+          "InputFileOptions": "-ss 62.45",
+          "OutputFileOptions": "-t 33.33"
+        }
+      }
+    ]
+  }
+}
