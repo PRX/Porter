@@ -1773,7 +1773,6 @@ Resources:
       Environment:
         Variables:
           S3_DESTINATION_WRITER_ROLE: !GetAtt S3DestinationWriterRole.Arn
-          LD_LIBRARY_PATH: /opt/lib64:$LD_PRIMARY_PATH
       Handler: index.handler
       Layers:
         - !Ref FfmpegLambdaLayer
@@ -1830,10 +1829,9 @@ Resources:
       Environment:
         Variables:
           S3_DESTINATION_WRITER_ROLE: !GetAtt S3DestinationWriterRole.Arn
-          LD_LIBRARY_PATH: /opt/lib64:$LD_PRIMARY_PATH
       Handler: index.handler
       Layers:
-        - !Ref SoxLambdaLayer
+        - !Ref FfmpegLambdaLayer
       MemorySize: 3008
       Role: !GetAtt ToneDetectionLambdaIamRole.Arn
       Runtime: nodejs14.x

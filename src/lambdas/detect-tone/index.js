@@ -8,7 +8,7 @@ const aws = require('aws-sdk');
 
 const s3 = new aws.S3();
 
-const DEFAULT_MIN_VALUE = 0.01;
+const DEFAULT_MIN_VALUE = 0.075;
 const DEFAULT_MIN_DURATION = 0.2;
 
 /**
@@ -68,31 +68,22 @@ async function fetchArtifact(event, filePath) {
   );
 }
 
-/**
- * Creates a SoX dat file
- * @param {string} inputFilePath
- * @param {string} outputFilePath
- * @param {number} frequency
- */
-function createDatFile(inputFilePath, outputFilePath, frequency) {
+function createMetadataFile(inputFilePath, outputFilePath) {
   return new Promise((resolve, reject) => {
     const start = process.hrtime();
 
+    const filterString = [
+      'pan=mono|c0=.5*c0+.5*c1',
+      'volume=volume=1.0',
+      'bandpass=frequency=25:width_type=q:width=3',
+      'asetnsamples=2000',
+      'astats=metadata=1:reset=1',
+      `ametadata=key=lavfi.astats.Overall.Max_level:mode=print:file=${outputFilePath}`,
+    ].join(',');
+
     const childProc = childProcess.spawn(
-      '/opt/bin/sox',
-      [
-        inputFilePath,
-        outputFilePath,
-        'channels',
-        '1',
-        'rate',
-        '200',
-        'bandpass',
-        `${frequency}`,
-        '3',
-        'gain',
-        '6',
-      ],
+      '/opt/bin/ffmpeg',
+      ['-i', inputFilePath, '-af', filterString, '-f', 'null', '-'],
       {
         env: process.env,
         cwd: os.tmpdir(),
@@ -106,13 +97,13 @@ function createDatFile(inputFilePath, outputFilePath, frequency) {
       const end = process.hrtime(start);
       console.log(
         JSON.stringify({
-          msg: 'Finished SoX',
+          msg: 'Finished FFmpeg',
           duration: `${end[0]} s ${end[1] / 1000000} ms`,
         }),
       );
 
       if (code || signal) {
-        reject(new Error(`SoX failed with ${code || signal}`));
+        reject(new Error(`FFmpeg failed with ${code || signal}`));
       } else {
         resolve();
       }
@@ -120,13 +111,7 @@ function createDatFile(inputFilePath, outputFilePath, frequency) {
   });
 }
 
-/**
- * @param {string} filePath
- * @param {number} minValue
- * @param {number} minDuration
- * @returns
- */
-async function findToneRanges(filePath, minValue, minDuration) {
+async function getRangesFromMetadataFile(filePath, minValue, minDuration) {
   const ranges = [];
 
   const reader = readline.createInterface({
@@ -134,62 +119,52 @@ async function findToneRanges(filePath, minValue, minDuration) {
     crlfDelay: Infinity,
   });
 
+  let timeBuffer;
   let rangeBuffer;
 
-  // Read the dat file line-by-line
   reader.on('line', (line) => {
-    // The first few lines are descriptors that can be ignored
-    if (line.startsWith(';')) {
-      return;
+    if (line.startsWith('frame:')) {
+      timeBuffer = Number(line.split('pts_time:')[1]);
     }
 
-    // Each line contains the time and an energy value
-    const sampleData = line
-      .trim()
-      .split(/\s+/)
-      .map((v) => +v);
-    const time = sampleData[0];
-    const energy = Math.abs(sampleData[1]);
+    if (line.startsWith('lavfi.astats.Overall.Max_level=')) {
+      const level = Number(line.split('=')[1]);
 
-    if (energy >= minValue) {
-      // This line represents some silence
+      if (level >= minValue) {
+        // This line represents a tone
 
-      if (!rangeBuffer) {
-        // Start a new range with sensible default values
-        rangeBuffer = {
-          Start: time,
-          End: time,
-          Minimum: energy,
-          Maximum: energy,
-        };
+        if (!rangeBuffer) {
+          // Start a new range with sensible default values
+          rangeBuffer = {
+            Start: timeBuffer,
+            StartS: new Date(timeBuffer * 1000).toISOString().substr(11, 12),
+            End: timeBuffer,
+            Minimum: level,
+            Maximum: level,
+          };
+        } else {
+          // Update values when working on a continuous range
+          rangeBuffer.End = timeBuffer;
+          EndS: new Date(timeBuffer * 1000).toISOString().substr(11, 12),
+            (rangeBuffer.Minimum = Math.min(rangeBuffer.Minimum, level));
+          rangeBuffer.Maximum = Math.max(rangeBuffer.Maximum, level);
+        }
       } else {
-        // Update values when working on a continuous range
-        rangeBuffer.End = time;
-        rangeBuffer.Minimum = Math.min(rangeBuffer.Minimum, energy);
-        rangeBuffer.Maximum = Math.max(rangeBuffer.Maximum, energy);
+        // This line is not tone
+
+        // If there's no active range, do nothing
+        if (!rangeBuffer) {
+          return;
+        }
+
+        // If the range is long enough to record, add it
+        if (rangeBuffer.End - rangeBuffer.Start > minDuration) {
+          ranges.push(rangeBuffer);
+        }
+
+        // Start a new range for the next line
+        rangeBuffer = undefined;
       }
-    } else {
-      // This line is not silence
-
-      // If there's no active range, do nothing
-      if (!rangeBuffer) {
-        return;
-      }
-
-      // If the range is long enough to record, add it
-      if (rangeBuffer.End - rangeBuffer.Start > minDuration) {
-        ranges.push(rangeBuffer);
-      }
-
-      // Start a new range for the next line
-      rangeBuffer = undefined;
-    }
-  });
-
-  reader.on('close', () => {
-    // At the end of the file, flush any remaining buffer if necessary
-    if (rangeBuffer && rangeBuffer.End - rangeBuffer.Start > minDuration) {
-      ranges.push(rangeBuffer);
     }
   });
 
@@ -208,17 +183,23 @@ exports.handler = async (event, context) => {
   await fetchArtifact(event, artifactFileTmpPath);
 
   const frequency = event.Task.Frequency;
-
-  const datFileTmpPath = path.join(os.tmpdir(), `${context.awsRequestId}.dat`);
-  await createDatFile(artifactFileTmpPath, datFileTmpPath, frequency);
-
   const minValue = event.Task?.Threshold?.Value || DEFAULT_MIN_VALUE;
   const minDuration = event.Task?.Threshold?.Duration || DEFAULT_MIN_DURATION;
 
-  const ranges = await findToneRanges(datFileTmpPath, minValue, minDuration);
+  const metadataFileTmpPath = path.join(
+    os.tmpdir(),
+    `${context.awsRequestId}.meta`,
+  );
+  await createMetadataFile(artifactFileTmpPath, metadataFileTmpPath);
+
+  const ranges = await getRangesFromMetadataFile(
+    metadataFileTmpPath,
+    minValue,
+    minDuration,
+  );
 
   fs.unlinkSync(artifactFileTmpPath);
-  fs.unlinkSync(datFileTmpPath);
+  fs.unlinkSync(metadataFileTmpPath);
 
   return { Task: 'DetectTone', Tone: { Frequency: frequency, Ranges: ranges } };
 };

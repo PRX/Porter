@@ -68,6 +68,15 @@ async function fetchArtifact(event, filePath) {
   );
 }
 
+/**
+ * Creates an FFmpeg ametadata file with values for the silence it detects
+ * based on certain thresholds
+ * @param {string} inputFilePath
+ * @param {string} outputFilePath
+ * @param {number} maxValue
+ * @param {number} minDuration
+ * @returns
+ */
 function createMetadataFile(
   inputFilePath,
   outputFilePath,
@@ -77,7 +86,10 @@ function createMetadataFile(
   return new Promise((resolve, reject) => {
     const start = process.hrtime();
 
-    const filterString = `silencedetect=noise=${maxValue}:duration=${minDuration},ametadata=mode=print:file=${outputFilePath}`;
+    const filterString = [
+      `silencedetect=noise=${maxValue}:duration=${minDuration}`,
+      `ametadata=mode=print:file=${outputFilePath}`,
+    ].join(',');
 
     const childProc = childProcess.spawn(
       '/opt/bin/ffmpeg',
@@ -109,6 +121,12 @@ function createMetadataFile(
   });
 }
 
+/**
+ * Parses the FFmpeg ametadata from a file and extracts an array of timing
+ * ranges for detected silence
+ * @param {string} filePath
+ * @returns
+ */
 async function getRangesFromMetadataFile(filePath) {
   const ranges = [];
 
