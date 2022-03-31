@@ -1466,9 +1466,9 @@ Resources:
     Type: AWS::Serverless::Function
     Properties:
       Architectures: [arm64]
-      CodeUri: src/lambdas/s3-copy-task/
+      CodeUri: src/lambdas/copy-task/
       Description: >-
-        Copies an object in S3 to another location in S3
+        Copies files from various sources to S3
       Environment:
         Variables:
           S3_DESTINATION_WRITER_ROLE: !GetAtt S3DestinationWriterRole.Arn
