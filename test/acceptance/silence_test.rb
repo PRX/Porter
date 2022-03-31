@@ -27,6 +27,7 @@ describe :porter do
         _(output['JobResult']['FailedTasks']).must_equal []
         _(output['JobResult']['TaskResults'].length).must_equal 1
 
+        # Silence starts at 00:02 and is 1 second
         range = output['JobResult']['TaskResults'][0]['Silence']['Ranges'][0]
         _(range['Start']).must_be_close_to 2, 0.01
         _(range['End']).must_be_close_to 3, 0.01
