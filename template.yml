@@ -173,8 +173,6 @@ Resources:
             Topic: !Ref JobExecutionSnsTopic
           Type: SNS
       Handler: index.handler
-      Layers:
-        - !Ref AwsXraySdkLambdaLayer
       MemorySize: 128
       Policies:
         - Statement:
@@ -248,7 +246,6 @@ Resources:
         Version: "2012-10-17"
       ManagedPolicyArns:
         - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
-        - arn:aws:iam::aws:policy/AWSXrayWriteOnlyAccess
       Policies:
         - PolicyName: SqsPolicy
           PolicyDocument:
@@ -291,8 +288,6 @@ Resources:
             Enabled: !If [CreateSqsEventMapping, true, false]
             Queue: !GetAtt JobExecutionSqsQueue.Arn
       Handler: index.handler
-      Layers:
-        - !Ref AwsXraySdkLambdaLayer
       MemorySize: 128
       Role: !GetAtt JobExecutionSqsQueueLambdaIamRole.Arn
       Runtime: nodejs14.x
@@ -423,8 +418,6 @@ Resources:
               Id: !Sub ${AWS::StackName}.Transcribe-JobState
           Type: EventBridgeRule
       Handler: index.handler
-      Layers:
-        - !Ref AwsXraySdkLambdaLayer
       MemorySize: 128
       Policies:
         - !Ref ArtifactBucketReadOnlyAccessPolicy
@@ -1174,19 +1167,6 @@ Resources:
       ContentUri: lib/aws-sdk
       Description: aws-sdk NPM module
       RetentionPolicy: Delete
-  AwsXraySdkLambdaLayer:
-    Type: AWS::Serverless::LayerVersion
-    Metadata:
-      BuildMethod: makefile
-    Properties:
-      CompatibleArchitectures:
-        - x86_64
-        - arm64
-      CompatibleRuntimes:
-        - nodejs14.x
-      ContentUri: lib/aws-xray-sdk
-      Description: aws-xray NPM module
-      RetentionPolicy: Delete
   FileTypeLambdaLayer:
     Type: AWS::Serverless::LayerVersion
     Metadata:
@@ -1262,8 +1242,6 @@ Resources:
       Description: >-
         Normalizes Porter job input
       Handler: index.handler
-      Layers:
-        - !Ref AwsXraySdkLambdaLayer
       MemorySize: 128
       Policies:
         - Statement:
@@ -1279,7 +1257,6 @@ Resources:
         prx:ops:environment: !Ref EnvironmentType
         prx:dev:application: Porter
       Timeout: 4
-      Tracing: Active
   NormalizeInputLambdaLogGroup:
     Type: AWS::Logs::LogGroup
     Properties:
@@ -1309,7 +1286,6 @@ Resources:
         # For uploading files and file parts to the artifact store
         - !Ref ArtifactBucketWriteAccessPolicy
         - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
-        - arn:aws:iam::aws:policy/AWSXrayWriteOnlyAccess
       Policies:
         # Allow GET-only access to any object in S3
         - PolicyName: S3CopySourcePolicy
@@ -1337,8 +1313,6 @@ Resources:
           ARTIFACT_BUCKET_NAME: !Ref ArtifactBucket
           MAX_HTTP_REDIRECTS: "10"
       Handler: index.handler
-      Layers:
-        - !Ref AwsXraySdkLambdaLayer
       MemorySize: 512
       Role: !GetAtt IngestLambdaIamRole.Arn
       Runtime: nodejs14.x
@@ -1349,7 +1323,6 @@ Resources:
         prx:ops:environment: !Ref EnvironmentType
         prx:dev:application: Porter
       Timeout: 90
-      Tracing: Active
   IngestLambdaLogGroup:
     Type: AWS::Logs::LogGroup
     Properties:
@@ -1399,7 +1372,6 @@ Resources:
           MAX_HTTP_REDIRECTS: "10"
       Handler: index.handler
       Layers:
-        - !Ref AwsXraySdkLambdaLayer
         - !Ref FileTypeLambdaLayer
       MemorySize: 256
       Policies:
@@ -1412,7 +1384,6 @@ Resources:
         prx:ops:environment: !Ref EnvironmentType
         prx:dev:application: Porter
       Timeout: 8
-      Tracing: Active
   SourceTypeLambdaLogGroup:
     Type: AWS::Logs::LogGroup
     Properties:
@@ -1433,7 +1404,6 @@ Resources:
         Inspects (ffprobe, etc) the source file
       Handler: index.handler
       Layers:
-        - !Ref AwsXraySdkLambdaLayer
         - !Ref FfmpegLambdaLayer
         - !Ref MpckLambdaLayer
         - !Ref SharpLambdaLayer
@@ -1448,7 +1418,6 @@ Resources:
         prx:ops:environment: !Ref EnvironmentType
         prx:dev:application: Porter
       Timeout: 900
-      Tracing: Active
   InspectMediaLambdaLogGroup:
     Type: AWS::Logs::LogGroup
     Properties:
@@ -1475,7 +1444,6 @@ Resources:
         # Copy operations are always copying FROM the artifact bucket
         - !Ref ArtifactBucketReadOnlyAccessPolicy
         - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
-        - arn:aws:iam::aws:policy/AWSXrayWriteOnlyAccess
       Tags:
         - { Key: prx:meta:tagging-version, Value: "2021-04-07" }
         - { Key: prx:cloudformation:stack-name, Value: !Ref AWS::StackName }
@@ -1493,8 +1461,6 @@ Resources:
         Variables:
           S3_DESTINATION_WRITER_ROLE: !GetAtt S3DestinationWriterRole.Arn
       Handler: index.handler
-      Layers:
-        - !Ref AwsXraySdkLambdaLayer
       MemorySize: 512
       Role: !GetAtt CopyLambdaIamRole.Arn
       Runtime: nodejs14.x
@@ -1505,7 +1471,6 @@ Resources:
         prx:ops:environment: !Ref EnvironmentType
         prx:dev:application: Porter
       Timeout: 32
-      Tracing: Active
   CopyLambdaLogGroup:
     Type: AWS::Logs::LogGroup
     Properties:
@@ -1529,8 +1494,6 @@ Resources:
         Variables:
           ARTIFACT_BUCKET_NAME: !Ref ArtifactBucket
       Handler: index.handler
-      Layers:
-        - !Ref AwsXraySdkLambdaLayer
       MemorySize: 128
       Policies:
         - !Ref ArtifactBucketReadOnlyAccessPolicy
@@ -1542,7 +1505,6 @@ Resources:
         prx:ops:environment: !Ref EnvironmentType
         prx:dev:application: Porter
       Timeout: 4
-      Tracing: Active
   FtpCopyTaskOutputLambdaLogGroup:
     Type: AWS::Logs::LogGroup
     Properties:
@@ -1584,8 +1546,6 @@ Resources:
         Variables:
           ARTIFACT_BUCKET_NAME: !Ref ArtifactBucket
       Handler: index.handler
-      Layers:
-        - !Ref AwsXraySdkLambdaLayer
       MemorySize: 128
       Policies:
         - !Ref ArtifactBucketReadOnlyAccessPolicy
@@ -1597,7 +1557,6 @@ Resources:
         prx:ops:environment: !Ref EnvironmentType
         prx:dev:application: Porter
       Timeout: 4
-      Tracing: Active
   TranscodeTaskOutputLambdaLogGroup:
     Type: AWS::Logs::LogGroup
     Properties:
@@ -1642,7 +1601,6 @@ Resources:
         # Image operations are always fetching from the artifact bucket
         - !Ref ArtifactBucketReadOnlyAccessPolicy
         - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
-        - arn:aws:iam::aws:policy/AWSXrayWriteOnlyAccess
       Tags:
         - { Key: prx:meta:tagging-version, Value: "2021-04-07" }
         - { Key: prx:cloudformation:stack-name, Value: !Ref AWS::StackName }
@@ -1660,7 +1618,6 @@ Resources:
           S3_DESTINATION_WRITER_ROLE: !GetAtt S3DestinationWriterRole.Arn
       Handler: index.handler
       Layers:
-        - !Ref AwsXraySdkLambdaLayer
         - !Ref SharpLambdaLayer
       MemorySize: 1024
       Role: !GetAtt ImageTransformLambdaIamRole.Arn
@@ -1672,7 +1629,6 @@ Resources:
         prx:ops:environment: !Ref EnvironmentType
         prx:dev:application: Porter
       Timeout: 16
-      Tracing: Active
   ImageTransformLambdaLogGroup:
     Type: AWS::Logs::LogGroup
     Properties:
@@ -1698,7 +1654,6 @@ Resources:
       ManagedPolicyArns:
         - !Ref ArtifactBucketReadOnlyAccessPolicy
         - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
-        - arn:aws:iam::aws:policy/AWSXrayWriteOnlyAccess
       Tags:
         - { Key: prx:meta:tagging-version, Value: "2021-04-07" }
         - { Key: prx:cloudformation:stack-name, Value: !Ref AWS::StackName }
@@ -1717,7 +1672,6 @@ Resources:
           S3_DESTINATION_WRITER_ROLE: !GetAtt S3DestinationWriterRole.Arn
       Handler: index.handler
       Layers:
-        - !Ref AwsXraySdkLambdaLayer
         - !Ref WavefileLambdaLayer
       MemorySize: 3008
       Role: !GetAtt WavWrapLambdaIamRole.Arn
@@ -1729,7 +1683,6 @@ Resources:
         prx:ops:environment: !Ref EnvironmentType
         prx:dev:application: Porter
       Timeout: 900
-      Tracing: Active
   WavWrapLambdaLogGroup:
     Type: AWS::Logs::LogGroup
     Properties:
@@ -1869,7 +1822,6 @@ Resources:
       Handler: index.handler
       Layers:
         - !Ref AwsSdkLambdaLayer
-        - !Ref AwsXraySdkLambdaLayer
       MemorySize: 128
       Policies:
         - !Ref ArtifactBucketReadOnlyAccessPolicy
@@ -1890,7 +1842,6 @@ Resources:
         prx:ops:environment: !Ref EnvironmentType
         prx:dev:application: Porter
       Timeout: 4
-      Tracing: Active
   TranscriptionJobStartLambdaLogGroup:
     Type: AWS::Logs::LogGroup
     Properties:
@@ -1916,7 +1867,6 @@ Resources:
       ManagedPolicyArns:
         - !Ref ArtifactBucketReadOnlyAccessPolicy
         - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
-        - arn:aws:iam::aws:policy/AWSXrayWriteOnlyAccess
       Policies:
         - PolicyName: TranscribeJobReadPolicy
           PolicyDocument:
@@ -1942,8 +1892,6 @@ Resources:
         Variables:
           S3_DESTINATION_WRITER_ROLE: !GetAtt S3DestinationWriterRole.Arn
       Handler: index.handler
-      Layers:
-        - !Ref AwsXraySdkLambdaLayer
       MemorySize: 512
       Role: !GetAtt TranscriptionJobResultsLambdaIamRole.Arn
       Runtime: nodejs14.x
@@ -1954,7 +1902,6 @@ Resources:
         prx:ops:environment: !Ref EnvironmentType
         prx:dev:application: Porter
       Timeout: 8
-      Tracing: Active
   TranscriptionJobResultsLambdaLogGroup:
     Type: AWS::Logs::LogGroup
     Properties:
@@ -1979,7 +1926,6 @@ Resources:
         Version: "2012-10-17"
       ManagedPolicyArns:
         - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
-        - arn:aws:iam::aws:policy/AWSXrayWriteOnlyAccess
       Policies:
         # Must be able to publish to whatever SNS topics are defined by a job
         - PolicyName: SnsPublish
@@ -2023,8 +1969,6 @@ Resources:
           MAX_HTTP_REDIRECTS: "3"
           S3_DESTINATION_WRITER_ROLE: !GetAtt S3DestinationWriterRole.Arn
       Handler: index.handler
-      Layers:
-        - !Ref AwsXraySdkLambdaLayer
       MemorySize: 128
       Role: !GetAtt CallbackLambdaIamRole.Arn
       Runtime: nodejs14.x
@@ -2035,7 +1979,6 @@ Resources:
         prx:ops:environment: !Ref EnvironmentType
         prx:dev:application: Porter
       Timeout: 4
-      Tracing: Active
   CallbackLambdaLogGroup:
     Type: AWS::Logs::LogGroup
     Properties:
@@ -2059,8 +2002,6 @@ Resources:
         Variables:
           JOB_EXECUTION_SNS_TOPIC_ARN: !Ref JobExecutionSnsTopic
       Handler: index.handler
-      Layers:
-        - !Ref AwsXraySdkLambdaLayer
       MemorySize: 128
       Policies:
         - Statement:
@@ -2076,7 +2017,6 @@ Resources:
         prx:ops:environment: !Ref EnvironmentType
         prx:dev:application: Porter
       Timeout: 4
-      Tracing: Active
   JobSerializerLambdaLogGroup:
     Type: AWS::Logs::LogGroup
     Properties:
@@ -2097,8 +2037,6 @@ Resources:
       Description: >-
         Normalizes Porter job output
       Handler: index.handler
-      Layers:
-        - !Ref AwsXraySdkLambdaLayer
       MemorySize: 128
       Policies:
         - Statement:
@@ -2114,7 +2052,6 @@ Resources:
         prx:ops:environment: !Ref EnvironmentType
         prx:dev:application: Porter
       Timeout: 4
-      Tracing: Active
   NormalizeOutputLambdaLogGroup:
     Type: AWS::Logs::LogGroup
     Properties:
@@ -2137,8 +2074,6 @@ Resources:
             Principal:
               Service: !Sub states.${AWS::Region}.amazonaws.com
         Version: "2012-10-17"
-      ManagedPolicyArns:
-        - arn:aws:iam::aws:policy/AWSXrayWriteOnlyAccess
       Policies:
         - PolicyName: LambdaTaskPolicy
           PolicyDocument:

@@ -2,9 +2,7 @@
 // machine. It passes the SNS message directly to the state machine as
 // the execution input.
 
-const AWSXRay = require('aws-xray-sdk');
-
-const AWS = AWSXRay.captureAWS(require('aws-sdk'));
+const AWS = require('aws-sdk');
 
 const stepfunctions = new AWS.StepFunctions({ apiVersion: '2016-11-23' });
 

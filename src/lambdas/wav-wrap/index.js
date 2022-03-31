@@ -1,5 +1,4 @@
-const AWSXRay = require('aws-xray-sdk');
-const AWS = AWSXRay.captureAWS(require('aws-sdk'));
+const AWS = require('aws-sdk');
 
 const wavefile = require('prx-wavefile');
 

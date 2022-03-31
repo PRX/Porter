@@ -8,7 +8,6 @@
   },
   "dependencies": {
     "aws-sdk": "^2.1046.0",
-    "aws-xray-sdk": "^3.0.0",
     "file-type": "^15.0.0",
     "prx-wavefile": "^11.0.0-prx.1",
     "sharp": "^0.25.2"

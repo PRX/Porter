@@ -8,9 +8,7 @@
 // This function will also copy the transcript file from its artifact location
 // to the destination defined on the Transcribe task.
 
-const AWSXRay = require('aws-xray-sdk');
-
-const AWS = AWSXRay.captureAWS(require('aws-sdk'));
+const AWS = require('aws-sdk');
 
 const url = require('url');
 

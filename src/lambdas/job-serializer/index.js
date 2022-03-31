@@ -10,9 +10,7 @@
 // represents the execution IDs of the jobs that serialized other jobs prior to
 // this one.
 
-const AWSXRay = require('aws-xray-sdk');
-
-const AWS = AWSXRay.captureAWS(require('aws-sdk'));
+const AWS = require('aws-sdk');
 
 const sns = new AWS.SNS({ apiVersion: '2010-03-31' });
 

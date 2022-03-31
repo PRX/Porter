@@ -20,11 +20,10 @@
 const path = require('path');
 const os = require('os');
 const fs = require('fs');
-const AWSXRay = require('aws-xray-sdk');
 
-const http = AWSXRay.captureHTTPs(require('http'), false);
-const https = AWSXRay.captureHTTPs(require('https'), false);
-const AWS = AWSXRay.captureAWS(require('aws-sdk'));
+const http = require('http');
+const https = require('https');
+const AWS = require('aws-sdk');
 
 const s3 = new AWS.S3({ apiVersion: '2006-03-01' });
 

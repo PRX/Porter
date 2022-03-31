@@ -2,9 +2,8 @@
 // state machine source artifact.
 
 const fileType = require('file-type');
-const AWSXRay = require('aws-xray-sdk');
 
-const AWS = AWSXRay.captureAWS(require('aws-sdk'));
+const AWS = require('aws-sdk');
 
 /** The number of bytes to use to detect a files type. */
 const MINIMUM_BYTES = 4100;

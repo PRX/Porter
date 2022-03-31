@@ -2,9 +2,7 @@
 // callback, this function takes the entire task input and builds a better
 // result that gets passed to the callback task.
 
-const AWSXRay = require('aws-xray-sdk');
-
-const AWS = AWSXRay.captureAWS(require('aws-sdk'));
+const AWS = require('aws-sdk');
 
 const s3 = new AWS.S3({ apiVersion: '2006-03-01' });
 

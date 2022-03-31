@@ -17,9 +17,7 @@
 //
 // https://docs.aws.amazon.com/transcribe/latest/dg/API_StartTranscriptionJob.html
 
-const AWSXRay = require('aws-xray-sdk');
-
-const AWS = AWSXRay.captureAWS(require('aws-sdk'));
+const AWS = require('aws-sdk');
 
 const s3 = new AWS.S3({ apiVersion: '2006-03-01' });
 const transcribe = new AWS.TranscribeService({ apiVersion: '2017-10-26' });

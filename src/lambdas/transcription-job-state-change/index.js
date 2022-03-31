@@ -8,9 +8,7 @@
 // This will get triggered by *all* transcribe jobs, so the predefined prefix
 // is used to filter out jobs originating elsewhere.
 
-const AWSXRay = require('aws-xray-sdk');
-
-const AWS = AWSXRay.captureAWS(require('aws-sdk'));
+const AWS = require('aws-sdk');
 
 const s3 = new AWS.S3({ apiVersion: '2006-03-01' });
 const stepFunctions = new AWS.StepFunctions({ apiVersion: '2016-11-23' });

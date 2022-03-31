@@ -1,7 +1,5 @@
 /* eslint-disable import/no-extraneous-dependencies */
-const AWSXRay = require('aws-xray-sdk');
-
-const AWS = AWSXRay.captureAWS(require('aws-sdk'));
+const AWS = require('aws-sdk');
 
 const cloudwatch = new AWS.CloudWatch({ apiVersion: '2010-08-01' });
 

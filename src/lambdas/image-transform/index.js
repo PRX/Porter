@@ -2,8 +2,7 @@ const sharp = require('sharp');
 const path = require('path');
 const os = require('os');
 const fs = require('fs');
-const awsxray = require('aws-xray-sdk');
-const AWS = awsxray.captureAWS(require('aws-sdk'));
+const AWS = require('aws-sdk');
 
 const s3 = new AWS.S3({ apiVersion: '2006-03-01' });
 const sts = new AWS.STS({ apiVersion: '2011-06-15' });

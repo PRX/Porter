@@ -9,9 +9,7 @@
 // could be other properties like Mode, etc. All such properties will be
 // included in the task result.
 
-const AWSXRay = require('aws-xray-sdk');
-
-const AWS = AWSXRay.captureAWS(require('aws-sdk'));
+const AWS = require('aws-sdk');
 
 const s3 = new AWS.S3({ apiVersion: '2006-03-01' });
 
