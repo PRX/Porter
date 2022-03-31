@@ -27,17 +27,17 @@ const s3 = new aws.S3();
 
 /**
  * Downloads the given S3 object to a local file path
- * @param {string} bucket
- * @param {string} fileKey
+ * @param {string} bucketName
+ * @param {string} objectKey
  * @param {string} filePath
  */
-function s3GetObject(bucket, fileKey, filePath) {
+function s3GetObject(bucketName, objectKey, filePath) {
   return new Promise((resolve, reject) => {
     const file = fs.createWriteStream(filePath);
     const stream = s3
       .getObject({
-        Bucket: bucket,
-        Key: fileKey,
+        Bucket: bucketName,
+        Key: objectKey,
       })
       .createReadStream();
 
