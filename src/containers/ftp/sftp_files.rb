@@ -1,7 +1,10 @@
+# frozen_string_literal: true
+
 require 'net/sftp'
 
 load './utils.rb'
 
+# Class to act as SFTP client for uploading files to SFTP servers
 class SftpFiles
   include Utils
   attr_reader :logger, :recorder
@@ -22,7 +25,7 @@ class SftpFiles
 
       if md5
         md5_file = create_md5_digest(local_file.path)
-        sftp.upload!(local_file.path, "#{remote_path}.md5")
+        sftp.upload!(md5_file.path, "#{remote_path}.md5")
       end
     end
   end
