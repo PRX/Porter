@@ -24,6 +24,7 @@ require 'net/ftp'
 require 'logger'
 
 load './ftp_files.rb'
+load './sftp_files.rb'
 load './s3_files.rb'
 load './recorder.rb'
 
@@ -67,10 +68,30 @@ begin
   # This value is not guaranteed to be honored, so it's undocumented
   max_attempts = task['MaxAttempts'].nil? ? 6 : task['MaxAttempts']
 
-  ftp_files = FtpFiles.new(logger, recorder)
-  used_mode = ftp_files.upload_file(uri, file, md5: md5, public_ip: ip, mode: task['Mode'], timeout: timeout, max_attempts: max_attempts)
+  if uri.scheme == 'ftp'
+    ftp_files = FtpFiles.new(logger, recorder)
+    used_mode = ftp_files.upload_file(uri, file, md5: md5, public_ip: ip, mode: task['Mode'], timeout: timeout, max_attempts: max_attempts)
 
-  if used_mode
+    if used_mode
+      logger.debug(JSON.dump({
+        msg: 'Copying state machine results file',
+        bucket_name: bucket,
+        object_key: RESULT_KEY
+      }))
+      s3.put_object(
+        bucket: bucket,
+        key: RESULT_KEY,
+        body: JSON.dump({
+          # All properties listed here will be included in the task result for
+          # this task.
+          Mode: used_mode
+        })
+      )
+    end
+  elsif uri.scheme == 'sftp'
+    sftp_files = SftpFiles.new(logger, recorder)
+    sftp_files.upload_file(uri, file, md5: md5)
+
     logger.debug(JSON.dump({
       msg: 'Copying state machine results file',
       bucket_name: bucket,
@@ -82,7 +103,7 @@ begin
       body: JSON.dump({
         # All properties listed here will be included in the task result for
         # this task.
-        Mode: used_mode
+        # Foo: "bar"
       })
     )
   end
