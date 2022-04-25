@@ -33,6 +33,7 @@ Many input and output methods are supported to allow flexibility with other appl
 -   [Serialized Jobs](#serialized-jobs)
 -   [S3 Read Permissions](#s3-read-permissions)
 -   [S3 Destination Permissions](#s3-destination-permissions)
+-   [Google Cloud Storage Read Permissions](#google-cloud-storage-read-permissions)
 
 ## Execution Model
 
@@ -152,7 +153,7 @@ A job's source is the file that all tasks in the job will be performed on. One i
 - When the mode is set to `AWS/S3`, `Source.BucketName` and `Source.ObjectKey` are also required.
 - When the mode is set to `HTTP`, `Source.URL` is also required, which can use either an `http://` or `https://` protocol.
 - When the mode is set to `Data/URI`, `Source.URI` is also required, and must be in the format: `data:<media type>;base64,<data>`.
-- When the mode is set to `GCP/Storage`, `Source.BucketName` and `Source.ObjectName` are also required.
+- When the mode is set to `GCP/Storage`, `Source.BucketName`, `Source.ObjectName`, `Source.ProjectId`, and `Source.ClientConfiguration` are also required.
 
 ##### S3 Read Permissions
 
@@ -178,6 +179,30 @@ The role's ARN is published as an output on the CloudFormation stack. The follow
 ```
 
 See also: [S3 Destination Permissions](#s3-destination-permissions)
+
+##### Google Cloud Storage Read Permissions
+
+When a job's source file is in [Google Cloud Storage](https://cloud.google.com/storage), it will be accessed using [workload identify federation](https://cloud.google.com/iam/docs/workload-identity-federation). This means that an IAM role in AWS will attempt to assume an identity in GCP that has permission to read the file. The Cloud Storage resource being accessed must be configured to allow this AWS role to impersonate an account in GCP with access to the file.
+
+The ARN of the AWS IAM role that is acting as an external identity to GCP is published as an output on the CloudFormation stack.
+
+The `Source.ClientConfiguration` property of the job input should contain the GCP client library configuration that includes information about the workload identity federation. `Source.ClientConfiguration` should **not** contain static API keys for a user in GCP; this configuration is not protected in any way. In the following example, the `audience` and `service_account_impersonation_url` properties include placeholder values.
+
+```json
+{
+  "type": "external_account",
+  "audience": "//iam.googleapis.com/projects/MY_PROJECT_NUMBER/locations/global/workloadIdentityPools/MY_POOL_ID/providers/MY_PROVIDER_ID",
+  "subject_token_type": "urn:ietf:params:aws:token-type:aws4_request",
+  "service_account_impersonation_url": "https://iamcredentials.googleapis.com/v1/projects/-/serviceAccounts/MY_SERVICE_ACCOUNT_EMAIL@MY_PROJECT_ID.iam.gserviceaccount.com:generateAccessToken",
+  "token_url": "https://sts.googleapis.com/v1/token",
+  "credential_source": {
+    "environment_id": "aws1",
+    "region_url": "http://169.254.169.254/latest/meta-data/placement/availability-zone",
+    "url": "http://169.254.169.254/latest/meta-data/iam/security-credentials",
+    "regional_cred_verification_url": "https://sts.{region}.amazonaws.com?Action=GetCallerIdentity&Version=2011-06-15"
+  }
+}
+```
 
 #### Job Tasks
 
