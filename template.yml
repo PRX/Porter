@@ -1468,11 +1468,13 @@ Resources:
       Architectures: [arm64]
       CodeUri: src/lambdas/copy-task/
       Description: >-
-        Copies files from various sources to S3
+        Copies job source files to various destinations
       Environment:
         Variables:
           S3_DESTINATION_WRITER_ROLE: !GetAtt S3DestinationWriterRole.Arn
       Handler: index.handler
+      Layers:
+        - !Ref GoogleCloudLayer
       MemorySize: 512
       Role: !GetAtt CopyLambdaIamRole.Arn
       Runtime: nodejs14.x
