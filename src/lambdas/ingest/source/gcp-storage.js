@@ -7,7 +7,6 @@ const AWS = require('aws-sdk');
 const { Storage } = require('@google-cloud/storage');
 
 const s3 = new AWS.S3({ apiVersion: '2006-03-01' });
-const storage = new Storage();
 
 module.exports = async function main(event, artifact, sourceFilename) {
   // Copies a file in Google Cloud Storage to the S3 artifact bucket.
@@ -15,6 +14,10 @@ module.exports = async function main(event, artifact, sourceFilename) {
   // https://googleapis.dev/nodejs/storage/latest/Bucket.html#getFiles
   // https://cloud.google.com/storage/docs/json_api/v1/objects/get
   // https://github.com/googleapis/nodejs-storage/blob/main/samples/downloadFile.js
+  const storage = new Storage({
+    projectId: event.Job.Source.ProjectId,
+    credentials: event.Job.Source.Credentials,
+  });
 
   const localFilePath = path.join(os.tmpdir(), sourceFilename);
 
