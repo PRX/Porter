@@ -104,7 +104,7 @@ Resources:
             Resource: !Sub arn:aws:s3:::${ArtifactBucket}/*
         Version: "2012-10-17"
   # General-Purpose IAM Roles
-  S3DestinationWriterRole:
+  S3DestinationWriterRole: # This resource name should not change. Changes will break existing bucket policies.
     Type: AWS::IAM::Role
     Properties:
       AssumeRolePolicyDocument:
@@ -137,6 +137,28 @@ Resources:
                 Effect: Allow
                 Resource: "*"
             Version: "2012-10-17"
+      Tags:
+        - { Key: prx:meta:tagging-version, Value: "2021-04-07" }
+        - { Key: prx:cloudformation:stack-name, Value: !Ref AWS::StackName }
+        - { Key: prx:cloudformation:stack-id, Value: !Ref AWS::StackId }
+        - { Key: prx:ops:environment, Value: !Ref EnvironmentType }
+        - { Key: prx:dev:application, Value: Porter }
+  GCPStorageDestinationWriterRole: # This resource name should not change. Changes will break existing federation configurations.
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Statement:
+          - Action: sts:AssumeRole
+            Effect: Allow
+            Principal:
+              AWS:
+                - !GetAtt CopyLambdaIamRole.Arn
+                - !GetAtt ImageTransformLambdaIamRole.Arn
+                - !GetAtt WavWrapLambdaIamRole.Arn
+                - !GetAtt TranscriptionJobResultsLambdaIamRole.Arn
+                - !GetAtt CallbackLambdaIamRole.Arn
+                - !GetAtt TranscodeEcsTaskIamRole.Arn
+        Version: "2012-10-17"
       Tags:
         - { Key: prx:meta:tagging-version, Value: "2021-04-07" }
         - { Key: prx:cloudformation:stack-name, Value: !Ref AWS::StackName }
@@ -1472,6 +1494,7 @@ Resources:
       Environment:
         Variables:
           S3_DESTINATION_WRITER_ROLE: !GetAtt S3DestinationWriterRole.Arn
+          GCP_STORAGE_DESTINATION_WRITER_ROLE: !GetAtt GCPStorageDestinationWriterRole.Arn
       Handler: index.handler
       Layers:
         - !Ref GoogleCloudLayer
@@ -2500,6 +2523,8 @@ Outputs:
     Value: !Ref JobExecutionSqsQueue
   S3DestinationWriterRoleArn:
     Value: !GetAtt S3DestinationWriterRole.Arn
+  GCPStorageDestinationWriterRoleArn:
+    Value: !GetAtt GCPStorageDestinationWriterRole.Arn
   IngestLambdaIamRoleArn:
     Value: !GetAtt IngestLambdaIamRole.Arn
   CustomEventBusName:
