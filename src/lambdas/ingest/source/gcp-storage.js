@@ -16,7 +16,7 @@ module.exports = async function main(event, artifact, sourceFilename) {
   // https://github.com/googleapis/nodejs-storage/blob/main/samples/downloadFile.js
   const storage = new Storage({
     projectId: event.Job.Source.ProjectId,
-    credentials: event.Job.Source.Credentials,
+    credentials: event.Job.Source.ClientConfiguration,
   });
 
   const localFilePath = path.join(os.tmpdir(), sourceFilename);
