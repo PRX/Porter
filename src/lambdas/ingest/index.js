@@ -15,6 +15,10 @@
 //
 // The result path is $.Artifact, so the output of the state looks like
 // { "Job": { … }, "Artifact": { "BucketName": "abc", "ObjectKey": "xyz" } }
+// eslint-disable-next-line import/no-extraneous-dependencies
+const AWS = require('aws-sdk');
+
+const s3 = new AWS.S3({ apiVersion: '2006-03-01' });
 
 const fromHttp = require('./source/http');
 const fromDataUri = require('./source/data-uri');
@@ -79,6 +83,13 @@ exports.handler = async (event, context) => {
     default:
       throw new UnknownSourceModeError('Unexpected source mode');
   }
+
+  // Add the file size of the actual object that was written to S3 to the
+  // artifact output
+  const head = await s3
+    .headObject({ Bucket: artifact.BucketName, Key: artifact.ObjectKey })
+    .promise();
+  artifact.ContentLength = head.ContentLength;
 
   return artifact;
 };
