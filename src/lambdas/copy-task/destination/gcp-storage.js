@@ -1,4 +1,4 @@
-const { Storage } = require('@google-cloud/storage');
+// const { Storage } = require('@google-cloud/storage');
 
 module.exports = async function main(event) {
   // Copies a file in Google Cloud Storage to the S3 artifact bucket.
@@ -10,4 +10,5 @@ module.exports = async function main(event) {
   //   projectId: event.Job.Source.ProjectId,
   //   credentials: event.Job.Source.Credentials,
   // });
+  console.log(event);
 };
