@@ -24,9 +24,9 @@ In the above command, the `_____` is where the audio filtergraph used to detect 
 
 `pan=mono|c0=.5*c0+.5*c1`: The `pan` filter mixes audio channels. This will output a single mono channel with two input channels contributing equally (i.e., balanced). This essentially mixes stereo files down to mono.
 
-`volume=volume=1.0`: The `volume` filter adjusts audio volume. I don't remember exactly why this filter is included, but it seemed necessary to include after the `pan`.
+`volume=volume=1.0`: The `volume` filter adjusts audio volume. I don't remember exactly why this filter is included, but it seemed necessary to include after the `pan` filter.
 
-`bandpass=frequency=440:width_type=q:width=3`: Applies a bandpass filter to the audio, using a Q-factor model to set the width of the band at the given frequency. The frequency here, `440` in the example, would be the tone we are trying to detect. This filter is attempting to remove any audio that is not very close to the desired tone.
+`bandpass=frequency=440:width_type=q:width=3`: Applies a bandpass filter to the audio, using a Q-factor model to set the width of the band at the given frequency. The frequency, `440` in the example, would be the tone we are trying to detect. This filter is attempting to remove any audio that is not very close to the desired tone.
 
 `asetnsamples=2000`: Sets the number of samples per frame, which is attempting to decrease the resolution of the input audio to smooth out the data being used for tone detection. This is attempting to reduce the possibilities of false positive detections of audio in the file that is close to the frequency, but is not the intended detectable tone engineered into the audio.
 
@@ -49,6 +49,6 @@ frame:3    pts:6000    pts_time:0.136054
 lavfi.astats.Overall.Max_level=0.059991
 ```
 
-Note that there are lines that indicate a frame, time, etc, and the following lines are the statistical metadata associated with that frame. The filtergraph included on the `Overall.Max_level` value in the file.
+Note that there are lines that indicate a frame, time, etc, and the following lines are the statistical metadata associated with that frame. The filtergraph includes only the `Overall.Max_level` values in the file.
 
 This Lambda function reads through these lines, and constructs ranges of time where a given tone appears to be present in the audio, based on these overall max sample level values.
