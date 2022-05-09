@@ -16,8 +16,8 @@ async function multipartCopy(copySource, artifact, sourceObjectSize) {
   // Initialize the multipart upload
   const multipartUpload = await s3
     .createMultipartUpload({
-      Bucket: artifact.BucketName,
-      Key: artifact.ObjectKey,
+      Bucket: artifact.BucketName, // Destination bucket
+      Key: artifact.ObjectKey, // Destination object key
     })
     .promise();
 
