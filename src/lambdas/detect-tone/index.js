@@ -76,7 +76,6 @@ function createMetadataFile(inputFilePath, outputFilePath, frequency) {
       'pan=mono|c0=.5*c0+.5*c1',
       'volume=volume=1.0',
       `bandpass=frequency=${frequency}:width_type=q:width=3`,
-      'asetnsamples=2000',
       'astats=metadata=1:reset=1',
       `ametadata=key=lavfi.astats.Overall.Max_level:mode=print:file=${outputFilePath}`,
     ].join(',');
