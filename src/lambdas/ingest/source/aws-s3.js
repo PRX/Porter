@@ -15,7 +15,10 @@ class AwsS3MultipartCopyError extends Error {
 async function multipartCopy(copySource, artifact, sourceObjectSize) {
   // Initialize the multipart upload
   const multipartUpload = await s3
-    .createMultipartUpload({ Bucket: artifact.Bucket, Key: artifact.ObjectKey })
+    .createMultipartUpload({
+      Bucket: artifact.BucketName,
+      Key: artifact.ObjectKey,
+    })
     .promise();
 
   const uploadId = multipartUpload.UploadId;
@@ -46,7 +49,7 @@ async function multipartCopy(copySource, artifact, sourceObjectSize) {
       partRanges.map((range, idx) =>
         s3
           .uploadPartCopy({
-            Bucket: artifact.Bucket, // Destination bucket
+            Bucket: artifact.BucketName, // Destination bucket
             Key: artifact.ObjectKey, // Destination object key
             PartNumber: idx + 1, // Positive integer between 1 and 10,000
             UploadId: uploadId,
@@ -62,7 +65,7 @@ async function multipartCopy(copySource, artifact, sourceObjectSize) {
     // Finalize the upload after all parts have been successfully copied
     await s3
       .completeMultipartUpload({
-        Bucket: artifact.Bucket, // Destination bucket
+        Bucket: artifact.BucketName, // Destination bucket
         Key: artifact.ObjectKey, // Destination object key
         UploadId: uploadId,
         MultipartUpload: {
@@ -77,7 +80,7 @@ async function multipartCopy(copySource, artifact, sourceObjectSize) {
     // Clean up the incomplete upload if it fails
     await s3
       .abortMultipartUpload({
-        Bucket: artifact.Bucket, // Destination bucket
+        Bucket: artifact.BucketName, // Destination bucket
         Key: artifact.ObjectKey, // Destination object key
         UploadId: uploadId,
       })
