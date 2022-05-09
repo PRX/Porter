@@ -75,11 +75,13 @@ async function multipartCopy(copySource, artifact, sourceObjectSize) {
       .promise();
   } catch (error) {
     // Clean up the incomplete upload if it fails
-    s3.abortMultipartUpload({
-      Bucket: artifact.Bucket, // Destination bucket
-      Key: artifact.ObjectKey, // Destination object key
-      UploadId: uploadId,
-    }).promise();
+    await s3
+      .abortMultipartUpload({
+        Bucket: artifact.Bucket, // Destination bucket
+        Key: artifact.ObjectKey, // Destination object key
+        UploadId: uploadId,
+      })
+      .promise();
 
     throw new AwsS3MultipartCopyError('Multipart copy was aborted');
   }
