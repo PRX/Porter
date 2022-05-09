@@ -25,19 +25,33 @@ async function multipartCopy(copySource, artifact, sourceObjectSize) {
 
   // All parts except the last part will be this size. The last part will be
   // whatever is left over, and always less than or equal to this.
-  const targetPartSize = 2 ** 20 * 16; // min 5 MiB, max 5 GiB
+  const MiB = 2 ** 20; // 2^20 bytes = 1 MiB
+  const targetPartSizeInBytes = 16 * MiB; // min 5 MiB, max 5 GiB
+
+  // There's a maximum of 10,000 parts per multi-part upload. Calculate the
+  // size of each part if the source object were split into the maximum number
+  // of parts. Parts are always a whole number of bytes, so round this value
+  // up to the nearest byte, to always stay below 10,000 after dividing (i.e.,
+  // err on the side of fewer parts).
+  const maxPartCount = 10000; // Limit set by S3
+  const minPartSizeInBytes = Math.ceil(sourceObjectSize / maxPartCount);
+
+  // If the target part size is smaller than the minimum, it would result in
+  // more than 10,000 parts. Use the minimum instead to have larger parts and
+  // stay below the limit.
+  const partSizeInBytes = Math.max(targetPartSizeInBytes, minPartSizeInBytes);
 
   // Calculate the byte ranges for each part of the source file that we're
   // going to upload, based on the target part size
-  const partCount = Math.ceil(sourceObjectSize / targetPartSize);
+  const partCount = Math.ceil(sourceObjectSize / partSizeInBytes);
   const partRanges = new Array(partCount).fill(0).map((r, idx) => {
     // For part size of 10, these would be: 0, 10, 20, etc
-    const start = idx * targetPartSize;
+    const start = idx * partSizeInBytes;
     // For part size of 10 these would be: 9, 19, 29, etc
     // This can never be outside the range of the source file's size, and the
     // copy range is zero-based, so it maxes out at 1 less than the size of the
     // source file
-    const end = Math.min(sourceObjectSize - 1, (idx + 1) * targetPartSize - 1);
+    const end = Math.min(sourceObjectSize - 1, (idx + 1) * partSizeInBytes - 1);
     // E.g., with a part size of 10, and a file size of 26:
     // [0, 9], [10, 19], [20, 25]
     return [start, end];
