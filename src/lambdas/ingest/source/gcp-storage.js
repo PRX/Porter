@@ -37,4 +37,6 @@ module.exports = async function main(event, artifact, sourceFilename) {
       Body: fs.createReadStream(localFilePath),
     })
     .promise();
+
+  fs.unlinkSync(localFilePath);
 };
