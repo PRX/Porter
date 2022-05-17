@@ -37,7 +37,7 @@ describe :porter do
         # Low frequency tone starts at 00:03 and is 1 second
         lf_task = task_results.filter { |r| r['Tone']['Frequency'] == 12 }[0]
         lf_range = lf_task['Tone']['Ranges'][0]
-        _(lf_range['Start']).must_be_close_to 3, 0.01
+        _(lf_range['Start']).must_be_close_to 3, 0.02
         _(lf_range['End']).must_be_close_to 4, 0.05
 
         # High frequency tone starts at 00:01 and is 1 second
