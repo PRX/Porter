@@ -212,7 +212,7 @@ The `Source.ClientConfiguration` property of the job input should contain the GC
 
 `Callbacks` is an array of endpoints to which callback messages about the job execution will be sent. Each endpoint object has a `Type` (supported types are `AWS/SNS`, `AWS/SQS`, `AWS/S3`, `AWS/EventBridge`, and `HTTP`). Different modes will have additional required properties.
 
-`HTTP` callbacks require a 'URL' property. When using methods like `POST` or `PUT`, they also require a `Content-Type`. Possible values are `application/json` and `application/x-www-form-urlencoded`. When using HTTP `GET`, the entire callback message is sent as a URL query parameter value. The `QueryParameterName` property is required and determines the name of the query parameter used to send the message. Other query parameters on the callback URL are preserved, but the chosen parameter is replaced if it exists. There is no guarantee that callback messages will fit within the normal limits of a URL's length, therefore `GET` callbacks are not recommended. The endpoint should respond with an HTTP `200` to acknowledge receipt of the callback.
+`HTTP` callbacks require a `URL` property. When using methods like `POST` or `PUT`, they also require a `Content-Type`. Possible values are `application/json` and `application/x-www-form-urlencoded`. When using HTTP `GET`, the entire callback message is sent as a URL query parameter value. The `QueryParameterName` property is required and determines the name of the query parameter used to send the message. Other query parameters on the callback URL are preserved, but the chosen parameter is replaced if it exists. There is no guarantee that callback messages will fit within the normal limits of a URL's length, therefore `GET` callbacks are not recommended. The endpoint should respond with an HTTP `200` to acknowledge receipt of the callback.
 
 `AWS/SNS` callbacks must include a `Topic` ARN, and `AWS/SQS` callbacks must include a `Queue` in the form of a URL. An `AWS/EventBridge` callback can optionally include an `EventBusName`; if excluded the callback will be sent to the default event bus.
 
@@ -252,7 +252,7 @@ Callbacks are sent when a job has been received (after the input has been normal
 
 #### Task Callbacks
 
-Callbacks are sent as individual tasks succeed or fail. For example, if a job includes three `Copy` destinations, a callback will be sent after each copy task completes. (Tasks are processed in parallel, so callbacks may arrive in any order). Task callbacks can be identified by the `TaskResult` key. The original task definition is also included in the callback under the `Task` key.
+Callbacks are sent as individual tasks succeed or fail. For example, if a job includes three `Copy` tasks, a callback will be sent after each copy task completes. (Tasks are processed in parallel, so callbacks may arrive in any order). Task callbacks can be identified by the `TaskResult` key. The original task definition is also included in the callback under the `Task` key.
 
 The JSON message for a successful `Copy` task callback looks like this:
 
@@ -312,7 +312,7 @@ The JSON message for a failed task will have an `TaskResult.Error` key rather th
 
 #### Job Result Callback
 
-Callbacks are also sent when the job completes. Job callbacks can be identified by the `JobResult` key. There are three properties that can be inspected to determine the result of the job. All three of these are present for all `JobResult` callbacks; you must check the values, not simply whether the keys exist.
+Callbacks are also sent when the job completes. Job result callbacks can be identified by the `JobResult` key. There are three properties that can be inspected to determine the result of the job. All three of these are present for all `JobResult` callbacks; you must check the values, not simply whether the keys exist.
 
 ##### Job State
 
@@ -330,7 +330,7 @@ The list of possible states may change over time.
 
 ##### Task Results
 
-`JobResult.TaskResults` is an array of task results for those tasks that completed successfully. If there were no successful tasks in a job, the array will be empty. The data included in a task result is described below for each task type.
+`JobResult.TaskResults` is an array of task results for those tasks that completed successfully. If there were no successful tasks in a job, the array will be empty. The data included in a task result are described below for each task type.
 
 ##### Failed Task
 
@@ -483,7 +483,7 @@ All jobs included directly as members of `SerializedJobs` are started simultaneo
 
 ## Telemetry
 
-Porter publishes the following CloudWatch Metrics related to job executions. Remember that job metrics and Step Function execution metrics are tracking different things. A Step Function execution, for example, can succeed while the Porter job it's running fails, and the metrics will reflect that.
+Porter publishes the following custom CloudWatch Metrics related to job executions. Remember that the custom Porter job metrics and the native Step Function execution metrics are tracking different things. A Step Function execution, for example, can succeed while the Porter job it's running fails, and the metrics will reflect that.
 
 The following metrics are available with the `StateMachineArn` dimension:
 
@@ -583,9 +583,9 @@ If port is not specified, it will default to the standard FTP command port, `21`
 There are additional parameters to specify how the file is transferred:
 
 `MD5`: The default is `false`, to indicate the md5 file should not be written.
-If set to `true` Porter will write an md5 file, containing the md5 hash of the input file (e.g. `<input file>.md5`).
+If set to `true` Porter will write a text file containing the MD5 hash of the copied file (e.g. `<input file>.md5`).
 This is useful both as a semaphore file, as it is written after the primary file is written successfully,
-and useful to validate the file was transferred without error by checking the md5 signature.
+and useful to validate the file was transferred without error by checking the MD5 signature.
 
 `Timeout`: The default is `1800` (30 minutes). The number of seconds that each FTP transfer should be given to complete. Note that the FTP copy task will internally make multiple attempts to transfer a file, and this is the timeout for each attempt, not for the task itself.
 
@@ -617,7 +617,7 @@ Output:
 
 ### Image Transform
 
-`Image` tasks perform image manipulations on the source file. These are intended for static image files (eg, jpeg, png, webp, gif, svg). Currently the only supported destination mode is `AWS/S3`. A job can include any number of image tasks; each will perform the operation against the original state of the source file.
+`Image` tasks perform image manipulations on the source file. These are intended for static image files (e.g., JPEG, PNG, WebP, GIF, SVG). Currently the only supported destination mode is `AWS/S3`. A job can include any number of image tasks; each will perform the operation against the original state of the source file.
 
 Resize supports the following parameters: `Fit`, `Height`, `Position`, and `Width`. These follow the same rules as [sharp's](http://sharp.pixelplumbing.com/en/stable/api-resize/#parameters) parameters. The `Resize` property is optional; if excluded the task will not attempt to resize the image. All child properties of the `Resize` object are optional.
 
@@ -683,7 +683,7 @@ A `Format` is required, and is used to explicitly set the output format of the e
 
 The `FFmpeg` property is optional. When included, each of `GlobalOptions`, `InputFileOptions`, and `OutputFileOptions` properties are also optional. The task constructs a call to FFmpeg that looks like `ffmpeg [global opts] [input file opts] -i input [output file opts] -f [format] output`.
 
-For `AWS/S3` destinations, the contents of `Parameters` are passed directly to the [upload_file()](https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/s3.html#S3.Client.upload_file) method as `ExtraArgs`. S3 will default the `content-type` to `binary/octet-stream`, so you may generally want to define that parameter.
+For `AWS/S3` destinations, the contents of `Parameters` are passed directly to the [upload_file()](https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/s3.html#S3.Client.upload_file) method as `ExtraArgs`. S3 will default the `content-type` to `binary/octet-stream`, so you may generally want to define that parameter to match the chosen output format.
 
 The output for the task includes the destination bucket, object key, transcoded file size in bytes, and duration in milliseconds (see example below).
 
@@ -725,7 +725,7 @@ Output:
 
 `Inspect` tasks performs an analysis of the job's source file, and returns a set of metadata. The method of analysis and resulting data are determined by the type of the source file.
 
-If the optional `EBUR128` property is set to `true`, several loudness measurements will be taken based on the [EBU R 128](https://en.wikipedia.org/wiki/EBU_R_128) standard. Given that this takes significantly longer than the rest of the inspection task, when submitting jobs that include loudness measurement, you may want to include two `Inspect` tasks, so that one can return results more quickly.
+If the optional `EBUR128` property is set to `true`, several loudness measurements will be taken based on the [EBU R 128](https://en.wikipedia.org/wiki/EBU_R_128) standard. Given that this takes significantly longer than the rest of the inspection task, when submitting jobs that include loudness measurement, you may want to include two `Inspect` tasks, so that one can return results more quickly. `EBUR128` measurements are intended for audio and video source files.
 
 Input:
 
@@ -749,7 +749,7 @@ Output:
 
 ### Transcribe
 
-`Transcribe` tasks use [Amazon Transcribe](https://aws.amazon.com/transcribe/) speech-to-text functionality to generate transcriptions from audio and video files. The source file must be an mp3, mp4, wav, ogg, amr, webm or flac file for transcriptions to work. The `LanguageCode` property is required. The destination property is required, and the only mode currently supported is `AWS/S3`. The output of this task is a JSON file, and it's recommended that the destination file uses a `.json` extension, though it's not required.
+`Transcribe` tasks use [Amazon Transcribe](https://aws.amazon.com/transcribe/) speech-to-text functionality to generate transcriptions from audio and video files. The source file must be an mp3, mp4, wav, ogg, amr, webm or flac file for transcriptions to work. The `LanguageCode` property is required. The `Destination` property is required, and the only mode currently supported is `AWS/S3`. The output of this task is a JSON file, and it's recommended that the destination file uses a `.json` extension, though it's not required.
 
 By default, the `MediaFormat` is set based on the [heuristically-determined](https://www.npmjs.com/package/file-type) file type extension of the source file, which may not match the source file's actual extension. For example, an Ogg source file with a `.oga` extension may have a default `MediaFormat` of `ogg`. Some common detected `MediaFormat` values are automatically remapped to a valid value, such as `m4a` to `mp4`. If necessary, you can override this to a different valid format by setting the optional `MediaFormat` property of the `Task`.
 
@@ -787,15 +787,13 @@ Output:
 
 ### WAV Wrap
 
-`WavWrap` tasks create a [WAV](https://en.wikipedia.org/wiki/WAV) file from an audio artifact, and apply data to specific chunks of the WAV wrapper.
+`WavWrap` tasks create a [WAV](https://en.wikipedia.org/wiki/WAV) file from an audio artifact, and apply data to specific chunks of the WAV wrapper. This is intended primarily to create broadcast-ready audio files that are compatible with control systems used by American public radio stations, which expect WAV-wrapped MP2 audio files.
 
-It accepts MPEG audio files, and any of the chunks supported by [prx-wavefile](https://github.com/PRX/prx-wavefile), including all Broadcast Wave Format chunks and `cart` chunks.
+Wrapping is performed by [prx-wavefile](https://github.com/PRX/prx-wavefile), and currently supports MPEG audio source files.
 
-`prx-wavefile` will attempt to set the `fmt`, `mext`, `bext`, `fact`, and `data` chunks from the source file, e.g. analyzing the MPEG audio to set the `fmt` sample rate, bit rate, and number of channels.
+By default, the resulting WAV-wrapped file will include the `fmt`, `mext`, `bext`, `fact`, and `data` chunks, with data derived from the source file. The `Task.Chunks` array can also include explicitly-defined chunks, such as the `cart` chunk, as seen in the example below (i.e., `"ChunkId": "cart"`).
 
-The `cart` chunk is optional, and won't be set unless it's included in the `Task.Chunks` array, as in the example below.
-
-The Output includes a `WavfileChunks` array with the attributes set on the `prx-wavefile` chunks.
+The task output includes a `WavfileChunks` array, which includes only the chunks passed in to `Task.Chunks` _and_ were included in the resulting file. The chunks may include some attributes that were not listed in the input, as some default attributes are added to certain chunks during the WAV wrap process.
 
 Input:
 
