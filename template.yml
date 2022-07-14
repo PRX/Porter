@@ -1865,7 +1865,9 @@ Resources:
         - !Ref ArtifactBucketWriteAccessPolicy
         - Statement:
             - Action:
+                - transcribe:CreateVocabularyFilter
                 - transcribe:GetTranscriptionJob
+                - transcribe:ListVocabularyFilters
                 - transcribe:StartTranscriptionJob
                 - transcribe:TagResource
               Effect: Allow
