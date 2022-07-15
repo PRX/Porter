@@ -30,7 +30,7 @@ async function s3Upload(s3, sts, event, uploadBuffer) {
     Bucket: event.Task.Destination.BucketName,
     Key: event.Task.Destination.ObjectKey,
     Body: uploadBuffer,
-    ContentMD5: md5(uploadBuffer),
+    ContentMD5: new Buffer(md5(uploadBuffer), 'hex').toString('base64'),
   };
 
   // When the optional `ContentType` property is set to `REPLACE`, if a MIME is
