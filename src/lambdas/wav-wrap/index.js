@@ -30,6 +30,7 @@ async function s3Upload(s3, sts, event, uploadBuffer) {
     Bucket: event.Task.Destination.BucketName,
     Key: event.Task.Destination.ObjectKey,
     Body: uploadBuffer,
+    // eslint-disable-next-line no-buffer-constructor
     ContentMD5: new Buffer(md5(uploadBuffer), 'hex').toString('base64'),
   };
 

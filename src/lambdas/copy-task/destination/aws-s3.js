@@ -28,6 +28,7 @@ function buildParams(event, sourceFileMd5) {
     CopySource: copySource, // Source bucket and key
     Bucket: event.Task.BucketName, // Destination bucket
     Key: event.Task.ObjectKey, // Destination object key
+    // eslint-disable-next-line no-buffer-constructor
     ContentMD5: new Buffer(sourceFileMd5, 'hex').toString('base64'),
   };
 
