@@ -11,7 +11,8 @@
     "aws-sdk": "^2.1046.0",
     "file-type": "^15.0.0",
     "prx-wavefile": "^11.0.0-prx.1",
-    "sharp": "^0.25.2"
+    "sharp": "^0.25.2",
+    "md5": "^2.3.0"
   },
   "devDependencies": {
     "@prettier/plugin-ruby": "^0.20.1",
