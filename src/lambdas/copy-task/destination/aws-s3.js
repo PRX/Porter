@@ -1,4 +1,8 @@
 const AWS = require('aws-sdk');
+const md5 = require('md5');
+const path = require('path');
+const os = require('os');
+const fs = require('fs');
 
 const sts = new AWS.STS({ apiVersion: '2011-06-15' });
 const s3reader = new AWS.S3({ apiVersion: '2006-03-01' });
@@ -10,7 +14,7 @@ class AwsS3MultipartCopyError extends Error {
   }
 }
 
-function buildParams(event) {
+function buildParams(event, sourceFileMd5) {
   // CopySource expects: "/sourcebucket/path/to/object.extension"
   // CopySource expects "/sourcebucket/path/to/object.extension" to be URI-encoded
   const copySource = encodeURI(
@@ -24,6 +28,7 @@ function buildParams(event) {
     CopySource: copySource, // Source bucket and key
     Bucket: event.Task.BucketName, // Destination bucket
     Key: event.Task.ObjectKey, // Destination object key
+    ContentMD5: new Buffer(sourceFileMd5, 'hex').toString('base64'),
   };
 
   // When the optional `ContentType` property is set to `REPLACE`, if a MIME is
@@ -142,7 +147,7 @@ async function multipartCopy(params, sourceObjectSize, s3Client) {
   }
 }
 
-module.exports = async function main(event) {
+module.exports = async function main(event, context) {
   console.log(
     JSON.stringify({
       msg: 'S3 Copy',
@@ -150,6 +155,48 @@ module.exports = async function main(event) {
       destination: `${event.Task.BucketName}/${event.Task.ObjectKey}`,
     }),
   );
+
+  // ///////////////////////////////////////////////////////////////////////////
+  // TODO Temporary
+  fs.mkdirSync(path.join(os.tmpdir(), context.awsRequestId));
+
+  function s3GetObject(bucketName, objectKey, filePath) {
+    return new Promise((resolve, reject) => {
+      const file = fs.createWriteStream(filePath);
+      const stream = s3reader
+        .getObject({
+          Bucket: bucketName,
+          Key: objectKey,
+        })
+        .createReadStream();
+
+      stream.on('error', reject);
+      file.on('error', reject);
+
+      file.on('finish', () => {
+        resolve(filePath);
+      });
+
+      stream.pipe(file);
+    });
+  }
+
+  const sourceFileTmpPath = path.join(
+    os.tmpdir(),
+    context.awsRequestId,
+    'sourceFile',
+  );
+
+  await s3GetObject(
+    event.Artifact.BucketName,
+    event.Artifact.ObjectKey,
+    sourceFileTmpPath,
+  );
+
+  const data = fs.readFileSync(sourceFileTmpPath);
+  const sourceFileMd5 = md5(data);
+  fs.unlinkSync(sourceFileTmpPath);
+  // ///////////////////////////////////////////////////////////////////////////
 
   const head = await s3reader
     .headObject({
@@ -172,7 +219,7 @@ module.exports = async function main(event) {
     sessionToken: writerRole.Credentials.SessionToken,
   });
 
-  const params = buildParams(event);
+  const params = buildParams(event, sourceFileMd5);
 
   // S3 can perform a native copy of objects up to 5 GB using the CopyObject
   // API. For objects larger than 5 GB, a multi-part upload must be used.
