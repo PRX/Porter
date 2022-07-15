@@ -11,7 +11,7 @@ function camelize(str) {
     .replace(/\s+/g, '');
 }
 
-async function s3Upload(s3, sts, event, uploadBuffer) {
+async function s3Upload(sts, event, uploadBuffer) {
   const role = await sts
     .assumeRole({
       RoleArn: process.env.S3_DESTINATION_WRITER_ROLE,
@@ -144,7 +144,7 @@ exports.handler = async (event) => {
 
   // save to s3 destination
   if (event.Task.Destination.Mode === 'AWS/S3') {
-    await s3Upload(s3, sts, event, Buffer.from(wav.toBuffer()));
+    await s3Upload(sts, event, Buffer.from(wav.toBuffer()));
   }
 
   const now = new Date();
