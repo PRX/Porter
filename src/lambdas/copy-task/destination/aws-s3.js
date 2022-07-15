@@ -14,7 +14,7 @@ class AwsS3MultipartCopyError extends Error {
   }
 }
 
-function buildParams(event, sourceFileMd5) {
+function buildParams(event) {
   // CopySource expects: "/sourcebucket/path/to/object.extension"
   // CopySource expects "/sourcebucket/path/to/object.extension" to be URI-encoded
   const copySource = encodeURI(
@@ -29,7 +29,6 @@ function buildParams(event, sourceFileMd5) {
     Bucket: event.Task.BucketName, // Destination bucket
     Key: event.Task.ObjectKey, // Destination object key
     // eslint-disable-next-line no-buffer-constructor
-    ContentMD5: new Buffer(sourceFileMd5, 'hex').toString('base64'),
   };
 
   // When the optional `ContentType` property is set to `REPLACE`, if a MIME is
@@ -157,48 +156,6 @@ module.exports = async function main(event, context) {
     }),
   );
 
-  // ///////////////////////////////////////////////////////////////////////////
-  // TODO Temporary
-  fs.mkdirSync(path.join(os.tmpdir(), context.awsRequestId));
-
-  function s3GetObject(bucketName, objectKey, filePath) {
-    return new Promise((resolve, reject) => {
-      const file = fs.createWriteStream(filePath);
-      const stream = s3reader
-        .getObject({
-          Bucket: bucketName,
-          Key: objectKey,
-        })
-        .createReadStream();
-
-      stream.on('error', reject);
-      file.on('error', reject);
-
-      file.on('finish', () => {
-        resolve(filePath);
-      });
-
-      stream.pipe(file);
-    });
-  }
-
-  const sourceFileTmpPath = path.join(
-    os.tmpdir(),
-    context.awsRequestId,
-    'sourceFile',
-  );
-
-  await s3GetObject(
-    event.Artifact.BucketName,
-    event.Artifact.ObjectKey,
-    sourceFileTmpPath,
-  );
-
-  const data = fs.readFileSync(sourceFileTmpPath);
-  const sourceFileMd5 = md5(data);
-  fs.unlinkSync(sourceFileTmpPath);
-  // ///////////////////////////////////////////////////////////////////////////
-
   const head = await s3reader
     .headObject({
       Bucket: event.Artifact.BucketName,
@@ -220,7 +177,128 @@ module.exports = async function main(event, context) {
     sessionToken: writerRole.Credentials.SessionToken,
   });
 
-  const params = buildParams(event, sourceFileMd5);
+  // ///////////////////////////////////////////////////////////////////////////
+  // TODO Temporary
+  if (
+    event.Task.BucketName === 'production.prxtransfer.org' ||
+    event.Task.ObjectKey.includes('_______md5_test_______')
+  ) {
+    console.log('------------------------------------');
+    console.log('------------------------------------');
+    console.log('------------------------------------');
+    console.log('------------------------------------');
+    console.log('Using custom MD5-compatible upload');
+    console.log('------------------------------------');
+    console.log('------------------------------------');
+    console.log('------------------------------------');
+    console.log('------------------------------------');
+    fs.mkdirSync(path.join(os.tmpdir(), context.awsRequestId));
+
+    // eslint-disable-next-line no-inner-declarations
+    function s3GetObject(bucketName, objectKey, filePath) {
+      return new Promise((resolve, reject) => {
+        const file = fs.createWriteStream(filePath);
+        const stream = s3reader
+          .getObject({
+            Bucket: bucketName,
+            Key: objectKey,
+          })
+          .createReadStream();
+
+        stream.on('error', reject);
+        file.on('error', reject);
+
+        file.on('finish', () => {
+          resolve(filePath);
+        });
+
+        stream.pipe(file);
+      });
+    }
+
+    const sourceFileTmpPath = path.join(
+      os.tmpdir(),
+      context.awsRequestId,
+      'sourceFile',
+    );
+
+    await s3GetObject(
+      event.Artifact.BucketName,
+      event.Artifact.ObjectKey,
+      sourceFileTmpPath,
+    );
+
+    // eslint-disable-next-line no-inner-declarations
+    async function s3Upload(xsts, xevent, uploadBuffer) {
+      const role = await xsts
+        .assumeRole({
+          RoleArn: process.env.S3_DESTINATION_WRITER_ROLE,
+          RoleSessionName: 'porter_wavwrapper_task',
+        })
+        .promise();
+
+      const s3writer2 = new AWS.S3({
+        apiVersion: '2006-03-01',
+        accessKeyId: role.Credentials.AccessKeyId,
+        secretAccessKey: role.Credentials.SecretAccessKey,
+        sessionToken: role.Credentials.SessionToken,
+      });
+
+      const params = {
+        Bucket: xevent.Task.BucketName,
+        Key: xevent.Task.ObjectKey,
+        Body: uploadBuffer,
+        // eslint-disable-next-line no-buffer-constructor
+        ContentMD5: new Buffer(md5(uploadBuffer), 'hex').toString('base64'),
+      };
+
+      // When the optional `ContentType` property is set to `REPLACE`, if a MIME is
+      // included with the artifact, that should be used as the new audio file's
+      // content type
+      if (
+        Object.prototype.hasOwnProperty.call(xevent.Task, 'ContentType') &&
+        xevent.Task.ContentType === 'REPLACE' &&
+        Object.prototype.hasOwnProperty.call(xevent.Artifact, 'Descriptor') &&
+        Object.prototype.hasOwnProperty.call(xevent.Artifact.Descriptor, 'MIME')
+      ) {
+        params.ContentType = xevent.Artifact.Descriptor.MIME;
+      }
+
+      // Assign all members of Parameters to params. Remove the properties required
+      // for the Copy operation, so there is no collision
+      if (Object.prototype.hasOwnProperty.call(xevent.Task, 'Parameters')) {
+        delete xevent.Task.Parameters.Bucket;
+        delete xevent.Task.Parameters.Key;
+        delete xevent.Task.Parameters.Body;
+
+        Object.assign(params, xevent.Task.Parameters);
+      }
+
+      // Upload the resulting file to the destination in S3
+      const uploadStart = process.hrtime();
+      console.log('<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<');
+      console.log('Using S3 upload, rather than S3 copy');
+      await s3writer2.upload(params).promise();
+
+      const uploadEnd = process.hrtime(uploadStart);
+      console.log(
+        JSON.stringify({
+          msg: 'Finished S3 upload',
+          duration: `${uploadEnd[0]} s ${uploadEnd[1] / 1000000} ms`,
+        }),
+      );
+    }
+
+    const data = fs.readFileSync(sourceFileTmpPath);
+    await s3Upload(sts, event, data);
+
+    fs.unlinkSync(sourceFileTmpPath);
+    return;
+  }
+
+  // ///////////////////////////////////////////////////////////////////////////
+
+  const params = buildParams(event);
 
   // S3 can perform a native copy of objects up to 5 GB using the CopyObject
   // API. For objects larger than 5 GB, a multi-part upload must be used.

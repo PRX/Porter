@@ -8,12 +8,12 @@ class UnknownCopyTaskModeError extends Error {
   }
 }
 
-exports.handler = async (event) => {
+exports.handler = async (event, context) => {
   console.log(JSON.stringify({ msg: 'State input', input: event }));
 
   switch (event.Task.Mode) {
     case 'AWS/S3':
-      await toAwsS3(event);
+      await toAwsS3(event, context);
       break;
     case 'GCP/Storage':
       await toGcpStorage(event);
