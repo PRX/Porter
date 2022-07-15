@@ -1,6 +1,7 @@
 const AWS = require('aws-sdk');
 
 const wavefile = require('prx-wavefile');
+const md5 = require('md5');
 
 function camelize(str) {
   return str
@@ -29,6 +30,7 @@ async function s3Upload(s3, sts, event, uploadBuffer) {
     Bucket: event.Task.Destination.BucketName,
     Key: event.Task.Destination.ObjectKey,
     Body: uploadBuffer,
+    ContentMD5: md5(uploadBuffer),
   };
 
   // When the optional `ContentType` property is set to `REPLACE`, if a MIME is
