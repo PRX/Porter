@@ -56,6 +56,8 @@ async function s3Upload(sts, event, uploadBuffer) {
     delete event.Task.Destination.Parameters.Bucket;
     delete event.Task.Destination.Parameters.Key;
     delete event.Task.Destination.Parameters.Body;
+    // TODO This is a temporary workaround, remove when this switched back to s3.upload()
+    delete event.Task.Destination.Parameters.MetadataDirective;
 
     Object.assign(params, event.Task.Destination.Parameters);
   }
