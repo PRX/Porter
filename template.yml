@@ -1508,7 +1508,7 @@ Resources:
         prx:cloudformation:stack-id: !Ref AWS::StackId
         prx:ops:environment: !Ref EnvironmentType
         prx:dev:application: Porter
-      Timeout: 32
+      Timeout: 120
   CopyLambdaLogGroup:
     Type: AWS::Logs::LogGroup
     Properties:
