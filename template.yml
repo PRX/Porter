@@ -1222,6 +1222,7 @@ Resources:
         - arm64
       CompatibleRuntimes:
         - nodejs14.x
+        - nodejs16.x
       ContentUri: lib/wavefile
       Description: wavefile NPM module
       RetentionPolicy: Delete
@@ -1273,6 +1274,7 @@ Resources:
       ContentUri: lib/md5
       CompatibleRuntimes:
         - nodejs14.x
+        - nodejs16.x
       Description: MD5 npm package
       RetentionPolicy: Delete
   # Normalize Input Lambda
@@ -1724,7 +1726,7 @@ Resources:
         - !Ref Md5LambdaLayer
       MemorySize: 3008
       Role: !GetAtt WavWrapLambdaIamRole.Arn
-      Runtime: nodejs14.x
+      Runtime: nodejs16.x
       Tags:
         prx:meta:tagging-version: "2021-04-07"
         prx:cloudformation:stack-name: !Ref AWS::StackName
