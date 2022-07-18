@@ -1,5 +1,4 @@
 const AWS = require('aws-sdk');
-const md5 = require('md5');
 const path = require('path');
 const os = require('os');
 const fs = require('fs');
