@@ -248,6 +248,7 @@ module.exports = async function main(event, context) {
         Bucket: xevent.Task.BucketName,
         Key: xevent.Task.ObjectKey,
         Body: uploadBuffer,
+        Metadata: {},
       };
 
       // When the optional `ContentType` property is set to `REPLACE`, if a MIME is

@@ -30,6 +30,7 @@ async function s3Upload(sts, event, uploadBuffer) {
     Bucket: event.Task.Destination.BucketName,
     Key: event.Task.Destination.ObjectKey,
     Body: uploadBuffer,
+    Metadata: {},
   };
 
   // When the optional `ContentType` property is set to `REPLACE`, if a MIME is
