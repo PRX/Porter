@@ -7,7 +7,8 @@ test('wraps an mp2', async () => {
   AWS.mock('S3', 'getObject', {
     Body: Buffer.from(fs.readFileSync('test/samples/test.mp2')),
   });
-  AWS.mock('S3', 'upload', true);
+  // TODO
+  AWS.mock('S3', 'putObject', true);
   AWS.mock('STS', 'assumeRole', {
     Credentials: { SecretAccessKey: 'key', SessionToken: 'token' },
   });
