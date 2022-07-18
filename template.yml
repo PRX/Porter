@@ -1266,17 +1266,6 @@ Resources:
         - nodejs14.x
       Description: Google Cloud Node.js SDK
       RetentionPolicy: Delete
-  Md5LambdaLayer:
-    Type: AWS::Serverless::LayerVersion
-    Metadata:
-      BuildMethod: makefile
-    Properties:
-      ContentUri: lib/md5
-      CompatibleRuntimes:
-        - nodejs14.x
-        - nodejs16.x
-      Description: MD5 npm package
-      RetentionPolicy: Delete
   # Normalize Input Lambda
   NormalizeInputLambdaFunction:
     Type: AWS::Serverless::Function
@@ -1510,7 +1499,6 @@ Resources:
       Handler: index.handler
       Layers:
         - !Ref GoogleCloudLayer
-        - !Ref Md5LambdaLayer
       MemorySize: 512
       Role: !GetAtt CopyLambdaIamRole.Arn
       Runtime: nodejs14.x
@@ -1723,7 +1711,6 @@ Resources:
       Handler: index.handler
       Layers:
         - !Ref WavefileLambdaLayer
-        - !Ref Md5LambdaLayer
       MemorySize: 3008
       Role: !GetAtt WavWrapLambdaIamRole.Arn
       Runtime: nodejs16.x

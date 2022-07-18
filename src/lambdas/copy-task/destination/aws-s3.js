@@ -3,6 +3,7 @@ const md5 = require('md5');
 const path = require('path');
 const os = require('os');
 const fs = require('fs');
+const crypto = require('crypto');
 
 const sts = new AWS.STS({ apiVersion: '2011-06-15' });
 const s3reader = new AWS.S3({ apiVersion: '2006-03-01' });
@@ -248,8 +249,6 @@ module.exports = async function main(event, context) {
         Bucket: xevent.Task.BucketName,
         Key: xevent.Task.ObjectKey,
         Body: uploadBuffer,
-        // eslint-disable-next-line no-buffer-constructor
-        ContentMD5: new Buffer(md5(uploadBuffer), 'hex').toString('base64'),
       };
 
       // When the optional `ContentType` property is set to `REPLACE`, if a MIME is
@@ -273,6 +272,11 @@ module.exports = async function main(event, context) {
 
         Object.assign(params, xevent.Task.Parameters);
       }
+
+      params.Metadata['prx-content-md5'] = crypto
+        .createHash('md5')
+        .update(uploadBuffer)
+        .digest('base64');
 
       // Upload the resulting file to the destination in S3
       const uploadStart = process.hrtime();

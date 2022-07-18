@@ -1,7 +1,7 @@
 const AWS = require('aws-sdk');
+const crypto = require('crypto');
 
 const wavefile = require('prx-wavefile');
-const md5 = require('md5');
 
 function camelize(str) {
   return str
@@ -30,8 +30,6 @@ async function s3Upload(sts, event, uploadBuffer) {
     Bucket: event.Task.Destination.BucketName,
     Key: event.Task.Destination.ObjectKey,
     Body: uploadBuffer,
-    // eslint-disable-next-line no-buffer-constructor
-    ContentMD5: new Buffer(md5(uploadBuffer), 'hex').toString('base64'),
   };
 
   // When the optional `ContentType` property is set to `REPLACE`, if a MIME is
@@ -60,6 +58,12 @@ async function s3Upload(sts, event, uploadBuffer) {
 
     Object.assign(params, event.Task.Destination.Parameters);
   }
+
+  // TODO Temporary
+  params.Metadata['prx-content-md5'] = crypto
+    .createHash('md5')
+    .update(uploadBuffer)
+    .digest('base64');
 
   // Upload the resulting file to the destination in S3
   const uploadStart = process.hrtime();
