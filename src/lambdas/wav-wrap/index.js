@@ -66,6 +66,8 @@ async function s3Upload(sts, event, uploadBuffer) {
     .update(uploadBuffer)
     .digest('base64');
 
+  params.ContentMD5 = params.Metadata['prx-content-md5'];
+
   // Upload the resulting file to the destination in S3
   const uploadStart = process.hrtime();
   // TODO
