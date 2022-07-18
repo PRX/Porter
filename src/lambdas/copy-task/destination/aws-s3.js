@@ -282,7 +282,7 @@ module.exports = async function main(event, context) {
       const uploadStart = process.hrtime();
       console.log('<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<');
       console.log('Using S3 upload, rather than S3 copy');
-      await s3writer2.upload(params).promise();
+      await s3writer2.putObject(params).promise();
 
       const uploadEnd = process.hrtime(uploadStart);
       console.log(

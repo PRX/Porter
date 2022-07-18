@@ -68,7 +68,9 @@ async function s3Upload(sts, event, uploadBuffer) {
 
   // Upload the resulting file to the destination in S3
   const uploadStart = process.hrtime();
-  await s3writer.upload(params).promise();
+  // TODO
+  // await s3writer.upload(params).promise();
+  await s3writer.putObject(params).promise();
 
   const uploadEnd = process.hrtime(uploadStart);
   console.log(
