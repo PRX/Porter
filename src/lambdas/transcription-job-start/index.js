@@ -100,6 +100,32 @@ exports.handler = async (event) => {
     })
     .promise();
 
+  // There seems to be some undocumented default filtering that Transcribe
+  // does. Using a (mostly) empty vocab filter appears to disable that
+  // filtering. This ensures that such a filter exists.
+  // TODO This may not work with all LanguageCodes
+  await transcribe
+    .getVocabularyFilter({
+      VocabularyFilterName: process.env.AWS_LAMBDA_FUNCTION_NAME,
+    })
+    .promise();
+  const filters = await transcribe.listVocabularyFilters().promise();
+  const filterName = `${process.env.AWS_LAMBDA_FUNCTION_NAME}-${event.Task.LanguageCode}`;
+  if (
+    !filters.VocabularyFilters.map((f) => f.VocabularyFilterName).includes(
+      filterName,
+    )
+  ) {
+    await transcribe
+      .createVocabularyFilter({
+        VocabularyFilterName: filterName,
+        LanguageCode: event.Task.LanguageCode,
+        // This is meant to be a nonsense word
+        Words: ['abcdefghijklmnopqrstuvwxyz'],
+      })
+      .promise();
+  }
+
   await transcribe
     .startTranscriptionJob({
       Media: {
@@ -117,6 +143,10 @@ exports.handler = async (event) => {
           Formats: event.Task.SubtitleFormats,
         },
       }),
+      Settings: {
+        VocabularyFilterName: filterName,
+        VocabularyFilterMethod: 'tag',
+      },
       Tags: [
         {
           Key: 'prx:ops:environment',
