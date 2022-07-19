@@ -17,7 +17,7 @@ describe :porter do
             {
               Type: 'Transcribe',
               LanguageCode: 'en-US',
-              SubtitleFormats: ['vtt'],
+              # SubtitleFormats: ['vtt'],
               Destination: {
                 Mode: 'AWS/S3',
                 BucketName: CONFIG.PORTER_TEST_BUCKET_NAME,
@@ -33,7 +33,7 @@ describe :porter do
         _(output['JobResult']['State']).must_equal 'DONE'
         _(output['JobResult']['FailedTasks']).must_equal []
         _(output['JobResult']['TaskResults'].length).must_equal 1
-        _(output['JobResult']['TaskResults'][0]['SubtitleFormats'][0]).must_equal 'vtt'
+        # _(output['JobResult']['TaskResults'][0]['SubtitleFormats'][0]).must_equal 'vtt'
       end
     end
 
