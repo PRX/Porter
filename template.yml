@@ -1492,6 +1492,7 @@ Resources:
       CodeUri: src/lambdas/copy-task/
       Description: >-
         Copies job source files to various destinations
+      EphemeralStorage: 4096 # TODO temp
       Environment:
         Variables:
           S3_DESTINATION_WRITER_ROLE: !GetAtt S3DestinationWriterRole.Arn
