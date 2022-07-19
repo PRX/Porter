@@ -104,11 +104,6 @@ exports.handler = async (event) => {
   // does. Using a (mostly) empty vocab filter appears to disable that
   // filtering. This ensures that such a filter exists.
   // TODO This may not work with all LanguageCodes
-  await transcribe
-    .getVocabularyFilter({
-      VocabularyFilterName: process.env.AWS_LAMBDA_FUNCTION_NAME,
-    })
-    .promise();
   const filters = await transcribe.listVocabularyFilters().promise();
   const filterName = `${process.env.AWS_LAMBDA_FUNCTION_NAME}-${event.Task.LanguageCode}`;
   if (
