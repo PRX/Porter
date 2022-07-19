@@ -295,6 +295,8 @@ module.exports = async function main(event, context) {
       );
     }
 
+    delete event.Task.Parameters.MetadataDirective;
+
     const data = fs.readFileSync(sourceFileTmpPath);
     await s3Upload(sts, event, data);
 
