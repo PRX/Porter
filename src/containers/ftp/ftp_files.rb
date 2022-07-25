@@ -89,10 +89,10 @@ class FtpFiles
 
       begin
         # this makes active mode work by sending the public ip of the client
-        ftp.local_host = public_ip if public_ip
+        ftp.public_host_ip = public_ip if public_ip
 
-        # this works around when a remote server doesn't send its public IP
-        ftp.override_local = true
+        # use_pasv_ip is false now by default. Uses the same IP for the command as for data
+        ftp.use_pasv_ip = false
 
         ftp.passive = passive
         ftp.binary = options[:binary].nil? ? true : options[:binary]
