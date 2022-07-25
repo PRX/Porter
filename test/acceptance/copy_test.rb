@@ -360,6 +360,5 @@ describe :porter do
         _(output['JobResult']['TaskResults'].length).must_equal 1
       end
     end
-
   end
 end
