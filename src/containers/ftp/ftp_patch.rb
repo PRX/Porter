@@ -1,4 +1,5 @@
 # frozen_string_literal: true
+
 require 'net/ftp'
 
 module Net
@@ -10,9 +11,7 @@ module Net
 
     # override with the public_host_ip
     def sendport_with_override(host, port)
-      if public_host_ip
-        host = public_host_ip
-      end
+      host = public_host_ip if public_host_ip
       sendport_without_override(host, port)
     end
 
