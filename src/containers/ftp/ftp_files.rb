@@ -24,7 +24,7 @@ class FtpFiles
   # - retry_wait: defaults to 10 seconds
   # - max_attempts: the number of times to try the transfer
   # - md5: will write an md5 by default, defaults to false
-  # - keep_alive: will attempt to keep connections alive by default, true
+  # - keep_alive: attempt to keep connections alive with a noop every  N seconds, 0 / off by default
   # - mode: FTP/Active, FTP/Passive, or FTP/Auto
   # - binary: binary transfer, true by default
   # - timeout: how long to spend trying to transfer the file
@@ -52,7 +52,7 @@ class FtpFiles
     md5_file = create_md5_digest(local_file.path) if md5
 
     # this may be turned to 0 on error
-    keep_alive = options[:keep_alive].nil? ? 10 : options[:keep_alive].to_i
+    keep_alive = options[:keep_alive].nil? ? 0 : options[:keep_alive].to_i
 
     max_attempts = options[:max_attempts] || 1
     retry_wait = options[:retry_wait] || 10
@@ -89,10 +89,10 @@ class FtpFiles
 
       begin
         # this makes active mode work by sending the public ip of the client
-        ftp.local_host = public_ip if public_ip
+        ftp.public_host_ip = public_ip if public_ip
 
-        # this works around when a remote server doesn't send its public IP
-        ftp.override_local = true
+        # use_pasv_ip is false now by default. Uses the same IP for the command as for data
+        ftp.use_pasv_ip = false
 
         ftp.passive = passive
         ftp.binary = options[:binary].nil? ? true : options[:binary]
