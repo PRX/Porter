@@ -1562,7 +1562,10 @@ Resources:
     Properties:
       AlarmName: !Sub MINOR [Porter] FTP output Lambda <${EnvironmentTypeAbbreviation}> INVOCATION FAILED (${AWS::StackName})
       AlarmDescription: >-
-        FTP copy output format function has encountered an invocation error
+        FTP copy output function has failed. This is generally an indication
+        that an FTP copy task failed. (Fragate FTP copy tasks cannot trigger
+        alarms themselves, so this Lambda function is used as a proxy.) The
+        Lambda logs should include the FTP error message..
       ComparisonOperator: GreaterThanThreshold
       EvaluationPeriods: 1
       MetricName: LambdaFunctionsFailed
