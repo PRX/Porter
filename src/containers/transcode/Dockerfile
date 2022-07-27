@@ -1,11 +1,10 @@
 FROM public.ecr.aws/amazonlinux/amazonlinux:latest
 
-LABEL org.prx.app="yes"
+RUN amazon-linux-extras install ruby3.0
 
 RUN yum update -y \
-    && yum install -y python-pip tar wget xz \
+    && yum install -y tar wget xz \
     && yum clean all
-RUN pip install boto3
 
 ENV APP_HOME /transcode
 RUN mkdir -p $APP_HOME
@@ -18,6 +17,6 @@ RUN mv ffmpeg-git-*-amd64-static/ffmpeg ffmpeg-bin/
 RUN mv ffmpeg-git-*-amd64-static/ffprobe ffmpeg-bin/
 
 ADD transcode.py ./
-RUN chmod +x ./transcode.py
+RUN chmod +x ./transcode.rb
 
-ENTRYPOINT ["./transcode.py"]
+ENTRYPOINT ["./transcode.rb"]
