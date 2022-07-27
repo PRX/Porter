@@ -6,6 +6,7 @@
 # STATE_MACHINE_ARN
 # STATE_MACHINE_NAME
 # STATE_MACHINE_EXECUTION_ID
+# STATE_MACHINE_FTP_LISTEN_PORT
 # STATE_MACHINE_JOB_ID
 # STATE_MACHINE_TASK_INDEX
 # STATE_MACHINE_AWS_REGION
@@ -60,7 +61,8 @@ begin
   s3_files = S3Files.new(s3, logger)
   file = s3_files.download_file(bucket, key)
 
-  ip = ENV['PUBLIC_IP']
+  public_ip = ENV['PUBLIC_IP']
+  public_port = ENV['STATE_MACHINE_FTP_LISTEN_PORT']
   task = JSON.parse(ENV['STATE_MACHINE_TASK_JSON'])
   uri = URI.parse(task['URL'])
   md5 = task['MD5'].nil? ? false : task['MD5']
@@ -70,7 +72,15 @@ begin
 
   if uri.scheme == 'ftp'
     ftp_files = FtpFiles.new(logger, recorder)
-    used_mode = ftp_files.upload_file(uri, file, md5: md5, public_ip: ip, mode: task['Mode'], timeout: timeout, max_attempts: max_attempts)
+    ftp_options = {
+      md5: md5,
+      public_ip: public_ip,
+      public_port: public_port,
+      mode: task['Mode'],
+      timeout: timeout,
+      max_attempts: max_attempts
+    }
+    used_mode = ftp_files.upload_file(uri, file, ftp_options)
 
     if used_mode
       logger.debug(JSON.dump({
