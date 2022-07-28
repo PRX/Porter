@@ -333,5 +333,32 @@ describe :porter do
         _(output['JobResult']['TaskResults'].length).must_equal 1
       end
     end
+
+    it 'returns execution output for a passive FTP copy task' do
+      job = {
+        Job: {
+          Id: 'porter-test-copy-ftp-active',
+          Source: {
+            Mode: 'HTTP',
+            URL: 'https://dovetail.prxu.org/152/245d0fe2-4171-4ebf-bea3-69deff3e9336/input file with spaces.mp3'
+          },
+          Tasks: [
+            {
+              Type: 'Copy',
+              Mode: 'FTP/Active',
+              URL: 'ftp://dlpuser:rNrKYTX9g7z3RgJRmxWuGHbeu@ftp.dlptest.com/file.ext',
+              MaxAttempts: 1
+            }
+          ]
+        }
+      }
+
+      job_test(job, 10) do |output|
+        _(output['JobResult']['Job']['Id']).must_equal 'porter-test-copy-ftp-active'
+        _(output['JobResult']['State']).must_equal 'DONE'
+        _(output['JobResult']['FailedTasks']).must_equal []
+        _(output['JobResult']['TaskResults'].length).must_equal 1
+      end
+    end
   end
 end
