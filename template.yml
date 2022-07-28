@@ -1220,7 +1220,6 @@ Resources:
       GroupId: !GetAtt FtpCopyEcsTaskSecurityGroup.GroupId
       IpProtocol: tcp
       ToPort: 32888
-
   # Artifact Bucket
   ArtifactBucket:
     Type: AWS::S3::Bucket
