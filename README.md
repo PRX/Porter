@@ -591,6 +591,8 @@ and useful to validate the file was transferred without error by checking the MD
 
 The task output will include a `Mode` value, which may not match the `Mode` value from the input. The output will indicate the FTP transfer mode that was actually used to sucessfully transfer the file. When `FTP/Auto` is selected for a task, this allows you to inspect which mode was used internally to complete the transfer.
 
+SFTP is also support when using an `sftp://` URL. All modes work identically with SFTP URLs, since there is no active or passive mode for SFTP. If included, the URL's port is ignored.
+
 Input:
 
 ```json
