@@ -334,7 +334,7 @@ describe :porter do
       end
     end
 
-    it 'returns execution output for a passive FTP copy task' do
+    it 'returns execution output for a active FTP copy task' do
       job = {
         Job: {
           Id: 'porter-test-copy-ftp-active',
@@ -346,7 +346,7 @@ describe :porter do
             {
               Type: 'Copy',
               Mode: 'FTP/Active',
-              URL: 'ftp://dlpuser:rNrKYTX9g7z3RgJRmxWuGHbeu@ftp.dlptest.com/file.ext',
+              URL: 'ftp://dlpuser:rNrKYTX9g7z3RgJRmxWuGHbeu@ftp.dlptest.com/file2.ext',
               MaxAttempts: 1
             }
           ]
