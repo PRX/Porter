@@ -1119,7 +1119,10 @@ Resources:
     Type: AWS::ECS::TaskDefinition
     Properties:
       ContainerDefinitions:
-        - Essential: true
+        - Environment:
+            - Name: FTP_LISTEN_PORT
+              Value: 32888
+          Essential: true
           Image: !Ref FtpCopyEcsTaskDefinitionImage
           LogConfiguration:
             LogDriver: awslogs
@@ -1128,6 +1131,9 @@ Resources:
               awslogs-region: !Ref AWS::Region
               awslogs-stream-prefix: ecs
           Name: !Sub ${AWS::StackName}-ftp-copy-container
+          PortMappings:
+            - ContainerPort: 32888
+              Protocol: tcp
       Cpu: "4096"
       ExecutionRoleArn: !GetAtt FtpCopyEcsTaskExecutionIamRole.Arn
       Memory: "8192"

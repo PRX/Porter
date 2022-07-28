@@ -12,6 +12,9 @@
 # STATE_MACHINE_ARTIFACT_BUCKET_NAME
 # STATE_MACHINE_ARTIFACT_OBJECT_KEY
 # STATE_MACHINE_TASK_JSON
+# Set elsewhere
+# FTP_LISTEN_PORT
+# PUBLIC_IP
 
 $stdout.sync = true
 $stderr.sync = true
@@ -60,7 +63,8 @@ begin
   s3_files = S3Files.new(s3, logger)
   file = s3_files.download_file(bucket, key)
 
-  ip = ENV['PUBLIC_IP']
+  public_ip = ENV['PUBLIC_IP']
+  public_port = ENV['FTP_LISTEN_PORT']
   task = JSON.parse(ENV['STATE_MACHINE_TASK_JSON'])
   uri = URI.parse(task['URL'])
   md5 = task['MD5'].nil? ? false : task['MD5']
@@ -70,7 +74,15 @@ begin
 
   if uri.scheme == 'ftp'
     ftp_files = FtpFiles.new(logger, recorder)
-    used_mode = ftp_files.upload_file(uri, file, md5: md5, public_ip: ip, mode: task['Mode'], timeout: timeout, max_attempts: max_attempts)
+    ftp_options = {
+      md5: md5,
+      public_ip: public_ip,
+      public_port: public_port,
+      mode: task['Mode'],
+      timeout: timeout,
+      max_attempts: max_attempts
+    }
+    used_mode = ftp_files.upload_file(uri, file, ftp_options)
 
     if used_mode
       logger.debug(JSON.dump({

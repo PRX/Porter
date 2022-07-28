@@ -47,6 +47,7 @@ class FtpFiles
     cstr = anon_uri.to_s
 
     public_ip = options[:public_ip]
+    public_port = options[:public_port]
 
     md5 = options[:md5].nil? ? false : options[:md5]
     md5_file = create_md5_digest(local_file.path) if md5
@@ -66,6 +67,7 @@ class FtpFiles
       msg: 'FTP transfer setup',
       task_mode: options[:mode],
       public_ip: public_ip,
+      public_port: public_port,
       md5: md5,
       remote_host: remote_host,
       remote_port: remote_port,
@@ -88,8 +90,9 @@ class FtpFiles
       ftp = Net::FTP.new
 
       begin
-        # this makes active mode work by sending the public ip of the client
+        # this makes active mode work by sending the public ip and port of the client
         ftp.public_host_ip = public_ip if public_ip
+        ftp.public_port_num = public_port if public_port
 
         # use_pasv_ip is false now by default. Uses the same IP for the command as for data
         ftp.use_pasv_ip = false
