@@ -6,13 +6,15 @@
 # STATE_MACHINE_ARN
 # STATE_MACHINE_NAME
 # STATE_MACHINE_EXECUTION_ID
-# STATE_MACHINE_FTP_LISTEN_PORT
 # STATE_MACHINE_JOB_ID
 # STATE_MACHINE_TASK_INDEX
 # STATE_MACHINE_AWS_REGION
 # STATE_MACHINE_ARTIFACT_BUCKET_NAME
 # STATE_MACHINE_ARTIFACT_OBJECT_KEY
 # STATE_MACHINE_TASK_JSON
+# Set elsewhere
+# FTP_LISTEN_PORT
+# PUBLIC_IP
 
 $stdout.sync = true
 $stderr.sync = true
@@ -62,7 +64,7 @@ begin
   file = s3_files.download_file(bucket, key)
 
   public_ip = ENV['PUBLIC_IP']
-  public_port = ENV['STATE_MACHINE_FTP_LISTEN_PORT']
+  public_port = ENV['FTP_LISTEN_PORT']
   task = JSON.parse(ENV['STATE_MACHINE_TASK_JSON'])
   uri = URI.parse(task['URL'])
   md5 = task['MD5'].nil? ? false : task['MD5']
