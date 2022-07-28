@@ -332,6 +332,8 @@ States:
             NetworkConfiguration:
               AwsvpcConfiguration:
                 AssignPublicIp: ENABLED
+                SecurityGroups:
+                  - "${FtpCopyEcsTaskSecurityGroupId}"
                 Subnets:
                   - "${VpcPublicSubnet1}"
                   - "${VpcPublicSubnet2}"

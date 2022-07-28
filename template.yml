@@ -1147,6 +1147,30 @@ Resources:
         - { Key: prx:ops:environment, Value: !Ref EnvironmentType }
         - { Key: prx:dev:application, Value: Porter }
       TaskRoleArn: !GetAtt FtpCopyEcsTaskIamRole.Arn
+  FtpCopyEcsTaskSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: !Sub >-
+        The security group for ${EnvironmentType} Fargate FTP tasks.
+      Tags:
+        # - { Key: Name, Value: !Sub "${RootStackName}_shared-ecs-asg_instance" }
+        - { Key: prx:meta:tagging-version, Value: "2021-04-07" }
+        - { Key: prx:cloudformation:stack-name, Value: !Ref AWS::StackName }
+        - { Key: prx:cloudformation:stack-id, Value: !Ref AWS::StackId }
+        - { Key: prx:ops:environment, Value: !Ref EnvironmentType }
+        - { Key: prx:dev:application, Value: Porter }
+      VpcId: !Ref VpcId
+  FtpCopyEcsTaskSecurityGroupAlbDynamicPortIngress:
+    Type: AWS::EC2::SecurityGroupIngress
+    Properties:
+      CidrIp: 0.0.0.0/0
+      Description: >-
+        Allow ingress traffic to the active FTP listener port
+      FromPort: 32888
+      GroupId: !GetAtt FtpCopyEcsTaskSecurityGroup.GroupId
+      IpProtocol: tcp
+      ToPort: 32888
+
   # Artifact Bucket
   ArtifactBucket:
     Type: AWS::S3::Bucket
@@ -2213,6 +2237,7 @@ Resources:
         CallbackLambdaFunctionArn: !GetAtt CallbackLambdaFunction.Arn
         CopyLambdaFunctionArn: !GetAtt CopyLambdaFunction.Arn
         EcsClusterArn: !GetAtt EcsCluster.Arn
+        FtpCopyEcsTaskSecurityGroupId: !GetAtt FtpCopyEcsTaskSecurityGroup.GroupId
         ImageTransformLambdaFunctionArn: !GetAtt ImageTransformLambdaFunction.Arn
         SilenceDetectionLambdaFunctionArn: !GetAtt SilenceDetectionLambdaFunction.Arn
         ToneDetectionLambdaFunctionArn: !GetAtt ToneDetectionLambdaFunction.Arn
