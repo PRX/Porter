@@ -43,7 +43,7 @@ class FtpFiles
 
     # for logging
     anon_uri = URI.parse(uri.to_s)
-    anon_uri.password = CGI.escape("#{remote_password[0]}#{'*' * (remote_password.length - 1)}")
+    anon_uri.password = "#{CGI.escape(remote_password[0])}#{'*' * (remote_password.length - 1)}"
     cstr = anon_uri.to_s
 
     public_ip = options[:public_ip]
