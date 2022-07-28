@@ -672,6 +672,31 @@ Resources:
       RuleAction: allow
       RuleNumber: 101
   ##
+  PublicSubnetIPv4AllowFtpActiveDataConnectionOutboundTrafficNetworkAclEntry:
+    Type: AWS::EC2::NetworkAclEntry
+    Properties:
+      CidrBlock: 0.0.0.0/0
+      Egress: true
+      NetworkAclId: !Ref PublicSubnetNetworkAcl
+      PortRange:
+        From: 20
+        To: 20
+      Protocol: 6 # TCP
+      RuleAction: allow
+      RuleNumber: 110
+  PublicSubnetIPv6AllowFtpActiveDataConnectionOutboundTrafficNetworkAclEntry:
+    Type: AWS::EC2::NetworkAclEntry
+    Properties:
+      Egress: true
+      Ipv6CidrBlock: ::/0
+      NetworkAclId: !Ref PublicSubnetNetworkAcl
+      PortRange:
+        From: 20
+        To: 20
+      Protocol: 6 # TCP
+      RuleAction: allow
+      RuleNumber: 111
+  ##
   PublicSubnetIPv4AllowFtpPassiveDataConnectionOutboundTrafficNetworkAclEntry:
     Type: AWS::EC2::NetworkAclEntry
     Properties:
