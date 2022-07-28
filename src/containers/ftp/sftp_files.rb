@@ -14,7 +14,7 @@ class SftpFiles
     @recorder = recorder
   end
 
-  def upload_file(uri, local_file, _options = {})
+  def upload_file(uri, local_file, options = {})
     remote_host = CGI.unescape(uri.host) if uri.host
     remote_path = CGI.unescape(uri.path) if uri.path
     remote_user = CGI.unescape(uri.user) if uri.user
