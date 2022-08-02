@@ -345,8 +345,8 @@ States:
           Retry:
             - ErrorEquals:
                 - States.ALL
-              IntervalSeconds: 5
-              MaxAttempts: 0
+              IntervalSeconds: 10
+              MaxAttempts: 3
               BackoffRate: 2
           Catch:
             - ErrorEquals:
