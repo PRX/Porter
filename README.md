@@ -807,6 +807,7 @@ Input:
         "BucketName": "myBucket",
         "ObjectKey": "myTranscript.json"
     },
+    "NoPadByte": true,
     "Chunks": [
         {
             "ChunkId": "cart",
