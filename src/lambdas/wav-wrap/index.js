@@ -119,7 +119,7 @@ exports.handler = async (event) => {
   // create the wav object
   const wav = new wavefile.WaveFile();
 
-  // only if the task explicit turns off pad byte
+  // only if the task explicitly turns off pad byte
   if (event.Task.NoPadByte === true) {
     wav.padBytes = false;
   }
