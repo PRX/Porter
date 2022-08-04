@@ -34,6 +34,7 @@ test('wraps an mp2', async () => {
         ObjectKey: 'wxyz/sound-opinions/30000.wav',
         ContentType: 'audio/wav',
       },
+      NoPadByte: true,
       Chunks: [
         {
           ChunkId: 'cart',
