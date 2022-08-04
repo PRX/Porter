@@ -119,6 +119,11 @@ exports.handler = async (event) => {
   // create the wav object
   const wav = new wavefile.WaveFile();
 
+  // only if the task explicitly turns off pad byte
+  if (event.Task.NoPadByte === true) {
+    wav.padBytes = false;
+  }
+
   if (s3Object.Body instanceof Uint8Array || Buffer.isBuffer(s3Object.Body)) {
     wav.fromMpeg(s3Object.Body);
   } else {

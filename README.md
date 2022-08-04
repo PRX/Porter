@@ -795,6 +795,8 @@ Wrapping is performed by [prx-wavefile](https://github.com/PRX/prx-wavefile), an
 
 By default, the resulting WAV-wrapped file will include the `fmt`, `mext`, `bext`, `fact`, and `data` chunks, with data derived from the source file. The `Task.Chunks` array can also include explicitly-defined chunks, such as the `cart` chunk, as seen in the example below (i.e., `"ChunkId": "cart"`).
 
+`Task.NoPadByte` is optional, and defaults to `false` (meaning, by default, pad bytes are included, which adheres to the RIFF spec). `NoPadByte` is generally used for compatibility with software that incorrectly implement the RIFF spec and can't handle the pad bytes.
+
 The task output includes a `WavfileChunks` array, which includes only the chunks passed in to `Task.Chunks` _and_ were included in the resulting file. The chunks may include some attributes that were not listed in the input, as some default attributes are added to certain chunks during the WAV wrap process.
 
 Input:
@@ -807,6 +809,7 @@ Input:
         "BucketName": "myBucket",
         "ObjectKey": "myTranscript.json"
     },
+    "NoPadByte": true,
     "Chunks": [
         {
             "ChunkId": "cart",
