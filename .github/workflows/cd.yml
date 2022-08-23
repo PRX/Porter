@@ -51,6 +51,7 @@ jobs:
       - uses: actions/setup-python@v3
       - uses: aws-actions/setup-sam@v1
       - run: sam build --parallel
+      - run: zip -r aws-sam.zip ./.aws-sam/*
       - uses: actions/upload-artifact@v3
         with:
           name: sam-build
@@ -64,6 +65,7 @@ jobs:
       - uses: actions/download-artifact@v3
         with:
           name: sam-build
+      - run: unzip aws-sam.zip
       - run: ls -R
 
   acceptance-test:
@@ -84,4 +86,5 @@ jobs:
       - uses: actions/download-artifact@v3
         with:
           name: sam-build
+      - run: unzip aws-sam.zip
       - run: ls -R
