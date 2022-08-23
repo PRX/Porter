@@ -47,6 +47,6 @@ jobs:
       - uses: aws-actions/setup-sam@v1
       - run: sam build --parallel
 
-  test:
-    runs-on: ubuntu-latest
-    needs: build
+  # test:
+  #   runs-on: ubuntu-latest
+  #   needs: build
