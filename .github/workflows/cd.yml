@@ -55,7 +55,7 @@ jobs:
       - uses: actions/upload-artifact@v3
         with:
           name: sam-build
-          path: .aws-sam
+          path: aws-sam.zip
           retention-days: 30
 
   staging-deploy:
