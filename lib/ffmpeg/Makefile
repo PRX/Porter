@@ -1,5 +1,5 @@
 build-FfmpegLambdaLayer:
-	curl http://media.prx.org/tech/ffmpeg-git-amd64-static.tar.xz --output "$(ARTIFACTS_DIR)/ffmpeg-release-amd64-static.tar.xz"
+	curl https://media.prx.org/tech/ffmpeg-git-amd64-static.tar.xz --output "$(ARTIFACTS_DIR)/ffmpeg-release-amd64-static.tar.xz"
 	tar xf "$(ARTIFACTS_DIR)/ffmpeg-release-amd64-static.tar.xz" -C "$(ARTIFACTS_DIR)"
 	rm "$(ARTIFACTS_DIR)/ffmpeg-release-amd64-static.tar.xz"
 	mkdir -p "$(ARTIFACTS_DIR)/bin"
