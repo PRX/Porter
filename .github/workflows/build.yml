@@ -1,0 +1,58 @@
+name: Build
+
+on:
+  workflow_call:
+    inputs:
+      account-id:
+        required: true
+        type: string
+      region:
+        required: true
+        type: string
+
+jobs:
+  build-sam:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/setup-python@v3
+      - uses: aws-actions/setup-sam@v1
+      - run: sam build --parallel
+      - run: zip -rq aws-sam.zip ./.aws-sam/*
+      - uses: actions/upload-artifact@v3
+        with:
+          name: sam-build
+          path: aws-sam.zip
+          retention-days: 30
+  # build-ffmpeg-docker:
+  #   permissions:
+  #     id-token: write
+  #     contents: read
+  #   uses: ./.github/workflows/push-to-ecr.yml
+  #   strategy:
+  #     matrix:
+  #       account-id:
+  #         - "561178107736"
+  #       region:
+  #         - us-east-1
+  #         - us-west-2
+  #   with:
+  #     src-directory: transcode
+  #     account-id: ${{ matrix.account-id }}
+  #     region: ${{ matrix.region }}
+  build-ftp-docker:
+    permissions:
+      id-token: write
+      contents: read
+    uses: ./.github/workflows/push-to-ecr.yml
+    strategy:
+      matrix:
+        account-id:
+          - "561178107736"
+        region:
+          - us-east-1
+          - us-west-2
+    with:
+      src-directory: ftp
+      account-id: ${{ matrix.account-id }}
+      region: ${{ matrix.region }}

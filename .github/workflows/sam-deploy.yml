@@ -1,0 +1,21 @@
+name: SAM Deploy
+
+on:
+  workflow_call:
+    inputs:
+      account-id:
+        required: true
+        type: string
+      region:
+        required: true
+        type: string
+
+jobs:
+  sam-deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@v3
+        with:
+          name: sam-build
+      - run: unzip -q aws-sam.zip
+      - run: echo "sam deploy --to-staging"
