@@ -1,12 +1,7 @@
 name: Continuous Deployment
 
 on:
-  workflow_call:
   workflow_dispatch:
-    inputs:
-      src-directory:
-        required: true
-        type: string
 
 concurrency:
   group: ${{ github.workflow }}
