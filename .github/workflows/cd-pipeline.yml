@@ -37,6 +37,7 @@ jobs:
       - run: npm install
       - run: npm run eslint -- "**/*.js"
       - run: npm run tsc
+      - run: npm run prettier -- --check "**/*.{js,json,yaml,yml}"
   lint-ruby:
     runs-on: ubuntu-latest
     steps:
