@@ -320,7 +320,7 @@ describe :porter do
               Type: 'Copy',
               Mode: 'FTP/Passive',
               URL: 'ftp://dlpuser:rNrKYTX9g7z3RgJRmxWuGHbeu@ftp.dlptest.com/file.ext',
-              MaxAttempts: 1
+              MaxAttempts: 5
             }
           ]
         }
@@ -347,7 +347,7 @@ describe :porter do
               Type: 'Copy',
               Mode: 'FTP/Active',
               URL: 'ftp://dlpuser:rNrKYTX9g7z3RgJRmxWuGHbeu@ftp.dlptest.com/file2.ext',
-              MaxAttempts: 1
+              MaxAttempts: 5
             }
           ]
         }
