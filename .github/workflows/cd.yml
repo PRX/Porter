@@ -83,6 +83,14 @@ jobs:
           role-to-assume: arn:aws:iam::${{ matrix.account-id }}:role/DevOps-GitHubOidcFederatedRole
           role-session-name: GitHub_Workflow-Deploy_Porter
       - run: aws ecr get-login-password --region ${{ matrix.region }} | docker login --username AWS --password-stdin ${{ matrix.account-id }}.dkr.ecr.${{ matrix.region }}.amazonaws.com
+      - run: |
+          sha1=`find src/containers/transcode -type f -print0 | sort -z | xargs -0 sha1sum | sha1sum | awk '{ print $1 }'`
+          ecrRepositoryName="${{ github.repository }}/ffmpeg"
+          imageName="${{ matrix.account-id }}.dkr.ecr.${{ matrix.region }}.amazonaws.com/$ecrRepositoryName:$sha1"
+          lookup=`aws ecr describe-images --repository-name "$ecrRepositoryName" --image-ids imageTag="$sha1" || echo "notFound"`
+          if [ "$lookup" = "notFound" ]; then docker build -t transcode src/containers/transcode; fi
+          if [ "$lookup" = "notFound" ]; then docker tag transcode:latest "$imageName"; fi
+          # if [ "$lookup" = "notFound" ]; then docker push "$imageName"; fi
   build-ftp-docker:
     runs-on: ubuntu-latest
     needs: [lint-cloudformation, lint-javascript, lint-ruby]
