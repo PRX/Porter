@@ -94,22 +94,22 @@ jobs:
       account-id: ${{ matrix.account-id }}
       region: ${{ matrix.region }}
 
-  staging-deploy:
-    runs-on: ubuntu-latest
-    needs: [build-sam, build-ffmpeg-docker, build-ftp-docker]
-    # environment:
-    #   name: Staging
-    strategy:
-      matrix:
-        region:
-          - us-east-1
-          - us-west-2
-    steps:
-      - uses: actions/download-artifact@v3
-        with:
-          name: sam-build
-      - run: unzip -q aws-sam.zip
-      - run: echo "sam deploy --to-staging"
+  # staging-deploy:
+  #   runs-on: ubuntu-latest
+  #   needs: [build-sam, build-ffmpeg-docker, build-ftp-docker]
+  #   # environment:
+  #   #   name: Staging
+  #   strategy:
+  #     matrix:
+  #       region:
+  #         - us-east-1
+  #         - us-west-2
+  #   steps:
+  #     - uses: actions/download-artifact@v3
+  #       with:
+  #         name: sam-build
+  #     - run: unzip -q aws-sam.zip
+  #     - run: echo "sam deploy --to-staging"
 
   # acceptance-test:
   #   runs-on: ubuntu-latest
