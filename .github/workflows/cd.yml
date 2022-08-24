@@ -33,6 +33,7 @@ jobs:
       - uses: actions/setup-node@v3
         with:
           node-version: "14"
+          cache: "npm"
       - run: npm install
       - run: npm run eslint -- "**/*.js"
       - run: npm run tsc
@@ -76,7 +77,7 @@ jobs:
         uses: aws-actions/configure-aws-credentials@v1
         with:
           aws-region: ${{ matrix.region }}
-          role-to-assume: arn:aws:iam::${{ matrix.account }}:role/DevOps-GitHubOidcFederatedRole
+          role-to-assume: arn:aws:iam::${{ matrix.account-id }}:role/DevOps-GitHubOidcFederatedRole
           role-session-name: GitHub_Workflow-Deploy_Porter
       - run: aws ecr get-login-password --region ${{ matrix.region }} | docker login --username AWS --password-stdin ${{ matrix.account-id }}.dkr.ecr.${{ matrix.region }}.amazonaws.com
   build-ftp-docker:
@@ -127,11 +128,11 @@ jobs:
         include:
           - region: us-east-1
             stack: porter-staging
-            account: "561178107736"
+            account-id: "561178107736"
             test-bucket: prx-porter-sandbox
           - region: us-west-2
             stack: porter-staging
-            account: "561178107736"
+            account-id: "561178107736"
             test-bucket: prx-porter-sandbox-us-west-2
     steps:
       - uses: actions/checkout@v3
@@ -143,7 +144,7 @@ jobs:
         uses: aws-actions/configure-aws-credentials@v1
         with:
           aws-region: ${{ matrix.region }}
-          role-to-assume: arn:aws:iam::${{ matrix.account }}:role/DevOps-GitHubOidcFederatedRole
+          role-to-assume: arn:aws:iam::${{ matrix.account-id }}:role/DevOps-GitHubOidcFederatedRole
           role-session-name: GitHub_Workflow-Deploy_Porter
       - run: |
           export PORTER_TEST_BUCKET_NAME=${{ matrix.test-bucket }}
