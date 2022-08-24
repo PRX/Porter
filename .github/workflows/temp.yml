@@ -61,18 +61,30 @@ jobs:
           image_name="${{ matrix.account-id }}.dkr.ecr.${{ matrix.region }}.amazonaws.com/${{ steps.ecr-repo.outputs.name }}:${{ steps.directory-hash.outputs.hash }}"
 
           echo "::set-output name=name::$image_name"
+      - name: Create ECR Repository
+        run: |
+          # Only create the repository if it doesn't exist
+          output=$(aws ecr describe-repositories --repository-names "${{ steps.ecr-repo.outputs.name }}" 2>&1)
+
+          if [ $? -ne 0 ]; then
+            if echo ${output} | grep -q RepositoryNotFoundException; then
+              echo "Creating ECR repository: ${{ steps.ecr-repo.outputs.name }}"
+              aws ecr create-repository --repository-name "${{ steps.ecr-repo.outputs.name }}"
+            else
+              echo "${{ steps.ecr-repo.outputs.name }} already exists"
+              >&2 echo ${output}
+            fi
+          fi
       - name: Build & Publish Docker Image
         run: |
-          if [ "this" = "this" ]
-          then
-            echo "line1"
-            echo "line2"
-          fi
-
-          # See if that tag already exists in the repository
+          # See if the tag already exists in the repository
           # tag_lookup=`aws ecr describe-images --repository-name "${{ steps.ecr-repo.outputs.name }}" --image-ids imageTag="${{ steps.directory-hash.outputs.hash }}" || echo "notFound"`
 
-          # Only build and push the image if it doesn't exist, meaning the directory and code has changed
-          # if [ "$tag_lookup" = "notFound" ]; then docker build -t ftp src/containers/ftp; fi
-          # if [ "$tag_lookup" = "notFound" ]; then docker tag ftp:latest "${{ steps.docker-image.outputs.name }}"; fi
-          # if [ "$tag_lookup" = "notFound" ]; then docker push "${{ steps.docker-image.outputs.name }}"; fi
+          if [ "$tag_lookup" = "notFound" ]
+          then
+            docker build -t ftp src/containers/ftp
+            docker tag ftp:latest "${{ steps.docker-image.outputs.name }}"
+            docker push "${{ steps.docker-image.outputs.name }}"
+          else
+            echo "Docker image already exists for this commit"
+          fi
