@@ -16,64 +16,64 @@ concurrency:
   group: ${{ github.workflow }}
 
 jobs:
-  lint-cloudformation:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v3
-      - uses: actions/setup-python@v3
-      - run: pip3 install -r requirements.txt
-      - run: cfn-lint --ignore-checks W --template template.yml
-  lint-javascript:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v3
-      - uses: actions/setup-node@v3
-        with:
-          node-version: 14
-      - run: npm install
-      - run: npm run eslint -- "**/*.js"
-      - run: npm run tsc
-  lint-ruby:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v3
-      - uses: ruby/setup-ruby@v1
-        with:
-          ruby-version: "2.6" # Not needed with a .ruby-version file
-          bundler-cache: true # runs 'bundle install' and caches installed gems automatically
-      - run: bundle exec rubocop
+  # lint-cloudformation:
+  #   runs-on: ubuntu-latest
+  #   steps:
+  #     - uses: actions/checkout@v3
+  #     - uses: actions/setup-python@v3
+  #     - run: pip3 install -r requirements.txt
+  #     - run: cfn-lint --ignore-checks W --template template.yml
+  # lint-javascript:
+  #   runs-on: ubuntu-latest
+  #   steps:
+  #     - uses: actions/checkout@v3
+  #     - uses: actions/setup-node@v3
+  #       with:
+  #         node-version: 14
+  #     - run: npm install
+  #     - run: npm run eslint -- "**/*.js"
+  #     - run: npm run tsc
+  # lint-ruby:
+  #   runs-on: ubuntu-latest
+  #   steps:
+  #     - uses: actions/checkout@v3
+  #     - uses: ruby/setup-ruby@v1
+  #       with:
+  #         ruby-version: "2.6" # Not needed with a .ruby-version file
+  #         bundler-cache: true # runs 'bundle install' and caches installed gems automatically
+  #     - run: bundle exec rubocop
 
-  build:
-    runs-on: ubuntu-latest
-    needs: [lint-cloudformation, lint-javascript, lint-ruby]
-    steps:
-      - uses: actions/checkout@v3
-      - uses: actions/setup-python@v3
-      - uses: aws-actions/setup-sam@v1
-      - run: sam build --parallel
-      - run: zip -rq aws-sam.zip ./.aws-sam/*
-      - uses: actions/upload-artifact@v3
-        with:
-          name: sam-build
-          path: aws-sam.zip
-          retention-days: 30
+  # build:
+  #   runs-on: ubuntu-latest
+  #   needs: [lint-cloudformation, lint-javascript, lint-ruby]
+  #   steps:
+  #     - uses: actions/checkout@v3
+  #     - uses: actions/setup-python@v3
+  #     - uses: aws-actions/setup-sam@v1
+  #     - run: sam build --parallel
+  #     - run: zip -rq aws-sam.zip ./.aws-sam/*
+  #     - uses: actions/upload-artifact@v3
+  #       with:
+  #         name: sam-build
+  #         path: aws-sam.zip
+  #         retention-days: 30
 
-  staging-deploy:
-    runs-on: ubuntu-latest
-    needs: build
-    # environment:
-    #   name: Staging
-    strategy:
-      matrix:
-        region:
-          - us-east-1
-          - us-west-2
-    steps:
-      - uses: actions/download-artifact@v3
-        with:
-          name: sam-build
-      - run: unzip -q aws-sam.zip
-      - run: echo "sam deploy --to-staging"
+  # staging-deploy:
+  #   runs-on: ubuntu-latest
+  #   needs: build
+  #   # environment:
+  #   #   name: Staging
+  #   strategy:
+  #     matrix:
+  #       region:
+  #         - us-east-1
+  #         - us-west-2
+  #   steps:
+  #     - uses: actions/download-artifact@v3
+  #       with:
+  #         name: sam-build
+  #     - run: unzip -q aws-sam.zip
+  #     - run: echo "sam deploy --to-staging"
 
   acceptance-test:
     runs-on: ubuntu-latest
@@ -102,22 +102,23 @@ jobs:
           aws-region: ${{ matrix.region }}
           role-to-assume: arn:aws:iam::${{ matrix.account }}:role/DevOps-GitHubOidcFederatedRole
           role-session-name: GitHub_Workflow-Deploy_Porter
+      - run: aws cloudformation describe-stacks --region ${{ matrix.region }} --stack-name ${{ matrix.stack }} --query "Stacks[0].Outputs[?OutputKey=='StateMachineArn'].OutputValue" --output text
       - run: PORTER_STATE_MACHINE_ARN=$(aws cloudformation describe-stacks --region ${{ matrix.region }} --stack-name ${{ matrix.stack }} --query "Stacks[0].Outputs[?OutputKey=='StateMachineArn'].OutputValue" --output text)
       - run: echo "bundle exec rake test $PORTER_STATE_MACHINE_ARN"
 
-  production-deploy:
-    runs-on: ubuntu-latest
-    needs: acceptance-test
-    # environment:
-    #   name: Production
-    strategy:
-      matrix:
-        region:
-          - us-east-1
-          - us-west-2
-    steps:
-      - uses: actions/download-artifact@v3
-        with:
-          name: sam-build
-      - run: unzip -q aws-sam.zip
-      - run: echo "sam deploy --to-prod"
+  # production-deploy:
+  #   runs-on: ubuntu-latest
+  #   needs: acceptance-test
+  #   # environment:
+  #   #   name: Production
+  #   strategy:
+  #     matrix:
+  #       region:
+  #         - us-east-1
+  #         - us-west-2
+  #   steps:
+  #     - uses: actions/download-artifact@v3
+  #       with:
+  #         name: sam-build
+  #     - run: unzip -q aws-sam.zip
+  #     - run: echo "sam deploy --to-prod"
