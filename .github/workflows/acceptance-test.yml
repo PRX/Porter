@@ -12,6 +12,9 @@ on:
       test-bucket:
         required: true
         type: string
+      stack-name:
+        required: true
+        type: string
 
 jobs:
   acceptance-test:

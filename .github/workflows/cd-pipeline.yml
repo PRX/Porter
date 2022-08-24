@@ -82,10 +82,13 @@ jobs:
           - us-west-2
         test-bucket:
           - prx-porter-sandbox
+        stack-name:
+          - porter-staging
     with:
       account-id: ${{ matrix.account-id }}
       region: ${{ matrix.region }}
       test-bucket: ${{ matrix.test-bucket }}
+      stack-name: ${{ matrix.stack-name }}
 
   production-deploy:
     needs: [acceptance-test]
