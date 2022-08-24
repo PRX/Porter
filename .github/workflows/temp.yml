@@ -66,21 +66,19 @@ jobs:
           echo "::set-output name=name::$image_name"
       - name: Create ECR Repository
         run: |
-          aws ecr describe-repositories --repository-names "github/prx/augury.prx.org1" || echo "nope"
-
           # Only create the repository if it doesn't exist
-          # output=$(aws ecr describe-repositories --repository-names "${{ steps.ecr-repo.outputs.name }}" 2>&1)
-          # echo "$output"
+          set +e
+          output=$(aws ecr describe-repositories --repository-names "${{ steps.ecr-repo.outputs.name }}" 2>&1)
 
-          # if [ $? -ne 0 ]; then
-          #   if echo ${output} | grep -q RepositoryNotFoundException; then
-          #     echo "Creating ECR repository: ${{ steps.ecr-repo.outputs.name }}"
-          #     aws ecr create-repository --repository-name "${{ steps.ecr-repo.outputs.name }}"
-          #   else
-          #     echo "${{ steps.ecr-repo.outputs.name }} already exists"
-          #     >&2 echo ${output}
-          #   fi
-          # fi
+          if [ $? -ne 0 ]; then
+            if echo ${output} | grep -q RepositoryNotFoundException; then
+              echo "Creating ECR repository: ${{ steps.ecr-repo.outputs.name }}"
+              aws ecr create-repository --repository-name "${{ steps.ecr-repo.outputs.name }}"
+            else
+              echo "${{ steps.ecr-repo.outputs.name }} already exists"
+              >&2 echo ${output}
+            fi
+          fi
       - name: Build & Publish Docker Image
         run: |
           # See if the tag already exists in the repository
