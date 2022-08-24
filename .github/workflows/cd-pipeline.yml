@@ -92,8 +92,6 @@ jobs:
 
   production-deploy:
     needs: [acceptance-test]
-    environment:
-      name: Production
     permissions:
       id-token: write
       contents: read
