@@ -61,30 +61,45 @@ jobs:
   staging-deploy:
     runs-on: ubuntu-latest
     needs: build
+    strategy:
+      matrix:
+        region:
+          - us-east-1
+          - us-west-2
     steps:
       - uses: actions/download-artifact@v3
         with:
           name: sam-build
-      - run: unzip aws-sam.zip
-      - run: ls -R
+      - run: unzip -q aws-sam.zip
+      - run: echo "sam deploy --to-staging"
 
   acceptance-test:
     runs-on: ubuntu-latest
     needs: staging-deploy
+    strategy:
+      matrix:
+        region:
+          - us-east-1
+          - us-west-2
     steps:
       - uses: actions/checkout@v3
       - uses: ruby/setup-ruby@v1
         with:
           ruby-version: "2.6"
           bundler-cache: true
-      - run: bundle exec rake test
+      - run: echo "bundle exec rake test"
 
   production-deploy:
     runs-on: ubuntu-latest
     needs: acceptance-test
+    strategy:
+      matrix:
+        region:
+          - us-east-1
+          - us-west-2
     steps:
       - uses: actions/download-artifact@v3
         with:
           name: sam-build
-      - run: unzip aws-sam.zip
-      - run: ls -R
+      - run: unzip -q aws-sam.zip
+      - run: echo "sam deploy --to-prod"
