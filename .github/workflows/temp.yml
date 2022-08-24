@@ -63,11 +63,16 @@ jobs:
           echo "::set-output name=name::$image_name"
       - name: Build & Publish Docker Image
         run: |
+          if [ "this" = "this" ]
+          then
+            echo "line1"
+            echo "line2"
+          fi
 
           # See if that tag already exists in the repository
-          lookup=`aws ecr describe-images --repository-name "${{ steps.ecr-repo.outputs.name }}" --image-ids imageTag="${{ steps.directory-hash.outputs.hash }}" || echo "notFound"`
+          # tag_lookup=`aws ecr describe-images --repository-name "${{ steps.ecr-repo.outputs.name }}" --image-ids imageTag="${{ steps.directory-hash.outputs.hash }}" || echo "notFound"`
 
           # Only build and push the image if it doesn't exist, meaning the directory and code has changed
-          if [ "$lookup" = "notFound" ]; then docker build -t ftp src/containers/ftp; fi
-          if [ "$lookup" = "notFound" ]; then docker tag ftp:latest "${{ steps.docker-image.outputs.name }}"; fi
-          if [ "$lookup" = "notFound" ]; then docker push "${{ steps.docker-image.outputs.name }}"; fi
+          # if [ "$tag_lookup" = "notFound" ]; then docker build -t ftp src/containers/ftp; fi
+          # if [ "$tag_lookup" = "notFound" ]; then docker tag ftp:latest "${{ steps.docker-image.outputs.name }}"; fi
+          # if [ "$tag_lookup" = "notFound" ]; then docker push "${{ steps.docker-image.outputs.name }}"; fi
