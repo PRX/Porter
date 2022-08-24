@@ -72,13 +72,13 @@ jobs:
           - us-west-2
     steps:
       - uses: actions/checkout@v3
-      - run: aws ecr get-login-password --region ${{ matrix.region } | docker login --username AWS --password-stdin ${{ matrix.account-id }.dkr.ecr.${{ matrix.region }.amazonaws.com
+      - run: aws ecr get-login-password --region ${{ matrix.region }} | docker login --username AWS --password-stdin ${{ matrix.account-id }}.dkr.ecr.${{ matrix.region }}.amazonaws.com
   build-ftp-docker:
     runs-on: ubuntu-latest
     needs: [lint-cloudformation, lint-javascript, lint-ruby]
     steps:
       - uses: actions/checkout@v3
-      - run: aws ecr get-login-password --region ${{ matrix.region } | docker login --username AWS --password-stdin ${{ matrix.account-id }.dkr.ecr.${{ matrix.region }.amazonaws.com
+      - run: aws ecr get-login-password --region ${{ matrix.region }} | docker login --username AWS --password-stdin ${{ matrix.account-id }}.dkr.ecr.${{ matrix.region }}.amazonaws.com
 
   staging-deploy:
     runs-on: ubuntu-latest
