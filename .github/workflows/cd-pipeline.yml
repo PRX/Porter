@@ -20,6 +20,7 @@ jobs:
     uses: ./.github/workflows/lint.yml
 
   build-sam:
+    needs: [lint]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
@@ -50,7 +51,7 @@ jobs:
       region: ${{ matrix.region }}
 
   staging-deploy:
-    needs: [build]
+    needs: [build-sam, build-docker]
     permissions:
       id-token: write
       contents: read
