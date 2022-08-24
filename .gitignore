@@ -9,7 +9,6 @@
 .env.prod
 .npm
 node_modules
-package-lock.json
 samconfig.toml
 samconfig.dev.toml
 samconfig.test.toml
