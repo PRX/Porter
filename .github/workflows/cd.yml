@@ -65,7 +65,8 @@ jobs:
     needs: [lint-cloudformation, lint-javascript, lint-ruby]
     strategy:
       matrix:
-        account-id: "561178107736"
+        account-id:
+          - "561178107736"
         region:
           - us-east-1
           - us-west-2
