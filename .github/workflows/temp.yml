@@ -67,15 +67,15 @@ jobs:
           output=$(aws ecr describe-repositories --repository-names "${{ steps.ecr-repo.outputs.name }}" 2>&1)
           echo "$output"
 
-          if [ $? -ne 0 ]; then
-            if echo ${output} | grep -q RepositoryNotFoundException; then
-              echo "Creating ECR repository: ${{ steps.ecr-repo.outputs.name }}"
-              aws ecr create-repository --repository-name "${{ steps.ecr-repo.outputs.name }}"
-            else
-              echo "${{ steps.ecr-repo.outputs.name }} already exists"
-              >&2 echo ${output}
-            fi
-          fi
+          # if [ $? -ne 0 ]; then
+          #   if echo ${output} | grep -q RepositoryNotFoundException; then
+          #     echo "Creating ECR repository: ${{ steps.ecr-repo.outputs.name }}"
+          #     aws ecr create-repository --repository-name "${{ steps.ecr-repo.outputs.name }}"
+          #   else
+          #     echo "${{ steps.ecr-repo.outputs.name }} already exists"
+          #     >&2 echo ${output}
+          #   fi
+          # fi
       - name: Build & Publish Docker Image
         run: |
           # See if the tag already exists in the repository
