@@ -72,6 +72,12 @@ jobs:
           - us-west-2
     steps:
       - uses: actions/checkout@v3
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v1
+        with:
+          aws-region: ${{ matrix.region }}
+          role-to-assume: arn:aws:iam::${{ matrix.account }}:role/DevOps-GitHubOidcFederatedRole
+          role-session-name: GitHub_Workflow-Deploy_Porter
       - run: aws ecr get-login-password --region ${{ matrix.region }} | docker login --username AWS --password-stdin ${{ matrix.account-id }}.dkr.ecr.${{ matrix.region }}.amazonaws.com
   build-ftp-docker:
     runs-on: ubuntu-latest
@@ -85,6 +91,12 @@ jobs:
           - us-west-2
     steps:
       - uses: actions/checkout@v3
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v1
+        with:
+          aws-region: ${{ matrix.region }}
+          role-to-assume: arn:aws:iam::${{ matrix.account }}:role/DevOps-GitHubOidcFederatedRole
+          role-session-name: GitHub_Workflow-Deploy_Porter
       - run: aws ecr get-login-password --region ${{ matrix.region }} | docker login --username AWS --password-stdin ${{ matrix.account-id }}.dkr.ecr.${{ matrix.region }}.amazonaws.com
 
   staging-deploy:
