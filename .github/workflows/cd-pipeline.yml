@@ -91,6 +91,7 @@ jobs:
       stack-name: ${{ matrix.stack-name }}
 
   production-deploy:
+    environment: Production
     needs: [acceptance-test]
     permissions:
       id-token: write
