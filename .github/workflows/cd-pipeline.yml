@@ -19,9 +19,22 @@ jobs:
   lint:
     uses: ./.github/workflows/lint.yml
 
-  build:
+  build-sam:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/setup-python@v3
+      - uses: aws-actions/setup-sam@v1
+      - run: sam build --parallel
+      - run: zip -rq aws-sam.zip ./.aws-sam/*
+      - uses: actions/upload-artifact@v3
+        with:
+          name: sam-build
+          path: aws-sam.zip
+          retention-days: 30
+  build-docker:
     needs: [lint]
-    uses: ./.github/workflows/build.yml
+    uses: ./.github/workflows/docker-build.yml
     permissions:
       id-token: write
       contents: read
