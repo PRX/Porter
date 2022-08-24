@@ -38,13 +38,36 @@ jobs:
           role-session-name: GitHub_Workflow-Deploy_Porter
       - name: Configure ECR Credentials
         run: aws ecr get-login-password --region ${{ matrix.region }} | docker login --username AWS --password-stdin ${{ matrix.account-id }}.dkr.ecr.${{ matrix.region }}.amazonaws.com
-      - name: Build & Publish Docker Image
+      - name: Get Directory Hash
+        id: directory-hash
         run: |
+          # Calculate the SHA1 hash of the ftp directory
           sha1=`find src/containers/ftp -type f -print0 | sort -z | xargs -0 sha1sum | sha1sum | awk '{ print $1 }'`
+
+          echo "::set-output name=hash::$sha1"
+      - name: Get ECR repository name
+        id: ecr-repo
+        run: |
+          # Construct the ECR repository name from the GitHub repository name and a package identifier
           unsafe_ecr_repo_name="${{ github.repository }}-ftp"
           safe_ecr_repo_name=$(echo "$unsafe_ecr_repo_name" | tr '[:upper:]' '[:lower:]')
-          image_name="${{ matrix.account-id }}.dkr.ecr.${{ matrix.region }}.amazonaws.com/$safe_ecr_repo_name:$sha1"
-          lookup=`aws ecr describe-images --repository-name "$safe_ecr_repo_name" --image-ids imageTag="$sha1" || echo "notFound"`
+
+          echo "::set-output name=name::$safe_ecr_repo_name"
+      - name: Get Docker image name
+        id: ecr-repo
+        run: |
+          # Construct the ECR repository name from the GitHub repository name and a package identifier
+          unsafe_ecr_repo_name="${{ github.repository }}-ftp"
+          safe_ecr_repo_name=$(echo "$unsafe_ecr_repo_name" | tr '[:upper:]' '[:lower:]')
+
+          echo "::set-output name=name::$safe_ecr_repo_name"
+      - name: Build & Publish Docker Image
+        run: |
+
+          # See if that tag already exists in the repository
+          lookup=`aws ecr describe-images --repository-name "${{ steps.ecr-repo.outputs.name }}" --image-ids imageTag="${{ steps.directory-hash.outputs.hash }}"" || echo "notFound"`
+
+          # Only build and push the image if it doesn't exist, meaning the directory and code has changed
           if [ "$lookup" = "notFound" ]; then docker build -t ftp src/containers/ftp; fi
           if [ "$lookup" = "notFound" ]; then docker tag ftp:latest "$image_name"; fi
           if [ "$lookup" = "notFound" ]; then docker push "$image_name"; fi
