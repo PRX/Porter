@@ -62,6 +62,7 @@ jobs:
           path: aws-sam.zip
           retention-days: 30
   # build-ffmpeg-docker:
+  #   needs: [lint-cloudformation, lint-javascript, lint-ruby]
   #   permissions:
   #     id-token: write
   #     contents: read
@@ -78,6 +79,7 @@ jobs:
   #     account-id: ${{ matrix.account-id }}
   #     region: ${{ matrix.region }}
   build-ftp-docker:
+    needs: [lint-cloudformation, lint-javascript, lint-ruby]
     permissions:
       id-token: write
       contents: read
