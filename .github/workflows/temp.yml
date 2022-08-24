@@ -11,6 +11,7 @@ on:
       - test/**
       - state-machine.asl.yml
       - template.yml
+      - .github/workflows/temp.yml
 
 concurrency:
   group: ${{ github.workflow }}
@@ -54,7 +55,7 @@ jobs:
 
           echo "::set-output name=name::$safe_ecr_repo_name"
       - name: Get Docker image name
-        id: ecr-repo
+        id: docker-image
         run: |
           # Construct the ECR repository name from the GitHub repository name and a package identifier
           unsafe_ecr_repo_name="${{ github.repository }}-ftp"
