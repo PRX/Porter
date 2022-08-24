@@ -27,7 +27,7 @@ jobs:
         account-id:
           - "561178107736"
         region:
-          - us-east-1
+          # - us-east-1
           - us-west-2
     steps:
       - uses: actions/checkout@v3
@@ -57,11 +57,10 @@ jobs:
       - name: Get Docker image name
         id: docker-image
         run: |
-          # Construct the ECR repository name from the GitHub repository name and a package identifier
-          unsafe_ecr_repo_name="${{ github.repository }}-ftp"
-          safe_ecr_repo_name=$(echo "$unsafe_ecr_repo_name" | tr '[:upper:]' '[:lower:]')
+          # Construct the Docker image name:tag using the hash
+          image_name="${{ matrix.account-id }}.dkr.ecr.${{ matrix.region }}.amazonaws.com/${{ steps.ecr-repo.outputs.name }}:${{ steps.directory-hash.outputs.hash }}"
 
-          echo "::set-output name=name::$safe_ecr_repo_name"
+          echo "::set-output name=name::$image_name"
       - name: Build & Publish Docker Image
         run: |
 
@@ -70,5 +69,5 @@ jobs:
 
           # Only build and push the image if it doesn't exist, meaning the directory and code has changed
           if [ "$lookup" = "notFound" ]; then docker build -t ftp src/containers/ftp; fi
-          if [ "$lookup" = "notFound" ]; then docker tag ftp:latest "$image_name"; fi
-          if [ "$lookup" = "notFound" ]; then docker push "$image_name"; fi
+          if [ "$lookup" = "notFound" ]; then docker tag ftp:latest "${{ steps.docker-image.outputs.name }}"; fi
+          if [ "$lookup" = "notFound" ]; then docker push "${{ steps.docker-image.outputs.name }}"; fi
