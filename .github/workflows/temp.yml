@@ -39,7 +39,7 @@ jobs:
       - run: aws ecr get-login-password --region ${{ matrix.region }} | docker login --username AWS --password-stdin ${{ matrix.account-id }}.dkr.ecr.${{ matrix.region }}.amazonaws.com
       - run: |
           sha1=`find src/containers/ftp -type f -print0 | sort -z | xargs -0 sha1sum | sha1sum | awk '{ print $1 }'`
-          ecrRepositoryName="${{ github.repository }}/ftp"
+          ecrRepositoryName="${{ github.repository }}-ftp"
           imageName="${{ matrix.account-id }}.dkr.ecr.${{ matrix.region }}.amazonaws.com/$ecrRepositoryName:$sha1"
           lookup=`aws ecr describe-images --repository-name "$ecrRepositoryName" --image-ids imageTag="$sha1" || echo "notFound"`
           if [ "$lookup" = "notFound" ]; then docker build -t ftp src/containers/ftp; fi
