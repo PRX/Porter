@@ -36,8 +36,10 @@ jobs:
           aws-region: ${{ matrix.region }}
           role-to-assume: arn:aws:iam::${{ matrix.account-id }}:role/DevOps-GitHubOidcFederatedRole
           role-session-name: GitHub_Workflow-Deploy_Porter
-      - run: aws ecr get-login-password --region ${{ matrix.region }} | docker login --username AWS --password-stdin ${{ matrix.account-id }}.dkr.ecr.${{ matrix.region }}.amazonaws.com
-      - run: |
+      - name: Configure ECR Credentials
+        run: aws ecr get-login-password --region ${{ matrix.region }} | docker login --username AWS --password-stdin ${{ matrix.account-id }}.dkr.ecr.${{ matrix.region }}.amazonaws.com
+      - name: Build & Publish Docker Image
+        run: |
           sha1=`find src/containers/ftp -type f -print0 | sort -z | xargs -0 sha1sum | sha1sum | awk '{ print $1 }'`
           unsafe_ecr_repo_name="${{ github.repository }}-ftp"
           safe_ecr_repo_name=$(echo "$unsafe_ecr_repo_name" | tr '[:upper:]' '[:lower:]')
@@ -45,4 +47,4 @@ jobs:
           lookup=`aws ecr describe-images --repository-name "$safe_ecr_repo_name" --image-ids imageTag="$sha1" || echo "notFound"`
           if [ "$lookup" = "notFound" ]; then docker build -t ftp src/containers/ftp; fi
           if [ "$lookup" = "notFound" ]; then docker tag ftp:latest "$image_name"; fi
-          # if [ "$lookup" = "notFound" ]; then docker push "$image_name"; fi
+          if [ "$lookup" = "notFound" ]; then docker push "$image_name"; fi
