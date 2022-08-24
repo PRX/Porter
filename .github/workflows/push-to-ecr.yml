@@ -1,0 +1,84 @@
+name: Push to ECR
+
+on:
+  workflow_call:
+    inputs:
+      src-directory:
+        required: true
+        type: string
+      account-id:
+        required: true
+        type: string
+      region:
+        required: true
+        type: string
+
+jobs:
+  build-and-push:
+    runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+      contents: read
+    steps:
+      - uses: actions/checkout@v3
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v1
+        with:
+          aws-region: ${{ inputs.region }}
+          role-to-assume: arn:aws:iam::${{ inputs.account-id }}:role/DevOps-GitHubOidcFederatedRole
+          role-session-name: GitHub_Workflow-Deploy_Porter
+      - name: Configure ECR Credentials
+        run: aws ecr get-login-password --region ${{ inputs.region }} | docker login --username AWS --password-stdin ${{ inputs.account-id }}.dkr.ecr.${{ inputs.region }}.amazonaws.com
+      - name: Get Directory Hash
+        id: directory-hash
+        run: |
+          # Calculate the SHA1 hash of the source directory
+          sha1=`find src/containers/${{ inputs.src-directory }} -type f -print0 | sort -z | xargs -0 sha1sum | sha1sum | awk '{ print $1 }'`
+
+          echo "::set-output name=hash::$sha1"
+      - name: Get ECR repository name
+        id: ecr-repo
+        run: |
+          # Construct the ECR repository name from the GitHub repository name and a package identifier
+          unsafe_ecr_repo_name="${{ github.repository }}-${{ inputs.src-directory }}"
+
+          # Do any transformations necessary to satisfy ECR naming requirements:
+          # Start with letter, [a-z0-9-_/.] (maybe, docs are unclear)
+          safe_ecr_repo_name=$(echo "$unsafe_ecr_repo_name" | tr '[:upper:]' '[:lower:]')
+
+          echo "::set-output name=name::$safe_ecr_repo_name"
+      - name: Get Docker image name
+        id: docker-image
+        run: |
+          # Construct the Docker image name:tag using the hash
+          image_name="${{ inputs.account-id }}.dkr.ecr.${{ inputs.region }}.amazonaws.com/${{ steps.ecr-repo.outputs.name }}:${{ steps.directory-hash.outputs.hash }}"
+
+          echo "::set-output name=name::$image_name"
+      - name: Create ECR Repository
+        run: |
+          # Only create the repository if it doesn't exist
+          set +e
+          output=$(aws ecr describe-repositories --repository-names "${{ steps.ecr-repo.outputs.name }}" 2>&1)
+
+          if [ $? -ne 0 ]; then
+            if echo ${output} | grep -q RepositoryNotFoundException; then
+              echo "Creating ECR repository: ${{ steps.ecr-repo.outputs.name }}"
+              aws ecr create-repository --repository-name "${{ steps.ecr-repo.outputs.name }}"
+            else
+              >&2 echo "ECR error: ${output}"
+            fi
+          else
+            echo "${{ steps.ecr-repo.outputs.name }} already exists"
+          fi
+      - name: Build & Publish Docker Image
+        run: |
+          # See if the tag already exists in the repository
+          # tag_lookup=`aws ecr describe-images --repository-name "${{ steps.ecr-repo.outputs.name }}" --image-ids imageTag="${{ steps.directory-hash.outputs.hash }}" || echo "notFound"`
+
+          if [ "$tag_lookup" = "notFound" ]; then
+            docker build -t ${{ inputs.src-directory }} src/containers/${{ inputs.src-directory }}
+            docker tag ${{ inputs.src-directory }}:latest "${{ steps.docker-image.outputs.name }}"
+            docker push "${{ steps.docker-image.outputs.name }}"
+          else
+            echo "Docker image already exists for this commit"
+          fi
