@@ -87,9 +87,11 @@ jobs:
           - region: us-east-1
             stack: porter-staging
             account: "561178107736"
+            text-bucket: prx-porter-sandbox
           - region: us-west-2
             stack: porter-staging
             account: "561178107736"
+            test-bucket: prx-porter-sandbox-us-west-2
     steps:
       - uses: actions/checkout@v3
       - uses: ruby/setup-ruby@v1
@@ -103,8 +105,8 @@ jobs:
           role-to-assume: arn:aws:iam::${{ matrix.account }}:role/DevOps-GitHubOidcFederatedRole
           role-session-name: GitHub_Workflow-Deploy_Porter
       - run: |
-          PORTER_STATE_MACHINE_ARN=$(aws cloudformation describe-stacks --region ${{ matrix.region }} --stack-name ${{ matrix.stack }} --query "Stacks[0].Outputs[?OutputKey=='StateMachineArn'].OutputValue" --output text)
-          export PORTER_STATE_MACHINE_ARN
+          export PORTER_TEST_BUCKET_NAME=${{ matrix.test-bucket }}
+          export PORTER_STATE_MACHINE_ARN=$(aws cloudformation describe-stacks --region ${{ matrix.region }} --stack-name ${{ matrix.stack }} --query "Stacks[0].Outputs[?OutputKey=='StateMachineArn'].OutputValue" --output text)
           bundle exec rake test
 
   # production-deploy:
