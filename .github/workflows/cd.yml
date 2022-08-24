@@ -61,42 +61,27 @@ jobs:
           name: sam-build
           path: aws-sam.zip
           retention-days: 30
-  build-ffmpeg-docker:
-    runs-on: ubuntu-latest
-    needs: [lint-cloudformation, lint-javascript, lint-ruby]
-    permissions:
-      id-token: write
-      contents: read
-    strategy:
-      matrix:
-        account-id:
-          - "561178107736"
-        region:
-          - us-east-1
-          - us-west-2
-    steps:
-      - uses: actions/checkout@v3
-      - name: Configure AWS Credentials
-        uses: aws-actions/configure-aws-credentials@v1
-        with:
-          aws-region: ${{ matrix.region }}
-          role-to-assume: arn:aws:iam::${{ matrix.account-id }}:role/DevOps-GitHubOidcFederatedRole
-          role-session-name: GitHub_Workflow-Deploy_Porter
-      - run: aws ecr get-login-password --region ${{ matrix.region }} | docker login --username AWS --password-stdin ${{ matrix.account-id }}.dkr.ecr.${{ matrix.region }}.amazonaws.com
-      - run: |
-          sha1=`find src/containers/transcode -type f -print0 | sort -z | xargs -0 sha1sum | sha1sum | awk '{ print $1 }'`
-          ecrRepositoryName="${{ github.repository }}/ffmpeg"
-          imageName="${{ matrix.account-id }}.dkr.ecr.${{ matrix.region }}.amazonaws.com/$ecrRepositoryName:$sha1"
-          lookup=`aws ecr describe-images --repository-name "$ecrRepositoryName" --image-ids imageTag="$sha1" || echo "notFound"`
-          if [ "$lookup" = "notFound" ]; then docker build -t transcode src/containers/transcode; fi
-          if [ "$lookup" = "notFound" ]; then docker tag transcode:latest "$imageName"; fi
-          # if [ "$lookup" = "notFound" ]; then docker push "$imageName"; fi
+  # build-ffmpeg-docker:
+  #   permissions:
+  #     id-token: write
+  #     contents: read
+  #   uses: ./.github/workflows/push-to-ecr.yml
+  #   strategy:
+  #     matrix:
+  #       account-id:
+  #         - "561178107736"
+  #       region:
+  #         - us-east-1
+  #         - us-west-2
+  #   with:
+  #     src-directory: transcode
+  #     account-id: ${{ matrix.account-id }}
+  #     region: ${{ matrix.region }}
   build-ftp-docker:
-    runs-on: ubuntu-latest
-    needs: [lint-cloudformation, lint-javascript, lint-ruby]
     permissions:
       id-token: write
       contents: read
+    uses: ./.github/workflows/push-to-ecr.yml
     strategy:
       matrix:
         account-id:
@@ -104,15 +89,10 @@ jobs:
         region:
           - us-east-1
           - us-west-2
-    steps:
-      - uses: actions/checkout@v3
-      - name: Configure AWS Credentials
-        uses: aws-actions/configure-aws-credentials@v1
-        with:
-          aws-region: ${{ matrix.region }}
-          role-to-assume: arn:aws:iam::${{ matrix.account-id }}:role/DevOps-GitHubOidcFederatedRole
-          role-session-name: GitHub_Workflow-Deploy_Porter
-      - run: aws ecr get-login-password --region ${{ matrix.region }} | docker login --username AWS --password-stdin ${{ matrix.account-id }}.dkr.ecr.${{ matrix.region }}.amazonaws.com
+    with:
+      src-directory: ftp
+      account-id: ${{ matrix.account-id }}
+      region: ${{ matrix.region }}
 
   staging-deploy:
     runs-on: ubuntu-latest
@@ -131,53 +111,53 @@ jobs:
       - run: unzip -q aws-sam.zip
       - run: echo "sam deploy --to-staging"
 
-  acceptance-test:
-    runs-on: ubuntu-latest
-    needs: staging-deploy
-    permissions:
-      id-token: write
-      contents: read
-    strategy:
-      matrix:
-        include:
-          - region: us-east-1
-            stack-name: porter-staging
-            account-id: "561178107736"
-            test-bucket: prx-porter-sandbox
-          - region: us-west-2
-            stack-name: porter-staging
-            account-id: "561178107736"
-            test-bucket: prx-porter-sandbox-us-west-2
-    steps:
-      - uses: actions/checkout@v3
-      - uses: ruby/setup-ruby@v1
-        with:
-          ruby-version: "2.6"
-          bundler-cache: true
-      - name: Configure AWS Credentials
-        uses: aws-actions/configure-aws-credentials@v1
-        with:
-          aws-region: ${{ matrix.region }}
-          role-to-assume: arn:aws:iam::${{ matrix.account-id }}:role/DevOps-GitHubOidcFederatedRole
-          role-session-name: GitHub_Workflow-Deploy_Porter
-      - run: |
-          export PORTER_TEST_BUCKET_NAME=${{ matrix.test-bucket }}
-          export PORTER_STATE_MACHINE_ARN=$(aws cloudformation describe-stacks --region ${{ matrix.region }} --stack-name ${{ matrix.stack-name }} --query "Stacks[0].Outputs[?OutputKey=='StateMachineArn'].OutputValue" --output text)
-          # bundle exec rake test
+  # acceptance-test:
+  #   runs-on: ubuntu-latest
+  #   needs: staging-deploy
+  #   permissions:
+  #     id-token: write
+  #     contents: read
+  #   strategy:
+  #     matrix:
+  #       include:
+  #         - region: us-east-1
+  #           stack-name: porter-staging
+  #           account-id: "561178107736"
+  #           test-bucket: prx-porter-sandbox
+  #         - region: us-west-2
+  #           stack-name: porter-staging
+  #           account-id: "561178107736"
+  #           test-bucket: prx-porter-sandbox-us-west-2
+  #   steps:
+  #     - uses: actions/checkout@v3
+  #     - uses: ruby/setup-ruby@v1
+  #       with:
+  #         ruby-version: "2.6"
+  #         bundler-cache: true
+  #     - name: Configure AWS Credentials
+  #       uses: aws-actions/configure-aws-credentials@v1
+  #       with:
+  #         aws-region: ${{ matrix.region }}
+  #         role-to-assume: arn:aws:iam::${{ matrix.account-id }}:role/DevOps-GitHubOidcFederatedRole
+  #         role-session-name: GitHub_Workflow-Deploy_Porter
+  #     - run: |
+  #         export PORTER_TEST_BUCKET_NAME=${{ matrix.test-bucket }}
+  #         export PORTER_STATE_MACHINE_ARN=$(aws cloudformation describe-stacks --region ${{ matrix.region }} --stack-name ${{ matrix.stack-name }} --query "Stacks[0].Outputs[?OutputKey=='StateMachineArn'].OutputValue" --output text)
+  #         # bundle exec rake test
 
-  production-deploy:
-    runs-on: ubuntu-latest
-    needs: acceptance-test
-    # environment:
-    #   name: Production
-    strategy:
-      matrix:
-        region:
-          - us-east-1
-          - us-west-2
-    steps:
-      - uses: actions/download-artifact@v3
-        with:
-          name: sam-build
-      - run: unzip -q aws-sam.zip
-      - run: echo "sam deploy --to-prod"
+  # production-deploy:
+  #   runs-on: ubuntu-latest
+  #   needs: acceptance-test
+  #   # environment:
+  #   #   name: Production
+  #   strategy:
+  #     matrix:
+  #       region:
+  #         - us-east-1
+  #         - us-west-2
+  #   steps:
+  #     - uses: actions/download-artifact@v3
+  #       with:
+  #         name: sam-build
+  #     - run: unzip -q aws-sam.zip
+  #     - run: echo "sam deploy --to-prod"
