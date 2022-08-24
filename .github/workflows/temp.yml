@@ -65,6 +65,7 @@ jobs:
         run: |
           # Only create the repository if it doesn't exist
           output=$(aws ecr describe-repositories --repository-names "${{ steps.ecr-repo.outputs.name }}" 2>&1)
+          echo "$output"
 
           if [ $? -ne 0 ]; then
             if echo ${output} | grep -q RepositoryNotFoundException; then
@@ -80,8 +81,7 @@ jobs:
           # See if the tag already exists in the repository
           # tag_lookup=`aws ecr describe-images --repository-name "${{ steps.ecr-repo.outputs.name }}" --image-ids imageTag="${{ steps.directory-hash.outputs.hash }}" || echo "notFound"`
 
-          if [ "$tag_lookup" = "notFound" ]
-          then
+          if [ "$tag_lookup" = "notFound" ]; then
             docker build -t ftp src/containers/ftp
             docker tag ftp:latest "${{ steps.docker-image.outputs.name }}"
             docker push "${{ steps.docker-image.outputs.name }}"
