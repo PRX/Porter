@@ -36,11 +36,9 @@ export const handler = async (event) => {
     })
     .createReadStream();
 
-  const ftStream = await fileTypeFromStream(s3stream);
-
   // Eg. {ext: 'mov', mime: 'video/quicktime'}
   // Returns `undefined` when there is no match.
-  const result = ftStream.fileType;
+  const result = await fileTypeFromStream(s3stream);
 
   if (!result) {
     return {};
