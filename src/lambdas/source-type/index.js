@@ -1,10 +1,14 @@
 // Using the file-type NPM module, this attempts to identify MIME type of the
 // state machine source artifact.
 
+// Lambda doesn't currently support easy ESM imports from Lambda layers, so
+// the import has to use a static path.
 // @ts-ignore
 // eslint-disable-next-line import/no-unresolved, import/no-absolute-path, import/extensions
 import { fileTypeFromStream } from '/opt/nodejs/node_modules/file-type/index.js';
 
+// Lambda doesn't currently support easy ESM imports from where the native
+// aws-sdk is installed, so the import has to use a static path.
 // @ts-ignore
 // eslint-disable-next-line import/no-unresolved, import/no-absolute-path, import/extensions
 import AWS from '/var/runtime/node_modules/aws-sdk/index.js';
