@@ -9,8 +9,7 @@
   "dependencies": {
     "@google-cloud/storage": "^5.18.3",
     "aws-sdk": "^2.1046.0",
-    "file-type": "^15.0.0",
-    "md5": "^2.3.0",
+    "file-type": "^18.0.0",
     "prx-wavefile": "^11.0.0-prx.4",
     "sharp": "^0.25.2"
   },

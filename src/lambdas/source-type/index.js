@@ -1,9 +1,13 @@
 // Using the file-type NPM module, this attempts to identify MIME type of the
 // state machine source artifact.
 
-const fileType = require('file-type');
+// @ts-ignore
+// eslint-disable-next-line import/no-unresolved, import/no-absolute-path, import/extensions
+import { fileTypeFromStream } from '/opt/nodejs/node_modules/file-type/index.js';
 
-const AWS = require('aws-sdk');
+// @ts-ignore
+// eslint-disable-next-line import/no-unresolved, import/no-absolute-path, import/extensions
+import AWS from '/var/runtime/node_modules/aws-sdk/index.js';
 
 /** The number of bytes to use to detect a files type. */
 const MINIMUM_BYTES = 4100;
@@ -18,7 +22,8 @@ const MINIMUM_BYTES = 4100;
  * @param {object} event
  * @returns {Promise<SourceTypeResult>}
  */
-exports.handler = async (event) => {
+// eslint-disable-next-line import/prefer-default-export
+export const handler = async (event) => {
   const s3 = new AWS.S3({ apiVersion: '2006-03-01' });
 
   console.log(JSON.stringify({ msg: 'State input', input: event }));
@@ -31,7 +36,7 @@ exports.handler = async (event) => {
     })
     .createReadStream();
 
-  const ftStream = await fileType.stream(s3stream);
+  const ftStream = await fileTypeFromStream(s3stream);
 
   // Eg. {ext: 'mov', mime: 'video/quicktime'}
   // Returns `undefined` when there is no match.
