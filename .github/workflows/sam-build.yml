@@ -1,4 +1,4 @@
-name: SAM build
+name: SAM Build
 
 on:
   workflow_call:

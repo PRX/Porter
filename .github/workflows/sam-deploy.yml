@@ -51,7 +51,6 @@ jobs:
             --region ${{ inputs.region }} \
             --no-execute-changeset \
             --no-fail-on-empty-changeset \
-            --parameter-overrides \
             --stack-name ${{ inputs.stack-name }} \
             --s3-bucket "$bucket_name" \
             --capabilities CAPABILITY_IAM,CAPABILITY_AUTO_EXPAND \
