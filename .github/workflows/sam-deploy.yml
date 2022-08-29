@@ -23,6 +23,9 @@ jobs:
   sam-deploy:
     runs-on: ubuntu-latest
     steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+
       - name: Download AWS SAM Build Artifact
         uses: actions/download-artifact@v3
         with:
