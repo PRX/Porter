@@ -29,18 +29,7 @@ jobs:
   # a single workflow run will use this artifact.
   build-sam:
     needs: [lint]
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v3
-      - uses: actions/setup-python@v3
-      - uses: aws-actions/setup-sam@v1
-      - run: sam build --parallel
-      - run: zip -rq aws-sam.zip ./.aws-sam/*
-      - uses: actions/upload-artifact@v3
-        with:
-          name: sam-build
-          path: aws-sam.zip
-          retention-days: 30
+    uses: ./.github/workflows/sam-build.yml
 
   # Builds all Docker images and pushes them to ECR. Each image must be pushed
   # to ECR in every region Porter will be deployed into.

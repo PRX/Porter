@@ -1,0 +1,30 @@
+name: SAM build
+
+on:
+  workflow_call:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - name: Setup Python
+        uses: actions/setup-python@v3
+
+      - name: Setup AWS SAM
+        uses: aws-actions/setup-sam@v1
+
+      - name: Build
+        run: sam build --parallel
+
+      - name: Compress Build Artifact
+        run: zip -rq aws-sam.zip ./.aws-sam/*
+
+      - name: Upload Build Artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: sam-build
+          path: aws-sam.zip
+          retention-days: 30

@@ -23,12 +23,29 @@ jobs:
   sam-deploy:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/download-artifact@v3
+      - name: Download AWS SAM Build Artifact
+        uses: actions/download-artifact@v3
         with:
           name: sam-build
-      - uses: aws-actions/setup-sam@v1
-      - run: unzip -q aws-sam.zip
-      - run: |
+
+      - name: Unzip SAM Build Artifact
+        run: unzip -q aws-sam.zip
+
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v1
+        with:
+          aws-region: ${{ inputs.region }}
+          role-to-assume: arn:aws:iam::${{ inputs.account-id }}:role/DevOps-GitHubOidcFederatedRole
+          role-session-name: GitHub_Workflow-Deploy_Porter
+
+      - name: Setup Python
+        uses: actions/setup-python@v3
+
+      - name: Setup AWS SAM
+        uses: aws-actions/setup-sam@v1
+
+      - name: Deploy CloudFormation Stack
+        run: |
           bucket_name=$(aws cloudformation describe-stacks --region ${{ inputs.region }} --stack-name aws-sam-cli-managed-default | jq -r ".Stacks[0].Outputs[0].OutputValue")
           sam deploy \
             --region ${{ inputs.region }} \
