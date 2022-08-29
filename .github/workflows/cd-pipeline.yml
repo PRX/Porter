@@ -123,3 +123,4 @@ jobs:
     with:
       account-id: ${{ matrix.account-id }}
       region: ${{ matrix.region }}
+      ftp-image-tag: ${{ needs.build-ftp-docker.outputs.image-tag }}
