@@ -56,5 +56,5 @@ jobs:
             --no-fail-on-empty-changeset \
             --stack-name ${{ inputs.stack-name }} \
             --s3-bucket "$bucket_name" \
-            --capabilities CAPABILITY_IAM,CAPABILITY_AUTO_EXPAND \
+            --capabilities CAPABILITY_IAM CAPABILITY_AUTO_EXPAND \
             --parameter-overrides TranscodeEcsTaskDefinitionImage="${{ inputs.ftp-image-tag }}" FtpCopyEcsTaskDefinitionImage="${{ inputs.ffmpeg-image-tag }}"
