@@ -13,8 +13,6 @@ on:
         required: true
         type: string
     outputs:
-      image-name:
-        value: ${{ jobs.build-and-push.outputs.repository-name }}
       image-tag:
         value: ${{ jobs.build-and-push.outputs.image-tag }}
 
@@ -25,7 +23,6 @@ jobs:
       id-token: write
       contents: read
     outputs:
-      repository-name: ${{ steps.ecr-repo.outputs.name }}
       image-tag: ${{ steps.image-tag.outputs.tag }}
     steps:
       - uses: actions/checkout@v3

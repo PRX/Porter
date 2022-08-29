@@ -9,6 +9,9 @@ on:
       region:
         required: true
         type: string
+      ftp-image-tag:
+        required: true
+        type: string
 
 jobs:
   sam-deploy:
@@ -19,3 +22,4 @@ jobs:
           name: sam-build
       - run: unzip -q aws-sam.zip
       - run: echo "sam deploy --to-staging"
+      - run: echo "${{ inputs.ftp-image-tag }}"
