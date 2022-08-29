@@ -67,7 +67,7 @@ jobs:
           # Construct the Docker "registry/name:tag" value for ECR
           image_name="${{ inputs.account-id }}.dkr.ecr.${{ inputs.region }}.amazonaws.com/${{ steps.ecr-repo.outputs.name }}:${{ steps.image-tag.outputs.tag }}"
 
-          echo "::set-output name=name::$image_name
+          echo "::set-output name=name::$image_name"
 
       - name: Create ECR Repository
         run: |
