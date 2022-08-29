@@ -15,10 +15,18 @@ on:
 concurrency:
   group: ${{ github.workflow }}
 
+permissions:
+  id-token: write
+  contents: read
+
 jobs:
+  # Run a variety of linters and code style checkers.
   lint:
     uses: ./.github/workflows/lint.yml
 
+  # Run `sam build` to create all deployable code packages, and save them all
+  # as a single workflow artifact. Deploys to all environments and regions in
+  # a single workflow run will use this artifact.
   build-sam:
     needs: [lint]
     runs-on: ubuntu-latest
@@ -33,12 +41,14 @@ jobs:
           name: sam-build
           path: aws-sam.zip
           retention-days: 30
-  build-docker:
+
+  # Builds all Docker images and pushes them to ECR. Each image must be pushed
+  # to ECR in every region Porter will be deployed into.
+  # TODO Currently this does a separate build for each region, but could/should
+  # probably just build each image once and push them to multiple regions.
+  build-ftp-docker:
     needs: [lint]
-    uses: ./.github/workflows/docker-build.yml
-    permissions:
-      id-token: write
-      contents: read
+    uses: ./.github/workflows/push-to-ecr.yml
     strategy:
       matrix:
         account-id:
@@ -47,14 +57,12 @@ jobs:
           - us-east-1
           - us-west-2
     with:
+      src-directory: ftp # as in src/containers/ftp
       account-id: ${{ matrix.account-id }}
       region: ${{ matrix.region }}
 
   staging-deploy:
-    needs: [build-sam, build-docker]
-    permissions:
-      id-token: write
-      contents: read
+    needs: [build-sam, build-ftp-docker]
     uses: ./.github/workflows/sam-deploy.yml
     strategy:
       matrix:
@@ -69,9 +77,6 @@ jobs:
 
   acceptance-test:
     needs: [staging-deploy]
-    permissions:
-      id-token: write
-      contents: read
     uses: ./.github/workflows/acceptance-test.yml
     strategy:
       matrix:
@@ -92,9 +97,6 @@ jobs:
 
   production-deploy:
     needs: [acceptance-test]
-    permissions:
-      id-token: write
-      contents: read
     uses: ./.github/workflows/sam-deploy.yml
     strategy:
       matrix:
