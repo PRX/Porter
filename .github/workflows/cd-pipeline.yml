@@ -60,23 +60,23 @@ jobs:
       src-directory: ftp # relative to src/containers
       account-id: ${{ matrix.account-id }}
       region: ${{ matrix.region }}
-  # build-ffmpeg-docker:
-  #   needs: [lint]
-  #   uses: ./.github/workflows/push-to-ecr.yml
-  #   strategy:
-  #     matrix:
-  #       account-id:
-  #         - "561178107736"
-  #       region:
-  #         - us-east-1
-  #         - us-west-2
-  #   with:
-  #     src-directory: transcode # relative to src/containers
-  #     account-id: ${{ matrix.account-id }}
-  #     region: ${{ matrix.region }}
+  build-ffmpeg-docker:
+    needs: [lint]
+    uses: ./.github/workflows/push-to-ecr.yml
+    strategy:
+      matrix:
+        account-id:
+          - "561178107736"
+        region:
+          - us-east-1
+          - us-west-2
+    with:
+      src-directory: transcode # relative to src/containers
+      account-id: ${{ matrix.account-id }}
+      region: ${{ matrix.region }}
 
   staging-deploy:
-    needs: [build-sam, build-ftp-docker]
+    needs: [build-sam, build-ftp-docker, build-ffmpeg-docker]
     uses: ./.github/workflows/sam-deploy.yml
     strategy:
       matrix:
@@ -88,7 +88,9 @@ jobs:
     with:
       account-id: ${{ matrix.account-id }}
       region: ${{ matrix.region }}
+      stack-name: porter-staging
       ftp-image-tag: ${{ needs.build-ftp-docker.outputs.image-tag }}
+      ffmpeg-image-tag: ${{ needs.build-ffmpeg-docker.outputs.image-tag }}
 
   acceptance-test:
     needs: [staging-deploy]
@@ -110,17 +112,19 @@ jobs:
       test-bucket: ${{ matrix.test-bucket }}
       stack-name: ${{ matrix.stack-name }}
 
-  production-deploy:
-    needs: [acceptance-test]
-    uses: ./.github/workflows/sam-deploy.yml
-    strategy:
-      matrix:
-        account-id:
-          - "561178107736"
-        region:
-          - us-east-1
-          - us-west-2
-    with:
-      account-id: ${{ matrix.account-id }}
-      region: ${{ matrix.region }}
-      ftp-image-tag: ${{ needs.build-ftp-docker.outputs.image-tag }}
+  # production-deploy:
+  #   needs: [acceptance-test]
+  #   uses: ./.github/workflows/sam-deploy.yml
+  #   strategy:
+  #     matrix:
+  #       account-id:
+  #         - "561178107736"
+  #       region:
+  #         - us-east-1
+  #         - us-west-2
+  #   with:
+  #     account-id: ${{ matrix.account-id }}
+  #     region: ${{ matrix.region }}
+  #     stack-name: porter-production
+  #     ftp-image-tag: ${{ needs.build-ftp-docker.outputs.image-tag }}
+  #     ffmpeg-image-tag: ${{ needs.build-ffmpeg-docker.outputs.image-tag }}

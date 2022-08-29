@@ -12,6 +12,12 @@ on:
       ftp-image-tag:
         required: true
         type: string
+      ffmpeg-image-tag:
+        required: true
+        type: string
+      stack-name:
+        required: true
+        type: string
 
 jobs:
   sam-deploy:
@@ -20,6 +26,16 @@ jobs:
       - uses: actions/download-artifact@v3
         with:
           name: sam-build
+      - uses: aws-actions/setup-sam@v1
       - run: unzip -q aws-sam.zip
-      - run: echo "sam deploy --to-staging"
-      - run: echo "${{ inputs.ftp-image-tag }}"
+      - run: |
+          bucket_name=$(aws cloudformation describe-stacks --region ${{ inputs.region }} --stack-name aws-sam-cli-managed-default | jq -r ".Stacks[0].Outputs[0].OutputValue")
+          sam deploy \
+            --region ${{ inputs.region }} \
+            --no-execute-changeset \
+            --no-fail-on-empty-changeset \
+            --parameter-overrides \
+            --stack-name ${{ inputs.stack-name }} \
+            --s3-bucket "$bucket_name" \
+            --capabilities CAPABILITY_IAM,CAPABILITY_AUTO_EXPAND \
+            --parameter-overrides TranscodeEcsTaskDefinitionImage="${{ inputs.ftp-image-tag }}" FtpCopyEcsTaskDefinitionImage="${{ inputs.ffmpeg-image-tag }}"
