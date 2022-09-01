@@ -9,7 +9,7 @@ import { fileTypeFromTokenizer } from '/opt/nodejs/node_modules/file-type/index.
 
 // @ts-ignore
 // eslint-disable-next-line import/no-unresolved, import/no-absolute-path, import/extensions
-import { makeTokenizer } from '/opt/nodejs/node_modules/@tokenizer/s3';
+import { makeTokenizer } from '/opt/nodejs/node_modules/@tokenizer/s3/lib/index.js';
 
 // Lambda doesn't currently support easy ESM imports from where the native
 // aws-sdk is installed, so the import has to use a static path.
