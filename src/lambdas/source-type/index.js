@@ -5,16 +5,17 @@
 // the import has to use a static path.
 // @ts-ignore
 // eslint-disable-next-line import/no-unresolved, import/no-absolute-path, import/extensions
-import { fileTypeFromStream } from '/opt/nodejs/node_modules/file-type/index.js';
+import { fileTypeFromTokenizer } from '/opt/nodejs/node_modules/file-type/index.js';
+
+// @ts-ignore
+// eslint-disable-next-line import/no-unresolved, import/no-absolute-path, import/extensions
+import { makeTokenizer } from '/opt/nodejs/node_modules/@tokenizer/s3';
 
 // Lambda doesn't currently support easy ESM imports from where the native
 // aws-sdk is installed, so the import has to use a static path.
 // @ts-ignore
 // eslint-disable-next-line import/no-unresolved, import/no-absolute-path, import/extensions
 import AWS from '/var/runtime/node_modules/aws-sdk/index.js';
-
-/** The number of bytes to use to detect a files type. */
-const MINIMUM_BYTES = 4100;
 
 /**
  * @typedef {object} SourceTypeResult
@@ -32,17 +33,11 @@ export const handler = async (event) => {
 
   console.log(JSON.stringify({ msg: 'State input', input: event }));
 
-  const s3stream = s3
-    .getObject({
-      Bucket: event.Artifact.BucketName,
-      Key: event.Artifact.ObjectKey,
-      Range: `bytes=0-${MINIMUM_BYTES}`,
-    })
-    .createReadStream();
-
-  // Eg. {ext: 'mov', mime: 'video/quicktime'}
-  // Returns `undefined` when there is no match.
-  const result = await fileTypeFromStream(s3stream);
+  const s3Tokenizer = await makeTokenizer(s3, {
+    Bucket: event.Artifact.BucketName,
+    Key: event.Artifact.ObjectKey,
+  });
+  const result = await fileTypeFromTokenizer(s3Tokenizer);
 
   if (!result) {
     return {};
