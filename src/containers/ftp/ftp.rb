@@ -120,6 +120,8 @@ begin
     )
   end
 rescue StandardError => e
+  puts e.backtrace
+
   logger.debug(JSON.dump({
     msg: 'Copying state machine results file for error',
     bucket_name: bucket,
