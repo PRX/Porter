@@ -107,9 +107,9 @@ async function multipartCopy(copySource, artifact, sourceObjectSize) {
 module.exports = async function main(event, artifact) {
   // CopySource expects: "/sourcebucket/path/to/object.extension"
   // CopySource expects "/sourcebucket/path/to/object.extension" to be URI-encoded
-  const copySource = encodeURI(
+  const copySource = encodeURIComponent(
     `/${event.Job.Source.BucketName}/${event.Job.Source.ObjectKey}`,
-  ).replace(/\+/g, '%2B');
+  );
 
   const head = await s3
     .headObject({

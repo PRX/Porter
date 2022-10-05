@@ -17,9 +17,9 @@ class AwsS3MultipartCopyError extends Error {
 function buildParams(event) {
   // CopySource expects: "/sourcebucket/path/to/object.extension"
   // CopySource expects "/sourcebucket/path/to/object.extension" to be URI-encoded
-  const copySource = encodeURI(
+  const copySource = encodeURIComponent(
     `/${event.Artifact.BucketName}/${event.Artifact.ObjectKey}`,
-  ).replace(/\+/g, '%2B');
+  );
 
   // These will be the params passed to copyObject and createMultipartUpload
   // The Porter job artifact is the source, the Bucket and Object defined on

@@ -53,7 +53,7 @@ async function awsS3copyObject(
   });
 
   const params = {
-    CopySource: encodeURI(s3path),
+    CopySource: encodeURIComponent(s3path),
     Bucket: destinationBucketName,
     Key: destinationObjectKey,
   };
