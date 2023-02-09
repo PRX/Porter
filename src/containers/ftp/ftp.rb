@@ -72,7 +72,7 @@ begin
   # This value is not guaranteed to be honored, so it's undocumented
   max_attempts = task['MaxAttempts'].nil? ? 6 : task['MaxAttempts']
 
-  if uri.scheme == 'ftp'
+  if uri.scheme == 'ftp' || uri.scheme == 'ftps'
     ftp_files = FtpFiles.new(logger, recorder)
     ftp_options = {
       md5: md5,
@@ -80,7 +80,8 @@ begin
       public_port: public_port,
       mode: task['Mode'],
       timeout: timeout,
-      max_attempts: max_attempts
+      max_attempts: max_attempts,
+      use_tls: uri.scheme == 'ftps'
     }
     used_mode = ftp_files.upload_file(uri, file, ftp_options)
 

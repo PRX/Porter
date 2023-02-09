@@ -55,6 +55,8 @@ class FtpFiles
     # this may be turned to 0 on error
     keep_alive = options[:keep_alive].nil? ? 0 : options[:keep_alive].to_i
 
+    use_tls = options[:use_tls].nil? ? false : options[:use_tls]
+
     max_attempts = options[:max_attempts] || 1
     retry_wait = options[:retry_wait] || 10
     attempt = 1
@@ -101,6 +103,7 @@ class FtpFiles
         ftp.binary = options[:binary].nil? ? true : options[:binary]
         ftp.open_timeout = nil # default is nil
         ftp.read_timeout = 60 # default is 60
+        ftp.ssl = options[:use_tls]
         # ftp.debug_mode = true
 
         begin
