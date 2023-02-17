@@ -11,7 +11,7 @@ describe :porter do
           Id: 'porter-test-waveform-binary',
           Source: {
             Mode: 'HTTP',
-            URL: 'https://raw.githubusercontent.com/PRX/Porter/master/test/samples/two-tone.flac'
+            URL: 'https://raw.githubusercontent.com/PRX/Porter/master/test/samples/two-tone.mp3'
           },
           Tasks: [
             {
@@ -42,7 +42,7 @@ describe :porter do
           Id: 'porter-test-waveform-json',
           Source: {
             Mode: 'HTTP',
-            URL: 'https://raw.githubusercontent.com/PRX/Porter/master/test/samples/two-tone.flac'
+            URL: 'https://raw.githubusercontent.com/PRX/Porter/master/test/samples/two-tone.mp3'
           },
           Tasks: [
             {
@@ -73,7 +73,7 @@ describe :porter do
           Id: 'porter-test-waveform-options',
           Source: {
             Mode: 'HTTP',
-            URL: 'https://raw.githubusercontent.com/PRX/Porter/master/test/samples/two-tone.flac'
+            URL: 'https://raw.githubusercontent.com/PRX/Porter/master/test/samples/two-tone.mp3'
           },
           Tasks: [
             {
