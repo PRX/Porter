@@ -1335,6 +1335,16 @@ Resources:
         - nodejs14.x
       Description: mpck binary
       RetentionPolicy: Delete
+  AudiowaveformLambdaLayer:
+    Type: AWS::Serverless::LayerVersion
+    Metadata:
+      BuildMethod: makefile
+    Properties:
+      ContentUri: lib/audiowaveform
+      CompatibleRuntimes:
+        - nodejs16.x
+      Description: audiowaveform binary
+      RetentionPolicy: Delete
   GoogleCloudLayer:
     Type: AWS::Serverless::LayerVersion
     Metadata:
