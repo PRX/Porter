@@ -45,10 +45,10 @@ module.exports = {
       }
 
       // Ensure that the chosen output format is supported
-      if (!['Binary', 'JSON'].includes(event.Task.DataForamt)) {
+      if (!['Binary', 'JSON'].includes(event.Task.DataFormat)) {
         reject(
           new InvalidDataFormatError(
-            `Unexpected data format: ${event.Task.DataForamt}`,
+            `Unexpected data format: ${event.Task.DataFormat}`,
           ),
         );
       }
@@ -56,7 +56,7 @@ module.exports = {
       // Remap the human-readable task output format to the value expected by
       // audiowaveform
       const outputFormat = { Binary: 'dat', JSON: 'json' }[
-        event.Task.DataForamt
+        event.Task.DataFormat
       ];
 
       // Use the defined bit depth if the value is allowed, otherwise default
