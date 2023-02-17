@@ -146,7 +146,7 @@ exports.handler = async (event, context) => {
   // Define a path for the resulting waveform audio data file
   const waveformFileTmpPath = path.join(
     os.tmpdir(),
-    `${context.awsRequestId}.${event.Artifact.Descriptor.Extension}/waveform`,
+    `${context.awsRequestId}.${event.Artifact.Descriptor.Extension}.waveform`,
   );
 
   // Run the selected generator. Each of these is reponsible for producing a
