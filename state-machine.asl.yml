@@ -228,6 +228,9 @@ States:
             - Variable: "$.Task.Type"
               StringEquals: DetectTone
               Next: Detect Tone Task Handler
+            - Variable: "$.Task.Type"
+              StringEquals: Waveform
+              Next: Waveform Task Handler
 
         # This is a no-op. No callbacks are sent, and any record of this task
         # will be filtered out of the job result callbacks
@@ -552,6 +555,30 @@ States:
           Type: Task
           Comment: Detects tones in audio files
           Resource: "${ToneDetectionLambdaFunctionArn}"
+          InputPath: "$"
+          Parameters:
+            Job:
+              Id.$: "$.Job.Id"
+            Artifact.$: "$.Artifact"
+            Task.$: "$.Task"
+          ResultPath: "$.TaskResult"
+          OutputPath: "$"
+          Next: TaskResult Callbacks Map
+          Retry:
+            - ErrorEquals:
+                - States.ALL
+              IntervalSeconds: 5
+              MaxAttempts: 3
+              BackoffRate: 2
+          Catch:
+            - ErrorEquals:
+                - States.ALL
+              ResultPath: "$.Error"
+              Next: TaskResult Error Callback Map
+        Waveform Task Handler:
+          Type: Task
+          Comment: Generates waveform data from audio files
+          Resource: "${WaveformLambdaFunctionArn}"
           InputPath: "$"
           Parameters:
             Job:

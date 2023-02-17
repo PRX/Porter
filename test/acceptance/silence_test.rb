@@ -5,7 +5,7 @@ require 'json'
 
 describe :porter do
   describe :silence do
-    it 'returns execution output for an detect silence task' do
+    it 'returns execution output for a detect silence task' do
       job = {
         Job: {
           Id: 'porter-test-detect-silence',

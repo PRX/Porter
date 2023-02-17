@@ -5,7 +5,7 @@ require 'json'
 
 describe :porter do
   describe :tone do
-    it 'returns execution output for an detect tone task' do
+    it 'returns execution output for a detect tone task' do
       job = {
         Job: {
           Id: 'porter-test-detect-tone',

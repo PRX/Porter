@@ -1938,6 +1938,60 @@ Resources:
         - { Key: prx:cloudformation:stack-id, Value: !Ref AWS::StackId }
         - { Key: prx:ops:environment, Value: !Ref EnvironmentType }
         - { Key: prx:dev:application, Value: Porter }
+  # Wave Form Lambda
+  WaveformLambdaIamRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Statement:
+          - Action: sts:AssumeRole
+            Effect: Allow
+            Principal:
+              Service: lambda.amazonaws.com
+        Version: "2012-10-17"
+      ManagedPolicyArns:
+        - !Ref ArtifactBucketReadOnlyAccessPolicy
+        - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+      Tags:
+        - { Key: prx:meta:tagging-version, Value: "2021-04-07" }
+        - { Key: prx:cloudformation:stack-name, Value: !Ref AWS::StackName }
+        - { Key: prx:cloudformation:stack-id, Value: !Ref AWS::StackId }
+        - { Key: prx:ops:environment, Value: !Ref EnvironmentType }
+        - { Key: prx:dev:application, Value: Porter }
+  WaveformLambdaFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      Architectures: [x86_64]
+      CodeUri: src/lambdas/waveform/
+      Description: >-
+        Generate waveform data from audio files
+      Environment:
+        Variables:
+          S3_DESTINATION_WRITER_ROLE: !GetAtt S3DestinationWriterRole.Arn
+      Handler: index.handler
+      Layers:
+        - !Ref AudiowaveformLambdaLayer
+      MemorySize: 3008
+      Role: !GetAtt WaveformLambdaIamRole.Arn
+      Runtime: nodejs16.x
+      Tags:
+        prx:meta:tagging-version: "2021-04-07"
+        prx:cloudformation:stack-name: !Ref AWS::StackName
+        prx:cloudformation:stack-id: !Ref AWS::StackId
+        prx:ops:environment: !Ref EnvironmentType
+        prx:dev:application: Porter
+      Timeout: 900
+  WaveformLambdaLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub /aws/lambda/${WaveformLambdaFunction}
+      RetentionInDays: 30
+      Tags:
+        - { Key: prx:meta:tagging-version, Value: "2021-04-07" }
+        - { Key: prx:cloudformation:stack-name, Value: !Ref AWS::StackName }
+        - { Key: prx:cloudformation:stack-id, Value: !Ref AWS::StackId }
+        - { Key: prx:ops:environment, Value: !Ref EnvironmentType }
+        - { Key: prx:dev:application, Value: Porter }
   # Transcribe Start Lambda
   TranscriptionJobStartLambdaFunction:
     Type: AWS::Serverless::Function
@@ -2300,6 +2354,7 @@ Resources:
         ImageTransformLambdaFunctionArn: !GetAtt ImageTransformLambdaFunction.Arn
         SilenceDetectionLambdaFunctionArn: !GetAtt SilenceDetectionLambdaFunction.Arn
         ToneDetectionLambdaFunctionArn: !GetAtt ToneDetectionLambdaFunction.Arn
+        WaveformLambdaFunctionArn: !GetAtt WaveformLambdaFunction.Arn
         IngestLambdaFunctionArn: !GetAtt IngestLambdaFunction.Arn
         InspectMediaLambdaFunctionArn: !GetAtt InspectMediaLambdaFunction.Arn
         JobSerializerLambdaFunctionArn: !GetAtt JobSerializerLambdaFunction.Arn

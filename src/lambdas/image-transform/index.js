@@ -200,6 +200,7 @@ exports.handler = async (event, context) => {
 
   return {
     Task: 'Image',
+    Mode: event.Task.Destination.Mode,
     BucketName: event.Task.Destination.BucketName,
     ObjectKey: event.Task.Destination.ObjectKey,
     Time: now.toISOString(),

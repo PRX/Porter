@@ -30,6 +30,7 @@ Many input and output methods are supported to allow flexibility with other appl
     -   [WAV Wrap](#wav-wrap)
     -   [Detect Silence](#detect-silence)
     -   [Detect Tone](#detect-tone)
+    -   [Waveform](#waveform)
 -   [Serialized Jobs](#serialized-jobs)
 -   [S3 Read Permissions](#s3-read-permissions)
 -   [S3 Destination Permissions](#s3-destination-permissions)
@@ -940,6 +941,45 @@ Output:
         { "Start": 10.105, "End": 19.988, "Minimum": 0, "Maximum": 0.00098160235211 }
       ]
     }
+}
+```
+
+### Waveform
+
+`Waveform` tasks generate waveform data from audio files. The `Generator` property determines which program is used to generate the waveform data. Currently the only supported destination mode is `AWS/S3`.
+
+When [`BBC/audiowaveform/v1.x`](https://github.com/bbc/audiowaveform) is used, the `DataFormat` is required, and must be either `Binary` or `JSON`, which determines the format of the output file containing the waveform data. By default, the `MediaFormat` is set based on the [heuristically-determined](https://www.npmjs.com/package/file-type) file type extension of the source file, which may not match the source file's actual extension. For example, an Ogg source file with a `.oga` extension may have a default `MediaFormat` of `ogg`. Some common detected `MediaFormat` values are automatically remapped to a valid value, such as `m4a` to `mp4`. If necessary, you can override this to a different valid format by setting the optional `MediaFormat` property of the Task. Valid formats are: `wav`, `mp3`, `flac`, `ogg`, and `opus`. The optional `WaveformPointBitDepth` property specifies the number of bits used for each output waveform data point; it can be `8` or `16`, and defaults to `16`. The optional `WaveformPointFrequency` property specifies the number of output waveform data points to generate for each second of audio input, and defaults to `100` (maximum of `4096`, must be an integer). (Note: The `zoom` property of audiowaveform is not currently supported.) Multi-channel audio files generate a single combined waveform.
+
+#### AWS/S3
+
+S3 destinations are handled by the [upload()](https://docs.aws.amazon.com/AWSJavaScriptSDK/latest/AWS/S3.html#upload-property) method in the AWS Node SDK.
+
+The `BucketName` and `ObjectKey` properties are required.
+
+Input:
+
+```json
+{
+    "Type": "Waveform",
+    "Generator": "BBC/audiowaveform/v1.x",
+    "MediaFormat": "flac",
+    "DataFormat": "JSON",
+    "Destination": {
+        "Mode": "AWS/S3",
+        "BucketName": "myBucket",
+        "ObjectKey": "myWaveform.json"
+    }
+}
+```
+
+Output:
+
+```json
+{
+    "Task": "Waveform",
+    "Mode": "AWS/S3",
+    "BucketName": "myBucket",
+    "ObjectKey": "myWaveform.json",
 }
 ```
 
