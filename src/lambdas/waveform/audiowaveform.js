@@ -88,7 +88,7 @@ module.exports = {
         '--bits',
         `${bitDepth}`,
         '--pixels-per-second',
-        pointsPerSecond,
+        `${pointsPerSecond}`,
       ];
       console.log(
         JSON.stringify({
