@@ -15,7 +15,7 @@ describe :porter do
           },
           Tasks: [
             {
-              Type: 'Waveform'
+              Type: 'Waveform',
               Generator: 'BBC/audiowaveform/v1.x',
               DataFormat: 'Binary',
               Destination: {
@@ -46,7 +46,7 @@ describe :porter do
           },
           Tasks: [
             {
-              Type: 'Waveform'
+              Type: 'Waveform',
               Generator: 'BBC/audiowaveform/v1.x',
               DataFormat: 'JSON',
               Destination: {
@@ -77,7 +77,7 @@ describe :porter do
           },
           Tasks: [
             {
-              Type: 'Waveform'
+              Type: 'Waveform',
               Generator: 'BBC/audiowaveform/v1.x',
               DataFormat: 'JSON',
               WaveformPointBitDepth: 8,
