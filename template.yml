@@ -1314,6 +1314,7 @@ Resources:
       ContentUri: lib/ffmpeg
       CompatibleRuntimes:
         - nodejs14.x
+        - nodejs16.x
       Description: FFmpeg binary
       RetentionPolicy: Delete
   SoxLambdaLayer:
@@ -1972,6 +1973,7 @@ Resources:
       Handler: index.handler
       Layers:
         - !Ref AudiowaveformLambdaLayer
+        - !Ref FfmpegLambdaLayer
       MemorySize: 3008
       Role: !GetAtt WaveformLambdaIamRole.Arn
       Runtime: nodejs16.x

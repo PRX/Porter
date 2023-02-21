@@ -1,4 +1,5 @@
 /* eslint-disable max-classes-per-file */
+
 const childProcess = require('child_process');
 const os = require('os');
 
