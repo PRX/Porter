@@ -22,10 +22,11 @@ class MissingAudioStreamError extends Error {
 /**
  * As best I can tell, FFprobe returns levels values in one of two forms:
  * - Floating point percents, e.g., "-0.398102"
- * - 16 bit integers as decimals, e.g., "13045.000000"
+ * - 16 bit signed integers as decimals, e.g., "13045.000000"
  * audiowaveform always uses true integers, and supports 8 and 16 bit.
- * NOTE: Even 8 bit audio files are reported with 16 bit values in FFprobe
- * based on my tests.
+ * NOTE: Tests have shown that all audio follows one of these two formats,
+ * including unsigned files, and files that are neither FP or 16 bit, such as
+ * 8 bit audio files.
  * @param {Number} sampleRate
  * @param {Number} frameSize
  * @param {FfprobeLevelsResult} levelsData
