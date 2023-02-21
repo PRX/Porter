@@ -23,8 +23,7 @@ class MissingAudioStreamError extends Error {
  * As best I can tell, FFprobe returns levels values in one of two forms:
  * - Floating point percents, e.g., "-0.398102"
  * - 16 bit integers as decimals, e.g., "13045.000000"
- * audiowaveform always uses true integers, and supports 8 and 16 bit, but
- * currently we only support 16 bit.
+ * audiowaveform always uses true integers, and supports 8 and 16 bit.
  * NOTE: Even 8 bit audio files are reported with 16 bit values in FFprobe
  * based on my tests.
  * @param {Number} sampleRate
@@ -48,10 +47,11 @@ function awfData(sampleRate, frameSize, bitDepth, levelsData) {
 
   // If the values returned from FFprobe were actually floating point values,
   // we can assume they are a percent, and they should be converted to signed
-  // integer 16 bit values, which is the expected output for audiowaveform
+  // integer values, which is the expected output for audiowaveform. They will
+  // be 16 or 8 bits depending on the task definition.
   //
-  // e.g., "1.0000" should become 32,767
-  // e.g., "-0.5" should become -16,384
+  // e.g., "1.0000" should become 32,767 or 127
+  // e.g., "-0.5" should become -16,384 or -64
   const scaleFactor = isFloat ? 65335 / 2 : 1;
 
   // If the desired data point bit depth is not 16, it won't match the values
@@ -67,6 +67,7 @@ function awfData(sampleRate, frameSize, bitDepth, levelsData) {
     // length is the number of frames, **not** the number of data points.
     // For mono audio, data points = length * 2
     // For stereo audio, data points = length * 2 * 2
+    // (But we only use mono audio, see `channels` above)
     length: levelsData.frames.length,
     data: levelsData.frames.reduce((acc, cur) => {
       const min = +cur.tags['lavfi.astats.Overall.Min_level'];
@@ -129,7 +130,6 @@ function writeAwfBinary(
 
 module.exports = {
   /**
-   *
    * @param {*} event
    * @param {string} inputFilePath
    * @param {string} outputFilePath
