@@ -159,7 +159,7 @@ module.exports = {
       ? event.Task.WaveformPointBitDepth
       : 16;
 
-    // Get the raw FFprobe statistics
+    // Get basic metadata from FFprobe
     const probe = await ffprobe.inspect(inputFilePath);
 
     // Find the first audio stream from the FFprobe data. For standard audio
@@ -177,6 +177,7 @@ module.exports = {
       // data points per second.
       const frameSize = Math.floor(sampleRate / pointsPerSecond);
 
+      // Get the raw FFprobe statistics
       const levelsData = await ffprobe.levels(inputFilePath, frameSize);
 
       if (event.Task.DataFormat === 'audiowaveform/JSON') {
