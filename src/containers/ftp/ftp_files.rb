@@ -70,6 +70,7 @@ class FtpFiles
       task_mode: options[:mode],
       public_ip: public_ip,
       public_port: public_port,
+      use_tls: use_tls,
       md5: md5,
       remote_host: remote_host,
       remote_port: remote_port,
