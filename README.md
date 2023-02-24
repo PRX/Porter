@@ -569,7 +569,7 @@ Output:
 
 #### FTP
 
-FTP operations are handled in the FTP container, using Ruby's `Net::FTP` module.
+FTP operations are handled in the FTP container, using Ruby's `Net::FTP` and `Net::SFTP` modules.
 
 The `Mode` property can be one of `FTP/Passive`, `FTP/Active`, or `FTP/Auto`. When `FTP/Auto` is used, both passive and active modes will be used if necessary, in order to try to complete the transfer.
 
@@ -592,7 +592,9 @@ and useful to validate the file was transferred without error by checking the MD
 
 The task output will include a `Mode` value, which may not match the `Mode` value from the input. The output will indicate the FTP transfer mode that was actually used to sucessfully transfer the file. When `FTP/Auto` is selected for a task, this allows you to inspect which mode was used internally to complete the transfer.
 
-SFTP is also support when using an `sftp://` URL. All modes work identically with SFTP URLs, since there is no active or passive mode for SFTP. If included, the URL's port is ignored.
+FTPS is also supported when using an `ftps://` URL.
+
+SFTP is also supported when using an `sftp://` URL. All modes work identically with SFTP URLs, since there is no active or passive mode for SFTP. If included, the URL's port is ignored. Currently, not all timeout and retry options are honored when performing SFTP copy tasks.
 
 Input:
 
