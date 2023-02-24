@@ -103,7 +103,7 @@ class FtpFiles
         ftp.binary = options[:binary].nil? ? true : options[:binary]
         ftp.open_timeout = nil # default is nil
         ftp.read_timeout = 60 # default is 60
-        ftp.ssl = options[:use_tls]
+        ftp.ssl = use_tls
         # ftp.debug_mode = true
 
         begin
