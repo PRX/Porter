@@ -185,6 +185,7 @@ Resources:
         - { Key: prx:dev:application, Value: Porter }
   JobExecutionSnsTopicPolicy:
     Type: AWS::SNS::TopicPolicy
+    Condition: CreateOrganizationAccessPolicies
     Properties:
       PolicyDocument:
         Id: OrganizationAcccessPolicy
@@ -235,6 +236,8 @@ Resources:
       Timeout: 8
   JobExecutionSnsTopicLambdaLogGroup:
     Type: AWS::Logs::LogGroup
+    DeletionPolicy: Delete
+    UpdateReplacePolicy: Delete
     Properties:
       LogGroupName: !Sub /aws/lambda/${JobExecutionSnsTopicLambdaFunction}
       RetentionInDays: 30
@@ -271,6 +274,8 @@ Resources:
   ## valic JSON.
   JobExecutionSqsQueue:
     Type: AWS::SQS::Queue
+    DeletionPolicy: Delete
+    UpdateReplacePolicy: Delete
     Properties:
       Tags:
         - { Key: prx:meta:tagging-version, Value: "2021-04-07" }
@@ -344,6 +349,8 @@ Resources:
       Timeout: 8
   JobExecutionSqsQueueLambdaLogGroup:
     Type: AWS::Logs::LogGroup
+    DeletionPolicy: Delete
+    UpdateReplacePolicy: Delete
     Properties:
       LogGroupName: !Sub /aws/lambda/${JobExecutionSqsQueueLambdaFunction}
       RetentionInDays: 30
@@ -483,6 +490,8 @@ Resources:
       Timeout: 4
   TranscriptionJobStateChangeLambdaLogGroup:
     Type: AWS::Logs::LogGroup
+    DeletionPolicy: Delete
+    UpdateReplacePolicy: Delete
     Properties:
       LogGroupName: !Sub /aws/lambda/${TranscriptionJobStateChangeLambdaFunction}
       RetentionInDays: 30
@@ -997,6 +1006,8 @@ Resources:
   # Transcode ECS Service
   TranscodeEcsTaskLogGroup:
     Type: AWS::Logs::LogGroup
+    DeletionPolicy: Delete
+    UpdateReplacePolicy: Delete
     Properties:
       RetentionInDays: 14
       Tags:
@@ -1101,6 +1112,8 @@ Resources:
   # FTP Copy ECS Service
   FtpCopyEcsTaskLogGroup:
     Type: AWS::Logs::LogGroup
+    DeletionPolicy: Delete
+    UpdateReplacePolicy: Delete
     Properties:
       RetentionInDays: 14
       Tags:
@@ -1404,6 +1417,8 @@ Resources:
       Timeout: 4
   NormalizeInputLambdaLogGroup:
     Type: AWS::Logs::LogGroup
+    DeletionPolicy: Delete
+    UpdateReplacePolicy: Delete
     Properties:
       LogGroupName: !Sub /aws/lambda/${NormalizeInputLambdaFunction}
       RetentionInDays: 30
@@ -1472,6 +1487,8 @@ Resources:
       Timeout: 90
   IngestLambdaLogGroup:
     Type: AWS::Logs::LogGroup
+    DeletionPolicy: Delete
+    UpdateReplacePolicy: Delete
     Properties:
       LogGroupName: !Sub /aws/lambda/${IngestLambdaFunction}
       RetentionInDays: 30
@@ -1533,6 +1550,8 @@ Resources:
       Timeout: 8
   SourceTypeLambdaLogGroup:
     Type: AWS::Logs::LogGroup
+    DeletionPolicy: Delete
+    UpdateReplacePolicy: Delete
     Properties:
       LogGroupName: !Sub /aws/lambda/${SourceTypeLambdaFunction}
       RetentionInDays: 30
@@ -1567,6 +1586,8 @@ Resources:
       Timeout: 900
   InspectMediaLambdaLogGroup:
     Type: AWS::Logs::LogGroup
+    DeletionPolicy: Delete
+    UpdateReplacePolicy: Delete
     Properties:
       LogGroupName: !Sub /aws/lambda/${InspectMediaLambdaFunction}
       RetentionInDays: 30
@@ -1625,6 +1646,8 @@ Resources:
       Timeout: 120
   CopyLambdaLogGroup:
     Type: AWS::Logs::LogGroup
+    DeletionPolicy: Delete
+    UpdateReplacePolicy: Delete
     Properties:
       LogGroupName: !Sub /aws/lambda/${CopyLambdaFunction}
       RetentionInDays: 30
@@ -1659,6 +1682,8 @@ Resources:
       Timeout: 4
   FtpCopyTaskOutputLambdaLogGroup:
     Type: AWS::Logs::LogGroup
+    DeletionPolicy: Delete
+    UpdateReplacePolicy: Delete
     Properties:
       LogGroupName: !Sub /aws/lambda/${FtpCopyTaskOutputLambdaFunction}
       RetentionInDays: 30
@@ -1714,6 +1739,8 @@ Resources:
       Timeout: 4
   TranscodeTaskOutputLambdaLogGroup:
     Type: AWS::Logs::LogGroup
+    DeletionPolicy: Delete
+    UpdateReplacePolicy: Delete
     Properties:
       LogGroupName: !Sub /aws/lambda/${TranscodeTaskOutputLambdaFunction}
       RetentionInDays: 30
@@ -1786,6 +1813,8 @@ Resources:
       Timeout: 16
   ImageTransformLambdaLogGroup:
     Type: AWS::Logs::LogGroup
+    DeletionPolicy: Delete
+    UpdateReplacePolicy: Delete
     Properties:
       LogGroupName: !Sub /aws/lambda/${ImageTransformLambdaFunction}
       RetentionInDays: 30
@@ -1840,6 +1869,8 @@ Resources:
       Timeout: 900
   WavWrapLambdaLogGroup:
     Type: AWS::Logs::LogGroup
+    DeletionPolicy: Delete
+    UpdateReplacePolicy: Delete
     Properties:
       LogGroupName: !Sub /aws/lambda/${WavWrapLambdaFunction}
       RetentionInDays: 30
@@ -1896,6 +1927,8 @@ Resources:
       Timeout: 900
   SilenceDetectionLambdaLogGroup:
     Type: AWS::Logs::LogGroup
+    DeletionPolicy: Delete
+    UpdateReplacePolicy: Delete
     Properties:
       LogGroupName: !Sub /aws/lambda/${SilenceDetectionLambdaFunction}
       RetentionInDays: 30
@@ -1952,6 +1985,8 @@ Resources:
       Timeout: 900
   ToneDetectionLambdaLogGroup:
     Type: AWS::Logs::LogGroup
+    DeletionPolicy: Delete
+    UpdateReplacePolicy: Delete
     Properties:
       LogGroupName: !Sub /aws/lambda/${ToneDetectionLambdaFunction}
       RetentionInDays: 30
@@ -2007,6 +2042,8 @@ Resources:
       Timeout: 900
   WaveformLambdaLogGroup:
     Type: AWS::Logs::LogGroup
+    DeletionPolicy: Delete
+    UpdateReplacePolicy: Delete
     Properties:
       LogGroupName: !Sub /aws/lambda/${WaveformLambdaFunction}
       RetentionInDays: 30
@@ -2056,6 +2093,8 @@ Resources:
       Timeout: 4
   TranscriptionJobStartLambdaLogGroup:
     Type: AWS::Logs::LogGroup
+    DeletionPolicy: Delete
+    UpdateReplacePolicy: Delete
     Properties:
       LogGroupName: !Sub /aws/lambda/${TranscriptionJobStartLambdaFunction}
       RetentionInDays: 30
@@ -2116,6 +2155,8 @@ Resources:
       Timeout: 8
   TranscriptionJobResultsLambdaLogGroup:
     Type: AWS::Logs::LogGroup
+    DeletionPolicy: Delete
+    UpdateReplacePolicy: Delete
     Properties:
       LogGroupName: !Sub /aws/lambda/${TranscriptionJobResultsLambdaFunction}
       RetentionInDays: 30
@@ -2193,6 +2234,8 @@ Resources:
       Timeout: 4
   CallbackLambdaLogGroup:
     Type: AWS::Logs::LogGroup
+    DeletionPolicy: Delete
+    UpdateReplacePolicy: Delete
     Properties:
       LogGroupName: !Sub /aws/lambda/${CallbackLambdaFunction}
       RetentionInDays: 30
@@ -2231,6 +2274,8 @@ Resources:
       Timeout: 4
   JobSerializerLambdaLogGroup:
     Type: AWS::Logs::LogGroup
+    DeletionPolicy: Delete
+    UpdateReplacePolicy: Delete
     Properties:
       LogGroupName: !Sub /aws/lambda/${JobSerializerLambdaFunction}
       RetentionInDays: 30
@@ -2266,6 +2311,8 @@ Resources:
       Timeout: 4
   NormalizeOutputLambdaLogGroup:
     Type: AWS::Logs::LogGroup
+    DeletionPolicy: Delete
+    UpdateReplacePolicy: Delete
     Properties:
       LogGroupName: !Sub /aws/lambda/${NormalizeOutputLambdaFunction}
       RetentionInDays: 30
