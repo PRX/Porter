@@ -1,7 +1,6 @@
-FROM public.ecr.aws/amazonlinux/amazonlinux:latest
+FROM public.ecr.aws/amazonlinux/amazonlinux:2
 
 RUN yum update -y \
-    && yum install -y amazon-linux-extras \
     && amazon-linux-extras enable ruby2.6 \
     && yum install -y ruby ruby-irb ruby-devel rubygems rubygem-rake rubygem-json rubygem-io-console make gcc \
     && gem install bundler \
