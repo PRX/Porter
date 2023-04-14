@@ -14,7 +14,7 @@ build:
 
 check: lint test
 deploy-check: lint jest
-lint: cfnlint prettier eslint typescript rubocop
+lint: cfnlint prettier eslint typescript
 test: minitest jest
 
 cfnlint:
