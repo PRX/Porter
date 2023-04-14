@@ -58,6 +58,7 @@ Parameters:
     Type: Number
   OrganizationId:
     Type: String
+    Default: ""
   # Required
   EnvironmentType:
     Type: String
