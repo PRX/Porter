@@ -9,6 +9,7 @@ Conditions:
   CreateProductionResources: !Equals [!Ref EnvironmentType, Production]
   CreateSqsEventMapping: !Equals [!Ref EnableSqsJobExecution, "True"]
   CreateDefaultEventBusRule: !Equals [!Ref EnableDefaultEventBusRule, "True"]
+  CreateOrganizationAccessPolicies: !Not [!Equals [!Ref OrganizationId, ""]]
 
 Parameters:
   # Generally set by the deploy pipeline
@@ -55,6 +56,8 @@ Parameters:
     MaxValue: 256
     MinValue: 1
     Type: Number
+  OrganizationId:
+    Type: String
   # Required
   EnvironmentType:
     Type: String
@@ -180,6 +183,24 @@ Resources:
         - { Key: prx:cloudformation:stack-id, Value: !Ref AWS::StackId }
         - { Key: prx:ops:environment, Value: !Ref EnvironmentType }
         - { Key: prx:dev:application, Value: Porter }
+  JobExecutionSnsTopicPolicy:
+    Type: AWS::SNS::TopicPolicy
+    Properties:
+      PolicyDocument:
+        Id: OrganizationAcccessPolicy
+        Statement:
+          - Action: sns:Publish
+            Condition:
+              StringEquals:
+                aws:PrincipalOrgID: !Ref OrganizationId
+            Effect: Allow
+            Sid: OrganizationPublish
+            Principal:
+              AWS: "*"
+            Resource: !Ref JobExecutionSnsTopic
+        Version: "2012-10-17"
+      Topics:
+        - !Ref JobExecutionSnsTopic
   JobExecutionSnsTopicLambdaFunction:
     Type: AWS::Serverless::Function
     Properties:
