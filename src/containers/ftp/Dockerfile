@@ -1,13 +1,11 @@
 FROM public.ecr.aws/amazonlinux/amazonlinux:latest
 
-LABEL org.prx.app="yes"
-
 RUN yum update -y \
-  && amazon-linux-extras enable ruby2.6 \
-  && yum install -y ruby ruby-irb ruby-devel rubygems rubygem-rake rubygem-json rubygem-io-console make gcc \
-  && gem install bundler \
-  && yum clean metadata \
-  && rm -rf /var/cache/yum
+    && yum install -y amazon-linux-extras enable ruby2.6 \
+    && yum install -y ruby ruby-irb ruby-devel rubygems rubygem-rake rubygem-json rubygem-io-console make gcc \
+    && gem install bundler \
+    && yum clean metadata \
+    && rm -rf /var/cache/yum
 
 ENV APP_HOME /ftp
 RUN mkdir -p $APP_HOME

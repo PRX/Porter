@@ -1,7 +1,5 @@
 FROM public.ecr.aws/amazonlinux/amazonlinux:latest
 
-LABEL org.prx.app="yes"
-
 RUN yum update -y \
     && yum install -y python-pip tar wget xz \
     && yum clean all
