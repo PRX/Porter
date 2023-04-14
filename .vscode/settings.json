@@ -27,8 +27,9 @@
     "editor.tabSize": 4
   },
   "[ruby]": {
-    "editor.defaultFormatter": "rebornix.ruby",
-    "editor.formatOnSave": true
+    "editor.defaultFormatter": "testdouble.vscode-standard-ruby",
+    "editor.formatOnSave": true,
+    "editor.formatOnSaveMode": "file"
   },
   "[yaml]": {
     "editor.defaultFormatter": "esbenp.prettier-vscode",
