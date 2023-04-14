@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
-load './ftp_patch.rb'
-load './utils.rb'
+load "./ftp_patch.rb"
+load "./utils.rb"
 
 # Class to act as FTP client for uploading files to FTP servers
 # rubocop:disable Metrics/ClassLength
@@ -43,7 +43,7 @@ class FtpFiles
 
     # for logging
     anon_uri = URI.parse(uri.to_s)
-    anon_uri.password = "#{CGI.escape(remote_password[0])}#{'*' * (remote_password.length - 1)}"
+    anon_uri.password = "#{CGI.escape(remote_password[0])}#{"*" * (remote_password.length - 1)}"
     cstr = anon_uri.to_s
 
     public_ip = options[:public_ip]
@@ -63,10 +63,10 @@ class FtpFiles
     result = false
 
     # Always make at least two total attempts with Auto mode, one for each
-    max_attempts = 2 if options[:mode] == 'FTP/Auto' && max_attempts < 2
+    max_attempts = 2 if options[:mode] == "FTP/Auto" && max_attempts < 2
 
     logger.debug(JSON.dump({
-      msg: 'FTP transfer setup',
+      msg: "FTP transfer setup",
       task_mode: options[:mode],
       public_ip: public_ip,
       public_port: public_port,
@@ -80,7 +80,7 @@ class FtpFiles
     }))
 
     # Start with passive mode for both FTP/Passive and FTP/Auto
-    passive = options[:mode] != 'FTP/Active'
+    passive = options[:mode] != "FTP/Active"
 
     while !result && (attempt <= max_attempts)
       sleep(retry_wait) if attempt > 1
@@ -88,7 +88,7 @@ class FtpFiles
       # When using FTP/Auto, failover to active mode after exhausting half
       # of the max retries. When max attempts is odd, passive mode will be
       # attempted one more time than active mode
-      passive = false if options[:mode] == 'FTP/Auto' && (attempt > (max_attempts / 2).ceil)
+      passive = false if options[:mode] == "FTP/Auto" && (attempt > (max_attempts / 2).ceil)
 
       ftp = Net::FTP.new
 
@@ -112,9 +112,9 @@ class FtpFiles
             ftp.connect(remote_host, remote_port)
             ftp.login(remote_user, remote_password) if uri.userinfo
           end
-        rescue StandardError => e
+        rescue => e
           logger.error(JSON.dump({
-            msg: 'FTP connect/login failed',
+            msg: "FTP connect/login failed",
             error: e.message,
             remote_host: remote_host,
             remote_port: remote_port,
@@ -126,16 +126,16 @@ class FtpFiles
         end
 
         # if there is a remote dir that is not "."
-        if remote_directory && remote_directory != '.'
+        if remote_directory && remote_directory != "."
           begin
             Timeout.timeout(60) do
               begin
                 ftp.mkdir(remote_directory)
-              rescue StandardError => e
+              rescue => e
                 # This might be okay if the dir already exist, which we'll
                 # find out when we chdir
                 logger.warn(JSON.dump({
-                  msg: 'FTP mkdir failed',
+                  msg: "FTP mkdir failed",
                   error: e.message,
                   remote_directory: remote_directory,
                   passive: passive,
@@ -144,18 +144,18 @@ class FtpFiles
               end
 
               logger.debug(JSON.dump({
-                msg: 'FTP chdir',
+                msg: "FTP chdir",
                 remote_directory: remote_directory,
                 passive: passive,
                 attempt: attempt
               }))
               ftp.chdir(remote_directory)
             end
-          rescue StandardError => e
+          rescue => e
             # Can't recover from this because we can't put the file where the
             # job wants it
             logger.error(JSON.dump({
-              msg: 'FTP chdir failed',
+              msg: "FTP chdir failed",
               error: e.message,
               remote_directory: remote_directory,
               passive: passive,
@@ -170,7 +170,7 @@ class FtpFiles
         begin
           Timeout.timeout(options[:timeout]) do
             logger.debug(JSON.dump({
-              msg: 'FTP put starting',
+              msg: "FTP put starting",
               local_file: local_file.path,
               remote_directory: remote_directory,
               remote_file_name: remote_file_name,
@@ -189,7 +189,7 @@ class FtpFiles
                 # this is to act as a keep alive - wbur needed it for remix delivery
                 begin
                   ftp.noop
-                rescue StandardError => e
+                rescue => e
                   # if they don't support this, and throw an error just keep going.
                   logger.warn("FTP noop error, off and retry: #{e.message}")
                   attempt = [(attempt - 1), 1].max
@@ -202,7 +202,7 @@ class FtpFiles
             end
 
             logger.debug(JSON.dump({
-              msg: 'FTP put complete',
+              msg: "FTP put complete",
               local_file: local_file.path,
               remote_directory: remote_directory,
               remote_file_name: remote_file_name,
@@ -213,7 +213,7 @@ class FtpFiles
             if md5
               ftp.puttextfile(md5_file.path, "#{remote_file_name}.md5")
               logger.debug(JSON.dump({
-                msg: 'FTP MD5 put complete',
+                msg: "FTP MD5 put complete",
                 local_file: md5_file.path,
                 remote_directory: remote_directory,
                 remote_file_name: remote_file_name,
@@ -222,9 +222,9 @@ class FtpFiles
               }))
             end
           end
-        rescue StandardError => e
+        rescue => e
           logger.error(JSON.dump({
-            msg: 'FTP put failed',
+            msg: "FTP put failed",
             error: e.message,
             reason: e.backtrace[0, 3].join("\n\t"),
             local_file: local_file.path,
@@ -241,10 +241,10 @@ class FtpFiles
         result = true
 
         # this records success!
-        recorder.record('FtpSuccess', 'Count', 1.0)
-      rescue StandardError => e
+        recorder.record("FtpSuccess", "Count", 1.0)
+      rescue => e
         # this records retried fails - open, login, mkdir, or put
-        recorder.record('FtpError', 'Count', 1.0)
+        recorder.record("FtpError", "Count", 1.0)
 
         attempt += 1
       ensure
@@ -252,7 +252,7 @@ class FtpFiles
           ftp.close if ftp && !ftp.closed?
         rescue Object => e
           logger.warn(JSON.dump({
-            msg: 'FTP close failed',
+            msg: "FTP close failed",
             error: e.message,
             passive: passive,
             attempt: attempt
@@ -262,10 +262,10 @@ class FtpFiles
     end
 
     if result
-      used_mode = passive ? 'FTP/Passive' : 'FTP/Active'
+      used_mode = passive ? "FTP/Passive" : "FTP/Active"
 
       logger.debug(JSON.dump({
-        msg: 'FTP transfer complete',
+        msg: "FTP transfer complete",
         used_mode: used_mode,
         passive: passive,
         attempt: attempt
@@ -274,7 +274,7 @@ class FtpFiles
       used_mode
     else
       # this records final fail (no more retries)
-      recorder.record('FtpFail', 'Count', 1.0)
+      recorder.record("FtpFail", "Count", 1.0)
       raise "FTP failed, no more retries: from '#{local_file}' to '#{cstr}'"
     end
   ensure

@@ -1,11 +1,11 @@
 # frozen_string_literal: true
 
-require 'aws-sdk-s3'
-require 'digest/sha2'
-require 'tempfile'
-require 'fileutils'
-require 'logger'
-load './utils.rb'
+require "aws-sdk-s3"
+require "digest/sha2"
+require "tempfile"
+require "fileutils"
+require "logger"
+load "./utils.rb"
 
 # This is a more paranoid s3 download class
 # based on all the various errors that have been handled in fixer.
@@ -16,7 +16,7 @@ class S3Files
   def initialize(client = nil, logger = nil, retry_count = 10)
     @s3 = client || Aws::S3::Client.new
     @logger = logger || Logger.new($stdout)
-    @retry_count = retry_count || ENV['S3_RETRY_COUNT']
+    @retry_count = retry_count || ENV["S3_RETRY_COUNT"]
   end
 
   def download_file(bucket, key)
@@ -33,7 +33,7 @@ class S3Files
         temp_file = s3_download(bucket, key)
         check_size(bucket, key, file_info, temp_file)
         file_downloaded = true
-      rescue StandardError => e
+      rescue => e
         logger.error "File get failed: '#{bucket}/#{key}': #{e.message}"
         delete_temp_file(temp_file)
       end
@@ -46,13 +46,13 @@ class S3Files
 
   def check_size(bucket, key, info, file)
     if info.content_length != file.size || file.size.zero?
-      raise "Wrong size: '#{bucket}/#{key}': "\
+      raise "Wrong size: '#{bucket}/#{key}': " \
             "s3:#{info.content_length}, local:#{file.size}"
     end
   end
 
   def s3_download(bucket, key)
-    temp_file = create_temp_file(key.split('/').last, true)
+    temp_file = create_temp_file(key.split("/").last, true)
     s3.get_object(bucket: bucket, key: key) do |chunk|
       temp_file.write(chunk)
     end

@@ -1,16 +1,16 @@
 # frozen_string_literal: true
 
-require 'minitest/reporters'
-require 'minitest/autorun'
-require 'minitest/spec'
-require 'minitest/pride'
-require 'minitest/focus'
-require 'config'
-begin begin
-        require 'pry'
-      rescue StandardError
-        LoadError
-      end end
+require "minitest/reporters"
+require "minitest/autorun"
+require "minitest/spec"
+require "minitest/pride"
+require "minitest/focus"
+require "config"
+begin
+  require "pry"
+rescue
+  LoadError
+end
 # output format
 Minitest::Reporters.use! Minitest::Reporters::SpecReporter.new
 
@@ -28,10 +28,10 @@ def job_test(job, timeout = DEFAULT_TIMEOUT)
 
   # Request task execution info; keep trying until it's ready
   begin
-    params = { execution_arn: task_req.execution_arn }
+    params = {execution_arn: task_req.execution_arn}
     task_desc = STATES_CLIENT.describe_execution(params)
 
-    raise RuntimeError if task_desc.status == 'RUNNING'
+    raise RuntimeError if task_desc.status == "RUNNING"
   rescue RuntimeError => e
     if retries <= MAX_RETRIES
       retries += 1

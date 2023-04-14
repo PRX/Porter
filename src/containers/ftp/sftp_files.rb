@@ -1,8 +1,8 @@
 # frozen_string_literal: true
 
-require 'net/sftp'
+require "net/sftp"
 
-load './utils.rb'
+load "./utils.rb"
 
 # Class to act as SFTP client for uploading files to SFTP servers
 class SftpFiles

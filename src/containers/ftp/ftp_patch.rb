@@ -1,6 +1,6 @@
 # frozen_string_literal: true
 
-require 'net/ftp'
+require "net/ftp"
 
 module Net
   # Override the Net::FTP class to add overrides

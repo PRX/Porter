@@ -2,10 +2,10 @@
 
 # Reusable utility methods
 module Utils
-  MAX_FILENAME ||= 160
-  MAX_EXTENSION ||= 6
+  MAX_FILENAME ||= 160 # standard:disable Lint/OrAssignmentToConstant
+  MAX_EXTENSION ||= 6 # standard:disable Lint/OrAssignmentToConstant
   def create_temp_file(base_file_name, bin_mode)
-    tmp_dir = './tmp'
+    tmp_dir = "./tmp"
     file_name = File.basename(base_file_name)
     file_name = Digest::SHA256.hexdigest(base_file_name) if file_name.length > MAX_FILENAME
     file_ext = File.extname(base_file_name)[0, MAX_EXTENSION]

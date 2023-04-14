@@ -11,7 +11,7 @@ class Recorder
   end
 
   def record(metric, unit, val)
-    md = { metric_name: metric, dimensions: dimensions, value: val, unit: unit }
-    cloudwatch.put_metric_data({ namespace: namespace, metric_data: [md] })
+    md = {metric_name: metric, dimensions: dimensions, value: val, unit: unit}
+    cloudwatch.put_metric_data({namespace: namespace, metric_data: [md]})
   end
 end

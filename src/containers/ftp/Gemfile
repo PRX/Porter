@@ -1,13 +1,13 @@
 # frozen_string_literal: true
 
-source 'https://rubygems.org'
+source "https://rubygems.org"
 
-gem 'aws-sdk-cloudwatch', '~> 1'
-gem 'aws-sdk-ec2', '~> 1'
-gem 'aws-sdk-ecs', '~> 1'
-gem 'aws-sdk-s3', '~> 1'
-gem 'net-sftp'
+gem "aws-sdk-cloudwatch", "~> 1"
+gem "aws-sdk-ec2", "~> 1"
+gem "aws-sdk-ecs", "~> 1"
+gem "aws-sdk-s3", "~> 1"
+gem "net-sftp"
 
 group :development do
-  gem 'rubocop'
+  gem "rubocop"
 end
