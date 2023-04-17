@@ -15,5 +15,4 @@ samconfig.test.toml
 samconfig.stag.toml
 samconfig.prod.toml
 vendor
-Gemfile.lock
 tmp
