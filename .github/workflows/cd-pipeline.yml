@@ -2,15 +2,15 @@ name: Continuous Deployment
 
 on:
   workflow_dispatch:
-  push:
-    branches:
-      - main
-    paths:
-      - lib/**
-      - src/**
-      - test/**
-      - state-machine.asl.yml
-      - template.yml
+  # push:
+  #   branches:
+  #     - main
+  #   paths:
+  #     - lib/**
+  #     - src/**
+  #     - test/**
+  #     - state-machine.asl.yml
+  #     - template.yml
 
 concurrency:
   group: ${{ github.workflow }}
