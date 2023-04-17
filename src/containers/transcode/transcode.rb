@@ -22,6 +22,16 @@
 
 require "json"
 
+class String
+  def underscore
+    gsub(/::/, "/")
+      .gsub(/([A-Z]+)([A-Z][a-z])/, '\1_\2')
+      .gsub(/([a-z\d])([A-Z])/, '\1_\2')
+      .tr("-", "_")
+      .downcase
+  end
+end
+
 cloudwatch = Aws::CloudWatch::Client.new
 s3 = Aws::S3::Client.new
 
@@ -48,7 +58,13 @@ cloudwatch.put_metric_data({
 # Get the artifact file from S3
 puts "Downloading artifact"
 File.open("artifact.file", "wb") do |file|
-  s3.get_object({bucket: ENV["STATE_MACHINE_ARTIFACT_BUCKET_NAME"], key: ENV["STATE_MACHINE_ARTIFACT_OBJECT_KEY"]}, target: file)
+  s3.get_object(
+    {
+      bucket: ENV["STATE_MACHINE_ARTIFACT_BUCKET_NAME"],
+      key: ENV["STATE_MACHINE_ARTIFACT_OBJECT_KEY"]
+    },
+    target: file
+  )
 end
 
 # Execute the transcode
@@ -126,17 +142,26 @@ if destination["Mode"] == "AWS/S3"
 
   s3_writer = Aws::S3::Client.new(credentials: role.credentials)
 
-  s3_parameters = {}
+  put_object_params = {}
 
-  s3_parameters = destination["Parameters"] if destination.key?("Parameters")
+  # For historical reasons, the available parameters match ALLOWED_UPLOAD_ARGS
+  # from Boto3's S3Transfer class.
+  # https://boto3.amazonaws.com/v1/documentation/api/latest/reference/customizations/s3.html
+  # If any parameters are included on the destination config, they are
+  # reformatted to snake case, and added to the put_object params as symbols.
+  if destination.key?("Parameters")
+    destination["Parameters"].each do |k, v|
+      put_object_params[k.underscore.to_sym] = v
+    end
+  end
 
   # Upload the encoded file to the S3
   puts "Writing output to S3 destination"
+  File.open("output.file", "rb") do |file|
+    put_object_params[:bucket] = ENV["STATE_MACHINE_DESTINATION_BUCKET_NAME"]
+    put_object_params[:key] = ENV["STATE_MACHINE_DESTINATION_OBJECT_KEY"]
+    put_object_params[:body] = file
 
-  #     s3_writer.meta.client.upload_file(
-  #         'output.file',
-  #         os.environ['STATE_MACHINE_DESTINATION_BUCKET_NAME'],
-  #         os.environ['STATE_MACHINE_DESTINATION_OBJECT_KEY'],
-  #         ExtraArgs=s3_parameters
-  #     )
+    s3_writer.put_object(put_object_params)
+  end
 end
