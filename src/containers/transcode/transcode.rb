@@ -138,13 +138,13 @@ if destination["Mode"] == "AWS/S3"
   sts = Aws::STS::Client.new(endpoint: "https://sts.#{region}.amazonaws.com")
 
   # Assume a role that will have access to the S3 destination bucket, and use
-  # that roles credentials for the S3 upload
+  # that role's credentials for the S3 upload
   role = sts.assume_role({
     role_arn: ENV["STATE_MACHINE_S3_DESTINATION_WRITER_ROLE"],
     role_session_name: "porter_transcode_task"
   })
 
-  s3_writer = Aws::S3::Client.new(credentials: role.credentials)
+  s3_writer = Aws::S3::Client.new(credentials: role)
 
   put_object_params = {}
 
