@@ -20,6 +20,7 @@
 # STATE_MACHINE_FFMPEG_INPUT_FILE_OPTIONS
 # STATE_MACHINE_FFMPEG_OUTPUT_FILE_OPTIONS
 
+require "aws-sdk"
 require "json"
 
 class String
