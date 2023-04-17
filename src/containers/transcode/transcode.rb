@@ -20,7 +20,10 @@
 # STATE_MACHINE_FFMPEG_INPUT_FILE_OPTIONS
 # STATE_MACHINE_FFMPEG_OUTPUT_FILE_OPTIONS
 
-require "aws-sdk"
+require "aws-sdk-cloudwatch"
+require "aws-sdk-s3"
+require "aws-sdk-sts"
+
 require "json"
 
 class String
