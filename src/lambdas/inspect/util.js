@@ -13,11 +13,9 @@ module.exports = {
     }
 
     // Look for strings like "24000/1001", and do the division safely
-    if (
-      typeof val === 'string' &&
-      val.match(/^-?[0-9]+(\.[0-9]+)?\/-?[0-9]+(\.[0-9]+)?$/)
-    ) {
-      const match = val.match(/^-?[0-9]+(\.[0-9]+)?\/-?[0-9]+(\.[0-9]+)?$/);
+    const rex = /^(-?[0-9]+(?:\.[0-9]+)?)(\/)(-?[0-9]+(?:\.[0-9]+)?)$/;
+    if (typeof val === 'string' && val.match(rex)) {
+      const match = val.match(rex);
       return +match[1] / +match[3];
     }
 
