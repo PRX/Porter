@@ -19,9 +19,10 @@ class SftpFiles
     remote_path = CGI.unescape(uri.path) if uri.path
     remote_user = CGI.unescape(uri.user) if uri.user
     remote_password = CGI.unescape(uri.password) if uri.password
+    remote_port = uri.port || 22
     md5 = options[:md5].nil? ? false : options[:md5]
 
-    Net::SFTP.start(remote_host, remote_user, password: remote_password) do |sftp|
+    Net::SFTP.start(remote_host, remote_user, password: remote_password, port: remote_port) do |sftp|
       sftp.upload!(local_file.path, remote_path)
 
       if md5
