@@ -121,6 +121,8 @@ begin
     )
   end
 rescue => e
+  puts e.class.name,
+  puts e.message
   puts e.backtrace
 
   logger.debug(JSON.dump({
