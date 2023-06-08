@@ -16,25 +16,28 @@ class SftpFiles
 
   def upload_file(uri, local_file, options = {})
     remote_host = CGI.unescape(uri.host) if uri.host
-    remote_path = CGI.unescape(uri.path) if uri.path
+    remote_port = uri.port || 22
     remote_user = CGI.unescape(uri.user) if uri.user
     remote_password = CGI.unescape(uri.password) if uri.password
-    remote_port = uri.port || 22
+    remote_path = CGI.unescape(uri.path) if uri.path
     md5 = options[:md5].nil? ? false : options[:md5]
 
-    Net::SFTP.start(remote_host, remote_user, password: remote_password, port: remote_port) do |sftp|
-      # Given a URL like sftp://alice@example.com/foo/bar/baz.mp3, we have to
-      # assume that /foo/bar is intended to be relative to the home directory
-      #  of alice. `upload!` treats the `remote` argument as an absolute file
-      # path, thus would try to upload to /foo/bar/baz.mp3 on the remote
-      # system. We actually want something like /usr/alice/foo/bar/baz.mp3.
-      # So we make the remote path relative to wherever the SFTP connection
-      # starts in (by adding a leading period).
-      sftp.upload!(local_file.path, ".#{remote_path}")
+    logger.debug(JSON.dump({
+      msg: "SFTP transfer setup",
+      remote_host: remote_host,
+      remote_port: remote_port,
+      remote_user: remote_user,
+      remote_path: remote_path,
+      md5: md5
+    }))
 
-      if md5
-        md5_file = create_md5_digest(local_file.path)
-        sftp.upload!(md5_file.path, ".#{remote_path}.md5")
+    Timeout.timeout(options[:timeout]) do
+      Net::SFTP.start(remote_host, remote_user, password: remote_password, port: remote_port) do |sftp|
+        # Given a URL like sftp://alice@example.com/foo/bar/baz.mp3, we have to
+        # assume that /foo/bar is intended to be relative to the home directory
+        #  of alice. `upload!` treats the `remote` argument as an absolute file
+        # path, thus would try to upload to /foo/bar/baz.mp3 on the remote
+        # system. We actually want something like /usr/alice/foo/bar/baz.mp3.
       end
     end
   end
