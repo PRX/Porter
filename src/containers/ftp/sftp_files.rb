@@ -38,6 +38,14 @@ class SftpFiles
         #  of alice. `upload!` treats the `remote` argument as an absolute file
         # path, thus would try to upload to /foo/bar/baz.mp3 on the remote
         # system. We actually want something like /usr/alice/foo/bar/baz.mp3.
+        # So we make the remote path relative to wherever the SFTP connection
+        # starts in (by adding a leading period).
+        sftp.upload!(local_file.path, ".#{remote_path}")
+
+        if md5
+          md5_file = create_md5_digest(local_file.path)
+          sftp.upload!(md5_file.path, ".#{remote_path}.md5")
+        end
       end
     end
   end
