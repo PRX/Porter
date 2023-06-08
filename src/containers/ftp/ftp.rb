@@ -103,7 +103,7 @@ begin
     end
   elsif uri.scheme == "sftp"
     sftp_files = SftpFiles.new(logger, recorder)
-    sftp_files.upload_file(uri, file, md5: md5)
+    sftp_files.upload_file(uri, file, md5: md5, timeout: timeout)
 
     logger.debug(JSON.dump({
       msg: "Copying state machine results file",
