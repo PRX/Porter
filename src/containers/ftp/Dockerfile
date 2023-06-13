@@ -7,7 +7,7 @@
 #     && yum clean metadata \
 #     && rm -rf /var/cache/yum
 
-FROM bitnami/ruby:latest
+FROM ruby:latest
 
 ENV APP_HOME /ftp
 RUN mkdir -p $APP_HOME
