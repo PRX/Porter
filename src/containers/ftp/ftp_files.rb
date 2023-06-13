@@ -34,7 +34,7 @@ class FtpFiles
   # rubocop:disable Metrics/PerceivedComplexity
   def upload_file(uri, local_file, options = {})
     remote_host = CGI.unescape(uri.host) if uri.host
-    remote_port = uri.port
+    remote_port = uri.port || 21
     remote_path = CGI.unescape(uri.path) if uri.path
     remote_file_name = File.basename(remote_path)
     remote_directory = File.dirname(remote_path)
