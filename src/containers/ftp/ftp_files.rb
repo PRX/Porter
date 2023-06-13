@@ -90,7 +90,7 @@ class FtpFiles
       # attempted one more time than active mode
       passive = false if options[:mode] == "FTP/Auto" && (attempt > (max_attempts / 2).ceil)
 
-      ftp = Net::FTP.new
+      ftp = Net::FTP.new(nil, ssl: use_tls)
 
       begin
         # this makes active mode work by sending the public ip and port of the client
@@ -104,7 +104,7 @@ class FtpFiles
         ftp.binary = options[:binary].nil? ? true : options[:binary]
         ftp.open_timeout = nil # default is nil
         ftp.read_timeout = 60 # default is 60
-        ftp.ssl = use_tls if use_tls
+        # ftp.ssl = use_tls if use_tls
         # ftp.debug_mode = true
 
         begin
