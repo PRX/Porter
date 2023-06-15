@@ -211,7 +211,15 @@ class FtpFiles
             }))
 
             if md5
-              ftp.puttextfile(md5_file.path, "#{remote_file_name}.md5")
+              begin
+                ftp.puttextfile(md5_file.path, "#{remote_file_name}.md5")
+              rescue => e
+                logger.error(JSON.dump{
+                  msg: "Sending MD5 as ASCII failed, switching to BINARY",
+                })
+                ftp.put(md5_file.path, "#{remote_file_name}.md5")
+              end
+
               logger.debug(JSON.dump({
                 msg: "FTP MD5 put complete",
                 local_file: md5_file.path,
