@@ -120,6 +120,7 @@ class FtpFiles
             remote_port: remote_port,
             remote_user: remote_user,
             passive: passive,
+            use_tls: use_tls,
             attempt: attempt
           }))
           raise e
@@ -135,10 +136,11 @@ class FtpFiles
                 # This might be okay if the dir already exist, which we'll
                 # find out when we chdir
                 logger.warn(JSON.dump({
-                  msg: "FTP mkdir failed",
+                  msg: "FTP mkdir failed (or unnecessary)",
                   error: e.message,
                   remote_directory: remote_directory,
                   passive: passive,
+                  use_tls: use_tls,
                   attempt: attempt
                 }))
               end
@@ -147,6 +149,7 @@ class FtpFiles
                 msg: "FTP chdir",
                 remote_directory: remote_directory,
                 passive: passive,
+                use_tls: use_tls,
                 attempt: attempt
               }))
               ftp.chdir(remote_directory)
@@ -159,6 +162,7 @@ class FtpFiles
               error: e.message,
               remote_directory: remote_directory,
               passive: passive,
+              use_tls: use_tls,
               attempt: attempt
             }))
             raise e
@@ -175,6 +179,7 @@ class FtpFiles
               remote_directory: remote_directory,
               remote_file_name: remote_file_name,
               passive: passive,
+              use_tls: use_tls,
               attempt: attempt
             }))
 
@@ -217,7 +222,7 @@ class FtpFiles
                 logger.error(JSON.dump({
                   msg: "Sending MD5 as ASCII failed, switching to BINARY",
                 }))
-                ftp.put(md5_file.path, "#{remote_file_name}.md5")
+                ftp.putbinaryfile(md5_file.path, "#{remote_file_name}.md5")
               end
 
               logger.debug(JSON.dump({
@@ -226,13 +231,14 @@ class FtpFiles
                 remote_directory: remote_directory,
                 remote_file_name: remote_file_name,
                 passive: passive,
+                use_tls: use_tls,
                 attempt: attempt
               }))
             end
           end
         rescue => e
           logger.error(JSON.dump({
-            msg: "FTP put failed",
+            msg: "FTP operation failed",
             error: e.message,
             reason: e.backtrace[0, 3].join("\n\t"),
             local_file: local_file.path,
