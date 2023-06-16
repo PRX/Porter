@@ -1,18 +1,14 @@
-FROM public.ecr.aws/amazonlinux/amazonlinux:2
+FROM amazonlinux:2023
 
-RUN yum update -y \
-    && amazon-linux-extras enable ruby3.0 \
-    && yum install -y ruby ruby-irb ruby-devel rubygems rubygem-rake rubygem-json rubygem-io-console make gcc \
-    && gem install bundler \
-    && yum clean metadata \
-    && rm -rf /var/cache/yum
+RUN dnf update -y \
+    && dnf install -y ruby3.2 ruby-devel make gcc
 
 ENV APP_HOME /ftp
 RUN mkdir -p $APP_HOME
 WORKDIR $APP_HOME
 
 ADD Gemfile* ./
-RUN bundle install
+RUN bundle install --without development test
 ADD *.rb ./
 
 ADD run ./
