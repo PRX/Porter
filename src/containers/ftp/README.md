@@ -1,5 +1,11 @@
 # FTP Container
 
+To do a very basic smoke test of the Docker image:
+
+```shell
+docker build -t porter-ftp-test . && docker run --env APP_ENV='development' porter-ftp-test
+```
+
 ## Getting Started
 To try this out:
 ```

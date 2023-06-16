@@ -1,5 +1,10 @@
 #!/bin/bash
 
+if [ "$APP_ENV" == "development" ]; then
+  ruby ftp-test.rb
+  exit
+fi
+
 # Get the public ip of the ecs fargate task, for use in FTP requests
 ECS_TASK_PUBLIC_IP=`./get-ecs-task-public-ip.rb | tail -1`
 export PUBLIC_IP=${ECS_TASK_PUBLIC_IP}
