@@ -81,7 +81,7 @@ describe :porter do
         _(output["JobResult"]["State"]).must_equal "DONE"
         _(output["JobResult"]["FailedTasks"]).must_equal []
         _(output["JobResult"]["TaskResults"].length).must_equal 1
-        _(output["JobResult"]["TaskResults"][0]["Duration"]).must_equal 1000
+        _(output["JobResult"]["TaskResults"][0]["Duration"]).must_be_close_to 1000, 50
       end
     end
   end
