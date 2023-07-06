@@ -684,7 +684,7 @@ Output:
 
 `Transcode` tasks encode and otherwise manipulate the source file. These are intended for audio and video source files, though could operate on any file formats supported by FFmpeg. A job can include any number of transcode tasks; each will perform the operation against the original state of the source file. Currently the only supported destination mode is `AWS/S3`.
 
-A `Format` is required, and is used to explicitly set the output format of the encoding operation; it is not implictly determined by the file extension. The available formats are indicted [in this list](https://johnvansickle.com/ffmpeg/release-readme.txt) with an `E`.
+A `Format` is required, and is used to explicitly set the output format of the encoding operation; it is not implictly determined by the file extension. The available formats are indicted [in this list](https://johnvansickle.com/ffmpeg/release-readme.txt) with an `E`. If you set `Format` to `INHERIT`, the output format will be set to a [heuristically-determined](https://www.npmjs.com/package/file-type) type based on the source file.
 
 The `FFmpeg` property is optional. When included, each of `GlobalOptions`, `InputFileOptions`, and `OutputFileOptions` properties are also optional. The task constructs a call to FFmpeg that looks like `ffmpeg [global opts] [input file opts] -i input [output file opts] -f [format] output`.
 

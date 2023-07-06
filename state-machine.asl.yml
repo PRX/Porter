@@ -414,6 +414,8 @@ States:
                       Value.$: "$.Artifact.BucketName"
                     - Name: STATE_MACHINE_ARTIFACT_OBJECT_KEY
                       Value.$: "$.Artifact.ObjectKey"
+                    - Name: STATE_MACHINE_ARTIFACT_DESCRIPTOR_EXTENSION
+                      Value.$: "$.Artifact.Descriptor.Extension"
                     - Name: STATE_MACHINE_DESTINATION_JSON
                       Value.$: States.JsonToString($.Task.Destination)
                     - Name: STATE_MACHINE_DESTINATION_MODE
