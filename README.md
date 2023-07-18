@@ -1005,7 +1005,10 @@ The following is an example of the bucket policy used for granting Porter access
             "Principal": {
                 "AWS": "arn:aws:iam::123456789012:role/porter-prod-S3DestinationWriterRole-TKTKTKTKTK"
             },
-            "Action": "s3:ListBucketMultipartUploads",
+            "Action": [
+              "s3:ListBucket",
+              "s3:ListBucketMultipartUploads"
+            ],
             "Resource": "arn:aws:s3:::myBucket"
         },
         {

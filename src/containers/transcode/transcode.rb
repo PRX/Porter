@@ -38,6 +38,8 @@ class String
 end
 
 cloudwatch = Aws::CloudWatch::Client.new
+# This S3 client is used for reading the source file and writing artifacts, it
+# doesn't touch the destination
 s3 = Aws::S3::Client.new
 
 start_time = Time.now.to_i
@@ -145,7 +147,22 @@ if destination["Mode"] == "AWS/S3"
     role_session_name: "porter_transcode_task"
   })
 
+  # The Ruby AWS SDK does not intelligently handle cases where the client isn't
+  # explicitly set for the region where the bucket exists. We have to detect
+  # the region using HeadBucket, and then create the client with the returned
+  # region.
+  # TODO This isn't necessary when the bucket and the client are in the same
+  # region. It would be possible to catch the error and do the lookup only when
+  # necessary.
+
+  # Create a client with permission to HeadBucket
   s3_writer = Aws::S3::Client.new(credentials: role)
+  bucket_head = s3_writer.head_bucket({bucket: STATE_MACHINE_DESTINATION_BUCKET_NAME})
+  bucket_region = bucket_head.context.http_response.headers["x-amz-bucket-region"]
+  puts "Destination bucket in region: #{bucket_region}"
+
+  # Create a new client with the permissions and the correct region
+  s3_writer = Aws::S3::Client.new(credentials: role, region: bucket_region)
 
   put_object_params = {}
 
