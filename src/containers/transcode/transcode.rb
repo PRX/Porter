@@ -157,7 +157,7 @@ if destination["Mode"] == "AWS/S3"
 
   # Create a client with permission to HeadBucket
   s3_writer = Aws::S3::Client.new(credentials: role)
-  bucket_head = s3_writer.head_bucket({bucket: STATE_MACHINE_DESTINATION_BUCKET_NAME})
+  bucket_head = s3_writer.head_bucket({bucket: ENV["STATE_MACHINE_DESTINATION_BUCKET_NAME"]})
   bucket_region = bucket_head.context.http_response.headers["x-amz-bucket-region"]
   puts "Destination bucket in region: #{bucket_region}"
 
