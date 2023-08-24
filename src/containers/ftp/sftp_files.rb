@@ -32,7 +32,15 @@ class SftpFiles
     }))
 
     Timeout.timeout(options[:timeout]) do
-      Net::SFTP.start(remote_host, remote_user, password: remote_password, port: remote_port) do |sftp|
+      Net::SFTP.start(
+        remote_host,
+        remote_user,
+        password: remote_password,
+        port: remote_port,
+        non_interactive: true,
+        timeout: options[:timeout],
+        logger: logger
+      ) do |sftp|
         # Given a URL like sftp://alice@example.com/foo/bar/baz.mp3, we have to
         # assume that /foo/bar is intended to be relative to the home directory
         #  of alice. `upload!` treats the `remote` argument as an absolute file
@@ -46,6 +54,10 @@ class SftpFiles
           md5_file = create_md5_digest(local_file.path)
           sftp.upload!(md5_file.path, ".#{remote_path}.md5")
         end
+
+        # send an EOF message for the channel before closing
+        # https://github.com/net-ssh/net-ssh/issues/716
+        sftp.channel.eof!
       end
     end
   end
