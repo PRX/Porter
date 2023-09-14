@@ -94,6 +94,17 @@ function awfData(
     }),
   );
 
+  const data = [];
+
+  levelsData.frames.forEach((frame) => {
+    const min = +frame.tags['lavfi.astats.Overall.Min_level'];
+    const max = +frame.tags['lavfi.astats.Overall.Max_level'];
+
+    const outMin = Math.round(Math.floor(min * scaleFactor) * depthFactor);
+    const outMax = Math.round(Math.floor(max * scaleFactor) * depthFactor);
+
+    data.push(outMin, outMax);
+  });
 
   return {
     version: 2,
@@ -106,15 +117,7 @@ function awfData(
     // For stereo audio, data points = length * 2 * 2
     // (But we only use mono audio, see `channels` above)
     length: levelsData.frames.length,
-    data: levelsData.frames.reduce((acc, cur) => {
-      const min = +cur.tags['lavfi.astats.Overall.Min_level'];
-      const max = +cur.tags['lavfi.astats.Overall.Max_level'];
-
-      const outMin = Math.round(Math.floor(min * scaleFactor) * depthFactor);
-      const outMax = Math.round(Math.floor(max * scaleFactor) * depthFactor);
-
-      return [...acc, outMin, outMax];
-    }, []),
+    data,
   };
 }
 
