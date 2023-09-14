@@ -22,6 +22,7 @@ const os = require('os');
  * @property {string} [codec_long_name]
  * @property {string} [codec_type]
  * @property {string} [sample_rate]
+ * @property {string} [sample_fmt]
  * @property {number} [channels]
  * @property {string} [channel_layout]
  * @property {string} [bit_rate]

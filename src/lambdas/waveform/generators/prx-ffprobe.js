@@ -20,18 +20,34 @@ class MissingAudioStreamError extends Error {
 }
 
 /**
- * As best I can tell, FFprobe returns levels values in one of two forms:
+ * FFprobe uses various scales when returning levels values, including:
  * - Floating point percents, e.g., "-0.398102"
  * - 16 bit signed integers as decimals, e.g., "13045.000000"
+ * - 32 bit signed integers as decimals, e.g., "1210322688.000000"
+ *
  * audiowaveform always uses true integers, and supports 8 and 16 bit.
- * NOTE: Tests have shown that all audio follows one of these two formats,
- * including unsigned files, and files that are neither FP or 16 bit, such as
- * 8 bit audio files.
+ *
+ * In some cases, the sample_fmt of a stream reported by FFprobe will match the
+ * scale used in levels values. For example, a file may report "fltp" or "s32",
+ * and use either the floating point or 32 bit signed scales. Other files will
+ * report a smaple_fmt that does not match. For example, a WAV file reporting
+ * "u8" sample_fmt will return 16 bit signed integer values.
+ *
+ * As best I can tell, fltp files will use percents, 32 bit files will use the
+ * 32 it scale, and everything else will use the 16 bit scale.
  * @param {Number} sampleRate
  * @param {Number} frameSize
+ * @param {Number} outputBitDepth
  * @param {FfprobeLevelsResult} levelsData
+ * @param {String} sampleFormat
  */
-function awfData(sampleRate, frameSize, bitDepth, levelsData) {
+function awfData(
+  sampleRate,
+  frameSize,
+  outputBitDepth,
+  levelsData,
+  sampleFormat,
+) {
   let isFloat = false;
 
   levelsData.frames.forEach((frame) => {
@@ -53,18 +69,38 @@ function awfData(sampleRate, frameSize, bitDepth, levelsData) {
   //
   // e.g., "1.0000" should become 32,767 or 127
   // e.g., "-0.5" should become -16,384 or -64
+  //
+  // The scaleFactor is responsible for converting from the percent to a
+  // signed 16 bit value (e.g., 32,767). Non-percent values are left unchanged.
   const scaleFactor = isFloat ? 65335 / 2 : 1;
 
-  // If the desired data point bit depth is not 16, it won't match the values
-  // from FFprobe and needs to be scaled up or down.
-  const depthFactor = 2 ** bitDepth / 65536;
+  // After applying the scaleFactor, the levels values from FFprobe will be
+  // integers values. They could be 16 bit, 32 bit, etc. The final output
+  // values will be either 8 bit or 16 bit. The depthFactor is used to convert
+  // between these different scales as necessary.
+  //
+  // e.g., -16,384 should become -64 when going from 16 bit input to 8 bit output
+  // e.g., 4,294,967,295 should become 65,535 when going from 32 bit input to 16 bit output
+  const inputBitDepth = sampleFormat === 's32' ? 2 ** 32 : 2 ** 16;
+  const depthFactor = 2 ** outputBitDepth / inputBitDepth;
+
+  console.log(
+    JSON.stringify({
+      msg: 'Conversion details',
+      treatInputAsPercent: isFloat,
+      scaleFactor,
+      depthFactor,
+      sampleFormat,
+    }),
+  );
+
 
   return {
     version: 2,
     channels: 1, // Waveforms are always generated from mixdowns
     sample_rate: sampleRate,
     samples_per_pixel: frameSize, // Pixel means data point
-    bits: bitDepth,
+    bits: outputBitDepth,
     // length is the number of frames, **not** the number of data points.
     // For mono audio, data points = length * 2
     // For stereo audio, data points = length * 2 * 2
@@ -87,9 +123,16 @@ function writeAwfJson(
   frameSize,
   bitDepth,
   levelsData,
+  sampleFormat,
   outputFilePath,
 ) {
-  const payload = awfData(sampleRate, frameSize, bitDepth, levelsData);
+  const payload = awfData(
+    sampleRate,
+    frameSize,
+    bitDepth,
+    levelsData,
+    sampleFormat,
+  );
   fs.writeFileSync(outputFilePath, JSON.stringify(payload));
 }
 
@@ -98,9 +141,16 @@ function writeAwfBinary(
   frameSize,
   bitDepth,
   levelsData,
+  sampleFormat,
   outputFilePath,
 ) {
-  const payload = awfData(sampleRate, frameSize, bitDepth, levelsData);
+  const payload = awfData(
+    sampleRate,
+    frameSize,
+    bitDepth,
+    levelsData,
+    sampleFormat,
+  );
 
   // Should only ever be 1 or 2
   const byteDepth = bitDepth / 8;
@@ -170,6 +220,7 @@ module.exports = {
     const stream = probe.streams.find((s) => s.codec_type === 'audio');
 
     if (stream) {
+      const sampleFormat = stream.sample_fmt;
       const sampleRate = +stream.sample_rate;
 
       // FFprobe generates a data point for each frame of audio. The number of
@@ -181,12 +232,20 @@ module.exports = {
       // Get the raw FFprobe statistics
       const levelsData = await ffprobe.levels(inputFilePath, frameSize);
 
+      console.log(
+        JSON.stringify({
+          msg: 'Finished getting levels data',
+          frames: `${levelsData.frames.length}`,
+        }),
+      );
+
       if (event.Task.DataFormat === 'audiowaveform/JSON') {
         writeAwfJson(
           sampleRate,
           frameSize,
           bitDepth,
           levelsData,
+          sampleFormat,
           outputFilePath,
         );
       } else if (event.Task.DataFormat === 'audiowaveform/Binary') {
@@ -195,6 +254,7 @@ module.exports = {
           frameSize,
           bitDepth,
           levelsData,
+          sampleFormat,
           outputFilePath,
         );
       }
