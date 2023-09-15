@@ -1354,12 +1354,25 @@ Resources:
     Metadata:
       BuildMethod: makefile
     Properties:
+      CompatibleArchitectures: [x86_64]
       ContentUri: lib/ffmpeg
       CompatibleRuntimes:
         - nodejs14.x
         - nodejs16.x
         - nodejs18.x
       Description: FFmpeg binary
+      RetentionPolicy: Delete
+  FfmpegArmLambdaLayer:
+    Type: AWS::Serverless::LayerVersion
+    Metadata:
+      BuildMethod: makefile
+    Properties:
+      CompatibleArchitectures: [arm64]
+      ContentUri: lib/ffmpeg-arm
+      CompatibleRuntimes:
+        - nodejs16.x
+        - nodejs18.x
+      Description: FFmpeg ARM64 binary
       RetentionPolicy: Delete
   SoxLambdaLayer:
     Type: AWS::Serverless::LayerVersion
