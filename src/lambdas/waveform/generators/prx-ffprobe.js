@@ -26,71 +26,73 @@ class MissingAudioStreamError extends Error {
  * - 32 bit signed integers as decimals, e.g., "1210322688.000000"
  *
  * audiowaveform always uses true integers, and supports 8 and 16 bit.
- *
- * In some cases, the sample_fmt of a stream reported by FFprobe will match the
- * scale used in levels values. For example, a file may report "fltp" or "s32",
- * and use either the floating point or 32 bit signed scales. Other files will
- * report a smaple_fmt that does not match. For example, a WAV file reporting
- * "u8" sample_fmt will return 16 bit signed integer values.
- *
- * As best I can tell, fltp files will use percents, 32 bit files will use the
- * 32 it scale, and everything else will use the 16 bit scale.
- * @param {Number} sampleRate
- * @param {Number} frameSize
- * @param {Number} outputBitDepth
+ * @param {Number} audioSampleRate
+ * @param {Number} probeFrameSize
+ * @param {Number} waveformBitDepth
  * @param {FfprobeLevelsResult} levelsData
- * @param {String} sampleFormat
  */
 function awfData(
-  sampleRate,
-  frameSize,
-  outputBitDepth,
+  audioSampleRate,
+  probeFrameSize,
+  waveformBitDepth,
   levelsData,
-  sampleFormat,
 ) {
-  let isFloat = false;
-
-  levelsData.frames.forEach((frame) => {
-    // All values returned from FFprobe are strings that look like numbers, and
-    // they all have decimal points. Coercing them to numbers and checking
-    // isInteger will tell us if they have any actual decimal values.
-    const max = +frame.tags['lavfi.astats.Overall.Max_level'];
-    const min = +frame.tags['lavfi.astats.Overall.Min_level'];
-
-    if (!Number.isInteger(max) || !Number.isInteger(min)) {
-      isFloat = true;
-    }
-  });
-
-  // If the values returned from FFprobe were actually floating point values,
-  // we can assume they are a percent, and they should be converted to signed
-  // integer values, which is the expected output for audiowaveform. They will
-  // be 16 or 8 bits depending on the task definition.
+  // Regardless of the sample format of the audio, the sample format of the
+  // levels value can only be one of a few types. This indicates the scale used
+  // for Max_level and Min_level values returned on levelsData.frames.tags.
   //
-  // e.g., "1.0000" should become 32,767 or 127
-  // e.g., "-0.5" should become -16,384 or -64
-  //
-  // The scaleFactor is responsible for converting from the percent to a
-  // signed 16 bit value (e.g., 32,767). Non-percent values are left unchanged.
-  const scaleFactor = isFloat ? 65335 / 2 : 1;
+  // The expected values for this are: s16, s32, s64, or flt
+  const levelsDataSampleFormat = levelsData.streams[0].sample_fmt;
 
-  // After applying the scaleFactor, the levels values from FFprobe will be
-  // integers values. They could be 16 bit, 32 bit, etc. The final output
-  // values will be either 8 bit or 16 bit. The depthFactor is used to convert
-  // between these different scales as necessary.
+  // The measured levels data sample format and the desired waveform data
+  // format may not match. For example, the levels data may be s16 (-32,768 to
+  // 32,767) while the desired waveform data is s8 (-128 to 127). A conversion
+  // needs to happen to rewrite the levels data to the desired format.
   //
-  // e.g., -16,384 should become -64 when going from 16 bit input to 8 bit output
-  // e.g., 4,294,967,295 should become 65,535 when going from 32 bit input to 16 bit output
-  const inputBitDepth = sampleFormat === 's32' ? 2 ** 32 : 2 ** 16;
-  const depthFactor = 2 ** outputBitDepth / inputBitDepth;
+  // The general process is:
+  // 2 ** desired_waveform_bit_depth / 2 ** levels_data_bit_depth
+  // E.g.,
+  // 2 ** 8 / 2 ** 16
+  //   = 256 / 65536
+  //   = 0.00390625
+  // That factor could then be used to convert, for example, 32,767 to 127:
+  //   floor(32,767 * 0.00390625) = 127
+  //
+  // Additionally, when the levels data sample format is "flt", or floating
+  // point, each value is represented as a fraction from -1 to 1. So rather
+  // than converting between bit depths, the values are multiplied to expand to
+  // the desired scale.
+  // e.g., (2 ** 8 - 1) / 2 = 255 / 2 = 127.5
+  // Then:
+  // floor(1.0 * 127.5) = 127
+  // floor(-1.0 * 127.5) = -128
+  let scaleFactor = 1;
+  switch (levelsDataSampleFormat) {
+    case 's16':
+      scaleFactor = 2 ** waveformBitDepth / 2 ** 16;
+      break;
+    case 's32':
+      scaleFactor = 2 ** waveformBitDepth / 2 ** 32;
+      break;
+    case 's64':
+      scaleFactor = 2 ** waveformBitDepth / 2 ** 64;
+      break;
+    case 'flt':
+      scaleFactor = (2 ** waveformBitDepth - 1) / 2;
+      break;
+    default:
+      console.warn(
+        `==!!== Unknown level data sample format: ${levelsDataSampleFormat}`,
+      );
+      break;
+  }
 
   console.log(
     JSON.stringify({
       msg: 'Conversion details',
-      treatInputAsPercent: isFloat,
       scaleFactor,
-      depthFactor,
-      sampleFormat,
+      levelsDataSampleFormat,
+      waveformBitDepth,
     }),
   );
 
@@ -100,8 +102,8 @@ function awfData(
     const min = +frame.tags['lavfi.astats.Overall.Min_level'];
     const max = +frame.tags['lavfi.astats.Overall.Max_level'];
 
-    const outMin = Math.round(Math.floor(min * scaleFactor) * depthFactor);
-    const outMax = Math.round(Math.floor(max * scaleFactor) * depthFactor);
+    const outMin = Math.floor(min * scaleFactor);
+    const outMax = Math.floor(max * scaleFactor);
 
     data.push(outMin, outMax);
   });
@@ -109,9 +111,9 @@ function awfData(
   return {
     version: 2,
     channels: 1, // Waveforms are always generated from mixdowns
-    sample_rate: sampleRate,
-    samples_per_pixel: frameSize, // Pixel means data point
-    bits: outputBitDepth,
+    sample_rate: audioSampleRate,
+    samples_per_pixel: probeFrameSize, // Pixel means data point
+    bits: waveformBitDepth,
     // length is the number of frames, **not** the number of data points.
     // For mono audio, data points = length * 2
     // For stereo audio, data points = length * 2 * 2
@@ -122,41 +124,37 @@ function awfData(
 }
 
 function writeAwfJson(
-  sampleRate,
-  frameSize,
-  bitDepth,
+  audioSampleRate,
+  probeFrameSize,
+  waveformBitDepth,
   levelsData,
-  sampleFormat,
   outputFilePath,
 ) {
   const payload = awfData(
-    sampleRate,
-    frameSize,
-    bitDepth,
+    audioSampleRate,
+    probeFrameSize,
+    waveformBitDepth,
     levelsData,
-    sampleFormat,
   );
   fs.writeFileSync(outputFilePath, JSON.stringify(payload));
 }
 
 function writeAwfBinary(
-  sampleRate,
-  frameSize,
-  bitDepth,
+  audioSampleRate,
+  probeFrameSize,
+  waveformBitDepth,
   levelsData,
-  sampleFormat,
   outputFilePath,
 ) {
   const payload = awfData(
-    sampleRate,
-    frameSize,
-    bitDepth,
+    audioSampleRate,
+    probeFrameSize,
+    waveformBitDepth,
     levelsData,
-    sampleFormat,
   );
 
   // Should only ever be 1 or 2
-  const byteDepth = bitDepth / 8;
+  const byteDepth = waveformBitDepth / 8;
 
   const headerBytes = 24;
   const dataBytes = payload.data.length * byteDepth;
@@ -166,9 +164,9 @@ function writeAwfBinary(
 
   // Write headers, first 24 bytes
   buf.writeInt32LE(2, 0); // version 2
-  buf.writeUInt32LE(bitDepth === 16 ? 0 : 1, 4); // 0=16bit data points, 1=8bit
-  buf.writeInt32LE(sampleRate, 8); // sample rate
-  buf.writeInt32LE(frameSize, 12); // samples per data point
+  buf.writeUInt32LE(waveformBitDepth === 16 ? 0 : 1, 4); // 0=16bit data points, 1=8bit
+  buf.writeInt32LE(audioSampleRate, 8); // sample rate
+  buf.writeInt32LE(probeFrameSize, 12); // samples per data point
   buf.writeUInt32LE(payload.length, 12); // length, i.e., the number of **frames**, not data points
   buf.writeInt32LE(1, 20); // channels
 
@@ -202,14 +200,16 @@ module.exports = {
     }
 
     // Use the defined points-per-second if it's an integer in the allowed
-    // range.
-    const pointsPerSecond = Number.isInteger(event.Task.WaveformPointFrequency)
+    // range. Otherwise, clamp it to the range, or default to 100.
+    const waveformPointsPerSecond = Number.isInteger(
+      event.Task.WaveformPointFrequency,
+    )
       ? Math.max(1, Math.min(4096, event.Task.WaveformPointFrequency))
       : 100;
 
     // Use the defined bit depth if the value is allowed, otherwise default
     // to 16 bits.
-    const bitDepth = [8, 16].includes(event.Task.WaveformPointBitDepth)
+    const waveformBitDepth = [8, 16].includes(event.Task.WaveformPointBitDepth)
       ? event.Task.WaveformPointBitDepth
       : 16;
 
@@ -220,20 +220,21 @@ module.exports = {
     // files, this will be the only audio in the file. If the source file is
     // something like a complex video file, there may be multiple audio
     // streams, and we always use the first.
-    const stream = probe.streams.find((s) => s.codec_type === 'audio');
+    const audioStream = probe.streams.find((s) => s.codec_type === 'audio');
 
-    if (stream) {
-      const sampleFormat = stream.sample_fmt;
-      const sampleRate = +stream.sample_rate;
+    if (audioStream) {
+      const audioSampleRate = +audioStream.sample_rate;
 
       // FFprobe generates a data point for each frame of audio. The number of
       // samples per frame (aka frame size) is calculated from the sample rate
       // (i.e., the number of samples per second) and the desired number of
       // data points per second.
-      const frameSize = Math.floor(sampleRate / pointsPerSecond);
+      const probeFrameSize = Math.floor(
+        audioSampleRate / waveformPointsPerSecond,
+      );
 
       // Get the raw FFprobe statistics
-      const levelsData = await ffprobe.levels(inputFilePath, frameSize);
+      const levelsData = await ffprobe.levels(inputFilePath, probeFrameSize);
 
       console.log(
         JSON.stringify({
@@ -244,20 +245,18 @@ module.exports = {
 
       if (event.Task.DataFormat === 'audiowaveform/JSON') {
         writeAwfJson(
-          sampleRate,
-          frameSize,
-          bitDepth,
+          audioSampleRate,
+          probeFrameSize,
+          waveformBitDepth,
           levelsData,
-          sampleFormat,
           outputFilePath,
         );
       } else if (event.Task.DataFormat === 'audiowaveform/Binary') {
         writeAwfBinary(
-          sampleRate,
-          frameSize,
-          bitDepth,
+          audioSampleRate,
+          probeFrameSize,
+          waveformBitDepth,
           levelsData,
-          sampleFormat,
           outputFilePath,
         );
       }

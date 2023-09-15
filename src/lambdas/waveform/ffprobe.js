@@ -22,7 +22,6 @@ const os = require('os');
  * @property {string} [codec_long_name]
  * @property {string} [codec_type]
  * @property {string} [sample_rate]
- * @property {string} [sample_fmt]
  * @property {number} [channels]
  * @property {string} [channel_layout]
  * @property {string} [bit_rate]
@@ -51,8 +50,14 @@ const os = require('os');
  */
 
 /**
+ * @typedef {object} FfprobeLevelsResultStream
+ * @property {"s16"|"s32"|"s64"|"flt"} sample_fmt
+ */
+
+/**
  * @typedef {object} FfprobeLevelsResult
  * @property {FfprobeLevelsResultFrame[]} [frames]
+ * @property {FfprobeLevelsResultStream[]} [streams]
  */
 
 module.exports = {
@@ -150,7 +155,7 @@ module.exports = {
           // those values would be 4800 and 960, respectively.
           `amovie=${filePath},asetnsamples=n=${frameSize},astats=metadata=1:reset=1`,
           '-show_entries',
-          'frame_tags=lavfi.astats.Overall.Max_level,lavfi.astats.Overall.Min_level',
+          'stream=sample_fmt:frame_tags=lavfi.astats.Overall.Max_level,lavfi.astats.Overall.Min_level',
           '-of',
           'json',
         ],
