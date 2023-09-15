@@ -1,5 +1,6 @@
 const childProcess = require('child_process');
 const os = require('os');
+const fs = require('fs');
 
 /**
  * @typedef {object} FfprobeFormat
@@ -124,6 +125,8 @@ module.exports = {
     return new Promise((resolve, reject) => {
       const start = process.hrtime();
 
+      const levelsDataFileTmpPath = `${filePath}.levels.json`;
+
       // This should normally output only JSON data
       const childProc = childProcess.spawn(
         '/opt/bin/ffprobe',
@@ -156,17 +159,18 @@ module.exports = {
           `amovie=${filePath},asetnsamples=n=${frameSize},astats=metadata=1:reset=1`,
           '-show_entries',
           'stream=sample_fmt:frame_tags=lavfi.astats.Overall.Max_level,lavfi.astats.Overall.Min_level',
-          '-of',
+          '-print_format',
           'json',
+          '-o',
+          levelsDataFileTmpPath,
         ],
         {
           env: process.env,
           cwd: os.tmpdir(),
         },
       );
-      const resultBuffers = [];
 
-      childProc.stdout.on('data', (buffer) => resultBuffers.push(buffer));
+      childProc.stdout.on('data', (buffer) => console.info(buffer.toString()));
       childProc.stderr.on('data', (buffer) => console.error(buffer.toString()));
 
       childProc.on('exit', (code, signal) => {
@@ -182,9 +186,9 @@ module.exports = {
           reject(new Error(`ffprobe failed with ${code || signal}`));
         } else {
           try {
-            const data = JSON.parse(
-              Buffer.concat(resultBuffers).toString().trim(),
-            );
+            const json = fs.readFileSync(levelsDataFileTmpPath);
+
+            const data = JSON.parse(json);
             resolve(data);
           } catch (error) {
             reject(error);
