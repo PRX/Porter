@@ -52,7 +52,7 @@ const fs = require('fs');
 
 /**
  * @typedef {object} FfprobeLevelsResultStream
- * @property {"s16"|"s32"|"s64"|"flt"} sample_fmt
+ * @property {"s16"|"s32"|"s64"|"flt"|"fltp"|"dbl"|"dblp"} sample_fmt
  */
 
 /**
@@ -188,7 +188,7 @@ module.exports = {
           try {
             const json = fs.readFileSync(levelsDataFileTmpPath);
 
-            const data = JSON.parse(json);
+            const data = JSON.parse(json.toString());
             resolve(data);
           } catch (error) {
             reject(error);
