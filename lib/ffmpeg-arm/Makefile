@@ -1,4 +1,4 @@
-build-FfmpegLambdaLayer:
+build-FfmpegArmLambdaLayer:
 	curl https://johnvansickle.com/ffmpeg/builds/ffmpeg-git-arm64-static.tar.xz --output "$(ARTIFACTS_DIR)/ffmpeg-git-arm64-static.tar.xz"
 	tar xf "$(ARTIFACTS_DIR)/ffmpeg-git-arm64-static.tar.xz" -C "$(ARTIFACTS_DIR)"
 	rm "$(ARTIFACTS_DIR)/ffmpeg-git-arm64-static.tar.xz"
