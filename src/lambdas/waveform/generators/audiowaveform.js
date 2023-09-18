@@ -10,40 +10,15 @@ class InvalidDataFormatError extends Error {
   }
 }
 
-class InvalidMediaFormatError extends Error {
-  constructor(...params) {
-    super(...params);
-    this.name = 'InvalidMediaFormatError';
-  }
-}
-
 module.exports = {
   async v1(event, inputFilePath, outputFilePath) {
     return new Promise((resolve, reject) => {
       // Use the heuristically-determined file extension of the input file as
-      // the input format by default
-      let mediaFormat = event.Artifact.Descriptor.Extension;
-
-      // Only certain extensions for some valid formats are compatible with
-      // audiowaveform. Remap known incompatible values to their compatible
-      // equivalents.
-      if (mediaFormat === 'oga') {
-        mediaFormat = 'ogg';
-      }
-
-      // If the task explicity sets a media format, use that instead
-      if (event.Task.MediaFormat) {
-        mediaFormat = event.Task.MediaFormat;
-      }
-
-      // Throw an error if the final media format is not supported
-      if (!['wav', 'mp3', 'flac', 'ogg', 'opus'].includes(mediaFormat)) {
-        reject(
-          new InvalidMediaFormatError(
-            `Unexpected media format: ${mediaFormat}`,
-          ),
-        );
-      }
+      // the input format by default. This is only used for MP3 and WAV files
+      // that are handled directly by audiowaveform. All other files are
+      // pre-processed through FFmpeg, which detects the media format
+      // automatically.
+      const mediaFormat = event.Artifact.Descriptor.Extension;
 
       // Ensure that the chosen output format is supported
       if (!['Binary', 'JSON'].includes(event.Task.DataFormat)) {
@@ -67,7 +42,7 @@ module.exports = {
         : 16;
 
       // Use the defined points-per-second if it's an integer in the allowed
-      // range.
+      // range. Otherwise, clamp it to the range, or default to 100.
       const pointsPerSecond = Number.isInteger(
         event.Task.WaveformPointFrequency,
       )
@@ -77,20 +52,51 @@ module.exports = {
       const start = process.hrtime();
 
       // Set the program parameters
-      const args = [
-        '--input-filename',
-        inputFilePath,
-        '--input-format',
-        mediaFormat,
-        '--output-filename',
-        outputFilePath,
-        '--output-format',
-        outputFormat,
-        '--bits',
-        `${bitDepth}`,
-        '--pixels-per-second',
-        `${pointsPerSecond}`,
-      ];
+      // Because we are piping FFmpeg output to audiowaveform, and spawn
+      // doesn't really support that so good, w're using this work around where
+      // spawn runs `sh` and the entire command is sent as a single argument.
+      //
+      // This runs some audio files through FFmpeg to be converted to WAV before
+      // being sent to audiowaveform to generate the waveform data points. This
+      // allows for handling vastly more audio encodings than audiowaveform
+      // supports natively.
+      let cmd;
+      if (['wav', 'mp3'].includes(mediaFormat)) {
+        // WAV and MP3 are natively supported by audiowaveform, so they don't
+        // run through FFmpeg
+        cmd = [
+          '/opt/bin/audiowaveform',
+          `--input-filename ${inputFilePath}`,
+          `--input-format ${mediaFormat}`,
+          `--output-filename ${outputFilePath}`,
+          `--output-format ${outputFormat}`,
+          `--bits ${bitDepth}`,
+          `--pixels-per-second ${pointsPerSecond}`,
+        ].join(' ');
+      } else {
+        // All other formats are *not* supported by audiowaveform, so they are
+        // transcoded first by FFmpeg with the result being piped to
+        // audiowaveform.
+        cmd = [
+          '/opt/bin/ffmpeg',
+          // Input from file
+          `-i ${inputFilePath}`,
+          // Output to stdout; always transcode to WAV
+          '-f wav -',
+          '|',
+          '/opt/bin/audiowaveform',
+          // Input from stdin
+          '--input-filename -',
+          // Audio coming from FFmpeg is always WAV
+          `--input-format wav`,
+          `--output-filename ${outputFilePath}`,
+          `--output-format ${outputFormat}`,
+          `--bits ${bitDepth}`,
+          `--pixels-per-second ${pointsPerSecond}`,
+        ].join(' ');
+      }
+
+      const args = ['-c', cmd];
       console.log(
         JSON.stringify({
           msg: 'audiowaveform arguments',
@@ -99,7 +105,7 @@ module.exports = {
       );
 
       // Run the program
-      const childProc = childProcess.spawn('/opt/bin/audiowaveform', args, {
+      const childProc = childProcess.spawn('sh', args, {
         env: process.env,
         cwd: os.tmpdir(),
       });
