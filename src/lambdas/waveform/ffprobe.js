@@ -133,6 +133,9 @@ module.exports = {
 
       const levelsDataFileTmpPath = `${filePath}.levels.json`;
 
+      console.log(audioSampleRate);
+      console.log(waveformPointsPerSecond);
+
       // This should normally output only JSON data
       const childProc = childProcess.spawn(
         '/opt/bin/ffprobe',
