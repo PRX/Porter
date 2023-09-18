@@ -1362,18 +1362,6 @@ Resources:
         - nodejs18.x
       Description: FFmpeg binary
       RetentionPolicy: Delete
-  FfmpegArmLambdaLayer:
-    Type: AWS::Serverless::LayerVersion
-    Metadata:
-      BuildMethod: makefile
-    Properties:
-      CompatibleArchitectures: [arm64]
-      ContentUri: lib/ffmpeg-arm
-      CompatibleRuntimes:
-        - nodejs16.x
-        - nodejs18.x
-      Description: FFmpeg ARM64 binary
-      RetentionPolicy: Delete
   SoxLambdaLayer:
     Type: AWS::Serverless::LayerVersion
     Metadata:
@@ -2049,7 +2037,7 @@ Resources:
   WaveformLambdaFunction:
     Type: AWS::Serverless::Function
     Properties:
-      Architectures: [arm64]
+      Architectures: [x86_64]
       CodeUri: src/lambdas/waveform/
       Description: >-
         Generate waveform data from audio files
@@ -2058,8 +2046,8 @@ Resources:
           S3_DESTINATION_WRITER_ROLE: !GetAtt S3DestinationWriterRole.Arn
       Handler: index.handler
       Layers:
-        # - !Ref AudiowaveformLambdaLayer
-        - !Ref FfmpegArmLambdaLayer
+        - !Ref AudiowaveformLambdaLayer
+        - !Ref FfmpegLambdaLayer
       MemorySize: 3008
       Role: !GetAtt WaveformLambdaIamRole.Arn
       Runtime: nodejs16.x
