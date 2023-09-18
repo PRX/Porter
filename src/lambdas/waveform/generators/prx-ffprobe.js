@@ -27,13 +27,13 @@ class MissingAudioStreamError extends Error {
  *
  * audiowaveform always uses true integers, and supports 8 and 16 bit.
  * @param {Number} audioSampleRate
- * @param {Number} probeFrameSize
+ * @param {Number} samplesPerWaveformPoint
  * @param {Number} waveformBitDepth
  * @param {FfprobeLevelsResult} levelsData
  */
 function awfData(
   audioSampleRate,
-  probeFrameSize,
+  samplesPerWaveformPoint,
   waveformBitDepth,
   levelsData,
 ) {
@@ -121,7 +121,7 @@ function awfData(
     version: 2,
     channels: 1, // Waveforms are always generated from mixdowns
     sample_rate: audioSampleRate,
-    samples_per_pixel: probeFrameSize, // Pixel means data point
+    samples_per_pixel: samplesPerWaveformPoint, // Pixel means data point
     bits: waveformBitDepth,
     // length is the number of frames, **not** the number of data points.
     // For mono audio, data points = length * 2
@@ -134,14 +134,14 @@ function awfData(
 
 function writeAwfJson(
   audioSampleRate,
-  probeFrameSize,
+  samplesPerWaveformPoint,
   waveformBitDepth,
   levelsData,
   outputFilePath,
 ) {
   const payload = awfData(
     audioSampleRate,
-    probeFrameSize,
+    samplesPerWaveformPoint,
     waveformBitDepth,
     levelsData,
   );
@@ -150,14 +150,14 @@ function writeAwfJson(
 
 function writeAwfBinary(
   audioSampleRate,
-  probeFrameSize,
+  samplesPerWaveformPoint,
   waveformBitDepth,
   levelsData,
   outputFilePath,
 ) {
   const payload = awfData(
     audioSampleRate,
-    probeFrameSize,
+    samplesPerWaveformPoint,
     waveformBitDepth,
     levelsData,
   );
@@ -175,7 +175,7 @@ function writeAwfBinary(
   buf.writeInt32LE(2, 0); // version 2
   buf.writeUInt32LE(waveformBitDepth === 16 ? 0 : 1, 4); // 0=16bit data points, 1=8bit
   buf.writeInt32LE(audioSampleRate, 8); // sample rate
-  buf.writeInt32LE(probeFrameSize, 12); // samples per data point
+  buf.writeInt32LE(samplesPerWaveformPoint, 12); // samples per data point
   buf.writeUInt32LE(payload.length, 12); // length, i.e., the number of **frames**, not data points
   buf.writeInt32LE(1, 20); // channels
 
@@ -234,11 +234,10 @@ module.exports = {
     if (audioStream) {
       const audioSampleRate = +audioStream.sample_rate;
 
-      // FFprobe generates a data point for each frame of audio. The number of
-      // samples per frame (aka frame size) is calculated from the sample rate
-      // (i.e., the number of samples per second) and the desired number of
-      // data points per second.
-      const probeFrameSize = Math.floor(
+      // The final output includes a "samples_per_pixel" values, which will
+      // always be the audio sample rate divided by the point frequency defined
+      // on the task
+      const samplesPerWaveformPoint = Math.floor(
         audioSampleRate / waveformPointsPerSecond,
       );
 
@@ -255,7 +254,7 @@ module.exports = {
       if (event.Task.DataFormat === 'audiowaveform/JSON') {
         writeAwfJson(
           audioSampleRate,
-          probeFrameSize,
+          samplesPerWaveformPoint,
           waveformBitDepth,
           levelsData,
           outputFilePath,
@@ -263,7 +262,7 @@ module.exports = {
       } else if (event.Task.DataFormat === 'audiowaveform/Binary') {
         writeAwfBinary(
           audioSampleRate,
-          probeFrameSize,
+          samplesPerWaveformPoint,
           waveformBitDepth,
           levelsData,
           outputFilePath,
