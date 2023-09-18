@@ -242,7 +242,11 @@ module.exports = {
       );
 
       // Get the raw FFprobe statistics
-      const levelsData = await ffprobe.levels(inputFilePath, probeFrameSize);
+      const levelsData = await ffprobe.levels(
+        inputFilePath,
+        audioSampleRate,
+        waveformPointsPerSecond,
+      );
 
       console.log(
         JSON.stringify({

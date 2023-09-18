@@ -119,9 +119,15 @@ module.exports = {
   },
   /**
    * @param {string} filePath
+   * @param {number} audioSampleRate
+   * @param {number} waveformPointsPerSecond
    * @returns {Promise<FfprobeLevelsResult>}
    */
-  levels: async function levels(filePath, frameSize) {
+  levels: async function levels(
+    filePath,
+    audioSampleRate,
+    waveformPointsPerSecond,
+  ) {
     return new Promise((resolve, reject) => {
       const start = process.hrtime();
 
@@ -156,7 +162,7 @@ module.exports = {
           // is 10 data points per second, n would need to be 4410; for 50 data
           // points per second, n would need to be 882. For a 48000 Hz file,
           // those values would be 4800 and 960, respectively.
-          `amovie=${filePath},asetnsamples=n=${frameSize},astats=metadata=1:reset=1`,
+          `amovie=${filePath},aresample=22050,asetnsamples=n=1575,astats=metadata=1:reset=1`,
           '-show_entries',
           'stream=sample_fmt:frame_tags=lavfi.astats.Overall.Max_level,lavfi.astats.Overall.Min_level',
           '-print_format',
