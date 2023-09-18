@@ -80,6 +80,15 @@ function awfData(
     case 'flt':
       scaleFactor = (2 ** waveformBitDepth - 1) / 2;
       break;
+    case 'fltp':
+      scaleFactor = (2 ** waveformBitDepth - 1) / 2;
+      break;
+    case 'dbl':
+      scaleFactor = (2 ** waveformBitDepth - 1) / 2;
+      break;
+    case 'dblp':
+      scaleFactor = (2 ** waveformBitDepth - 1) / 2;
+      break;
     default:
       console.warn(
         `==!!== Unknown level data sample format: ${levelsDataSampleFormat}`,
