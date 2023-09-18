@@ -4,7 +4,6 @@ const os = require('os');
 const fs = require('fs');
 const s3util = require('./s3-util');
 const audiowaveform = require('./generators/audiowaveform');
-const prx = require('./generators/prx-ffprobe');
 
 class UnknownDestinationModeError extends Error {
   constructor(...params) {
@@ -48,8 +47,6 @@ exports.handler = async (event, context) => {
   // file at the expected path.
   if (event.Task.Generator === 'BBC/audiowaveform/v1.x') {
     await audiowaveform.v1(event, artifactFileTmpPath, waveformFileTmpPath);
-  } else if (event.Task.Generator === 'PRX/FFprobe') {
-    await prx.ffprobe(event, artifactFileTmpPath, waveformFileTmpPath);
   } else {
     throw new UnknownGeneratorError(
       `Unexpected generator: ${event.Task.Generator}`,
