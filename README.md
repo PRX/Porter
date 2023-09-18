@@ -950,9 +950,7 @@ Output:
 
 `Waveform` tasks generate waveform data from audio files. The `Generator` property determines which program is used to generate the waveform data. Currently the only supported destination mode is `AWS/S3`.
 
-When [`BBC/audiowaveform/v1.x`](https://github.com/bbc/audiowaveform) is used, the `DataFormat` is required, and must be either `Binary` or `JSON`, which determines the format of the output file containing the waveform data. By default, the `MediaFormat` is set based on the [heuristically-determined](https://www.npmjs.com/package/file-type) file type extension of the source file, which may not match the source file's actual extension. For example, an Ogg source file with a `.oga` extension may have a default `MediaFormat` of `ogg`. If necessary, you can override this to a different valid format by setting the optional `MediaFormat` property of the Task. Valid formats are: `wav`, `mp3`, and `ogg`. The optional `WaveformPointBitDepth` property specifies the number of bits used for each output waveform data point; it can be `8` or `16`, and defaults to `16`. The optional `WaveformPointFrequency` property specifies the number of output waveform data points to generate for each second of audio input, and defaults to `100` (maximum of `4096`, must be an integer). (Note: The `zoom` property of audiowaveform is not currently supported.) Multi-channel audio files generate a single combined waveform.
-
-When `PRX/FFprobe` is used, the `DataFormat` is required and must be either `audiowaveform/Binary` or `audiowaveform/JSON`. These formats are intended to match the output of `audiowaveform` in structure. The data is generated using [FFprobe](https://ffmpeg.org/ffprobe.html), and the values may not match `audiowaveform` exactly. The optional `WaveformPointBitDepth` property specifies the number of bits used for each output waveform data point; it can be `8` or `16`, and defaults to `16`. The optional `WaveformPointFrequency` property specifies the number of output waveform data points to generate for each second of audio input, and defaults to `100` (maximum of `4096`, must be an integer). The supported formats are indicted [in this list](https://johnvansickle.com/ffmpeg/release-readme.txt) with an `D`.
+When [`BBC/audiowaveform/v1.x`](https://github.com/bbc/audiowaveform) is used, the `DataFormat` is required, and must be either `Binary` or `JSON`, which determines the format of the output file containing the waveform data. The optional `WaveformPointBitDepth` property specifies the number of bits used for each output waveform data point; it can be `8` or `16`, and defaults to `16`. The optional `WaveformPointFrequency` property specifies the number of output waveform data points to generate for each second of audio input, and defaults to `100` (maximum of `4096`, must be an integer). (Note: The `zoom` property of audiowaveform is not currently supported.) Multi-channel audio files generate a single combined waveform. MP3 and WAV files are analyzed directly by audiowaveform. All other formats are transcoded to WAV using FFmpeg before being analyzed by audiowaveform. The supported formats are indicted [in this list](https://johnvansickle.com/ffmpeg/release-readme.txt) with an `D`.
 
 #### AWS/S3
 
@@ -966,7 +964,6 @@ Input:
 {
     "Type": "Waveform",
     "Generator": "BBC/audiowaveform/v1.x",
-    "MediaFormat": "flac",
     "DataFormat": "JSON",
     "Destination": {
         "Mode": "AWS/S3",
