@@ -1586,6 +1586,8 @@ Resources:
       CodeUri: src/lambdas/inspect/
       Description: >-
         Inspects (ffprobe, etc) the source file
+      EphemeralStorage:
+        Size: 4096
       Handler: index.handler
       Layers:
         - !Ref FfmpegLambdaLayer
@@ -1869,6 +1871,8 @@ Resources:
       CodeUri: src/lambdas/wav-wrap/
       Description: >-
         WAV wrap a source audio file
+      EphemeralStorage:
+        Size: 4096
       Environment:
         Variables:
           S3_DESTINATION_WRITER_ROLE: !GetAtt S3DestinationWriterRole.Arn
@@ -1925,8 +1929,8 @@ Resources:
       CodeUri: src/lambdas/detect-silence/
       Description: >-
         Detect silence timings in an audio file
-      # EphemeralStorage:
-      #   Size: 2048
+      EphemeralStorage:
+        Size: 4096
       Environment:
         Variables:
           S3_DESTINATION_WRITER_ROLE: !GetAtt S3DestinationWriterRole.Arn
@@ -1983,8 +1987,8 @@ Resources:
       CodeUri: src/lambdas/detect-tone/
       Description: >-
         Detect tone timings in an audio file
-      # EphemeralStorage:
-      #   Size: 2048
+      EphemeralStorage:
+        Size: 4096
       Environment:
         Variables:
           S3_DESTINATION_WRITER_ROLE: !GetAtt S3DestinationWriterRole.Arn
