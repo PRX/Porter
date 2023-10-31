@@ -10,11 +10,11 @@
 // represents the execution IDs of the jobs that serialized other jobs prior to
 // this one.
 
-const AWS = require('aws-sdk');
+import { SNS, PublishCommand } from '@aws-sdk/client-sns';
 
-const sns = new AWS.SNS({ apiVersion: '2010-03-31' });
+const sns = new SNS({ region: process.env.AWS_REGION });
 
-exports.handler = async (event) => {
+export const handler = async (event) => {
   console.log(JSON.stringify({ msg: 'State input', input: event }));
 
   event.SerializedJob.ExecutionTrace = [
@@ -26,10 +26,10 @@ exports.handler = async (event) => {
     JSON.stringify({ msg: 'Serialized Job', input: event.SerializedJob }),
   );
 
-  await sns
-    .publish({
+  await sns.send(
+    new PublishCommand({
       TopicArn: process.env.JOB_EXECUTION_SNS_TOPIC_ARN,
       Message: JSON.stringify(event.SerializedJob),
-    })
-    .promise();
+    }),
+  );
 };

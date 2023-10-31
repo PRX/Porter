@@ -2283,6 +2283,8 @@ Resources:
         Variables:
           JOB_EXECUTION_SNS_TOPIC_ARN: !Ref JobExecutionSnsTopic
       Handler: index.handler
+      Layers:
+        - !Ref AwsSdkJsV3LambdaLayer
       MemorySize: 128
       Policies:
         - Statement:
@@ -2290,7 +2292,7 @@ Resources:
               Effect: Allow
               Resource: !Ref JobExecutionSnsTopic
           Version: "2012-10-17"
-      Runtime: nodejs16.x
+      Runtime: nodejs18.x
       Tags:
         prx:meta:tagging-version: "2021-04-07"
         prx:cloudformation:stack-name: !Ref AWS::StackName

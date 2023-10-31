@@ -3,4 +3,5 @@ build-AwsSdkJsV3LambdaLayer:
 	yarn add @aws-sdk/util-retry
 	yarn add @aws-sdk/middleware-retry
 	yarn add @aws-sdk/client-cloudwatch
+	yarn add @aws-sdk/client-sns
 	yarn install --modules-folder "$(ARTIFACTS_DIR)/nodejs/node_modules"
