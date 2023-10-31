@@ -1,8 +1,12 @@
 {
   "extends": ["airbnb-base", "prettier"],
   "plugins": ["prettier", "jest"],
+  "env": {
+    "node": true,
+    "es2022": true
+  },
   "parserOptions": {
-    "ecmaVersion": 2020
+    "ecmaVersion": 2022
   },
   "rules": {
     "prettier/prettier": ["error"],
@@ -19,6 +23,12 @@
             "packageDir": "./"
           }
         ]
+      }
+    },
+    {
+      "files": ["**/*.mjs"],
+      "parserOptions": {
+        "sourceType": "module"
       }
     },
     {
