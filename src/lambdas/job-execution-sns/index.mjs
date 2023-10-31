@@ -2,11 +2,11 @@
 // machine. It passes the SNS message directly to the state machine as
 // the execution input.
 
-const AWS = require('aws-sdk');
+import { SFN, StartExecutionCommand } from '@aws-sdk/client-sfn';
 
-const stepfunctions = new AWS.StepFunctions({ apiVersion: '2016-11-23' });
+const sfn = new SFN();
 
-exports.handler = async (event) => {
+export const handler = async (event) => {
   console.log(
     JSON.stringify({
       msg: 'Starting execution',
@@ -14,10 +14,10 @@ exports.handler = async (event) => {
     }),
   );
 
-  await stepfunctions
-    .startExecution({
+  await sfn.send(
+    new StartExecutionCommand({
       stateMachineArn: process.env.STATE_MACHINE_ARN,
       input: event.Records[0].Sns.Message,
-    })
-    .promise();
+    }),
+  );
 };
