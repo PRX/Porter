@@ -1,9 +1,9 @@
 // Returns a value that should be identical to the JobResults message
 // that is sent with job callbacks.
 
-const Telemetry = require('./telemetry');
+import sendTelemetry from './telemetry.mjs';
 
-exports.handler = async (event) => {
+export const handler = async (event) => {
   console.log(JSON.stringify({ msg: 'State input', event }));
 
   const now = new Date();
@@ -15,7 +15,7 @@ exports.handler = async (event) => {
 
   console.log(JSON.stringify({ msg: 'Normalized output', body: msg }));
 
-  await Telemetry.send(event);
+  await sendTelemetry(event);
 
   return msg;
 };
