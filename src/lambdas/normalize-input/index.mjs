@@ -13,7 +13,7 @@
 //
 // The result path and output path MUST both be "$".
 
-const Telemetry = require('./telemetry');
+import sendTelemetry from './telemetry.mjs';
 
 class MissingTaskTypeError extends Error {
   constructor(...params) {
@@ -22,17 +22,14 @@ class MissingTaskTypeError extends Error {
   }
 }
 
-exports.handler = async (event) => {
+export const handler = async (event) => {
   // This is the raw Step Functions execution input
   const { Input } = event;
 
   console.log(JSON.stringify({ msg: 'Unmodified input', event }));
 
   // Set Job.Tasks to an empty array, unless it's already an array.
-  if (
-    !Object.prototype.hasOwnProperty.call(Input.Job, 'Tasks') ||
-    !Array.isArray(Input.Job.Tasks)
-  ) {
+  if (!Object.hasOwn(Input.Job, 'Tasks') || !Array.isArray(Input.Job.Tasks)) {
     Input.Job.Tasks = [];
   }
 
@@ -42,7 +39,7 @@ exports.handler = async (event) => {
     // and fails without the error being caught if it's missing. This forces
     // the execution to error out in a way that can be caught and handled as
     // expected. (Choice states don't support Catch)
-    if (!Object.prototype.hasOwnProperty.call(task, 'Type')) {
+    if (!Object.hasOwn(task, 'Type')) {
       throw new MissingTaskTypeError('Job included a task without a Type');
     }
 
@@ -50,27 +47,23 @@ exports.handler = async (event) => {
       return;
     }
 
-    if (!Object.prototype.hasOwnProperty.call(task, 'FFmpeg')) {
+    if (!Object.hasOwn(task, 'FFmpeg')) {
       task.FFmpeg = {};
     }
-    if (!Object.prototype.hasOwnProperty.call(task.FFmpeg, 'GlobalOptions')) {
+    if (!Object.hasOwn(task.FFmpeg, 'GlobalOptions')) {
       task.FFmpeg.GlobalOptions = '';
     }
-    if (
-      !Object.prototype.hasOwnProperty.call(task.FFmpeg, 'InputFileOptions')
-    ) {
+    if (!Object.hasOwn(task.FFmpeg, 'InputFileOptions')) {
       task.FFmpeg.InputFileOptions = '';
     }
-    if (
-      !Object.prototype.hasOwnProperty.call(task.FFmpeg, 'OutputFileOptions')
-    ) {
+    if (!Object.hasOwn(task.FFmpeg, 'OutputFileOptions')) {
       task.FFmpeg.OutputFileOptions = '';
     }
   });
 
   // Set Job.Callbacks to an empty array, unless it's already an array.
   if (
-    !Object.prototype.hasOwnProperty.call(Input.Job, 'Callbacks') ||
+    !Object.hasOwn(Input.Job, 'Callbacks') ||
     !Array.isArray(Input.Job.Callbacks)
   ) {
     Input.Job.Callbacks = [];
@@ -78,7 +71,7 @@ exports.handler = async (event) => {
 
   // Set Job.SerializedJobs to an empty array, unless it's already an array.
   if (
-    !Object.prototype.hasOwnProperty.call(Input.Job, 'SerializedJobs') ||
+    !Object.hasOwn(Input.Job, 'SerializedJobs') ||
     !Array.isArray(Input.Job.SerializedJobs)
   ) {
     Input.Job.SerializedJobs = [];
@@ -86,7 +79,7 @@ exports.handler = async (event) => {
 
   // Set Job.ExecutionTrace to an empty array, unless it's already an array.
   if (
-    !Object.prototype.hasOwnProperty.call(Input.Job, 'ExecutionTrace') ||
+    !Object.hasOwn(Input.Job, 'ExecutionTrace') ||
     !Array.isArray(Input.Job.ExecutionTrace)
   ) {
     Input.Job.ExecutionTrace = [];
@@ -99,7 +92,7 @@ exports.handler = async (event) => {
   // we pre-create them now to be safe.
   Input.State = 'DONE';
 
-  await Telemetry.send(event);
+  await sendTelemetry(event);
 
   return Input;
 };
