@@ -1,14 +1,20 @@
-const querystring = require('querystring');
+import * as querystring from 'node:querystring';
 
-const AWS = require('aws-sdk');
-const http = require('http');
-const https = require('https');
+import * as http from 'node:http';
+import * as https from 'node:https';
 
-const sns = new AWS.SNS({ apiVersion: '2010-03-31' });
-const sqs = new AWS.SQS({ apiVersion: '2012-11-05' });
-const sts = new AWS.STS({ apiVersion: '2011-06-15' });
-const cloudwatch = new AWS.CloudWatch({ apiVersion: '2010-08-01' });
-const eventbridge = new AWS.EventBridge({ apiVersion: '2015-10-07' });
+import { S3, PutObjectCommand } from '@aws-sdk/client-s3';
+import { SNS, PublishCommand } from '@aws-sdk/client-sns';
+import { SQS, SendMessageCommand } from '@aws-sdk/client-sqs';
+import { STS, AssumeRoleCommand } from '@aws-sdk/client-sts';
+import { CloudWatch, PutMetricDataCommand } from '@aws-sdk/client-cloudwatch';
+import { EventBridge, PutEventsCommand } from '@aws-sdk/client-eventbridge';
+
+const sns = new SNS();
+const sqs = new SQS();
+const sts = new STS();
+const cloudwatch = new CloudWatch();
+const eventbridge = new EventBridge();
 
 function httpRequest(event, message, redirectCount, redirectUrl) {
   return new Promise((resolve, reject) => {
@@ -108,27 +114,28 @@ async function s3Put(event, message) {
     key = `/unknown_${+new Date()}.json`;
   }
 
-  const role = await sts
-    .assumeRole({
+  const role = await sts.send(
+    new AssumeRoleCommand({
       RoleArn: process.env.S3_DESTINATION_WRITER_ROLE,
       RoleSessionName: 'porter_s3_callback',
-    })
-    .promise();
+    }),
+  );
 
-  const s3 = new AWS.S3({
-    apiVersion: '2006-03-01',
-    accessKeyId: role.Credentials.AccessKeyId,
-    secretAccessKey: role.Credentials.SecretAccessKey,
-    sessionToken: role.Credentials.SessionToken,
+  const s3 = new S3({
+    credentials: {
+      accessKeyId: role.Credentials.AccessKeyId,
+      secretAccessKey: role.Credentials.SecretAccessKey,
+      sessionToken: role.Credentials.SessionToken,
+    },
   });
 
-  await s3
-    .putObject({
+  await s3.send(
+    new PutObjectCommand({
       Bucket: event.Callback.BucketName,
       Key: [event.Callback.ObjectPrefix, id, key].join(''),
       Body: JSON.stringify(message),
-    })
-    .promise();
+    }),
+  );
 }
 
 async function eventBridgePutEvent(event, message, now) {
@@ -143,8 +150,8 @@ async function eventBridgePutEvent(event, message, now) {
     DetailType = 'Porter Job Result Callback';
   }
 
-  await eventbridge
-    .putEvents({
+  await eventbridge.send(
+    new PutEventsCommand({
       Entries: [
         {
           Detail: JSON.stringify(message),
@@ -157,13 +164,13 @@ async function eventBridgePutEvent(event, message, now) {
           Time: now,
         },
       ],
-    })
-    .promise();
+    }),
+  );
 }
 
 async function putErrorMetric() {
-  await cloudwatch
-    .putMetricData({
+  await cloudwatch.send(
+    new PutMetricDataCommand({
       Namespace: 'PRX/Porter',
       MetricData: [
         {
@@ -178,14 +185,14 @@ async function putErrorMetric() {
           Unit: 'Count',
         },
       ],
-    })
-    .promise();
+    }),
+  );
 }
 
 /**
  * @param {object} event
  */
-exports.handler = async (event) => {
+export const handler = async (event) => {
   console.log(JSON.stringify({ msg: 'State input', input: event }));
 
   const now = new Date();
@@ -200,13 +207,12 @@ exports.handler = async (event) => {
   // Keep track of how many JobResult callbacks indicated any sort of job
   // execution problem in a custom CloudWatch Metric
   // TODO Maybe move this to its own Lambda; this is kind of a weird spot for it
-  if (Object.prototype.hasOwnProperty.call(msg, 'JobResult')) {
+  if (Object.hasOwn(msg, 'JobResult')) {
     const hasFailedTask =
-      Object.prototype.hasOwnProperty.call(msg.JobResult, 'FailedTasks') &&
+      Object.hasOwn(msg.JobResult, 'FailedTasks') &&
       msg.JobResult.FailedTasks.length;
     const hasJobProblem =
-      Object.prototype.hasOwnProperty.call(msg.JobResult, 'State') &&
-      msg.JobResult.State !== 'DONE';
+      Object.hasOwn(msg.JobResult, 'State') && msg.JobResult.State !== 'DONE';
 
     if (hasFailedTask || hasJobProblem) {
       await putErrorMetric();
@@ -217,12 +223,12 @@ exports.handler = async (event) => {
     const TopicArn = event.Callback.Topic;
     const Message = JSON.stringify(msg);
 
-    await sns.publish({ Message, TopicArn }).promise();
+    await sns.send(new PublishCommand({ Message, TopicArn }));
   } else if (event.Callback.Type === 'AWS/SQS') {
     const QueueUrl = event.Callback.Queue;
     const MessageBody = JSON.stringify(msg);
 
-    await sqs.sendMessage({ QueueUrl, MessageBody }).promise();
+    await sqs.send(new SendMessageCommand({ QueueUrl, MessageBody }));
   } else if (event.Callback.Type === 'AWS/S3') {
     await s3Put(event, msg);
   } else if (event.Callback.Type === 'AWS/EventBridge') {
