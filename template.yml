@@ -1279,19 +1279,19 @@ Resources:
         - { Key: prx:ops:environment, Value: !Ref EnvironmentType }
         - { Key: prx:dev:application, Value: Porter }
   # Lambda Layers
-  # AwsSdkJsV3LambdaLayer:
-  #   Type: AWS::Serverless::LayerVersion
-  #   Metadata:
-  #     BuildMethod: makefile
-  #   Properties:
-  #     CompatibleArchitectures:
-  #       - x86_64
-  #       - arm64
-  #     CompatibleRuntimes:
-  #       - nodejs14.x
-  #     ContentUri: lib/aws-sdk-js-v3
-  #     Description: aws-sdk v3 NPM module
-  #     RetentionPolicy: Delete
+  AwsSdkJsV3LambdaLayer:
+    Type: AWS::Serverless::LayerVersion
+    Metadata:
+      BuildMethod: makefile
+    Properties:
+      CompatibleArchitectures:
+        - x86_64
+        - arm64
+      CompatibleRuntimes:
+        - nodejs18.x
+      ContentUri: lib/aws-sdk-js-v3
+      Description: aws-sdk v3 NPM module
+      RetentionPolicy: Delete
   AwsSdkLambdaLayer:
     Type: AWS::Serverless::LayerVersion
     Metadata:
