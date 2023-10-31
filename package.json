@@ -9,7 +9,9 @@
   "dependencies": {
     "@google-cloud/storage": "^7",
     "@aws-sdk/client-cloudwatch": "*",
+    "@aws-sdk/client-s3": "*",
     "@aws-sdk/client-sns": "*",
+    "@tokenizer/s3": "^0.2",
     "aws-sdk": "^2.1354.0",
     "file-type": "^18.0.0",
     "prx-wavefile": "^11.0.0-prx.4",

@@ -1556,11 +1556,12 @@ Resources:
           MAX_HTTP_REDIRECTS: "10"
       Handler: index.handler
       Layers:
+        - !Ref AwsSdkJsV3LambdaLayer
         - !Ref FileTypeLambdaLayer
       MemorySize: 256
       Policies:
         - !Ref ArtifactBucketReadOnlyAccessPolicy
-      Runtime: nodejs16.x
+      Runtime: nodejs18.x
       Tags:
         prx:meta:tagging-version: "2021-04-07"
         prx:cloudformation:stack-name: !Ref AWS::StackName
