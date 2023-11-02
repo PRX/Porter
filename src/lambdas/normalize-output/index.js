@@ -1,7 +1,7 @@
 // Returns a value that should be identical to the JobResults message
 // that is sent with job callbacks.
 
-import sendTelemetry from './telemetry.mjs';
+import sendTelemetry from './telemetry.js';
 
 export const handler = async (event) => {
   console.log(JSON.stringify({ msg: 'State input', event }));

@@ -12,7 +12,7 @@
 
 import { SNS, PublishCommand } from '@aws-sdk/client-sns';
 
-const sns = new SNS({ region: process.env.AWS_REGION });
+const sns = new SNS();
 
 export const handler = async (event) => {
   console.log(JSON.stringify({ msg: 'State input', input: event }));

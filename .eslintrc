@@ -6,16 +6,19 @@
     "es2022": true
   },
   "parserOptions": {
-    "ecmaVersion": 2022
+    "ecmaVersion": 2022,
+    "sourceType": "module"
   },
   "rules": {
     "prettier/prettier": ["error"],
     "no-console": 0,
-    "no-param-reassign": 0
+    "no-param-reassign": 0,
+    "import/prefer-default-export": "off",
+    "import/extensions": "off"
   },
   "overrides": [
     {
-      "files": ["src/lambdas/**/index.js"],
+      "files": ["src/lambdas/**/*.js"],
       "rules": {
         "import/no-extraneous-dependencies": [
           "error",
@@ -23,16 +26,6 @@
             "packageDir": "./"
           }
         ]
-      }
-    },
-    {
-      "files": ["**/*.mjs"],
-      "parserOptions": {
-        "sourceType": "module"
-      },
-      "rules": {
-        "import/prefer-default-export": "off",
-        "import/extensions": "off"
       }
     },
     {

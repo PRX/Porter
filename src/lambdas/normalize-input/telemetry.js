@@ -1,6 +1,6 @@
 import { CloudWatch, PutMetricDataCommand } from '@aws-sdk/client-cloudwatch';
 
-const cloudwatch = new CloudWatch({ region: process.env.AWS_REGION });
+const cloudwatch = new CloudWatch();
 
 export default async function send(event) {
   // This is to avoid sending metrics during the test suite
