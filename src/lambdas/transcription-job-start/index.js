@@ -17,10 +17,16 @@
 //
 // https://docs.aws.amazon.com/transcribe/latest/dg/API_StartTranscriptionJob.html
 
-const AWS = require('aws-sdk');
+import { S3, PutObjectCommand } from '@aws-sdk/client-s3';
+import {
+  Transcribe,
+  ListVocabularyFiltersCommand,
+  CreateVocabularyFilterCommand,
+  StartTranscriptionJobCommand,
+} from '@aws-sdk/client-transcribe';
 
-const s3 = new AWS.S3({ apiVersion: '2006-03-01' });
-const transcribe = new AWS.TranscribeService({ apiVersion: '2017-10-26' });
+const s3 = new S3();
+const transcribe = new Transcribe();
 
 class InvalidTranscribeTaskInputError extends Error {
   constructor(...params) {
@@ -92,37 +98,37 @@ exports.handler = async (event) => {
   ).pop()}-${event.TaskIteratorIndex}`;
 
   // Write the task token provided by the state machine context to S3
-  await s3
-    .putObject({
+  await s3.send(
+    new PutObjectCommand({
       Bucket: event.Artifact.BucketName,
       Key: `${transcriptionJobName}.TaskToken`,
       Body: event.TaskToken,
-    })
-    .promise();
+    }),
+  );
 
   // There seems to be some undocumented default filtering that Transcribe
   // does. Using a (mostly) empty vocab filter appears to disable that
   // filtering. This ensures that such a filter exists.
   // TODO This may not work with all LanguageCodes
-  const filters = await transcribe.listVocabularyFilters().promise();
+  const filters = await transcribe.send(new ListVocabularyFiltersCommand({}));
   const filterName = `${process.env.AWS_LAMBDA_FUNCTION_NAME}-${event.Task.LanguageCode}`;
   if (
     !filters.VocabularyFilters.map((f) => f.VocabularyFilterName).includes(
       filterName,
     )
   ) {
-    await transcribe
-      .createVocabularyFilter({
+    await transcribe.send(
+      new CreateVocabularyFilterCommand({
         VocabularyFilterName: filterName,
         LanguageCode: event.Task.LanguageCode,
         // This is meant to be a nonsense word
         Words: ['abcdefghijklmnopqrstuvwxyz'],
-      })
-      .promise();
+      }),
+    );
   }
 
-  await transcribe
-    .startTranscriptionJob({
+  await transcribe.send(
+    new StartTranscriptionJobCommand({
       Media: {
         // https://docs.aws.amazon.com/transcribe/latest/dg/API_Media.html
         // Expects s3://<bucket-name>/<keyprefix>/<objectkey>
@@ -152,6 +158,6 @@ exports.handler = async (event) => {
           Value: 'Porter',
         },
       ],
-    })
-    .promise();
+    }),
+  );
 };

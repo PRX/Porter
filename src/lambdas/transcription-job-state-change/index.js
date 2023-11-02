@@ -8,12 +8,17 @@
 // This will get triggered by *all* transcribe jobs, so the predefined prefix
 // is used to filter out jobs originating elsewhere.
 
-const AWS = require('aws-sdk');
+import { S3, GetObjectCommand } from '@aws-sdk/client-s3';
+import {
+  SFN,
+  SendTaskFailureCommand,
+  SendTaskSuccessCommand,
+} from '@aws-sdk/client-sfn';
 
-const s3 = new AWS.S3({ apiVersion: '2006-03-01' });
-const stepFunctions = new AWS.StepFunctions({ apiVersion: '2016-11-23' });
+const s3 = new S3();
+const sfn = new SFN();
 
-exports.handler = async (event) => {
+export const handler = async (event) => {
   console.log(JSON.stringify({ msg: 'Event', input: event }));
 
   const transcriptionJobName = event.detail.TranscriptionJobName;
@@ -25,33 +30,33 @@ exports.handler = async (event) => {
   }
 
   try {
-    const file = await s3
-      .getObject({
+    const file = await s3.send(
+      new GetObjectCommand({
         Bucket: process.env.ARTIFACT_BUCKET_NAME,
         Key: `${transcriptionJobName}.TaskToken`,
-      })
-      .promise();
+      }),
+    );
 
-    const taskToken = file.Body.toString();
+    const taskToken = await file.Body.transformToString();
 
     if (transcriptionJobStatus === 'COMPLETED') {
       // The `output` parameter becomes the result value of the
       // ExecuteTranscribeTask state
-      await stepFunctions
-        .sendTaskSuccess({
+      await sfn.send(
+        new SendTaskSuccessCommand({
           output: JSON.stringify({
             TranscriptionJobName: transcriptionJobName,
           }),
           taskToken,
-        })
-        .promise();
+        }),
+      );
     } else {
       // TODO Add error/cause
-      await stepFunctions
-        .sendTaskFailure({
+      await sfn.send(
+        new SendTaskFailureCommand({
           taskToken,
-        })
-        .promise();
+        }),
+      );
     }
   } catch (error) {
     // TODO
