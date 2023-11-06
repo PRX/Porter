@@ -486,7 +486,7 @@ Resources:
               Resource: !Ref StateMachine
               Sid: AllowSendTaskResults
           Version: "2012-10-17"
-      Runtime: nodejs16.x
+      Runtime: nodejs18.x
       Tags:
         prx:meta:tagging-version: "2021-04-07"
         prx:cloudformation:stack-name: !Ref AWS::StackName
@@ -1305,8 +1305,6 @@ Resources:
         - x86_64
         - arm64
       CompatibleRuntimes:
-        - nodejs14.x
-        - nodejs16.x
         - nodejs18.x
       ContentUri: lib/aws-sdk
       Description: aws-sdk NPM module
@@ -1320,8 +1318,6 @@ Resources:
         - x86_64
         - arm64
       CompatibleRuntimes:
-        - nodejs14.x
-        - nodejs16.x
         - nodejs18.x
       ContentUri: lib/file-type
       Description: file-type NPM module
@@ -1333,8 +1329,7 @@ Resources:
     Properties:
       ContentUri: lib/sharp
       CompatibleRuntimes:
-        - nodejs14.x
-        - nodejs16.x
+        - nodejs18.x
         - nodejs18.x
       Description: sharp NPM module
       RetentionPolicy: Delete
@@ -1347,8 +1342,7 @@ Resources:
         - x86_64
         - arm64
       CompatibleRuntimes:
-        - nodejs14.x
-        - nodejs16.x
+        - nodejs18.x
         - nodejs18.x
       ContentUri: lib/wavefile
       Description: wavefile NPM module
@@ -1361,8 +1355,7 @@ Resources:
       CompatibleArchitectures: [x86_64]
       ContentUri: lib/ffmpeg
       CompatibleRuntimes:
-        - nodejs14.x
-        - nodejs16.x
+        - nodejs18.x
         - nodejs18.x
       Description: FFmpeg binary
       RetentionPolicy: Delete
@@ -1373,8 +1366,7 @@ Resources:
     Properties:
       ContentUri: lib/sox
       CompatibleRuntimes:
-        - nodejs14.x
-        - nodejs16.x
+        - nodejs18.x
         - nodejs18.x
       Description: SoX binary
       RetentionPolicy: Delete
@@ -1385,8 +1377,7 @@ Resources:
     Properties:
       ContentUri: lib/mpck
       CompatibleRuntimes:
-        - nodejs14.x
-        - nodejs16.x
+        - nodejs18.x
         - nodejs18.x
       Description: mpck binary
       RetentionPolicy: Delete
@@ -1397,7 +1388,7 @@ Resources:
     Properties:
       ContentUri: lib/audiowaveform
       CompatibleRuntimes:
-        - nodejs16.x
+        - nodejs18.x
         - nodejs18.x
       Description: audiowaveform binary
       RetentionPolicy: Delete
@@ -1408,8 +1399,7 @@ Resources:
     Properties:
       ContentUri: lib/google-cloud
       CompatibleRuntimes:
-        - nodejs14.x
-        - nodejs16.x
+        - nodejs18.x
         - nodejs18.x
       Description: Google Cloud Node.js SDK
       RetentionPolicy: Delete
@@ -1501,7 +1491,7 @@ Resources:
         - !Ref GoogleCloudLayer
       MemorySize: 512
       Role: !GetAtt IngestLambdaIamRole.Arn
-      Runtime: nodejs16.x
+      Runtime: nodejs18.x
       Tags:
         prx:meta:tagging-version: "2021-04-07"
         prx:cloudformation:stack-name: !Ref AWS::StackName
@@ -1603,7 +1593,7 @@ Resources:
       MemorySize: 2048
       Policies:
         - !Ref ArtifactBucketReadOnlyAccessPolicy
-      Runtime: nodejs16.x
+      Runtime: nodejs18.x
       Tags:
         prx:meta:tagging-version: "2021-04-07"
         prx:cloudformation:stack-name: !Ref AWS::StackName
@@ -1663,7 +1653,7 @@ Resources:
         - !Ref GoogleCloudLayer
       MemorySize: 512
       Role: !GetAtt CopyLambdaIamRole.Arn
-      Runtime: nodejs16.x
+      Runtime: nodejs18.x
       Tags:
         prx:meta:tagging-version: "2021-04-07"
         prx:cloudformation:stack-name: !Ref AWS::StackName
@@ -1699,7 +1689,7 @@ Resources:
       MemorySize: 128
       Policies:
         - !Ref ArtifactBucketReadOnlyAccessPolicy
-      Runtime: nodejs16.x
+      Runtime: nodejs18.x
       Tags:
         prx:meta:tagging-version: "2021-04-07"
         prx:cloudformation:stack-name: !Ref AWS::StackName
@@ -1756,7 +1746,7 @@ Resources:
       MemorySize: 128
       Policies:
         - !Ref ArtifactBucketReadOnlyAccessPolicy
-      Runtime: nodejs16.x
+      Runtime: nodejs18.x
       Tags:
         prx:meta:tagging-version: "2021-04-07"
         prx:cloudformation:stack-name: !Ref AWS::StackName
@@ -1830,7 +1820,7 @@ Resources:
         - !Ref SharpLambdaLayer
       MemorySize: 1024
       Role: !GetAtt ImageTransformLambdaIamRole.Arn
-      Runtime: nodejs16.x
+      Runtime: nodejs18.x
       Tags:
         prx:meta:tagging-version: "2021-04-07"
         prx:cloudformation:stack-name: !Ref AWS::StackName
@@ -1888,7 +1878,7 @@ Resources:
         - !Ref WavefileLambdaLayer
       MemorySize: 3008
       Role: !GetAtt WavWrapLambdaIamRole.Arn
-      Runtime: nodejs16.x
+      Runtime: nodejs18.x
       Tags:
         prx:meta:tagging-version: "2021-04-07"
         prx:cloudformation:stack-name: !Ref AWS::StackName
@@ -1946,7 +1936,7 @@ Resources:
         - !Ref FfmpegLambdaLayer
       MemorySize: 3008
       Role: !GetAtt SilenceDetectionLambdaIamRole.Arn
-      Runtime: nodejs16.x
+      Runtime: nodejs18.x
       Tags:
         prx:meta:tagging-version: "2021-04-07"
         prx:cloudformation:stack-name: !Ref AWS::StackName
@@ -2004,7 +1994,7 @@ Resources:
         - !Ref FfmpegLambdaLayer
       MemorySize: 3008
       Role: !GetAtt ToneDetectionLambdaIamRole.Arn
-      Runtime: nodejs16.x
+      Runtime: nodejs18.x
       Tags:
         prx:meta:tagging-version: "2021-04-07"
         prx:cloudformation:stack-name: !Ref AWS::StackName
@@ -2063,7 +2053,7 @@ Resources:
         - !Ref FfmpegLambdaLayer
       MemorySize: 3008
       Role: !GetAtt WaveformLambdaIamRole.Arn
-      Runtime: nodejs16.x
+      Runtime: nodejs18.x
       Tags:
         prx:meta:tagging-version: "2021-04-07"
         prx:cloudformation:stack-name: !Ref AWS::StackName
@@ -2114,7 +2104,7 @@ Resources:
               Effect: Allow
               Resource: "*"
           Version: "2012-10-17"
-      Runtime: nodejs16.x
+      Runtime: nodejs18.x
       Tags:
         prx:meta:tagging-version: "2021-04-07"
         prx:cloudformation:stack-name: !Ref AWS::StackName
@@ -2176,7 +2166,7 @@ Resources:
       Handler: index.handler
       MemorySize: 512
       Role: !GetAtt TranscriptionJobResultsLambdaIamRole.Arn
-      Runtime: nodejs16.x
+      Runtime: nodejs18.x
       Tags:
         prx:meta:tagging-version: "2021-04-07"
         prx:cloudformation:stack-name: !Ref AWS::StackName
