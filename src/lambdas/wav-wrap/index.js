@@ -1,7 +1,8 @@
-const AWS = require('aws-sdk');
-const crypto = require('crypto');
-
-const wavefile = require('prx-wavefile');
+import { createHash } from 'crypto';
+import { S3Client, GetObjectCommand } from '@aws-sdk/client-s3';
+import { STSClient } from '@aws-sdk/client-sts';
+import { Upload } from '@aws-sdk/lib-storage';
+import * as wavefile from 'prx-wavefile';
 
 function camelize(str) {
   return str
@@ -19,11 +20,13 @@ async function s3Upload(sts, event, uploadBuffer) {
     })
     .promise();
 
-  const s3writer = new AWS.S3({
+  const s3writer = new S3Client({
     apiVersion: '2006-03-01',
-    accessKeyId: role.Credentials.AccessKeyId,
-    secretAccessKey: role.Credentials.SecretAccessKey,
-    sessionToken: role.Credentials.SessionToken,
+    credentials: {
+      accessKeyId: role.Credentials.AccessKeyId,
+      secretAccessKey: role.Credentials.SecretAccessKey,
+      sessionToken: role.Credentials.SessionToken,
+    },
   });
 
   const params = {
@@ -56,15 +59,12 @@ async function s3Upload(sts, event, uploadBuffer) {
     delete event.Task.Destination.Parameters.Bucket;
     delete event.Task.Destination.Parameters.Key;
     delete event.Task.Destination.Parameters.Body;
-    // TODO This is a temporary workaround, remove when this switched back to s3.upload()
-    delete event.Task.Destination.Parameters.MetadataDirective;
 
     Object.assign(params, event.Task.Destination.Parameters);
   }
 
   // TODO Temporary
-  params.Metadata['prx-content-md5'] = crypto
-    .createHash('md5')
+  params.Metadata['prx-content-md5'] = createHash('md5')
     .update(uploadBuffer)
     .digest('base64');
 
@@ -73,8 +73,7 @@ async function s3Upload(sts, event, uploadBuffer) {
   // Upload the resulting file to the destination in S3
   const uploadStart = process.hrtime();
   // TODO
-  // await s3writer.upload(params).promise();
-  await s3writer.putObject(params).promise();
+  await new Upload({ client: s3writer, params });
 
   const uploadEnd = process.hrtime(uploadStart);
   console.log(
@@ -85,11 +84,11 @@ async function s3Upload(sts, event, uploadBuffer) {
   );
 }
 
-exports.handler = async (event) => {
+export const handler = async (event) => {
   console.log(JSON.stringify({ msg: 'State input', input: event }));
 
-  const s3 = new AWS.S3({ apiVersion: '2006-03-01' });
-  const sts = new AWS.STS({ apiVersion: '2011-06-15' });
+  const s3 = new S3Client({ apiVersion: '2006-03-01' });
+  const sts = new STSClient({ apiVersion: '2011-06-15' });
 
   // Fetch the source file artifact from S3
   console.log(
@@ -101,13 +100,12 @@ exports.handler = async (event) => {
 
   const s3start = process.hrtime();
 
-  const s3Object = await s3
-    .getObject({
+  const s3Object = await s3.send(
+    new GetObjectCommand({
       Bucket: event.Artifact.BucketName,
       Key: event.Artifact.ObjectKey,
-    })
-    .promise();
-
+    }),
+  );
   const s3end = process.hrtime(s3start);
   console.log(
     JSON.stringify({

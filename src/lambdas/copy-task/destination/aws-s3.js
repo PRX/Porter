@@ -1,11 +1,12 @@
-const AWS = require('aws-sdk');
-const path = require('path');
-const os = require('os');
-const fs = require('fs');
-const crypto = require('crypto');
+import { STSClient, AssumeRoleCommand } from '@aws-sdk/client-sts';
+import {
+  S3Client,
+  HeadObjectCommand,
+  CopyObjectCommand,
+} from '@aws-sdk/client-s3';
 
-const sts = new AWS.STS({ apiVersion: '2011-06-15' });
-const s3reader = new AWS.S3({ apiVersion: '2006-03-01' });
+const sts = new STSClient({ apiVersion: '2011-06-15' });
+const s3reader = new S3Client({ apiVersion: '2006-03-01' });
 
 class AwsS3MultipartCopyError extends Error {
   constructor(...params) {
@@ -34,10 +35,10 @@ function buildParams(event) {
   // When the optional `ContentType` property is set to `REPLACE`, if a MIME is
   // included with the artifact, that should be used as the copy's content type
   if (
-    Object.prototype.hasOwnProperty.call(event.Task, 'ContentType') &&
+    Object.hasOwn(event.Task, 'ContentType') &&
     event.Task.ContentType === 'REPLACE' &&
-    Object.prototype.hasOwnProperty.call(event.Artifact, 'Descriptor') &&
-    Object.prototype.hasOwnProperty.call(event.Artifact.Descriptor, 'MIME')
+    Object.hasOwn(event.Artifact, 'Descriptor') &&
+    Object.hasOwn(event.Artifact.Descriptor, 'MIME')
   ) {
     params.MetadataDirective = 'REPLACE';
     params.ContentType = event.Artifact.Descriptor.MIME;
@@ -45,7 +46,7 @@ function buildParams(event) {
 
   // Assign all members of Parameters to params. Remove the properties required
   // for the Copy operation, so there is no collision
-  if (Object.prototype.hasOwnProperty.call(event.Task, 'Parameters')) {
+  if (Object.hasOwn(event.Task, 'Parameters')) {
     delete event.Task.Parameters.CopySource;
     delete event.Task.Parameters.Bucket;
     delete event.Task.Parameters.Key;
@@ -147,7 +148,7 @@ async function multipartCopy(params, sourceObjectSize, s3Client) {
   }
 }
 
-module.exports = async function main(event, context) {
+export default async function main(event) {
   console.log(
     JSON.stringify({
       msg: 'S3 Copy',
@@ -156,155 +157,27 @@ module.exports = async function main(event, context) {
     }),
   );
 
-  const head = await s3reader
-    .headObject({
+  const head = await s3reader.send(
+    new HeadObjectCommand({
       Bucket: event.Artifact.BucketName,
       Key: event.Artifact.ObjectKey,
-    })
-    .promise();
+    }),
+  );
 
-  const writerRole = await sts
-    .assumeRole({
+  const writerRole = await sts.send(
+    new AssumeRoleCommand({
       RoleArn: process.env.S3_DESTINATION_WRITER_ROLE,
       RoleSessionName: 'porter_copy_task',
-    })
-    .promise();
+    }),
+  );
 
-  const s3writer = new AWS.S3({
-    apiVersion: '2006-03-01',
-    accessKeyId: writerRole.Credentials.AccessKeyId,
-    secretAccessKey: writerRole.Credentials.SecretAccessKey,
-    sessionToken: writerRole.Credentials.SessionToken,
+  const s3writer = new S3Client({
+    credentials: {
+      accessKeyId: writerRole.Credentials.AccessKeyId,
+      secretAccessKey: writerRole.Credentials.SecretAccessKey,
+      sessionToken: writerRole.Credentials.SessionToken,
+    },
   });
-
-  // ///////////////////////////////////////////////////////////////////////////
-  // TODO Temporary
-  if (
-    event.Task.BucketName === 'production.prxtransfer.org' ||
-    event.Task.ObjectKey.includes('_______md5_test_______')
-  ) {
-    console.log('------------------------------------');
-    console.log('------------------------------------');
-    console.log('------------------------------------');
-    console.log('------------------------------------');
-    console.log('Using custom MD5-compatible upload');
-    console.log('------------------------------------');
-    console.log('------------------------------------');
-    console.log('------------------------------------');
-    console.log('------------------------------------');
-    fs.mkdirSync(path.join(os.tmpdir(), context.awsRequestId));
-
-    // eslint-disable-next-line no-inner-declarations
-    function s3GetObject(bucketName, objectKey, filePath) {
-      return new Promise((resolve, reject) => {
-        const file = fs.createWriteStream(filePath);
-        const stream = s3reader
-          .getObject({
-            Bucket: bucketName,
-            Key: objectKey,
-          })
-          .createReadStream();
-
-        stream.on('error', reject);
-        file.on('error', reject);
-
-        file.on('finish', () => {
-          resolve(filePath);
-        });
-
-        stream.pipe(file);
-      });
-    }
-
-    const sourceFileTmpPath = path.join(
-      os.tmpdir(),
-      context.awsRequestId,
-      'sourceFile',
-    );
-
-    await s3GetObject(
-      event.Artifact.BucketName,
-      event.Artifact.ObjectKey,
-      sourceFileTmpPath,
-    );
-
-    // eslint-disable-next-line no-inner-declarations
-    async function s3Upload(xsts, xevent, uploadBuffer) {
-      const role = await xsts
-        .assumeRole({
-          RoleArn: process.env.S3_DESTINATION_WRITER_ROLE,
-          RoleSessionName: 'porter_wavwrapper_task',
-        })
-        .promise();
-
-      const s3writer2 = new AWS.S3({
-        apiVersion: '2006-03-01',
-        accessKeyId: role.Credentials.AccessKeyId,
-        secretAccessKey: role.Credentials.SecretAccessKey,
-        sessionToken: role.Credentials.SessionToken,
-      });
-
-      const params = {
-        Bucket: xevent.Task.BucketName,
-        Key: xevent.Task.ObjectKey,
-        Body: uploadBuffer,
-        Metadata: {},
-      };
-
-      // When the optional `ContentType` property is set to `REPLACE`, if a MIME is
-      // included with the artifact, that should be used as the new audio file's
-      // content type
-      if (
-        Object.prototype.hasOwnProperty.call(xevent.Task, 'ContentType') &&
-        xevent.Task.ContentType === 'REPLACE' &&
-        Object.prototype.hasOwnProperty.call(xevent.Artifact, 'Descriptor') &&
-        Object.prototype.hasOwnProperty.call(xevent.Artifact.Descriptor, 'MIME')
-      ) {
-        params.ContentType = xevent.Artifact.Descriptor.MIME;
-      }
-
-      // Assign all members of Parameters to params. Remove the properties required
-      // for the Copy operation, so there is no collision
-      if (Object.prototype.hasOwnProperty.call(xevent.Task, 'Parameters')) {
-        delete xevent.Task.Parameters.Bucket;
-        delete xevent.Task.Parameters.Key;
-        delete xevent.Task.Parameters.Body;
-
-        Object.assign(params, xevent.Task.Parameters);
-      }
-
-      params.Metadata['prx-content-md5'] = crypto
-        .createHash('md5')
-        .update(uploadBuffer)
-        .digest('base64');
-
-      params.ContentMD5 = params.Metadata['prx-content-md5'];
-
-      // Upload the resulting file to the destination in S3
-      const uploadStart = process.hrtime();
-      console.log('<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<');
-      console.log('Using S3 upload, rather than S3 copy');
-      await s3writer2.putObject(params).promise();
-
-      const uploadEnd = process.hrtime(uploadStart);
-      console.log(
-        JSON.stringify({
-          msg: 'Finished S3 upload',
-          duration: `${uploadEnd[0]} s ${uploadEnd[1] / 1000000} ms`,
-        }),
-      );
-    }
-
-    delete event.Task.Parameters.MetadataDirective;
-
-    const data = fs.readFileSync(sourceFileTmpPath);
-    await s3Upload(sts, event, data);
-
-    fs.unlinkSync(sourceFileTmpPath);
-    return;
-  }
-
-  // ///////////////////////////////////////////////////////////////////////////
 
   const params = buildParams(event);
 
@@ -314,10 +187,10 @@ module.exports = async function main(event, context) {
     // Copies an existing S3 object to the S3 artifact bucket.
     // https://docs.aws.amazon.com/AWSJavaScriptSDK/latest/AWS/S3.html#copyObject-property
     // https://docs.aws.amazon.com/AmazonS3/latest/API/RESTObjectCOPY.html
-    await s3writer.copyObject(params).promise();
+    await s3writer.send(new CopyObjectCommand(params));
   } else {
     // Copies and object using parallelized copy operations for byte range
     // parts of the source object
     await multipartCopy(params, head.ContentLength, s3writer);
   }
-};
+}

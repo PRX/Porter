@@ -1,7 +1,14 @@
-// eslint-disable-next-line import/no-extraneous-dependencies
-const AWS = require('aws-sdk');
+import {
+  S3,
+  HeadObjectCommand,
+  CopyObjectCommand,
+  CreateMultipartUploadCommand,
+  UploadPartCopyCommand,
+  CompleteMultipartUploadCommand,
+  AbortMultipartUploadCommand,
+} from '@aws-sdk/client-s3';
 
-const s3 = new AWS.S3({ apiVersion: '2006-03-01' });
+const s3 = new S3();
 
 class AwsS3MultipartCopyError extends Error {
   constructor(...params) {
@@ -14,12 +21,12 @@ class AwsS3MultipartCopyError extends Error {
 // Look for max_concurrency for some info on performance tuning
 async function multipartCopy(copySource, artifact, sourceObjectSize) {
   // Initialize the multipart upload
-  const multipartUpload = await s3
-    .createMultipartUpload({
+  const multipartUpload = await s3.send(
+    new CreateMultipartUploadCommand({
       Bucket: artifact.BucketName, // Destination bucket
       Key: artifact.ObjectKey, // Destination object key
-    })
-    .promise();
+    }),
+  );
 
   const uploadId = multipartUpload.UploadId;
 
@@ -61,8 +68,8 @@ async function multipartCopy(copySource, artifact, sourceObjectSize) {
     // Copy all parts in parallel
     const uploads = await Promise.all(
       partRanges.map((range, idx) =>
-        s3
-          .uploadPartCopy({
+        s3.send(
+          new UploadPartCopyCommand({
             Bucket: artifact.BucketName, // Destination bucket
             Key: artifact.ObjectKey, // Destination object key
             PartNumber: idx + 1, // Positive integer between 1 and 10,000
@@ -71,14 +78,14 @@ async function multipartCopy(copySource, artifact, sourceObjectSize) {
             // CopySource expects "/sourcebucket/path/to/object.extension" to be URI-encoded
             CopySource: copySource,
             CopySourceRange: `bytes=${range.join('-')}`,
-          })
-          .promise(),
+          }),
+        ),
       ),
     );
 
     // Finalize the upload after all parts have been successfully copied
-    await s3
-      .completeMultipartUpload({
+    await s3.send(
+      new CompleteMultipartUploadCommand({
         Bucket: artifact.BucketName, // Destination bucket
         Key: artifact.ObjectKey, // Destination object key
         UploadId: uploadId,
@@ -88,35 +95,35 @@ async function multipartCopy(copySource, artifact, sourceObjectSize) {
             PartNumber: idx + 1,
           })),
         },
-      })
-      .promise();
+      }),
+    );
   } catch (error) {
     // Clean up the incomplete upload if it fails
-    await s3
-      .abortMultipartUpload({
+    await s3.send(
+      new AbortMultipartUploadCommand({
         Bucket: artifact.BucketName, // Destination bucket
         Key: artifact.ObjectKey, // Destination object key
         UploadId: uploadId,
-      })
-      .promise();
+      }),
+    );
 
     throw new AwsS3MultipartCopyError('Multipart copy was aborted');
   }
 }
 
-module.exports = async function main(event, artifact) {
+export default async function main(event, artifact) {
   // CopySource expects: "/sourcebucket/path/to/object.extension"
   // CopySource expects "/sourcebucket/path/to/object.extension" to be URI-encoded
   const copySource = encodeURIComponent(
     `/${event.Job.Source.BucketName}/${event.Job.Source.ObjectKey}`,
   );
 
-  const head = await s3
-    .headObject({
+  const head = await s3.send(
+    new HeadObjectCommand({
       Bucket: event.Job.Source.BucketName,
       Key: event.Job.Source.ObjectKey,
-    })
-    .promise();
+    }),
+  );
 
   // S3 can perform a native copy of objects up to 5 GB using the CopyObject
   // API. For objects larger than 5 GB, a multi-part upload must be used.
@@ -124,16 +131,16 @@ module.exports = async function main(event, artifact) {
     // Copies an existing S3 object to the S3 artifact bucket.
     // https://docs.aws.amazon.com/AWSJavaScriptSDK/latest/AWS/S3.html#copyObject-property
     // https://docs.aws.amazon.com/AmazonS3/latest/API/RESTObjectCOPY.html
-    await s3
-      .copyObject({
+    await s3.send(
+      new CopyObjectCommand({
         CopySource: copySource,
         Bucket: artifact.BucketName,
         Key: artifact.ObjectKey,
-      })
-      .promise();
+      }),
+    );
   } else {
     // Copies and object using parallelized copy operations for byte range
     // parts of the source object
     await multipartCopy(copySource, artifact, head.ContentLength);
   }
-};
+}

@@ -16,14 +16,13 @@
 // The result path is $.Artifact, so the output of the state looks like
 // { "Job": { … }, "Artifact": { "BucketName": "abc", "ObjectKey": "xyz" } }
 // eslint-disable-next-line import/no-extraneous-dependencies
-const AWS = require('aws-sdk');
+import { S3Client, HeadObjectCommand } from '@aws-sdk/client-s3';
+import fromHttp from './source/http.js';
+import fromDataUri from './source/data-uri.js';
+import fromS3 from './source/aws-s3.js';
+import fromGcpStorage from './source/gcp-storage.js';
 
-const s3 = new AWS.S3({ apiVersion: '2006-03-01' });
-
-const fromHttp = require('./source/http');
-const fromDataUri = require('./source/data-uri');
-const fromS3 = require('./source/aws-s3');
-const fromGcpStorage = require('./source/gcp-storage');
+const s3 = new S3Client({ apiVersion: '2006-03-01' });
 
 class UnknownSourceModeError extends Error {
   constructor(...params) {
@@ -57,7 +56,7 @@ function filenameFromSource(source) {
 }
 exports.filenameFromSource = filenameFromSource;
 
-exports.handler = async (event, context) => {
+export const handler = async (event, context) => {
   console.log(JSON.stringify({ msg: 'State input', input: event }));
 
   const sourceFilename = filenameFromSource(event.Job.Source);
@@ -86,9 +85,12 @@ exports.handler = async (event, context) => {
 
   // Add the file size of the actual object that was written to S3 to the
   // artifact output
-  const head = await s3
-    .headObject({ Bucket: artifact.BucketName, Key: artifact.ObjectKey })
-    .promise();
+  const head = await s3.send(
+    new HeadObjectCommand({
+      Bucket: artifact.BucketName,
+      Key: artifact.ObjectKey,
+    }),
+  );
   artifact.ContentLength = head.ContentLength;
 
   return artifact;

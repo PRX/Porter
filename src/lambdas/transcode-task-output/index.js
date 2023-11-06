@@ -1,21 +1,20 @@
 // Because the result of a Fargate task is not sufficient for sending a proper
 // callback, this function takes the entire task input and builds a better
 // result that gets passed to the callback task.
+import { S3Client, GetObjectCommand } from '@aws-sdk/client-s3';
 
-const AWS = require('aws-sdk');
+const s3 = new S3Client({ apiVersion: '2006-03-01' });
 
-const s3 = new AWS.S3({ apiVersion: '2006-03-01' });
-
-exports.handler = async (event) => {
+export const handler = async (event) => {
   console.log(JSON.stringify({ msg: 'State input', input: event }));
 
   // Get ffprobe results
-  const file = await s3
-    .getObject({
+  const file = await s3.send(
+    new GetObjectCommand({
       Bucket: process.env.ARTIFACT_BUCKET_NAME,
       Key: `${event.Execution.Id}/transcode/ffprobe-${event.TaskIteratorIndex}.json`,
-    })
-    .promise();
+    }),
+  );
   const ffprobe = JSON.parse(file.Body.toString());
 
   const now = new Date();

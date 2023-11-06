@@ -17,16 +17,16 @@
 //
 // https://docs.aws.amazon.com/transcribe/latest/dg/API_StartTranscriptionJob.html
 
-import { S3, PutObjectCommand } from '@aws-sdk/client-s3';
+import { S3Client, PutObjectCommand } from '@aws-sdk/client-s3';
 import {
-  Transcribe,
+  TranscribeClient,
   ListVocabularyFiltersCommand,
   CreateVocabularyFilterCommand,
   StartTranscriptionJobCommand,
 } from '@aws-sdk/client-transcribe';
 
-const s3 = new S3();
-const transcribe = new Transcribe();
+const s3 = new S3Client({ apiVersion: '2006-03-01' });
+const transcribe = new TranscribeClient({ apiVersion: '2017-10-26' });
 
 class InvalidTranscribeTaskInputError extends Error {
   constructor(...params) {
@@ -42,7 +42,7 @@ class UnknownDestinationModeError extends Error {
   }
 }
 
-exports.handler = async (event) => {
+export const handler = async (event) => {
   console.log(JSON.stringify({ msg: 'State input', input: event }));
 
   let mediaFormat = event.Artifact.Descriptor.Extension;

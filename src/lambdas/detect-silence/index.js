@@ -1,12 +1,12 @@
-const path = require('path');
-const os = require('os');
-const fs = require('fs');
-const readline = require('readline');
-const events = require('events');
-const childProcess = require('child_process');
-const aws = require('aws-sdk');
+import { join as pathJoin } from 'node:path';
+import { tmpdir } from 'node:os';
+import { createReadStream, createWriteStream, unlinkSync } from 'node:fs';
+import { createInterface } from 'node:readline';
+import { once } from 'node:events';
+import { spawn } from 'node:child_process';
+import { S3Client, GetObjectCommand } from '@aws-sdk/client-s3';
 
-const s3 = new aws.S3();
+const s3 = new S3Client({ apiVersion: '2006-03-01' });
 
 const DEFAULT_MAX_VALUE = 0.001;
 const DEFAULT_MIN_DURATION = 0.2;
@@ -18,23 +18,29 @@ const DEFAULT_MIN_DURATION = 0.2;
  * @param {string} filePath
  */
 function s3GetObject(bucketName, objectKey, filePath) {
-  return new Promise((resolve, reject) => {
-    const file = fs.createWriteStream(filePath);
-    const stream = s3
-      .getObject({
+  // eslint-disable-next-line no-async-promise-executor
+  return new Promise(async (resolve, reject) => {
+    const file = createWriteStream(filePath);
+
+    const resp = await s3.send(
+      new GetObjectCommand({
         Bucket: bucketName,
         Key: objectKey,
-      })
-      .createReadStream();
+      }),
+    );
 
+    const stream = resp.Body;
+
+    // @ts-ignore
+    stream.pipe(file);
+
+    // @ts-ignore
     stream.on('error', reject);
     file.on('error', reject);
 
     file.on('finish', () => {
       resolve(filePath);
     });
-
-    stream.pipe(file);
   });
 }
 
@@ -91,12 +97,12 @@ function createMetadataFile(
       `ametadata=mode=print:file=${outputFilePath}`,
     ].join(',');
 
-    const childProc = childProcess.spawn(
+    const childProc = spawn(
       '/opt/bin/ffmpeg',
       ['-i', inputFilePath, '-af', filterString, '-f', 'null', '-'],
       {
         env: process.env,
-        cwd: os.tmpdir(),
+        cwd: tmpdir(),
       },
     );
 
@@ -130,8 +136,8 @@ function createMetadataFile(
 async function getRangesFromMetadataFile(filePath) {
   const ranges = [];
 
-  const reader = readline.createInterface({
-    input: fs.createReadStream(filePath),
+  const reader = createInterface({
+    input: createReadStream(filePath),
     crlfDelay: Infinity,
   });
 
@@ -149,16 +155,16 @@ async function getRangesFromMetadataFile(filePath) {
     }
   });
 
-  await events.once(reader, 'close');
+  await once(reader, 'close');
 
   return ranges;
 }
 
-exports.handler = async (event, context) => {
+export const handler = async (event, context) => {
   console.log(JSON.stringify({ msg: 'State input', input: event }));
 
-  const artifactFileTmpPath = path.join(
-    os.tmpdir(),
+  const artifactFileTmpPath = pathJoin(
+    tmpdir(),
     `${context.awsRequestId}.${event.Artifact.Descriptor.Extension}`,
   );
   await fetchArtifact(event, artifactFileTmpPath);
@@ -166,8 +172,8 @@ exports.handler = async (event, context) => {
   const maxValue = event.Task?.Threshold?.Value || DEFAULT_MAX_VALUE;
   const minDuration = event.Task?.Threshold?.Duration || DEFAULT_MIN_DURATION;
 
-  const metadataFileTmpPath = path.join(
-    os.tmpdir(),
+  const metadataFileTmpPath = pathJoin(
+    tmpdir(),
     `${context.awsRequestId}.meta`,
   );
   await createMetadataFile(
@@ -179,8 +185,8 @@ exports.handler = async (event, context) => {
 
   const ranges = await getRangesFromMetadataFile(metadataFileTmpPath);
 
-  fs.unlinkSync(artifactFileTmpPath);
-  fs.unlinkSync(metadataFileTmpPath);
+  unlinkSync(artifactFileTmpPath);
+  unlinkSync(metadataFileTmpPath);
 
   return {
     Task: 'DetectSilence',

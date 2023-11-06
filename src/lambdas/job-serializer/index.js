@@ -10,9 +10,9 @@
 // represents the execution IDs of the jobs that serialized other jobs prior to
 // this one.
 
-import { SNS, PublishCommand } from '@aws-sdk/client-sns';
+import { SNSClient, PublishCommand } from '@aws-sdk/client-sns';
 
-const sns = new SNS();
+const sns = new SNSClient({ apiVersion: '2010-03-31' });
 
 export const handler = async (event) => {
   console.log(JSON.stringify({ msg: 'State input', input: event }));

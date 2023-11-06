@@ -1,11 +1,18 @@
-const sharp = require('sharp');
-const path = require('path');
-const os = require('os');
-const fs = require('fs');
-const AWS = require('aws-sdk');
+import { S3Client, GetObjectCommand } from '@aws-sdk/client-s3';
+import { STSClient, AssumeRoleCommand } from '@aws-sdk/client-sts';
+import { Upload } from '@aws-sdk/lib-storage';
+import { tmpdir } from 'node:os';
+import {
+  createReadStream,
+  createWriteStream,
+  mkdirSync,
+  unlinkSync,
+} from 'node:fs';
+import { join as pathJoin } from 'node:path';
+import sharp from 'sharp';
 
-const s3 = new AWS.S3({ apiVersion: '2006-03-01' });
-const sts = new AWS.STS({ apiVersion: '2011-06-15' });
+const s3 = new S3Client({ apiVersion: '2006-03-01' });
+const sts = new STSClient({ apiVersion: '2011-06-15' });
 
 function transform(inputFile, outputFile, event) {
   return new Promise((resolve, reject) => {
@@ -14,7 +21,7 @@ function transform(inputFile, outputFile, event) {
 
       process = sharp(inputFile);
 
-      if (Object.prototype.hasOwnProperty.call(event.Task, 'Resize')) {
+      if (Object.hasOwn(event.Task, 'Resize')) {
         process = process.resize({
           width: event.Task.Resize.Width,
           height: event.Task.Resize.Height,
@@ -23,12 +30,12 @@ function transform(inputFile, outputFile, event) {
         });
       }
 
-      if (Object.prototype.hasOwnProperty.call(event.Task, 'Format')) {
+      if (Object.hasOwn(event.Task, 'Format')) {
         process = process.toFormat(event.Task.Format);
       }
 
       if (
-        Object.prototype.hasOwnProperty.call(event.Task, 'Metadata') &&
+        Object.hasOwn(event.Task, 'Metadata') &&
         event.Task.Metadata === 'PRESERVE'
       ) {
         process = process.withMetadata();
@@ -54,67 +61,70 @@ function transform(inputFile, outputFile, event) {
  * @param {string} filePath
  */
 function s3GetObject(bucketName, objectKey, filePath) {
-  return new Promise((resolve, reject) => {
-    const file = fs.createWriteStream(filePath);
-    const stream = s3
-      .getObject({
+  // eslint-disable-next-line no-async-promise-executor
+  return new Promise(async (resolve, reject) => {
+    const file = createWriteStream(filePath);
+
+    const resp = await s3.send(
+      new GetObjectCommand({
         Bucket: bucketName,
         Key: objectKey,
-      })
-      .createReadStream();
+      }),
+    );
 
+    const stream = resp.Body;
+
+    // @ts-ignore
+    stream.pipe(file);
+
+    // @ts-ignore
     stream.on('error', reject);
     file.on('error', reject);
 
     file.on('finish', () => {
       resolve(filePath);
     });
-
-    stream.pipe(file);
   });
 }
 
 async function s3Upload(event, imageFileTmpPath) {
-  const role = await sts
-    .assumeRole({
+  const role = await sts.send(
+    new AssumeRoleCommand({
       RoleArn: process.env.S3_DESTINATION_WRITER_ROLE,
       RoleSessionName: 'porter_image_task',
-    })
-    .promise();
+    }),
+  );
 
-  const s3writer = new AWS.S3({
+  const s3writer = new S3Client({
     apiVersion: '2006-03-01',
-    accessKeyId: role.Credentials.AccessKeyId,
-    secretAccessKey: role.Credentials.SecretAccessKey,
-    sessionToken: role.Credentials.SessionToken,
+    credentials: {
+      accessKeyId: role.Credentials.AccessKeyId,
+      secretAccessKey: role.Credentials.SecretAccessKey,
+      sessionToken: role.Credentials.SessionToken,
+    },
   });
 
   const params = {
     Bucket: event.Task.Destination.BucketName,
     Key: event.Task.Destination.ObjectKey,
-    Body: fs.createReadStream(imageFileTmpPath),
+    Body: createReadStream(imageFileTmpPath),
   };
 
   // When the optional `ContentType` property is set to `REPLACE`, if a MIME is
   // included with the artifact, that should be used as the new images's
   // content type
   if (
-    Object.prototype.hasOwnProperty.call(
-      event.Task.Destination,
-      'ContentType',
-    ) &&
+    Object.hasOwn(event.Task.Destination, 'ContentType') &&
     event.Task.Destination.ContentType === 'REPLACE' &&
-    Object.prototype.hasOwnProperty.call(event.Artifact, 'Descriptor') &&
-    Object.prototype.hasOwnProperty.call(event.Artifact.Descriptor, 'MIME')
+    Object.hasOwn(event.Artifact, 'Descriptor') &&
+    Object.hasOwn(event.Artifact.Descriptor, 'MIME')
   ) {
     params.ContentType = event.Artifact.Descriptor.MIME;
   }
 
   // Assign all members of Parameters to params. Remove the properties required
   // for the Copy operation, so there is no collision
-  if (
-    Object.prototype.hasOwnProperty.call(event.Task.Destination, 'Parameters')
-  ) {
+  if (Object.hasOwn(event.Task.Destination, 'Parameters')) {
     delete event.Task.Destination.Parameters.Bucket;
     delete event.Task.Destination.Parameters.Key;
     delete event.Task.Destination.Parameters.Body;
@@ -124,8 +134,7 @@ async function s3Upload(event, imageFileTmpPath) {
 
   // Upload the resulting file to the destination in S3
   const uploadStart = process.hrtime();
-  await s3writer.upload(params).promise();
-
+  await new Upload({ client: s3writer, params });
   const uploadEnd = process.hrtime(uploadStart);
   console.log(
     JSON.stringify({
@@ -138,10 +147,10 @@ async function s3Upload(event, imageFileTmpPath) {
 exports.handler = async (event, context) => {
   console.log(JSON.stringify({ msg: 'State input', input: event }));
 
-  fs.mkdirSync(path.join(os.tmpdir(), context.awsRequestId));
+  mkdirSync(pathJoin(tmpdir(), context.awsRequestId));
 
-  const artifactFileTmpPath = path.join(
-    os.tmpdir(),
+  const artifactFileTmpPath = pathJoin(
+    tmpdir(),
     context.awsRequestId,
     'artifact',
   );
@@ -173,11 +182,7 @@ exports.handler = async (event, context) => {
   // Run the file through sharp
   const sharpStart = process.hrtime();
 
-  const imageFileTmpPath = path.join(
-    os.tmpdir(),
-    context.awsRequestId,
-    'output',
-  );
+  const imageFileTmpPath = pathJoin(tmpdir(), context.awsRequestId, 'output');
 
   await transform(artifactFileTmpPath, imageFileTmpPath, event);
 
@@ -193,8 +198,8 @@ exports.handler = async (event, context) => {
     await s3Upload(event, imageFileTmpPath);
   }
 
-  fs.unlinkSync(artifactFileTmpPath);
-  fs.unlinkSync(imageFileTmpPath);
+  unlinkSync(artifactFileTmpPath);
+  unlinkSync(imageFileTmpPath);
 
   const now = new Date();
 

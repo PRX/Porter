@@ -1,20 +1,26 @@
-import * as querystring from 'node:querystring';
+import querystring from 'node:querystring';
 
-import * as http from 'node:http';
-import * as https from 'node:https';
+import http from 'node:http';
+import https from 'node:https';
 
-import { S3, PutObjectCommand } from '@aws-sdk/client-s3';
-import { SNS, PublishCommand } from '@aws-sdk/client-sns';
-import { SQS, SendMessageCommand } from '@aws-sdk/client-sqs';
-import { STS, AssumeRoleCommand } from '@aws-sdk/client-sts';
-import { CloudWatch, PutMetricDataCommand } from '@aws-sdk/client-cloudwatch';
-import { EventBridge, PutEventsCommand } from '@aws-sdk/client-eventbridge';
+import { S3Client, PutObjectCommand } from '@aws-sdk/client-s3';
+import { SNSClient, PublishCommand } from '@aws-sdk/client-sns';
+import { SQSClient, SendMessageCommand } from '@aws-sdk/client-sqs';
+import { STSClient, AssumeRoleCommand } from '@aws-sdk/client-sts';
+import {
+  CloudWatchClient,
+  PutMetricDataCommand,
+} from '@aws-sdk/client-cloudwatch';
+import {
+  EventBridgeClient,
+  PutEventsCommand,
+} from '@aws-sdk/client-eventbridge';
 
-const sns = new SNS();
-const sqs = new SQS();
-const sts = new STS();
-const cloudwatch = new CloudWatch();
-const eventbridge = new EventBridge();
+const sns = new SNSClient({ apiVersion: '2010-03-31' });
+const sqs = new SQSClient({ apiVersion: '2012-11-05' });
+const sts = new STSClient({ apiVersion: '2011-06-15' });
+const cloudwatch = new CloudWatchClient({ apiVersion: '2010-08-01' });
+const eventbridge = new EventBridgeClient({ apiVersion: '2015-10-07' });
 
 function httpRequest(event, message, redirectCount, redirectUrl) {
   return new Promise((resolve, reject) => {
@@ -121,7 +127,8 @@ async function s3Put(event, message) {
     }),
   );
 
-  const s3 = new S3({
+  const s3 = new S3Client({
+    apiVersion: '2006-03-01',
     credentials: {
       accessKeyId: role.Credentials.AccessKeyId,
       secretAccessKey: role.Credentials.SecretAccessKey,

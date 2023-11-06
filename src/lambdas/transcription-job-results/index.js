@@ -8,12 +8,16 @@
 // This function will also copy the transcript file from its artifact location
 // to the destination defined on the Transcribe task.
 
-const AWS = require('aws-sdk');
+import { S3Client, CopyObjectCommand } from '@aws-sdk/client-s3';
+import { STSClient, AssumeRoleCommand } from '@aws-sdk/client-sts';
+import {
+  TranscribeClient,
+  GetTranscriptionJobCommand,
+} from '@aws-sdk/client-transcribe';
+import { parse } from 'node:url';
 
-const url = require('url');
-
-const sts = new AWS.STS({ apiVersion: '2011-06-15' });
-const transcribe = new AWS.TranscribeService({ apiVersion: '2017-10-26' });
+const sts = new STSClient({ apiVersion: '2011-06-15' });
+const transcribe = new TranscribeClient({ apiVersion: '2017-10-26' });
 
 // https://docs.aws.amazon.com/AWSJavaScriptSDK/latest/AWS/S3.html#copyObject-property
 // https://docs.aws.amazon.com/AmazonS3/latest/API/RESTObjectCOPY.html
@@ -26,7 +30,7 @@ async function awsS3copyObject(
 ) {
   // fileUri
   // e.g., https://s3.amazonaws.com/artifact-bucket/transcribe_job_name.json
-  const s3path = url.parse(sourceFileUri).pathname;
+  const s3path = parse(sourceFileUri).pathname;
   // s3path
   // e.g., /artifact-bucket/transcribe_job_name.json
 
@@ -38,18 +42,20 @@ async function awsS3copyObject(
     }),
   );
 
-  const role = await sts
-    .assumeRole({
+  const role = await sts.send(
+    new AssumeRoleCommand({
       RoleArn: process.env.S3_DESTINATION_WRITER_ROLE,
       RoleSessionName: 'porter_transcribe_task',
-    })
-    .promise();
+    }),
+  );
 
-  const s3 = new AWS.S3({
+  const s3 = new S3Client({
     apiVersion: '2006-03-01',
-    accessKeyId: role.Credentials.AccessKeyId,
-    secretAccessKey: role.Credentials.SecretAccessKey,
-    sessionToken: role.Credentials.SessionToken,
+    credentials: {
+      accessKeyId: role.Credentials.AccessKeyId,
+      secretAccessKey: role.Credentials.SecretAccessKey,
+      sessionToken: role.Credentials.SessionToken,
+    },
   });
 
   const params = {
@@ -61,7 +67,7 @@ async function awsS3copyObject(
   const start = process.hrtime();
   // TODO Detect if the source file is > 5 GB and do a multipart upload to
   // create the copy
-  await s3.copyObject(params).promise();
+  await s3.send(new CopyObjectCommand(params));
   const end = process.hrtime(start);
 
   console.log(
@@ -72,15 +78,15 @@ async function awsS3copyObject(
   );
 }
 
-exports.handler = async (event) => {
+export const handler = async (event) => {
   console.log(JSON.stringify({ msg: 'State input', input: event }));
 
   // Get the details of the Transcribe job
-  const res = await transcribe
-    .getTranscriptionJob({
+  const res = await transcribe.send(
+    new GetTranscriptionJobCommand({
       TranscriptionJobName: event.TranscriptionJob.TranscriptionJobName,
-    })
-    .promise();
+    }),
+  );
 
   const transcriptionJob = res.TranscriptionJob;
 

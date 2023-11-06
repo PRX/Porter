@@ -1,5 +1,5 @@
-const toAwsS3 = require('./destination/aws-s3');
-const toGcpStorage = require('./destination/gcp-storage');
+import toAwsS3 from './destination/aws-s3.js';
+import toGcpStorage from './destination/gcp-storage.js';
 
 class UnknownCopyTaskModeError extends Error {
   constructor(...params) {
@@ -8,12 +8,12 @@ class UnknownCopyTaskModeError extends Error {
   }
 }
 
-exports.handler = async (event, context) => {
+export const handler = async (event) => {
   console.log(JSON.stringify({ msg: 'State input', input: event }));
 
   switch (event.Task.Mode) {
     case 'AWS/S3':
-      await toAwsS3(event, context);
+      await toAwsS3(event);
       break;
     case 'GCP/Storage':
       await toGcpStorage(event);

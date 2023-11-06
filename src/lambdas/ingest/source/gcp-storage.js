@@ -1,14 +1,13 @@
-const path = require('path');
-const os = require('os');
-const fs = require('fs');
-// eslint-disable-next-line import/no-extraneous-dependencies
-const AWS = require('aws-sdk');
-// eslint-disable-next-line import/no-extraneous-dependencies
-const { Storage } = require('@google-cloud/storage');
+import { Storage } from '@google-cloud/storage';
+import { tmpdir } from 'node:os';
+import { join as pathJoin } from 'node:path';
+import { createReadStream, unlinkSync } from 'node:fs';
+import { S3Client } from '@aws-sdk/client-s3';
+import { Upload } from '@aws-sdk/lib-storage';
 
-const s3 = new AWS.S3({ apiVersion: '2006-03-01' });
+const s3 = new S3Client({ apiVersion: '2006-03-01' });
 
-module.exports = async function main(event, artifact, sourceFilename) {
+export default async function main(event, artifact, sourceFilename) {
   // Copies a file in Google Cloud Storage to the S3 artifact bucket.
   // https://googleapis.dev/nodejs/storage/latest/index.html
   // https://googleapis.dev/nodejs/storage/latest/Bucket.html#getFiles
@@ -19,7 +18,7 @@ module.exports = async function main(event, artifact, sourceFilename) {
     credentials: event.Job.Source.ClientConfiguration,
   });
 
-  const localFilePath = path.join(os.tmpdir(), sourceFilename);
+  const localFilePath = pathJoin(tmpdir(), sourceFilename);
 
   // Downloads the file from GCP
   await storage
@@ -30,13 +29,14 @@ module.exports = async function main(event, artifact, sourceFilename) {
     });
 
   // Upload the artifact to S3
-  await s3
-    .upload({
+  await new Upload({
+    client: s3,
+    params: {
       Bucket: artifact.BucketName,
       Key: artifact.ObjectKey,
-      Body: fs.createReadStream(localFilePath),
-    })
-    .promise();
+      Body: createReadStream(localFilePath),
+    },
+  }).done();
 
-  fs.unlinkSync(localFilePath);
-};
+  unlinkSync(localFilePath);
+}

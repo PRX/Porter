@@ -16,6 +16,7 @@
     "@aws-sdk/client-sts": "*",
     "@aws-sdk/client-eventbridge": "*",
     "@aws-sdk/client-transcribe": "*",
+    "@aws-sdk/lib-storage": "*",
     "@tokenizer/s3": "^0.2",
     "aws-sdk": "^2.1354.0",
     "file-type": "^18",

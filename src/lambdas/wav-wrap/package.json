@@ -1,4 +1,5 @@
 {
-  "name": "null",
-  "version": "1.0.0"
+  "name": "wav-wrap",
+  "version": "1.0.0",
+  "type": "module"
 }

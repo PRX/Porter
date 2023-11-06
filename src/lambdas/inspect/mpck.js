@@ -1,5 +1,5 @@
-const childProcess = require('child_process');
-const os = require('os');
+import { spawn } from 'node:child_process';
+import { tmpdir } from 'node:os';
 
 /**
  * @typedef {object} MpckResult
@@ -45,44 +45,42 @@ function extract(output) {
   return result;
 }
 
-module.exports = {
-  /**
-   * @param {string} filePath
-   * @returns {Promise<MpckResult>}
-   */
-  inspect: async function inspect(filePath) {
-    return new Promise((resolve, reject) => {
-      const start = process.hrtime();
+/**
+ * @param {string} filePath
+ * @returns {Promise<MpckResult>}
+ */
+export async function inspect(filePath) {
+  return new Promise((resolve, reject) => {
+    const start = process.hrtime();
 
-      // mpck will nominally output something like:
-      // SUMMARY: myAudio.mp3
-      //     version                       MPEG v1.0
-      //     layer                         3
-      //     frames                        1682
-      const childProc = childProcess.spawn('/opt/bin/mpck', ['-v', filePath], {
-        env: process.env,
-        cwd: os.tmpdir(),
-      });
-      const resultBuffers = [];
-
-      childProc.stdout.on('data', (buffer) => resultBuffers.push(buffer));
-      childProc.stderr.on('data', (buffer) => console.error(buffer.toString()));
-
-      childProc.on('exit', (code, signal) => {
-        const end = process.hrtime(start);
-        console.log(
-          JSON.stringify({
-            msg: 'Finished mpck',
-            duration: `${end[0]} s ${end[1] / 1000000} ms`,
-          }),
-        );
-
-        if (code || signal) {
-          reject(new Error(`mpck failed with ${code || signal}`));
-        } else {
-          resolve(extract(Buffer.concat(resultBuffers).toString().trim()));
-        }
-      });
+    // mpck will nominally output something like:
+    // SUMMARY: myAudio.mp3
+    //     version                       MPEG v1.0
+    //     layer                         3
+    //     frames                        1682
+    const childProc = spawn('/opt/bin/mpck', ['-v', filePath], {
+      env: process.env,
+      cwd: tmpdir(),
     });
-  },
-};
+    const resultBuffers = [];
+
+    childProc.stdout.on('data', (buffer) => resultBuffers.push(buffer));
+    childProc.stderr.on('data', (buffer) => console.error(buffer.toString()));
+
+    childProc.on('exit', (code, signal) => {
+      const end = process.hrtime(start);
+      console.log(
+        JSON.stringify({
+          msg: 'Finished mpck',
+          duration: `${end[0]} s ${end[1] / 1000000} ms`,
+        }),
+      );
+
+      if (code || signal) {
+        reject(new Error(`mpck failed with ${code || signal}`));
+      } else {
+        resolve(extract(Buffer.concat(resultBuffers).toString().trim()));
+      }
+    });
+  });
+}

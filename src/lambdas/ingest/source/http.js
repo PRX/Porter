@@ -1,12 +1,14 @@
 // eslint-disable-next-line import/no-extraneous-dependencies
-const AWS = require('aws-sdk');
-const path = require('path');
-const os = require('os');
-const fs = require('fs');
-const http = require('http');
-const https = require('https');
+import { join as pathJoin } from 'node:path';
+import { tmpdir } from 'node:os';
+import { createReadStream, createWriteStream, unlinkSync } from 'node:fs';
+import * as http from 'node:http';
+import * as https from 'node:https';
 
-const s3 = new AWS.S3({ apiVersion: '2006-03-01' });
+import { Upload } from '@aws-sdk/lib-storage';
+import { S3 } from '@aws-sdk/client-s3';
+
+const s3 = new S3();
 
 // Requests a file over HTTP and writes it to disk
 function httpGet(uri, file, redirectCount) {
@@ -49,7 +51,7 @@ function httpGet(uri, file, redirectCount) {
         } else if (res.statusCode >= 200 && res.statusCode < 300) {
           file.on('finish', () => file.close(() => resolve()));
           file.on('error', (error) => {
-            fs.unlinkSync(file);
+            unlinkSync(file);
             reject(error);
           });
 
@@ -68,22 +70,23 @@ function httpGet(uri, file, redirectCount) {
  * @param {object} artifact
  * @param {string} sourceFilename
  */
-module.exports = async function main(event, artifact, sourceFilename) {
+export default async function main(event, artifact, sourceFilename) {
   // Downloads the HTTP resource to a file on disk in the Lambda's tmp
   // directory, and then uploads that file to the S3 artifact bucket.
-  const localFilePath = path.join(os.tmpdir(), sourceFilename);
+  const localFilePath = pathJoin(tmpdir(), sourceFilename);
 
-  const localFile = fs.createWriteStream(localFilePath);
+  const localFile = createWriteStream(localFilePath);
 
   await httpGet(event.Job.Source.URL, localFile);
 
-  await s3
-    .upload({
+  await new Upload({
+    client: s3,
+    params: {
       Bucket: artifact.BucketName,
       Key: artifact.ObjectKey,
-      Body: fs.createReadStream(localFilePath),
-    })
-    .promise();
+      Body: createReadStream(localFilePath),
+    },
+  }).done();
 
-  fs.unlinkSync(localFilePath);
-};
+  unlinkSync(localFilePath);
+}

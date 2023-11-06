@@ -1,16 +1,17 @@
-const path = require('path');
-const os = require('os');
-const fs = require('fs');
-const aws = require('aws-sdk');
-const audio = require('./audio');
-const video = require('./video');
-const image = require('./image');
+import { join as pathJoin } from 'node:path';
+import { tmpdir } from 'node:os';
+import { unlinkSync, statSync, createWriteStream } from 'node:fs';
+import { S3Client, GetObjectCommand } from '@aws-sdk/client-s3';
 
-const s3 = new aws.S3();
+import { inspect as audio } from './audio.js';
+import { inspect as video } from './video.js';
+import { inspect as image } from './image.js';
 
-/** @typedef {import('./audio').AudioInspection} AudioInspection */
-/** @typedef {import('./video').VideoInspection} VideoInspection */
-/** @typedef {import('./image').ImageInspection} ImageInspection */
+const s3 = new S3Client();
+
+/** @typedef {import('./audio.js').AudioInspection} AudioInspection */
+/** @typedef {import('./video.js').VideoInspection} VideoInspection */
+/** @typedef {import('./image.js').ImageInspection} ImageInspection */
 
 /**
  * @typedef {object} InspectTask
@@ -32,23 +33,29 @@ const s3 = new aws.S3();
  * @param {string} filePath
  */
 function s3GetObject(bucketName, objectKey, filePath) {
-  return new Promise((resolve, reject) => {
-    const file = fs.createWriteStream(filePath);
-    const stream = s3
-      .getObject({
+  // eslint-disable-next-line no-async-promise-executor
+  return new Promise(async (resolve, reject) => {
+    const file = createWriteStream(filePath);
+
+    const resp = await s3.send(
+      new GetObjectCommand({
         Bucket: bucketName,
         Key: objectKey,
-      })
-      .createReadStream();
+      }),
+    );
 
+    const stream = resp.Body;
+
+    // @ts-ignore
+    stream.pipe(file);
+
+    // @ts-ignore
     stream.on('error', reject);
     file.on('error', reject);
 
     file.on('finish', () => {
       resolve(filePath);
     });
-
-    stream.pipe(file);
   });
 }
 
@@ -85,16 +92,16 @@ async function fetchArtifact(event, filePath) {
 exports.handler = async (event, context) => {
   console.log(JSON.stringify({ msg: 'State input', input: event }));
 
-  const artifactFileTmpPath = path.join(os.tmpdir(), context.awsRequestId);
+  const artifactFileTmpPath = pathJoin(tmpdir(), context.awsRequestId);
   await fetchArtifact(event, artifactFileTmpPath);
 
-  const stat = fs.statSync(artifactFileTmpPath);
+  const stat = statSync(artifactFileTmpPath);
 
   const [audioInspection, videoInspection, imageInspection] = await Promise.all(
     [
-      audio.inspect(event.Task, artifactFileTmpPath),
-      video.inspect(event.Task, artifactFileTmpPath),
-      image.inspect(event.Task, artifactFileTmpPath),
+      audio(event.Task, artifactFileTmpPath),
+      video(event.Task, artifactFileTmpPath),
+      image(event.Task, artifactFileTmpPath),
     ],
   );
 
@@ -107,7 +114,7 @@ exports.handler = async (event, context) => {
     ...(imageInspection && { Image: imageInspection }),
   };
 
-  fs.unlinkSync(artifactFileTmpPath);
+  unlinkSync(artifactFileTmpPath);
 
   if (inspection.Audio && !inspection.Audio.Layer) {
     console.log(JSON.stringify({ event, inspection, tag: 'NO_LAYER' }));

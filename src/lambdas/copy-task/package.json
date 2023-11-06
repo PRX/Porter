@@ -1,5 +1,5 @@
 {
-  "name": "transcode-task-output",
+  "name": "copy-task",
   "version": "1.0.0",
   "type": "module"
 }
