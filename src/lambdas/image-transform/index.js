@@ -144,7 +144,7 @@ async function s3Upload(event, imageFileTmpPath) {
   );
 }
 
-exports.handler = async (event, context) => {
+export const handler = async (event, context) => {
   console.log(JSON.stringify({ msg: 'State input', input: event }));
 
   mkdirSync(pathJoin(tmpdir(), context.awsRequestId));

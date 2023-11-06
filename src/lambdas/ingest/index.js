@@ -36,7 +36,7 @@ class UnknownSourceModeError extends Error {
  * @param {object} source
  * @returns
  */
-function filenameFromSource(source) {
+export function filenameFromSource(source) {
   if (source.Mode === 'HTTP') {
     const urlObj = new URL(source.URL);
     return (
@@ -54,7 +54,6 @@ function filenameFromSource(source) {
 
   return false;
 }
-exports.filenameFromSource = filenameFromSource;
 
 export const handler = async (event, context) => {
   console.log(JSON.stringify({ msg: 'State input', input: event }));
