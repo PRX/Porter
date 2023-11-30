@@ -67,7 +67,7 @@ export const handler = async (event, context) => {
 
   switch (event.Job.Source.Mode) {
     case 'HTTP':
-      await fromHttp(event, artifact, sourceFilename);
+      await fromHttp(event, artifact);
       break;
     case 'AWS/S3':
       await fromS3(event, artifact);
@@ -76,7 +76,7 @@ export const handler = async (event, context) => {
       await fromDataUri(event, artifact);
       break;
     case 'GCP/Storage':
-      await fromGcpStorage(event, artifact, sourceFilename);
+      await fromGcpStorage(event, artifact);
       break;
     default:
       throw new UnknownSourceModeError('Unexpected source mode');

@@ -1,13 +1,10 @@
 import { Storage } from '@google-cloud/storage';
-import { tmpdir } from 'node:os';
-import { join as pathJoin } from 'node:path';
-import { createReadStream, unlinkSync } from 'node:fs';
 import { S3Client } from '@aws-sdk/client-s3';
 import { Upload } from '@aws-sdk/lib-storage';
 
 const s3 = new S3Client({ apiVersion: '2006-03-01' });
 
-export default async function main(event, artifact, sourceFilename) {
+export default async function main(event, artifact) {
   // Copies a file in Google Cloud Storage to the S3 artifact bucket.
   // https://googleapis.dev/nodejs/storage/latest/index.html
   // https://googleapis.dev/nodejs/storage/latest/Bucket.html#getFiles
@@ -18,25 +15,20 @@ export default async function main(event, artifact, sourceFilename) {
     credentials: event.Job.Source.ClientConfiguration,
   });
 
-  const localFilePath = pathJoin(tmpdir(), sourceFilename);
-
-  // Downloads the file from GCP
-  await storage
+  // Create a readable stream from the GCP object
+  const readable = await storage
     .bucket(event.Job.Source.BucketName)
     .file(event.Job.Source.ObjectName)
-    .download({
-      destination: localFilePath,
-    });
+    .createReadStream();
 
-  // Upload the artifact to S3
-  await new Upload({
+  // Stream the object data to S3
+  const upload = new Upload({
     client: s3,
     params: {
       Bucket: artifact.BucketName,
       Key: artifact.ObjectKey,
-      Body: createReadStream(localFilePath),
+      Body: readable,
     },
-  }).done();
-
-  unlinkSync(localFilePath);
+  });
+  await upload.done();
 }

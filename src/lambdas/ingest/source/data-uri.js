@@ -10,6 +10,11 @@ class InvalidDataUriError extends Error {
   }
 }
 
+/**
+ * Creates an object in S3 from a data URI
+ * @param {object} event
+ * @param {object} artifact
+ */
 export default async function main(event, artifact) {
   // e.g., data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7
   const uri = event.Job.Source.URI;
@@ -20,12 +25,13 @@ export default async function main(event, artifact) {
 
   const base64Data = uri.split(';base64,')[1];
 
-  await new Upload({
+  const upload = new Upload({
     client: s3,
     params: {
       Bucket: artifact.BucketName,
       Key: artifact.ObjectKey,
       Body: Buffer.from(base64Data, 'base64'),
     },
-  }).done();
+  });
+  await upload.done();
 }
