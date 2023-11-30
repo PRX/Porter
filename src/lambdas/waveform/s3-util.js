@@ -106,7 +106,8 @@ export async function s3Upload(event, waveformFileTmpPath) {
 
   // Upload the resulting file to the destination in S3
   const uploadStart = process.hrtime();
-  await new Upload({ client: s3writer, params });
+  const upload = new Upload({ client: s3writer, params });
+  await upload.done();
   const uploadEnd = process.hrtime(uploadStart);
   console.log(
     JSON.stringify({
