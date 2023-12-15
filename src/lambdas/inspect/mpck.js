@@ -6,6 +6,7 @@ import { tmpdir } from 'node:os';
  * @property {string} [layer]
  * @property {number} [samples]
  * @property {number} [frames]
+ * @property {number} [time]
  * @property {number} [unidentified]
  */
 
@@ -37,6 +38,16 @@ function extract(output) {
   const unidentified = output.match(/unidentified\s+([0-9]+) b/);
   if (unidentified) {
     result.unidentified = +unidentified[1];
+  }
+
+  const time = output.match(/time\s+([0-9:.]+)/);
+  if (time) {
+    const parts = time[1].split(':');
+    const min = +parts[0];
+    const sec = +parts[1];
+    const total = min * 60 + sec;
+
+    result.time = total;
   }
 
   console.log(

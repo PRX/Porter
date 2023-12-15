@@ -75,6 +75,7 @@ export async function inspect(task, filePath) {
           ...(check.layer && { Layer: check.layer }),
           ...(check.frames && { Frames: check.frames }),
           ...(check.samples && { Samples: check.samples }),
+          ...(check.time && { Duration: Math.round(nmbr(check.time) * 1000) }),
           ...(check.unidentified && {
             UnidentifiedBytes: check.unidentified,
           }),
