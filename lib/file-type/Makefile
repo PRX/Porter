@@ -1,5 +1,5 @@
 build-FileTypeLambdaLayer:
-	mkdir -p "$(ARTIFACTS_DIR)/nodejs
+	mkdir -p "$(ARTIFACTS_DIR)/nodejs"
 	npm init --yes
 	npm install file-type
 	npm install @tokenizer/s3
