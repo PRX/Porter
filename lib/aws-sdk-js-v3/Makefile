@@ -11,4 +11,3 @@ build-AwsSdkJsV3LambdaLayer:
 	npm install --prefix "$(ARTIFACTS_DIR)/nodejs" @aws-sdk/client-eventbridge
 	npm install --prefix "$(ARTIFACTS_DIR)/nodejs" @aws-sdk/client-transcribe
 	npm install --prefix "$(ARTIFACTS_DIR)/nodejs" @aws-sdk/lib-storage
-	npm install --prefix "$(ARTIFACTS_DIR)/nodejs" @tokenizer/s3
