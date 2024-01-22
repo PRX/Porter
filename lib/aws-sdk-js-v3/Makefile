@@ -1,15 +1,14 @@
 build-AwsSdkJsV3LambdaLayer:
-	mkdir -p "$(ARTIFACTS_DIR)/nodejs/node_modules"
-	yarn add @aws-sdk/util-retry
-	yarn add @aws-sdk/middleware-retry
-	yarn add @aws-sdk/client-cloudwatch
-	yarn add @aws-sdk/client-s3
-	yarn add @aws-sdk/client-sns
-	yarn add @aws-sdk/client-sqs
-	yarn add @aws-sdk/client-sfn
-	yarn add @aws-sdk/client-sts
-	yarn add @aws-sdk/client-eventbridge
-	yarn add @aws-sdk/client-transcribe
-	yarn add @aws-sdk/lib-storage
-	yarn add @tokenizer/s3
-	yarn install --modules-folder "$(ARTIFACTS_DIR)/nodejs/node_modules"
+	mkdir -p "$(ARTIFACTS_DIR)/nodejs"
+	npm install --prefix "$(ARTIFACTS_DIR)/nodejs" @aws-sdk/util-retry
+	npm install --prefix "$(ARTIFACTS_DIR)/nodejs" @aws-sdk/middleware-retry
+	npm install --prefix "$(ARTIFACTS_DIR)/nodejs" @aws-sdk/client-cloudwatch
+	npm install --prefix "$(ARTIFACTS_DIR)/nodejs" @aws-sdk/client-s3
+	npm install --prefix "$(ARTIFACTS_DIR)/nodejs" @aws-sdk/client-sns
+	npm install --prefix "$(ARTIFACTS_DIR)/nodejs" @aws-sdk/client-sqs
+	npm install --prefix "$(ARTIFACTS_DIR)/nodejs" @aws-sdk/client-sfn
+	npm install --prefix "$(ARTIFACTS_DIR)/nodejs" @aws-sdk/client-sts
+	npm install --prefix "$(ARTIFACTS_DIR)/nodejs" @aws-sdk/client-eventbridge
+	npm install --prefix "$(ARTIFACTS_DIR)/nodejs" @aws-sdk/client-transcribe
+	npm install --prefix "$(ARTIFACTS_DIR)/nodejs" @aws-sdk/lib-storage
+	npm install --prefix "$(ARTIFACTS_DIR)/nodejs" @tokenizer/s3
