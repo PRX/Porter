@@ -7,25 +7,24 @@
     "url": "git://github.com/PRX/Porter.git"
   },
   "dependencies": {
-    "@google-cloud/storage": "^7",
     "@aws-sdk/client-cloudwatch": "*",
+    "@aws-sdk/client-eventbridge": "*",
     "@aws-sdk/client-s3": "*",
-    "@aws-sdk/client-sns": "*",
     "@aws-sdk/client-sfn": "*",
+    "@aws-sdk/client-sns": "*",
     "@aws-sdk/client-sqs": "*",
     "@aws-sdk/client-sts": "*",
-    "@aws-sdk/client-eventbridge": "*",
     "@aws-sdk/client-transcribe": "*",
     "@aws-sdk/lib-storage": "*",
+    "@google-cloud/storage": "^7",
     "@tokenizer/s3": "^0.2",
     "aws-sdk": "^2.1354.0",
-    "file-type": "^18",
+    "file-type": "^19",
     "prx-wavefile": "^11.0.0-prx.4",
-    "sharp": "^0.32"
+    "sharp": "^0.33"
   },
   "devDependencies": {
-    "@prettier/plugin-ruby": "^3",
-    "aws-sdk-mock": "^5.1.0",
+    "@prettier/plugin-ruby": "^4",
     "dotenv": "^16",
     "eslint": "^8",
     "eslint-config-airbnb-base": "^15",
