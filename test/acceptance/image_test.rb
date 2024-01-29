@@ -22,7 +22,7 @@ describe :porter do
               },
               Destination: {
                 Mode: "AWS/S3",
-                BucketName: "prx-porter-sandbox",
+                BucketName: CONFIG.PORTER_TEST_BUCKET_NAME,
                 ObjectKey: "dev/sample/image/image.jpg"
               }
             }

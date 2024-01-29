@@ -20,7 +20,7 @@ describe :porter do
               DataFormat: "Binary",
               Destination: {
                 Mode: "AWS/S3",
-                BucketName: "prx-porter-sandbox",
+                BucketName: CONFIG.PORTER_TEST_BUCKET_NAME,
                 ObjectKey: "dev/sample/waveform/waveform.dat"
               }
             }
@@ -51,7 +51,7 @@ describe :porter do
               DataFormat: "JSON",
               Destination: {
                 Mode: "AWS/S3",
-                BucketName: "prx-porter-sandbox",
+                BucketName: CONFIG.PORTER_TEST_BUCKET_NAME,
                 ObjectKey: "dev/sample/waveform/waveform.json"
               }
             }
@@ -84,7 +84,7 @@ describe :porter do
               WaveformPointFrequency: 256,
               Destination: {
                 Mode: "AWS/S3",
-                BucketName: "prx-porter-sandbox",
+                BucketName: CONFIG.PORTER_TEST_BUCKET_NAME,
                 ObjectKey: "dev/sample/waveform/waveform.json"
               }
             }
