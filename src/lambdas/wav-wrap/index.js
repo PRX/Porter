@@ -2,7 +2,7 @@ import { createHash } from 'node:crypto';
 import { S3Client, GetObjectCommand } from '@aws-sdk/client-s3';
 import { STSClient, AssumeRoleCommand } from '@aws-sdk/client-sts';
 import { Upload } from '@aws-sdk/lib-storage';
-import * as wavefile from 'prx-wavefile';
+import wavefile from 'prx-wavefile';
 
 function camelize(str) {
   return str
@@ -112,6 +112,7 @@ export const handler = async (event) => {
       Key: event.Artifact.ObjectKey,
     }),
   );
+  const mpegData = await s3Object.Body.transformToByteArray();
   const s3end = process.hrtime(s3start);
   console.log(
     JSON.stringify({
@@ -128,8 +129,8 @@ export const handler = async (event) => {
     wav.padBytes = false;
   }
 
-  if (s3Object.Body instanceof Uint8Array || Buffer.isBuffer(s3Object.Body)) {
-    wav.fromMpeg(s3Object.Body);
+  if (mpegData instanceof Uint8Array || Buffer.isBuffer(mpegData)) {
+    wav.fromMpeg(mpegData);
   } else {
     throw new Error(
       'No suitable mpeg buffer found to set up WaveFileCreator object',
