@@ -1,6 +1,6 @@
 import { createHash } from 'node:crypto';
 import { S3Client, GetObjectCommand } from '@aws-sdk/client-s3';
-import { STSClient } from '@aws-sdk/client-sts';
+import { STSClient, AssumeRoleCommand } from '@aws-sdk/client-sts';
 import { Upload } from '@aws-sdk/lib-storage';
 import * as wavefile from 'prx-wavefile';
 
@@ -12,13 +12,19 @@ function camelize(str) {
     .replace(/\s+/g, '');
 }
 
+/**
+ *
+ * @param {STSClient} sts
+ * @param {*} event
+ * @param {Uint8Array} uploadBuffer
+ */
 async function s3Upload(sts, event, uploadBuffer) {
-  const role = await sts
-    .assumeRole({
+  const role = await sts.send(
+    new AssumeRoleCommand({
       RoleArn: process.env.S3_DESTINATION_WRITER_ROLE,
       RoleSessionName: 'porter_wavwrapper_task',
-    })
-    .promise();
+    }),
+  );
 
   const s3writer = new S3Client({
     apiVersion: '2006-03-01',
