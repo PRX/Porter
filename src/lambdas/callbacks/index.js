@@ -236,7 +236,7 @@ export const handler = async (event) => {
     const QueueUrl = event.Callback.Queue;
     const MessageBody = JSON.stringify(msg);
 
-    const region = QueueUrl.match(/[a-z]{2}\-[a-z]+-[0-9]+/)[0];
+    const region = QueueUrl.match(/[a-z]{2}-[a-z]+-[0-9]+/)[0];
     const sqs = new SQSClient({ apiVersion: '2012-11-05', region });
 
     await sqs.send(new SendMessageCommand({ QueueUrl, MessageBody }));
