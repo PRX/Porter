@@ -15,7 +15,8 @@ export const handler = async (event) => {
       Key: `${event.Execution.Id}/transcode/ffprobe-${event.TaskIteratorIndex}.json`,
     }),
   );
-  const ffprobe = JSON.parse(file.Body.toString());
+  const json = await file.Body.transformToString();
+  const ffprobe = JSON.parse(json);
 
   const now = new Date();
 

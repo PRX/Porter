@@ -35,7 +35,8 @@ export const handler = async (event) => {
       Key: `${event.Execution.Id}/copy/ftp-result-${event.TaskIteratorIndex}.json`,
     }),
   );
-  const ftpResult = JSON.parse(file.Body.toString());
+  const json = await file.Body.transformToString();
+  const ftpResult = JSON.parse(json);
 
   if (!ftpResult) {
     throw new MissingFtpResultsError('No Fargate results file found');
