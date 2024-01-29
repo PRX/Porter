@@ -54,7 +54,7 @@ export async function fetchArtifact(event, filePath) {
   );
 
   const s3start = process.hrtime();
-  await this.s3GetObject(
+  await s3GetObject(
     event.Artifact.BucketName,
     event.Artifact.ObjectKey,
     filePath,
