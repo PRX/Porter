@@ -3,6 +3,10 @@ import {
   S3Client,
   HeadObjectCommand,
   CopyObjectCommand,
+  CreateMultipartUploadCommand,
+  UploadPartCopyCommand,
+  CompleteMultipartUploadCommand,
+  AbortMultipartUploadCommand,
 } from '@aws-sdk/client-s3';
 
 const sts = new STSClient({ apiVersion: '2011-06-15' });
@@ -59,11 +63,17 @@ function buildParams(event) {
 
 // https://aws.amazon.com/blogs/storage/copying-objects-greater-than-5-gb-with-amazon-s3-batch-operations/
 // Look for max_concurrency for some info on performance tuning
+/**
+ *
+ * @param {*} params
+ * @param {*} sourceObjectSize
+ * @param {S3Client} s3Client
+ */
 async function multipartCopy(params, sourceObjectSize, s3Client) {
   // Initialize the multipart upload
-  const multipartUpload = await s3Client
-    .createMultipartUpload(params)
-    .promise();
+  const multipartUpload = await s3Client.send(
+    new CreateMultipartUploadCommand(params),
+  );
 
   const uploadId = multipartUpload.UploadId;
 
@@ -105,8 +115,8 @@ async function multipartCopy(params, sourceObjectSize, s3Client) {
     // Copy all parts in parallel
     const uploads = await Promise.all(
       partRanges.map((range, idx) =>
-        s3Client
-          .uploadPartCopy({
+        s3Client.send(
+          new UploadPartCopyCommand({
             Bucket: params.Bucket, // Destination bucket
             Key: params.Key, // Destination object key
             PartNumber: idx + 1, // Positive integer between 1 and 10,000
@@ -115,14 +125,14 @@ async function multipartCopy(params, sourceObjectSize, s3Client) {
             // CopySource expects "/sourcebucket/path/to/object.extension" to be URI-encoded
             CopySource: params.CopySource,
             CopySourceRange: `bytes=${range.join('-')}`,
-          })
-          .promise(),
+          }),
+        ),
       ),
     );
 
     // Finalize the upload after all parts have been successfully copied
-    await s3Client
-      .completeMultipartUpload({
+    await s3Client.send(
+      new CompleteMultipartUploadCommand({
         Bucket: params.Bucket, // Destination bucket
         Key: params.Key, // Destination object key
         UploadId: uploadId,
@@ -132,17 +142,17 @@ async function multipartCopy(params, sourceObjectSize, s3Client) {
             PartNumber: idx + 1,
           })),
         },
-      })
-      .promise();
+      }),
+    );
   } catch (error) {
     // Clean up the incomplete upload if it fails
-    await s3Client
-      .abortMultipartUpload({
+    await s3Client.send(
+      new AbortMultipartUploadCommand({
         Bucket: params.Bucket, // Destination bucket
         Key: params.Key, // Destination object key
         UploadId: uploadId,
-      })
-      .promise();
+      }),
+    );
 
     throw new AwsS3MultipartCopyError('Multipart copy was aborted');
   }
