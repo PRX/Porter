@@ -19,6 +19,7 @@
     "@google-cloud/storage": "^7",
     "@tokenizer/s3": "^0.2",
     "file-type": "^19",
+    "porter-util": "file:./lib/porter-util",
     "prx-wavefile": "^11.0.0-prx.4",
     "sharp": "^0.33"
   },

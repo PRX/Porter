@@ -1383,6 +1383,16 @@ Resources:
         - nodejs20.x
       Description: Google Cloud Node.js SDK
       RetentionPolicy: Delete
+  PorterUtilLambdaLayer:
+    Type: AWS::Serverless::LayerVersion
+    Metadata:
+      BuildMethod: makefile
+    Properties:
+      ContentUri: lib/porter-util
+      CompatibleRuntimes:
+        - nodejs20.x
+      Description: Shared Porter utilities
+      RetentionPolicy: Delete
   # Normalize Input Lambda
   NormalizeInputLambdaFunction:
     Type: AWS::Serverless::Function
@@ -1468,6 +1478,7 @@ Resources:
           MAX_HTTP_REDIRECTS: "10"
       Handler: index.handler
       Layers:
+        - !Ref AwsSdkJsV3LambdaLayer
         - !Ref GoogleCloudLambdaLayer
       MemorySize: 512
       Role: !GetAtt IngestLambdaIamRole.Arn
@@ -1567,6 +1578,7 @@ Resources:
         Size: 4096
       Handler: index.handler
       Layers:
+        - !Ref AwsSdkJsV3LambdaLayer
         - !Ref FfmpegLambdaLayer
         - !Ref MpckLambdaLayer
         - !Ref SharpLambdaLayer
@@ -1630,6 +1642,7 @@ Resources:
           GCP_STORAGE_DESTINATION_WRITER_ROLE: !GetAtt GCPStorageDestinationWriterRole.Arn
       Handler: index.handler
       Layers:
+        - !Ref AwsSdkJsV3LambdaLayer
         - !Ref GoogleCloudLambdaLayer
       MemorySize: 512
       Role: !GetAtt CopyLambdaIamRole.Arn
@@ -1666,6 +1679,8 @@ Resources:
         Variables:
           ARTIFACT_BUCKET_NAME: !Ref ArtifactBucket
       Handler: index.handler
+      Layers:
+        - !Ref AwsSdkJsV3LambdaLayer
       MemorySize: 128
       Policies:
         - !Ref ArtifactBucketReadOnlyAccessPolicy
@@ -1723,6 +1738,8 @@ Resources:
         Variables:
           ARTIFACT_BUCKET_NAME: !Ref ArtifactBucket
       Handler: index.handler
+      Layers:
+        - !Ref AwsSdkJsV3LambdaLayer
       MemorySize: 128
       Policies:
         - !Ref ArtifactBucketReadOnlyAccessPolicy
@@ -1797,6 +1814,7 @@ Resources:
           S3_DESTINATION_WRITER_ROLE: !GetAtt S3DestinationWriterRole.Arn
       Handler: index.handler
       Layers:
+        - !Ref AwsSdkJsV3LambdaLayer
         - !Ref SharpLambdaLayer
       MemorySize: 1024
       Role: !GetAtt ImageTransformLambdaIamRole.Arn
@@ -1855,6 +1873,7 @@ Resources:
           S3_DESTINATION_WRITER_ROLE: !GetAtt S3DestinationWriterRole.Arn
       Handler: index.handler
       Layers:
+        - !Ref AwsSdkJsV3LambdaLayer
         - !Ref WavefileLambdaLayer
       MemorySize: 3008
       Role: !GetAtt WavWrapLambdaIamRole.Arn
@@ -1913,7 +1932,9 @@ Resources:
           S3_DESTINATION_WRITER_ROLE: !GetAtt S3DestinationWriterRole.Arn
       Handler: index.handler
       Layers:
+        - !Ref AwsSdkJsV3LambdaLayer
         - !Ref FfmpegLambdaLayer
+        - !Ref PorterUtilLambdaLayer
       MemorySize: 3008
       Role: !GetAtt SilenceDetectionLambdaIamRole.Arn
       Runtime: nodejs20.x
@@ -1971,6 +1992,7 @@ Resources:
           S3_DESTINATION_WRITER_ROLE: !GetAtt S3DestinationWriterRole.Arn
       Handler: index.handler
       Layers:
+        - !Ref AwsSdkJsV3LambdaLayer
         - !Ref FfmpegLambdaLayer
       MemorySize: 3008
       Role: !GetAtt ToneDetectionLambdaIamRole.Arn
@@ -2029,6 +2051,7 @@ Resources:
         Size: 4096
       Handler: index.handler
       Layers:
+        - !Ref AwsSdkJsV3LambdaLayer
         - !Ref AudiowaveformLambdaLayer
         - !Ref FfmpegLambdaLayer
       MemorySize: 3008
@@ -2144,6 +2167,8 @@ Resources:
         Variables:
           S3_DESTINATION_WRITER_ROLE: !GetAtt S3DestinationWriterRole.Arn
       Handler: index.handler
+      Layers:
+        - !Ref AwsSdkJsV3LambdaLayer
       MemorySize: 512
       Role: !GetAtt TranscriptionJobResultsLambdaIamRole.Arn
       Runtime: nodejs20.x
