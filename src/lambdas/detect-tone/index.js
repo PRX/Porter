@@ -4,13 +4,7 @@ import { spawn } from 'node:child_process';
 import { once } from 'node:events';
 import { createInterface } from 'node:readline';
 import { unlinkSync, createReadStream } from 'node:fs';
-import { S3Client, GetObjectCommand } from '@aws-sdk/client-s3';
-import { writeFile } from 'node:fs/promises';
-
-const s3 = new S3Client({
-  apiVersion: '2006-03-01',
-  followRegionRedirects: true,
-});
+import { writeArtifact } from 'porter-util';
 
 const DEFAULT_MIN_VALUE = 0.025;
 const DEFAULT_MIN_DURATION = 0.2;
@@ -115,27 +109,6 @@ async function getRangesFromMetadataFile(filePath, minValue, minDuration) {
   await once(reader, 'close');
 
   return ranges;
-}
-
-/** Fetches the job's source file artifact from S3 and writes it to the Lambda
- * environment's local temp storage.
- * @returns {Promise<string>} Path to the file that was written
- */
-async function writeArtifact(event, context) {
-  const ext = event.Artifact.Descriptor.Extension;
-  const tmpFilePath = pathJoin(tmpdir(), `${context.awsRequestId}.${ext}`);
-
-  const { Body } = await s3.send(
-    new GetObjectCommand({
-      Bucket: event.Artifact.BucketName,
-      Key: event.Artifact.ObjectKey,
-    }),
-  );
-
-  // @ts-ignore
-  await writeFile(tmpFilePath, Body);
-
-  return tmpFilePath;
 }
 
 export const handler = async (event, context) => {

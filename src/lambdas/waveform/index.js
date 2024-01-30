@@ -3,15 +3,9 @@
 import { join as pathJoin } from 'node:path';
 import { tmpdir } from 'node:os';
 import { unlinkSync } from 'node:fs';
-import { writeFile } from 'node:fs/promises';
-import { S3Client, GetObjectCommand } from '@aws-sdk/client-s3';
+import { writeArtifact } from 'porter-util';
 import { s3Upload } from './s3-util.js';
 import { v1 as awfV1 } from './generators/audiowaveform.js';
-
-const s3 = new S3Client({
-  apiVersion: '2006-03-01',
-  followRegionRedirects: true,
-});
 
 class UnknownDestinationModeError extends Error {
   constructor(...params) {
@@ -25,27 +19,6 @@ class UnknownGeneratorError extends Error {
     super(...params);
     this.name = 'UnknownGeneratorError';
   }
-}
-
-/** Fetches the job's source file artifact from S3 and writes it to the Lambda
- * environment's local temp storage.
- * @returns {Promise<string>} Path to the file that was written
- */
-async function writeArtifact(event, context) {
-  const ext = event.Artifact.Descriptor.Extension;
-  const tmpFilePath = pathJoin(tmpdir(), `${context.awsRequestId}.${ext}`);
-
-  const { Body } = await s3.send(
-    new GetObjectCommand({
-      Bucket: event.Artifact.BucketName,
-      Key: event.Artifact.ObjectKey,
-    }),
-  );
-
-  // @ts-ignore
-  await writeFile(tmpFilePath, Body);
-
-  return tmpFilePath;
 }
 
 export const handler = async (event, context) => {

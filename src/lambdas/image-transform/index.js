@@ -1,16 +1,10 @@
-import { S3Client, GetObjectCommand } from '@aws-sdk/client-s3';
+import { S3Client } from '@aws-sdk/client-s3';
 import { STSClient, AssumeRoleCommand } from '@aws-sdk/client-sts';
 import { Upload } from '@aws-sdk/lib-storage';
-import { tmpdir } from 'node:os';
 import { unlinkSync } from 'node:fs';
-import { writeFile } from 'node:fs/promises';
-import { join as pathJoin } from 'node:path';
 import sharp from 'sharp';
+import { writeArtifact } from 'porter-util';
 
-const s3 = new S3Client({
-  apiVersion: '2006-03-01',
-  followRegionRedirects: true,
-});
 const sts = new STSClient({ apiVersion: '2011-06-15' });
 
 async function s3Upload(event, sharpInstance) {
@@ -88,27 +82,6 @@ function sharpTransformer(inputFilePath, event) {
   }
 
   return transformer;
-}
-
-/** Fetches the job's source file artifact from S3 and writes it to the Lambda
- * environment's local temp storage.
- * @returns {Promise<string>} Path to the file that was written
- */
-async function writeArtifact(event, context) {
-  const ext = event.Artifact.Descriptor.Extension;
-  const tmpFilePath = pathJoin(tmpdir(), `${context.awsRequestId}.${ext}`);
-
-  const { Body } = await s3.send(
-    new GetObjectCommand({
-      Bucket: event.Artifact.BucketName,
-      Key: event.Artifact.ObjectKey,
-    }),
-  );
-
-  // @ts-ignore
-  await writeFile(tmpFilePath, Body);
-
-  return tmpFilePath;
 }
 
 export const handler = async (event, context) => {

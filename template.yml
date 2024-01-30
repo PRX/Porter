@@ -1581,6 +1581,7 @@ Resources:
         - !Ref AwsSdkJsV3LambdaLayer
         - !Ref FfmpegLambdaLayer
         - !Ref MpckLambdaLayer
+        - !Ref PorterUtilLambdaLayer
         - !Ref SharpLambdaLayer
       MemorySize: 2048
       Policies:
@@ -1815,6 +1816,7 @@ Resources:
       Handler: index.handler
       Layers:
         - !Ref AwsSdkJsV3LambdaLayer
+        - !Ref PorterUtilLambdaLayer
         - !Ref SharpLambdaLayer
       MemorySize: 1024
       Role: !GetAtt ImageTransformLambdaIamRole.Arn
@@ -1993,6 +1995,7 @@ Resources:
       Handler: index.handler
       Layers:
         - !Ref AwsSdkJsV3LambdaLayer
+        - !Ref PorterUtilLambdaLayer
         - !Ref FfmpegLambdaLayer
       MemorySize: 3008
       Role: !GetAtt ToneDetectionLambdaIamRole.Arn
@@ -2053,6 +2056,7 @@ Resources:
       Layers:
         - !Ref AwsSdkJsV3LambdaLayer
         - !Ref AudiowaveformLambdaLayer
+        - !Ref PorterUtilLambdaLayer
         - !Ref FfmpegLambdaLayer
       MemorySize: 3008
       Role: !GetAtt WaveformLambdaIamRole.Arn
