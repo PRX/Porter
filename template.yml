@@ -1296,19 +1296,6 @@ Resources:
       ContentUri: lib/aws-sdk-js-v3
       Description: aws-sdk v3 NPM module
       RetentionPolicy: Delete
-  AwsSdkLambdaLayer:
-    Type: AWS::Serverless::LayerVersion
-    Metadata:
-      BuildMethod: makefile
-    Properties:
-      CompatibleArchitectures:
-        - x86_64
-        - arm64
-      CompatibleRuntimes:
-        - nodejs20.x
-      ContentUri: lib/aws-sdk
-      Description: aws-sdk NPM module
-      RetentionPolicy: Delete
   FileTypeLambdaLayer:
     Type: AWS::Serverless::LayerVersion
     Metadata:
