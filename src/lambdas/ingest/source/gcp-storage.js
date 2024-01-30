@@ -2,7 +2,10 @@ import { Storage } from '@google-cloud/storage';
 import { S3Client } from '@aws-sdk/client-s3';
 import { Upload } from '@aws-sdk/lib-storage';
 
-const s3 = new S3Client({ apiVersion: '2006-03-01' });
+const s3 = new S3Client({
+  apiVersion: '2006-03-01',
+  followRegionRedirects: true,
+});
 
 export default async function main(event, artifact) {
   // Copies a file in Google Cloud Storage to the S3 artifact bucket.

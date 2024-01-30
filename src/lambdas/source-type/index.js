@@ -5,7 +5,10 @@ import { fileTypeFromTokenizer } from 'file-type';
 import { makeTokenizer } from '@tokenizer/s3';
 import { S3Client } from '@aws-sdk/client-s3';
 
-const s3 = new S3Client({ apiVersion: '2006-03-01' });
+const s3 = new S3Client({
+  apiVersion: '2006-03-01',
+  followRegionRedirects: true,
+});
 
 /**
  * @typedef {object} SourceTypeResult

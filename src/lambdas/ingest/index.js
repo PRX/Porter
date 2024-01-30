@@ -22,7 +22,10 @@ import fromDataUri from './source/data-uri.js';
 import fromS3 from './source/aws-s3.js';
 import fromGcpStorage from './source/gcp-storage.js';
 
-const s3 = new S3Client({ apiVersion: '2006-03-01' });
+const s3 = new S3Client({
+  apiVersion: '2006-03-01',
+  followRegionRedirects: true,
+});
 
 class UnknownSourceModeError extends Error {
   constructor(...params) {

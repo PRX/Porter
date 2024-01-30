@@ -56,6 +56,7 @@ async function awsS3copyObject(
       secretAccessKey: role.Credentials.SecretAccessKey,
       sessionToken: role.Credentials.SessionToken,
     },
+    followRegionRedirects: true,
   });
 
   const params = {

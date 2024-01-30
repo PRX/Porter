@@ -6,7 +6,10 @@ import { createInterface } from 'node:readline';
 import { unlinkSync, createReadStream, createWriteStream } from 'node:fs';
 import { S3Client, GetObjectCommand } from '@aws-sdk/client-s3';
 
-const s3 = new S3Client({ apiVersion: '2006-03-01' });
+const s3 = new S3Client({
+  apiVersion: '2006-03-01',
+  followRegionRedirects: true,
+});
 
 const DEFAULT_MIN_VALUE = 0.025;
 const DEFAULT_MIN_DURATION = 0.2;

@@ -7,7 +7,10 @@ import { writeFile } from 'node:fs/promises';
 import { join as pathJoin } from 'node:path';
 import sharp from 'sharp';
 
-const s3 = new S3Client({ apiVersion: '2006-03-01' });
+const s3 = new S3Client({
+  apiVersion: '2006-03-01',
+  followRegionRedirects: true,
+});
 const sts = new STSClient({ apiVersion: '2011-06-15' });
 
 async function s3Upload(event, sharpInstance) {
@@ -25,6 +28,7 @@ async function s3Upload(event, sharpInstance) {
       secretAccessKey: role.Credentials.SecretAccessKey,
       sessionToken: role.Credentials.SessionToken,
     },
+    followRegionRedirects: true,
   });
 
   const params = {

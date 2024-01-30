@@ -3,7 +3,10 @@ import { S3Client, GetObjectCommand } from '@aws-sdk/client-s3';
 import { STSClient, AssumeRoleCommand } from '@aws-sdk/client-sts';
 import { Upload } from '@aws-sdk/lib-storage';
 
-const s3 = new S3Client({ apiVersion: '2006-03-01' });
+const s3 = new S3Client({
+  apiVersion: '2006-03-01',
+  followRegionRedirects: true,
+});
 const sts = new STSClient({ apiVersion: '2011-06-15' });
 
 /**
@@ -84,6 +87,7 @@ export async function s3Upload(event, waveformFileTmpPath) {
       secretAccessKey: role.Credentials.SecretAccessKey,
       sessionToken: role.Credentials.SessionToken,
     },
+    followRegionRedirects: true,
   });
 
   const params = {

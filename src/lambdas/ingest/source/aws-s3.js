@@ -1,5 +1,5 @@
 import {
-  S3,
+  S3Client,
   HeadObjectCommand,
   CopyObjectCommand,
   CreateMultipartUploadCommand,
@@ -8,7 +8,10 @@ import {
   AbortMultipartUploadCommand,
 } from '@aws-sdk/client-s3';
 
-const s3 = new S3();
+const s3 = new S3Client({
+  apiVersion: '2006-03-01',
+  followRegionRedirects: true,
+});
 
 class AwsS3MultipartCopyError extends Error {
   constructor(...params) {

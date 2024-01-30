@@ -3,7 +3,10 @@
 // result that gets passed to the callback task.
 import { S3Client, GetObjectCommand } from '@aws-sdk/client-s3';
 
-const s3 = new S3Client({ apiVersion: '2006-03-01' });
+const s3 = new S3Client({
+  apiVersion: '2006-03-01',
+  followRegionRedirects: true,
+});
 
 export const handler = async (event) => {
   console.log(JSON.stringify({ msg: 'State input', input: event }));

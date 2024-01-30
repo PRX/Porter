@@ -6,7 +6,10 @@ import { once } from 'node:events';
 import { spawn } from 'node:child_process';
 import { S3Client, GetObjectCommand } from '@aws-sdk/client-s3';
 
-const s3 = new S3Client({ apiVersion: '2006-03-01' });
+const s3 = new S3Client({
+  apiVersion: '2006-03-01',
+  followRegionRedirects: true,
+});
 
 const DEFAULT_MAX_VALUE = 0.001;
 const DEFAULT_MIN_DURATION = 0.2;

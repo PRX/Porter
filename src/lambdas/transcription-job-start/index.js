@@ -25,7 +25,10 @@ import {
   StartTranscriptionJobCommand,
 } from '@aws-sdk/client-transcribe';
 
-const s3 = new S3Client({ apiVersion: '2006-03-01' });
+const s3 = new S3Client({
+  apiVersion: '2006-03-01',
+  followRegionRedirects: true,
+});
 const transcribe = new TranscribeClient({ apiVersion: '2017-10-26' });
 
 class InvalidTranscribeTaskInputError extends Error {

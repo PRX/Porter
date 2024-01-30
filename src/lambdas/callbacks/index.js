@@ -132,6 +132,7 @@ async function s3Put(event, message) {
       secretAccessKey: role.Credentials.SecretAccessKey,
       sessionToken: role.Credentials.SessionToken,
     },
+    followRegionRedirects: true,
   });
 
   await s3.send(

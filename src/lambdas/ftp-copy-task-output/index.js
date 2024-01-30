@@ -10,7 +10,10 @@
 // included in the task result.
 import { S3Client, GetObjectCommand } from '@aws-sdk/client-s3';
 
-const s3 = new S3Client({ apiVersion: '2006-03-01' });
+const s3 = new S3Client({
+  apiVersion: '2006-03-01',
+  followRegionRedirects: true,
+});
 
 class MissingFtpResultsError extends Error {
   constructor(...params) {

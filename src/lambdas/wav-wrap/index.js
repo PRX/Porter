@@ -33,6 +33,7 @@ async function s3Upload(sts, event, uploadBuffer) {
       secretAccessKey: role.Credentials.SecretAccessKey,
       sessionToken: role.Credentials.SessionToken,
     },
+    followRegionRedirects: true,
   });
 
   const params = {
@@ -93,7 +94,10 @@ async function s3Upload(sts, event, uploadBuffer) {
 export const handler = async (event) => {
   console.log(JSON.stringify({ msg: 'State input', input: event }));
 
-  const s3 = new S3Client({ apiVersion: '2006-03-01' });
+  const s3 = new S3Client({
+    apiVersion: '2006-03-01',
+    followRegionRedirects: true,
+  });
   const sts = new STSClient({ apiVersion: '2011-06-15' });
 
   // Fetch the source file artifact from S3

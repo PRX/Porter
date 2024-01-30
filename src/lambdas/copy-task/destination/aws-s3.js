@@ -10,7 +10,10 @@ import {
 } from '@aws-sdk/client-s3';
 
 const sts = new STSClient({ apiVersion: '2011-06-15' });
-const s3reader = new S3Client({ apiVersion: '2006-03-01' });
+const s3reader = new S3Client({
+  apiVersion: '2006-03-01',
+  followRegionRedirects: true,
+});
 
 class AwsS3MultipartCopyError extends Error {
   constructor(...params) {
@@ -187,6 +190,7 @@ export default async function main(event) {
       secretAccessKey: writerRole.Credentials.SecretAccessKey,
       sessionToken: writerRole.Credentials.SessionToken,
     },
+    followRegionRedirects: true,
   });
 
   const params = buildParams(event);

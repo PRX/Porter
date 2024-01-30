@@ -7,7 +7,10 @@ import { inspect as audio } from './audio.js';
 import { inspect as video } from './video.js';
 import { inspect as image } from './image.js';
 
-const s3 = new S3Client();
+const s3 = new S3Client({
+  apiVersion: '2006-03-01',
+  followRegionRedirects: true,
+});
 
 /** @typedef {import('./audio.js').AudioInspection} AudioInspection */
 /** @typedef {import('./video.js').VideoInspection} VideoInspection */
