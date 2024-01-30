@@ -70,13 +70,6 @@ async function s3Upload(sts, event, uploadBuffer) {
     Object.assign(params, event.Task.Destination.Parameters);
   }
 
-  // TODO Temporary
-  params.Metadata['prx-content-md5'] = createHash('md5')
-    .update(uploadBuffer)
-    .digest('base64');
-
-  params.ContentMD5 = params.Metadata['prx-content-md5'];
-
   // Upload the resulting file to the destination in S3
   const uploadStart = process.hrtime();
   const upload = new Upload({ client: s3writer, params });
