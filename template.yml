@@ -1373,7 +1373,7 @@ Resources:
         - nodejs20.x
       Description: audiowaveform binary
       RetentionPolicy: Delete
-  GoogleCloudLayer:
+  GoogleCloudLambdaLayer:
     Type: AWS::Serverless::LayerVersion
     Metadata:
       BuildMethod: makefile
@@ -1468,7 +1468,7 @@ Resources:
           MAX_HTTP_REDIRECTS: "10"
       Handler: index.handler
       Layers:
-        - !Ref GoogleCloudLayer
+        - !Ref GoogleCloudLambdaLayer
       MemorySize: 512
       Role: !GetAtt IngestLambdaIamRole.Arn
       Runtime: nodejs20.x
@@ -1630,7 +1630,7 @@ Resources:
           GCP_STORAGE_DESTINATION_WRITER_ROLE: !GetAtt GCPStorageDestinationWriterRole.Arn
       Handler: index.handler
       Layers:
-        - !Ref GoogleCloudLayer
+        - !Ref GoogleCloudLambdaLayer
       MemorySize: 512
       Role: !GetAtt CopyLambdaIamRole.Arn
       Runtime: nodejs20.x
