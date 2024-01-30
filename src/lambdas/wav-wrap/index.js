@@ -1,4 +1,3 @@
-import { createHash } from 'node:crypto';
 import { S3Client, GetObjectCommand } from '@aws-sdk/client-s3';
 import { STSClient, AssumeRoleCommand } from '@aws-sdk/client-sts';
 import { Upload } from '@aws-sdk/lib-storage';
