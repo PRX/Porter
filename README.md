@@ -632,11 +632,11 @@ By default all image metadata (EXIF, XMP, IPTC, etc) is stripped away during pro
 
 #### AWS/S3
 
-S3 image destinations are handled by the [upload()](https://docs.aws.amazon.com/AWSJavaScriptSDK/latest/AWS/S3.html#upload-property) method in the AWS Node SDK.
+S3 destinations are handled by the [Upload class](https://docs.aws.amazon.com/AWSJavaScriptSDK/v3/latest/Package/-aws-sdk-lib-storage/Class/Upload/) method in the AWS Node SDK.
 
 The `BucketName` and `ObjectKey` properties are required.
 
-To set metadata on the new image object, use the optional `Parameters` property on the destination. The contents of `Parameters` are passed directly to the [upload()](https://docs.aws.amazon.com/AWSJavaScriptSDK/latest/AWS/S3.html#upload-property) method.
+To set metadata on the new image object, use the optional `Parameters` property on the destination. The contents of `Parameters` are passed directly to the `params` argument of `Upload`, which follows the [`PutObjectRequest`](https://docs.aws.amazon.com/AWSJavaScriptSDK/v3/latest/Package/-aws-sdk-client-s3/Interface/PutObjectCommandInput/) interface.
 
 If you set the optional `ContentType` property to `REPLACE`, the content type of the newly created image will be set to a [heuristically-determined](https://www.npmjs.com/package/file-type) value from the job's source file. If the content type could not be determined heuristically, this property has no effect. If a `ContentType` value is explicitly defined in `Parameters` that value will take precedence.
 
@@ -872,11 +872,11 @@ Output:
 
 #### AWS/S3
 
-S3 destinations are handled by the [upload()](https://docs.aws.amazon.com/AWSJavaScriptSDK/latest/AWS/S3.html#upload-property) method in the AWS Node SDK.
+S3 destinations are handled by the [Upload class](https://docs.aws.amazon.com/AWSJavaScriptSDK/v3/latest/Package/-aws-sdk-lib-storage/Class/Upload/) method in the AWS Node SDK.
 
 The `BucketName` and `ObjectKey` properties are required.
 
-To set metadata on the new audio file object, use the optional `Parameters` property on the destination. The contents of `Parameters` are passed directly to the [upload()](https://docs.aws.amazon.com/AWSJavaScriptSDK/latest/AWS/S3.html#upload-property) method.
+To set metadata on the new image object, use the optional `Parameters` property on the destination. The contents of `Parameters` are passed directly to the `params` argument of `Upload`, which follows the [`PutObjectRequest`](https://docs.aws.amazon.com/AWSJavaScriptSDK/v3/latest/Package/-aws-sdk-client-s3/Interface/PutObjectCommandInput/) interface.
 
 ### Detect Silence
 
@@ -954,9 +954,11 @@ When [`BBC/audiowaveform/v1.x`](https://github.com/bbc/audiowaveform) is used, t
 
 #### AWS/S3
 
-S3 destinations are handled by the [upload()](https://docs.aws.amazon.com/AWSJavaScriptSDK/latest/AWS/S3.html#upload-property) method in the AWS Node SDK.
+S3 destinations are handled by the [Upload class](https://docs.aws.amazon.com/AWSJavaScriptSDK/v3/latest/Package/-aws-sdk-lib-storage/Class/Upload/) method in the AWS Node SDK.
 
 The `BucketName` and `ObjectKey` properties are required.
+
+To set metadata on the new image object, use the optional `Parameters` property on the destination. The contents of `Parameters` are passed directly to the `params` argument of `Upload`, which follows the [`PutObjectRequest`](https://docs.aws.amazon.com/AWSJavaScriptSDK/v3/latest/Package/-aws-sdk-client-s3/Interface/PutObjectCommandInput/) interface.
 
 Input:
 
