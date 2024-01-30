@@ -90,10 +90,13 @@ function sharpTransformer(inputFilePath, event) {
   return transformer;
 }
 
-export const handler = async (event, context) => {
-  console.log(JSON.stringify({ msg: 'State input', input: event }));
-
-  const artifactFileTmpPath = pathJoin(tmpdir(), `${context.awsRequestId}.art`);
+/** Fetches the job's source file artifact from S3 and writes it to the Lambda
+ * environment's local temp storage.
+ * @returns {Promise<string>} Path to the file that was written
+ */
+async function writeArtifact(event, context) {
+  const ext = event.Artifact.Descriptor.Extension;
+  const tmpFilePath = pathJoin(tmpdir(), `${context.awsRequestId}.${ext}`);
 
   const { Body } = await s3.send(
     new GetObjectCommand({
@@ -101,18 +104,27 @@ export const handler = async (event, context) => {
       Key: event.Artifact.ObjectKey,
     }),
   );
+
+  // @ts-ignore
+  await writeFile(tmpFilePath, Body);
+
+  return tmpFilePath;
+}
+
+export const handler = async (event, context) => {
+  console.log(JSON.stringify({ msg: 'State input', input: event }));
+
   // TODO If Sharp supports input streams some day, we can skip saving this
   // to a file
-  // @ts-ignore
-  await writeFile(artifactFileTmpPath, Body);
+  const artifactTmpPath = await writeArtifact(event, context);
 
-  const transformer = sharpTransformer(artifactFileTmpPath, event);
+  const transformer = sharpTransformer(artifactTmpPath, event);
 
   if (event.Task.Destination.Mode === 'AWS/S3') {
     await s3Upload(event, transformer);
   }
 
-  unlinkSync(artifactFileTmpPath);
+  unlinkSync(artifactTmpPath);
 
   const now = new Date();
 

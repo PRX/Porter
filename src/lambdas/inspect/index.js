@@ -1,7 +1,8 @@
 import { join as pathJoin } from 'node:path';
 import { tmpdir } from 'node:os';
-import { unlinkSync, statSync, createWriteStream } from 'node:fs';
+import { unlinkSync, statSync } from 'node:fs';
 import { S3Client, GetObjectCommand } from '@aws-sdk/client-s3';
+import { writeFile } from 'node:fs/promises';
 
 import { inspect as audio } from './audio.js';
 import { inspect as video } from './video.js';
@@ -29,82 +30,39 @@ const s3 = new S3Client({
  * @property {ImageInspection} [Image]
  */
 
-/**
- * Downloads the given S3 object to a local file path
- * @param {string} bucketName
- * @param {string} objectKey
- * @param {string} filePath
+/** Fetches the job's source file artifact from S3 and writes it to the Lambda
+ * environment's local temp storage.
+ * @returns {Promise<string>} Path to the file that was written
  */
-function s3GetObject(bucketName, objectKey, filePath) {
-  // eslint-disable-next-line no-async-promise-executor
-  return new Promise(async (resolve, reject) => {
-    const file = createWriteStream(filePath);
+async function writeArtifact(event, context) {
+  const ext = event.Artifact.Descriptor.Extension;
+  const tmpFilePath = pathJoin(tmpdir(), `${context.awsRequestId}.${ext}`);
 
-    const resp = await s3.send(
-      new GetObjectCommand({
-        Bucket: bucketName,
-        Key: objectKey,
-      }),
-    );
-
-    const stream = resp.Body;
-
-    // @ts-ignore
-    stream.pipe(file);
-
-    // @ts-ignore
-    stream.on('error', reject);
-    file.on('error', reject);
-
-    file.on('finish', () => {
-      resolve(filePath);
-    });
-  });
-}
-
-/**
- * Downloads the artifact from the Lambda input to a local file path
- * @param {object} event
- * @param {string} filePath
- */
-async function fetchArtifact(event, filePath) {
-  console.log(
-    JSON.stringify({
-      msg: 'Fetching artifact from S3',
-      s3: `${event.Artifact.BucketName}/${event.Artifact.ObjectKey}`,
-      fs: filePath,
+  const { Body } = await s3.send(
+    new GetObjectCommand({
+      Bucket: event.Artifact.BucketName,
+      Key: event.Artifact.ObjectKey,
     }),
   );
 
-  const s3start = process.hrtime();
-  await s3GetObject(
-    event.Artifact.BucketName,
-    event.Artifact.ObjectKey,
-    filePath,
-  );
+  // @ts-ignore
+  await writeFile(tmpFilePath, Body);
 
-  const s3end = process.hrtime(s3start);
-  console.log(
-    JSON.stringify({
-      msg: 'Fetched artifact from S3',
-      duration: `${s3end[0]} s ${s3end[1] / 1000000} ms`,
-    }),
-  );
+  return tmpFilePath;
 }
 
 export const handler = async (event, context) => {
   console.log(JSON.stringify({ msg: 'State input', input: event }));
 
-  const artifactFileTmpPath = pathJoin(tmpdir(), context.awsRequestId);
-  await fetchArtifact(event, artifactFileTmpPath);
+  const artifactTmpPath = await writeArtifact(event, context);
 
-  const stat = statSync(artifactFileTmpPath);
+  const stat = statSync(artifactTmpPath);
 
   const [audioInspection, videoInspection, imageInspection] = await Promise.all(
     [
-      audio(event.Task, artifactFileTmpPath),
-      video(event.Task, artifactFileTmpPath),
-      image(event.Task, artifactFileTmpPath),
+      audio(event.Task, artifactTmpPath),
+      video(event.Task, artifactTmpPath),
+      image(event.Task, artifactTmpPath),
     ],
   );
 
@@ -117,7 +75,7 @@ export const handler = async (event, context) => {
     ...(imageInspection && { Image: imageInspection }),
   };
 
-  unlinkSync(artifactFileTmpPath);
+  unlinkSync(artifactTmpPath);
 
   if (inspection.Audio && !inspection.Audio.Layer) {
     console.log(JSON.stringify({ event, inspection, tag: 'NO_LAYER' }));

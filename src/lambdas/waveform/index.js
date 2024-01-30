@@ -3,8 +3,15 @@
 import { join as pathJoin } from 'node:path';
 import { tmpdir } from 'node:os';
 import { unlinkSync } from 'node:fs';
-import { fetchArtifact, s3Upload } from './s3-util.js';
+import { writeFile } from 'node:fs/promises';
+import { S3Client, GetObjectCommand } from '@aws-sdk/client-s3';
+import { s3Upload } from './s3-util.js';
 import { v1 as awfV1 } from './generators/audiowaveform.js';
+
+const s3 = new S3Client({
+  apiVersion: '2006-03-01',
+  followRegionRedirects: true,
+});
 
 class UnknownDestinationModeError extends Error {
   constructor(...params) {
@@ -20,6 +27,27 @@ class UnknownGeneratorError extends Error {
   }
 }
 
+/** Fetches the job's source file artifact from S3 and writes it to the Lambda
+ * environment's local temp storage.
+ * @returns {Promise<string>} Path to the file that was written
+ */
+async function writeArtifact(event, context) {
+  const ext = event.Artifact.Descriptor.Extension;
+  const tmpFilePath = pathJoin(tmpdir(), `${context.awsRequestId}.${ext}`);
+
+  const { Body } = await s3.send(
+    new GetObjectCommand({
+      Bucket: event.Artifact.BucketName,
+      Key: event.Artifact.ObjectKey,
+    }),
+  );
+
+  // @ts-ignore
+  await writeFile(tmpFilePath, Body);
+
+  return tmpFilePath;
+}
+
 export const handler = async (event, context) => {
   console.log(JSON.stringify({ msg: 'State input', input: event }));
 
@@ -32,11 +60,7 @@ export const handler = async (event, context) => {
 
   // Copy the source file artifact (the audio file) into the Lambda
   // environment's temporary storage
-  const artifactFileTmpPath = pathJoin(
-    tmpdir(),
-    `${context.awsRequestId}.${event.Artifact.Descriptor.Extension}`,
-  );
-  await fetchArtifact(event, artifactFileTmpPath);
+  const artifactTmpPath = await writeArtifact(event, context);
 
   // Define a path for the resulting waveform audio data file
   const waveformFileTmpPath = pathJoin(
@@ -47,7 +71,7 @@ export const handler = async (event, context) => {
   // Run the selected generator. Each of these is reponsible for producing a
   // file at the expected path.
   if (event.Task.Generator === 'BBC/audiowaveform/v1.x') {
-    await awfV1(event, artifactFileTmpPath, waveformFileTmpPath);
+    await awfV1(event, artifactTmpPath, waveformFileTmpPath);
   } else {
     throw new UnknownGeneratorError(
       `Unexpected generator: ${event.Task.Generator}`,
@@ -60,7 +84,7 @@ export const handler = async (event, context) => {
   }
 
   // Cleanup
-  unlinkSync(artifactFileTmpPath);
+  unlinkSync(artifactTmpPath);
   unlinkSync(waveformFileTmpPath);
 
   const now = new Date();

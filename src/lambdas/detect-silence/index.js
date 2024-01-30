@@ -1,10 +1,11 @@
 import { join as pathJoin } from 'node:path';
 import { tmpdir } from 'node:os';
-import { createReadStream, createWriteStream, unlinkSync } from 'node:fs';
+import { createReadStream, unlinkSync } from 'node:fs';
 import { createInterface } from 'node:readline';
 import { once } from 'node:events';
 import { spawn } from 'node:child_process';
 import { S3Client, GetObjectCommand } from '@aws-sdk/client-s3';
+import { writeFile } from 'node:fs/promises';
 
 const s3 = new S3Client({
   apiVersion: '2006-03-01',
@@ -13,69 +14,6 @@ const s3 = new S3Client({
 
 const DEFAULT_MAX_VALUE = 0.001;
 const DEFAULT_MIN_DURATION = 0.2;
-
-/**
- * Downloads the given S3 object to a local file path
- * @param {string} bucketName
- * @param {string} objectKey
- * @param {string} filePath
- */
-function s3GetObject(bucketName, objectKey, filePath) {
-  // eslint-disable-next-line no-async-promise-executor
-  return new Promise(async (resolve, reject) => {
-    const file = createWriteStream(filePath);
-
-    const resp = await s3.send(
-      new GetObjectCommand({
-        Bucket: bucketName,
-        Key: objectKey,
-      }),
-    );
-
-    const stream = resp.Body;
-
-    // @ts-ignore
-    stream.pipe(file);
-
-    // @ts-ignore
-    stream.on('error', reject);
-    file.on('error', reject);
-
-    file.on('finish', () => {
-      resolve(filePath);
-    });
-  });
-}
-
-/**
- * Downloads the artifact from the Lambda input to a local file path
- * @param {object} event
- * @param {string} filePath
- */
-async function fetchArtifact(event, filePath) {
-  console.log(
-    JSON.stringify({
-      msg: 'Fetching artifact from S3',
-      s3: `${event.Artifact.BucketName}/${event.Artifact.ObjectKey}`,
-      fs: filePath,
-    }),
-  );
-
-  const s3start = process.hrtime();
-  await s3GetObject(
-    event.Artifact.BucketName,
-    event.Artifact.ObjectKey,
-    filePath,
-  );
-
-  const s3end = process.hrtime(s3start);
-  console.log(
-    JSON.stringify({
-      msg: 'Fetched artifact from S3',
-      duration: `${s3end[0]} s ${s3end[1] / 1000000} ms`,
-    }),
-  );
-}
 
 /**
  * Creates an FFmpeg ametadata file with values for the silence it detects
@@ -163,24 +101,41 @@ async function getRangesFromMetadataFile(filePath) {
   return ranges;
 }
 
+/** Fetches the job's source file artifact from S3 and writes it to the Lambda
+ * environment's local temp storage.
+ * @returns {Promise<string>} Path to the file that was written
+ */
+async function writeArtifact(event, context) {
+  const ext = event.Artifact.Descriptor.Extension;
+  const tmpFilePath = pathJoin(tmpdir(), `${context.awsRequestId}.${ext}`);
+
+  const { Body } = await s3.send(
+    new GetObjectCommand({
+      Bucket: event.Artifact.BucketName,
+      Key: event.Artifact.ObjectKey,
+    }),
+  );
+
+  // @ts-ignore
+  await writeFile(tmpFilePath, Body);
+
+  return tmpFilePath;
+}
+
 export const handler = async (event, context) => {
   console.log(JSON.stringify({ msg: 'State input', input: event }));
 
-  const artifactFileTmpPath = pathJoin(
-    tmpdir(),
-    `${context.awsRequestId}.${event.Artifact.Descriptor.Extension}`,
-  );
-  await fetchArtifact(event, artifactFileTmpPath);
-
   const maxValue = event.Task?.Threshold?.Value || DEFAULT_MAX_VALUE;
   const minDuration = event.Task?.Threshold?.Duration || DEFAULT_MIN_DURATION;
+
+  const artifactTmpPath = await writeArtifact(event, context);
 
   const metadataFileTmpPath = pathJoin(
     tmpdir(),
     `${context.awsRequestId}.meta`,
   );
   await createMetadataFile(
-    artifactFileTmpPath,
+    artifactTmpPath,
     metadataFileTmpPath,
     maxValue,
     minDuration,
@@ -188,7 +143,7 @@ export const handler = async (event, context) => {
 
   const ranges = await getRangesFromMetadataFile(metadataFileTmpPath);
 
-  unlinkSync(artifactFileTmpPath);
+  unlinkSync(artifactTmpPath);
   unlinkSync(metadataFileTmpPath);
 
   return {

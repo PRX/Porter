@@ -100,16 +100,7 @@ export const handler = async (event) => {
   });
   const sts = new STSClient({ apiVersion: '2011-06-15' });
 
-  // Fetch the source file artifact from S3
-  console.log(
-    JSON.stringify({
-      msg: 'Fetching artifact from S3',
-      s3: `${event.Artifact.BucketName}/${event.Artifact.ObjectKey}`,
-    }),
-  );
-
-  const s3start = process.hrtime();
-
+  // Fetch the source file artifact from S3 into memory
   const s3Object = await s3.send(
     new GetObjectCommand({
       Bucket: event.Artifact.BucketName,
@@ -117,13 +108,6 @@ export const handler = async (event) => {
     }),
   );
   const mpegData = await s3Object.Body.transformToByteArray();
-  const s3end = process.hrtime(s3start);
-  console.log(
-    JSON.stringify({
-      msg: 'Fetched artifact from S3',
-      duration: `${s3end[0]} s ${s3end[1] / 1000000} ms`,
-    }),
-  );
 
   // create the wav object
   const wav = new wavefile.WaveFile();

@@ -1,76 +1,9 @@
-import { createWriteStream, createReadStream } from 'node:fs';
-import { S3Client, GetObjectCommand } from '@aws-sdk/client-s3';
+import { createReadStream } from 'node:fs';
+import { S3Client } from '@aws-sdk/client-s3';
 import { STSClient, AssumeRoleCommand } from '@aws-sdk/client-sts';
 import { Upload } from '@aws-sdk/lib-storage';
 
-const s3 = new S3Client({
-  apiVersion: '2006-03-01',
-  followRegionRedirects: true,
-});
 const sts = new STSClient({ apiVersion: '2011-06-15' });
-
-/**
- * Downloads the given S3 object to a local file path
- * @param {string} bucketName
- * @param {string} objectKey
- * @param {string} filePath
- */
-export function s3GetObject(bucketName, objectKey, filePath) {
-  // eslint-disable-next-line no-async-promise-executor
-  return new Promise(async (resolve, reject) => {
-    const file = createWriteStream(filePath);
-
-    const resp = await s3.send(
-      new GetObjectCommand({
-        Bucket: bucketName,
-        Key: objectKey,
-      }),
-    );
-
-    const stream = resp.Body;
-
-    // @ts-ignore
-    stream.pipe(file);
-
-    // @ts-ignore
-    stream.on('error', reject);
-    file.on('error', reject);
-
-    file.on('finish', () => {
-      resolve(filePath);
-    });
-  });
-}
-
-/**
- * Downloads the artifact from the Lambda input to a local file path
- * @param {object} event
- * @param {string} filePath
- */
-export async function fetchArtifact(event, filePath) {
-  console.log(
-    JSON.stringify({
-      msg: 'Fetching artifact from S3',
-      s3: `${event.Artifact.BucketName}/${event.Artifact.ObjectKey}`,
-      fs: filePath,
-    }),
-  );
-
-  const s3start = process.hrtime();
-  await s3GetObject(
-    event.Artifact.BucketName,
-    event.Artifact.ObjectKey,
-    filePath,
-  );
-
-  const s3end = process.hrtime(s3start);
-  console.log(
-    JSON.stringify({
-      msg: 'Fetched artifact from S3',
-      duration: `${s3end[0]} s ${s3end[1] / 1000000} ms`,
-    }),
-  );
-}
 
 export async function s3Upload(event, waveformFileTmpPath) {
   const role = await sts.send(
