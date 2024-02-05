@@ -1,4 +1,3 @@
-singleQuote: true
 overrides:
   - files: "*.asl.json"
     options:
@@ -12,5 +11,4 @@ overrides:
       useTabs: true
   - files: "*.yml"
     options:
-      singleQuote: false
       printWidth: 250
