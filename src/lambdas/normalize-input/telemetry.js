@@ -1,38 +1,38 @@
 import {
   CloudWatchClient,
   PutMetricDataCommand,
-} from '@aws-sdk/client-cloudwatch';
+} from "@aws-sdk/client-cloudwatch";
 
-const cloudwatch = new CloudWatchClient({ apiVersion: '2010-08-01' });
+const cloudwatch = new CloudWatchClient({ apiVersion: "2010-08-01" });
 
 export default async function send(event) {
   // This is to avoid sending metrics during the test suite
   if (event.StateMachine) {
     await cloudwatch.send(
       new PutMetricDataCommand({
-        Namespace: 'PRX/Porter',
+        Namespace: "PRX/Porter",
         MetricData: [
           {
-            MetricName: 'JobsStarted',
+            MetricName: "JobsStarted",
             Dimensions: [
               {
-                Name: 'StateMachineArn',
+                Name: "StateMachineArn",
                 Value: event.StateMachine.Id,
               },
             ],
             Value: 1,
-            Unit: 'Count',
+            Unit: "Count",
           },
           {
-            MetricName: 'TasksRequested',
+            MetricName: "TasksRequested",
             Dimensions: [
               {
-                Name: 'StateMachineArn',
+                Name: "StateMachineArn",
                 Value: event.StateMachine.Id,
               },
             ],
             Value: event.Input.Job.Tasks.length,
-            Unit: 'Count',
+            Unit: "Count",
           },
         ],
       }),

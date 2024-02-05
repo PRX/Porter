@@ -1,12 +1,12 @@
 // Using the file-type NPM module, this attempts to identify MIME type of the
 // state machine source artifact.
 
-import { fileTypeFromTokenizer } from 'file-type';
-import { makeTokenizer } from '@tokenizer/s3';
-import { S3Client } from '@aws-sdk/client-s3';
+import { fileTypeFromTokenizer } from "file-type";
+import { makeTokenizer } from "@tokenizer/s3";
+import { S3Client } from "@aws-sdk/client-s3";
 
 const s3 = new S3Client({
-  apiVersion: '2006-03-01',
+  apiVersion: "2006-03-01",
   followRegionRedirects: true,
 });
 
@@ -21,7 +21,7 @@ const s3 = new S3Client({
  * @returns {Promise<SourceTypeResult>}
  */
 export const handler = async (event) => {
-  console.log(JSON.stringify({ msg: 'State input', input: event }));
+  console.log(JSON.stringify({ msg: "State input", input: event }));
 
   const s3Tokenizer = await makeTokenizer(s3, {
     Bucket: event.Artifact.BucketName,
@@ -36,7 +36,7 @@ export const handler = async (event) => {
     return {};
   }
 
-  console.log(JSON.stringify({ msg: 'Result', result: fileType }));
+  console.log(JSON.stringify({ msg: "Result", result: fileType }));
 
   return {
     Extension: fileType.ext,

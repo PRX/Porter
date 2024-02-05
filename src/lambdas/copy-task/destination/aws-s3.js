@@ -1,4 +1,4 @@
-import { STSClient, AssumeRoleCommand } from '@aws-sdk/client-sts';
+import { STSClient, AssumeRoleCommand } from "@aws-sdk/client-sts";
 import {
   S3Client,
   HeadObjectCommand,
@@ -7,18 +7,18 @@ import {
   UploadPartCopyCommand,
   CompleteMultipartUploadCommand,
   AbortMultipartUploadCommand,
-} from '@aws-sdk/client-s3';
+} from "@aws-sdk/client-s3";
 
-const sts = new STSClient({ apiVersion: '2011-06-15' });
+const sts = new STSClient({ apiVersion: "2011-06-15" });
 const s3reader = new S3Client({
-  apiVersion: '2006-03-01',
+  apiVersion: "2006-03-01",
   followRegionRedirects: true,
 });
 
 class AwsS3MultipartCopyError extends Error {
   constructor(...params) {
     super(...params);
-    this.name = 'AwsS3MultipartCopyError';
+    this.name = "AwsS3MultipartCopyError";
   }
 }
 
@@ -42,18 +42,18 @@ function buildParams(event) {
   // When the optional `ContentType` property is set to `REPLACE`, if a MIME is
   // included with the artifact, that should be used as the copy's content type
   if (
-    Object.hasOwn(event.Task, 'ContentType') &&
-    event.Task.ContentType === 'REPLACE' &&
-    Object.hasOwn(event.Artifact, 'Descriptor') &&
-    Object.hasOwn(event.Artifact.Descriptor, 'MIME')
+    Object.hasOwn(event.Task, "ContentType") &&
+    event.Task.ContentType === "REPLACE" &&
+    Object.hasOwn(event.Artifact, "Descriptor") &&
+    Object.hasOwn(event.Artifact.Descriptor, "MIME")
   ) {
-    params.MetadataDirective = 'REPLACE';
+    params.MetadataDirective = "REPLACE";
     params.ContentType = event.Artifact.Descriptor.MIME;
   }
 
   // Assign all members of Parameters to params. Remove the properties required
   // for the Copy operation, so there is no collision
-  if (Object.hasOwn(event.Task, 'Parameters')) {
+  if (Object.hasOwn(event.Task, "Parameters")) {
     delete event.Task.Parameters.CopySource;
     delete event.Task.Parameters.Bucket;
     delete event.Task.Parameters.Key;
@@ -127,7 +127,7 @@ async function multipartCopy(params, sourceObjectSize, s3Client) {
             // CopySource expects: "/sourcebucket/path/to/object.extension"
             // CopySource expects "/sourcebucket/path/to/object.extension" to be URI-encoded
             CopySource: params.CopySource,
-            CopySourceRange: `bytes=${range.join('-')}`,
+            CopySourceRange: `bytes=${range.join("-")}`,
           }),
         ),
       ),
@@ -157,14 +157,14 @@ async function multipartCopy(params, sourceObjectSize, s3Client) {
       }),
     );
 
-    throw new AwsS3MultipartCopyError('Multipart copy was aborted');
+    throw new AwsS3MultipartCopyError("Multipart copy was aborted");
   }
 }
 
 export default async function main(event) {
   console.log(
     JSON.stringify({
-      msg: 'S3 Copy',
+      msg: "S3 Copy",
       source: `${event.Artifact.BucketName}/${event.Artifact.ObjectKey}`,
       destination: `${event.Task.BucketName}/${event.Task.ObjectKey}`,
     }),
@@ -180,7 +180,7 @@ export default async function main(event) {
   const writerRole = await sts.send(
     new AssumeRoleCommand({
       RoleArn: process.env.S3_DESTINATION_WRITER_ROLE,
-      RoleSessionName: 'porter_copy_task',
+      RoleSessionName: "porter_copy_task",
     }),
   );
 

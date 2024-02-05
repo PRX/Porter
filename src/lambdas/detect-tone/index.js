@@ -1,10 +1,10 @@
-import { join as pathJoin } from 'node:path';
-import { tmpdir } from 'node:os';
-import { spawn } from 'node:child_process';
-import { once } from 'node:events';
-import { createInterface } from 'node:readline';
-import { unlinkSync, createReadStream } from 'node:fs';
-import { writeArtifact } from 'porter-util';
+import { join as pathJoin } from "node:path";
+import { tmpdir } from "node:os";
+import { spawn } from "node:child_process";
+import { once } from "node:events";
+import { createInterface } from "node:readline";
+import { unlinkSync, createReadStream } from "node:fs";
+import { writeArtifact } from "porter-util";
 
 const DEFAULT_MIN_VALUE = 0.025;
 const DEFAULT_MIN_DURATION = 0.2;
@@ -14,30 +14,30 @@ function createMetadataFile(inputFilePath, outputFilePath, frequency) {
     const start = process.hrtime();
 
     const filterString = [
-      'pan=mono|c0=.5*c0+.5*c1',
-      'volume=volume=1.0',
+      "pan=mono|c0=.5*c0+.5*c1",
+      "volume=volume=1.0",
       `bandpass=frequency=${frequency}:width_type=q:width=3`,
-      'astats=metadata=1:reset=1',
+      "astats=metadata=1:reset=1",
       `ametadata=key=lavfi.astats.Overall.Max_level:mode=print:file=${outputFilePath}`,
-    ].join(',');
+    ].join(",");
 
     const childProc = spawn(
-      '/opt/bin/ffmpeg',
-      ['-i', inputFilePath, '-af', filterString, '-f', 'null', '-'],
+      "/opt/bin/ffmpeg",
+      ["-i", inputFilePath, "-af", filterString, "-f", "null", "-"],
       {
         env: process.env,
         cwd: tmpdir(),
       },
     );
 
-    childProc.stdout.on('data', (buffer) => console.info(buffer.toString()));
-    childProc.stderr.on('data', (buffer) => console.error(buffer.toString()));
+    childProc.stdout.on("data", (buffer) => console.info(buffer.toString()));
+    childProc.stderr.on("data", (buffer) => console.error(buffer.toString()));
 
-    childProc.on('exit', (code, signal) => {
+    childProc.on("exit", (code, signal) => {
       const end = process.hrtime(start);
       console.log(
         JSON.stringify({
-          msg: 'Finished FFmpeg',
+          msg: "Finished FFmpeg",
           duration: `${end[0]} s ${end[1] / 1000000} ms`,
         }),
       );
@@ -62,13 +62,13 @@ async function getRangesFromMetadataFile(filePath, minValue, minDuration) {
   let timeBuffer;
   let rangeBuffer;
 
-  reader.on('line', (line) => {
-    if (line.startsWith('frame:')) {
-      timeBuffer = Number(line.split('pts_time:')[1]);
+  reader.on("line", (line) => {
+    if (line.startsWith("frame:")) {
+      timeBuffer = Number(line.split("pts_time:")[1]);
     }
 
-    if (line.startsWith('lavfi.astats.Overall.Max_level=')) {
-      const level = Number(line.split('=')[1]);
+    if (line.startsWith("lavfi.astats.Overall.Max_level=")) {
+      const level = Number(line.split("=")[1]);
 
       if (level >= minValue) {
         // This line represents a tone
@@ -106,13 +106,13 @@ async function getRangesFromMetadataFile(filePath, minValue, minDuration) {
     }
   });
 
-  await once(reader, 'close');
+  await once(reader, "close");
 
   return ranges;
 }
 
 export const handler = async (event, context) => {
-  console.log(JSON.stringify({ msg: 'State input', input: event }));
+  console.log(JSON.stringify({ msg: "State input", input: event }));
 
   const artifactTmpPath = await writeArtifact(event, context);
 
@@ -136,7 +136,7 @@ export const handler = async (event, context) => {
   unlinkSync(metadataFileTmpPath);
 
   return {
-    Task: 'DetectTone',
+    Task: "DetectTone",
     Threshold: {
       Value: minValue,
       Duration: minDuration,

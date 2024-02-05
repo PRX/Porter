@@ -1,9 +1,9 @@
-import { Storage } from '@google-cloud/storage';
-import { S3Client } from '@aws-sdk/client-s3';
-import { Upload } from '@aws-sdk/lib-storage';
+import { Storage } from "@google-cloud/storage";
+import { S3Client } from "@aws-sdk/client-s3";
+import { Upload } from "@aws-sdk/lib-storage";
 
 const s3 = new S3Client({
-  apiVersion: '2006-03-01',
+  apiVersion: "2006-03-01",
   followRegionRedirects: true,
 });
 

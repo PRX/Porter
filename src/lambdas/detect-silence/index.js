@@ -1,10 +1,10 @@
-import { join as pathJoin } from 'node:path';
-import { tmpdir } from 'node:os';
-import { createReadStream, unlinkSync } from 'node:fs';
-import { createInterface } from 'node:readline';
-import { once } from 'node:events';
-import { spawn } from 'node:child_process';
-import { writeArtifact } from 'porter-util';
+import { join as pathJoin } from "node:path";
+import { tmpdir } from "node:os";
+import { createReadStream, unlinkSync } from "node:fs";
+import { createInterface } from "node:readline";
+import { once } from "node:events";
+import { spawn } from "node:child_process";
+import { writeArtifact } from "porter-util";
 
 const DEFAULT_MAX_VALUE = 0.001;
 const DEFAULT_MIN_DURATION = 0.2;
@@ -30,25 +30,25 @@ function createMetadataFile(
     const filterString = [
       `silencedetect=noise=${maxValue}:duration=${minDuration}`,
       `ametadata=mode=print:file=${outputFilePath}`,
-    ].join(',');
+    ].join(",");
 
     const childProc = spawn(
-      '/opt/bin/ffmpeg',
-      ['-i', inputFilePath, '-af', filterString, '-f', 'null', '-'],
+      "/opt/bin/ffmpeg",
+      ["-i", inputFilePath, "-af", filterString, "-f", "null", "-"],
       {
         env: process.env,
         cwd: tmpdir(),
       },
     );
 
-    childProc.stdout.on('data', (buffer) => console.info(buffer.toString()));
-    childProc.stderr.on('data', (buffer) => console.error(buffer.toString()));
+    childProc.stdout.on("data", (buffer) => console.info(buffer.toString()));
+    childProc.stderr.on("data", (buffer) => console.error(buffer.toString()));
 
-    childProc.on('exit', (code, signal) => {
+    childProc.on("exit", (code, signal) => {
       const end = process.hrtime(start);
       console.log(
         JSON.stringify({
-          msg: 'Finished FFmpeg silencedetect',
+          msg: "Finished FFmpeg silencedetect",
           duration: `${end[0]} s ${end[1] / 1000000} ms`,
         }),
       );
@@ -78,25 +78,25 @@ async function getRangesFromMetadataFile(filePath) {
 
   let rangeBuffer;
 
-  reader.on('line', (line) => {
-    if (line.startsWith('lavfi.silence_start=')) {
+  reader.on("line", (line) => {
+    if (line.startsWith("lavfi.silence_start=")) {
       rangeBuffer = {
-        Start: Number(line.split('=')[1]),
+        Start: Number(line.split("=")[1]),
       };
-    } else if (line.startsWith('lavfi.silence_end=')) {
-      rangeBuffer.End = Number(line.split('=')[1]);
+    } else if (line.startsWith("lavfi.silence_end=")) {
+      rangeBuffer.End = Number(line.split("=")[1]);
       ranges.push(rangeBuffer);
       rangeBuffer = undefined;
     }
   });
 
-  await once(reader, 'close');
+  await once(reader, "close");
 
   return ranges;
 }
 
 export const handler = async (event, context) => {
-  console.log(JSON.stringify({ msg: 'State input', input: event }));
+  console.log(JSON.stringify({ msg: "State input", input: event }));
 
   const maxValue = event.Task?.Threshold?.Value || DEFAULT_MAX_VALUE;
   const minDuration = event.Task?.Threshold?.Duration || DEFAULT_MIN_DURATION;
@@ -120,7 +120,7 @@ export const handler = async (event, context) => {
   unlinkSync(metadataFileTmpPath);
 
   return {
-    Task: 'DetectSilence',
+    Task: "DetectSilence",
     Threshold: {
       Value: maxValue,
       Duration: minDuration,

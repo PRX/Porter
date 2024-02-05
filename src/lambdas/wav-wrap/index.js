@@ -1,14 +1,14 @@
-import { S3Client, GetObjectCommand } from '@aws-sdk/client-s3';
-import { STSClient, AssumeRoleCommand } from '@aws-sdk/client-sts';
-import { Upload } from '@aws-sdk/lib-storage';
-import wavefile from 'prx-wavefile';
+import { S3Client, GetObjectCommand } from "@aws-sdk/client-s3";
+import { STSClient, AssumeRoleCommand } from "@aws-sdk/client-sts";
+import { Upload } from "@aws-sdk/lib-storage";
+import wavefile from "prx-wavefile";
 
 function camelize(str) {
   return str
     .replace(/(?:^\w|[A-Z]|\b\w)/g, (word, index) =>
       index === 0 ? word.toLowerCase() : word.toUpperCase(),
     )
-    .replace(/\s+/g, '');
+    .replace(/\s+/g, "");
 }
 
 /**
@@ -21,12 +21,12 @@ async function s3Upload(sts, event, uploadBuffer) {
   const role = await sts.send(
     new AssumeRoleCommand({
       RoleArn: process.env.S3_DESTINATION_WRITER_ROLE,
-      RoleSessionName: 'porter_wavwrapper_task',
+      RoleSessionName: "porter_wavwrapper_task",
     }),
   );
 
   const s3writer = new S3Client({
-    apiVersion: '2006-03-01',
+    apiVersion: "2006-03-01",
     credentials: {
       accessKeyId: role.Credentials.AccessKeyId,
       secretAccessKey: role.Credentials.SecretAccessKey,
@@ -48,11 +48,11 @@ async function s3Upload(sts, event, uploadBuffer) {
   if (
     Object.prototype.hasOwnProperty.call(
       event.Task.Destination,
-      'ContentType',
+      "ContentType",
     ) &&
-    event.Task.Destination.ContentType === 'REPLACE' &&
-    Object.prototype.hasOwnProperty.call(event.Artifact, 'Descriptor') &&
-    Object.prototype.hasOwnProperty.call(event.Artifact.Descriptor, 'MIME')
+    event.Task.Destination.ContentType === "REPLACE" &&
+    Object.prototype.hasOwnProperty.call(event.Artifact, "Descriptor") &&
+    Object.prototype.hasOwnProperty.call(event.Artifact.Descriptor, "MIME")
   ) {
     params.ContentType = event.Artifact.Descriptor.MIME;
   }
@@ -60,7 +60,7 @@ async function s3Upload(sts, event, uploadBuffer) {
   // Assign all members of Parameters to params. Remove the properties required
   // for the Copy operation, so there is no collision
   if (
-    Object.prototype.hasOwnProperty.call(event.Task.Destination, 'Parameters')
+    Object.prototype.hasOwnProperty.call(event.Task.Destination, "Parameters")
   ) {
     delete event.Task.Destination.Parameters.Bucket;
     delete event.Task.Destination.Parameters.Key;
@@ -77,20 +77,20 @@ async function s3Upload(sts, event, uploadBuffer) {
   const uploadEnd = process.hrtime(uploadStart);
   console.log(
     JSON.stringify({
-      msg: 'Finished S3 upload',
+      msg: "Finished S3 upload",
       duration: `${uploadEnd[0]} s ${uploadEnd[1] / 1000000} ms`,
     }),
   );
 }
 
 export const handler = async (event) => {
-  console.log(JSON.stringify({ msg: 'State input', input: event }));
+  console.log(JSON.stringify({ msg: "State input", input: event }));
 
   const s3 = new S3Client({
-    apiVersion: '2006-03-01',
+    apiVersion: "2006-03-01",
     followRegionRedirects: true,
   });
-  const sts = new STSClient({ apiVersion: '2011-06-15' });
+  const sts = new STSClient({ apiVersion: "2011-06-15" });
 
   // Fetch the source file artifact from S3 into memory
   const s3Object = await s3.send(
@@ -113,7 +113,7 @@ export const handler = async (event) => {
     wav.fromMpeg(mpegData);
   } else {
     throw new Error(
-      'No suitable mpeg buffer found to set up WaveFileCreator object',
+      "No suitable mpeg buffer found to set up WaveFileCreator object",
     );
   }
 
@@ -126,7 +126,7 @@ export const handler = async (event) => {
       Object.keys(taskChunk).forEach((taskKey) => {
         const wavKey = camelize(taskKey);
         if (
-          !['chunkSize'].includes(wavKey) &&
+          !["chunkSize"].includes(wavKey) &&
           Object.prototype.hasOwnProperty.call(wav[chunkId], wavKey)
         ) {
           wav[chunkId][wavKey] = taskChunk[taskKey];
@@ -138,20 +138,20 @@ export const handler = async (event) => {
 
   console.log(
     JSON.stringify({
-      msg: 'Wavefile chunks set',
+      msg: "Wavefile chunks set",
       chunks: resultChunks,
     }),
   );
 
   // save to s3 destination
-  if (event.Task.Destination.Mode === 'AWS/S3') {
+  if (event.Task.Destination.Mode === "AWS/S3") {
     await s3Upload(sts, event, Buffer.from(wav.toBuffer()));
   }
 
   const now = new Date();
 
   return {
-    Task: 'WavWrap',
+    Task: "WavWrap",
     Mode: event.Task.Destination.Mode,
     BucketName: event.Task.Destination.BucketName,
     ObjectKey: event.Task.Destination.ObjectKey,

@@ -1,4 +1,4 @@
-import sharp from 'sharp';
+import sharp from "sharp";
 
 /** @typedef {import('./index.js').InspectTask} InspectTask */
 
@@ -45,6 +45,6 @@ export async function inspect(task, filePath) {
     return inspection;
   }
 
-  console.log('Image inspection yielded no results');
+  console.log("Image inspection yielded no results");
   return null;
 }

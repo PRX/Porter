@@ -7,19 +7,19 @@
  */
 export function nmbr(val) {
   // Reflect a number input
-  if (typeof val === 'number') {
+  if (typeof val === "number") {
     return val;
   }
 
   // Look for strings like "24000/1001", and do the division safely
   const rex = /^(-?[0-9]+(?:\.[0-9]+)?)(\/)(-?[0-9]+(?:\.[0-9]+)?)$/;
-  if (typeof val === 'string' && val.match(rex)) {
+  if (typeof val === "string" && val.match(rex)) {
     const match = val.match(rex);
     return +match[1] / +match[3];
   }
 
   // Look for integer and decimal strings and convert to numbers
-  if (typeof val === 'string' && val.match(/^(-?[0-9]+(\.[0-9]+)?)$/)) {
+  if (typeof val === "string" && val.match(/^(-?[0-9]+(\.[0-9]+)?)$/)) {
     return +val;
   }
 

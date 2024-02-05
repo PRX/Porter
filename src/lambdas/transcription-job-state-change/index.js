@@ -8,21 +8,21 @@
 // This will get triggered by *all* transcribe jobs, so the predefined prefix
 // is used to filter out jobs originating elsewhere.
 
-import { S3Client, GetObjectCommand } from '@aws-sdk/client-s3';
+import { S3Client, GetObjectCommand } from "@aws-sdk/client-s3";
 import {
   SFNClient,
   SendTaskFailureCommand,
   SendTaskSuccessCommand,
-} from '@aws-sdk/client-sfn';
+} from "@aws-sdk/client-sfn";
 
 const s3 = new S3Client({
-  apiVersion: '2006-03-01',
+  apiVersion: "2006-03-01",
   followRegionRedirects: true,
 });
-const sfn = new SFNClient({ apiVersion: '2016-11-23' });
+const sfn = new SFNClient({ apiVersion: "2016-11-23" });
 
 export const handler = async (event) => {
-  console.log(JSON.stringify({ msg: 'Event', input: event }));
+  console.log(JSON.stringify({ msg: "Event", input: event }));
 
   const transcriptionJobName = event.detail.TranscriptionJobName;
   const transcriptionJobStatus = event.detail.TranscriptionJobStatus;
@@ -42,7 +42,7 @@ export const handler = async (event) => {
 
     const taskToken = await file.Body.transformToString();
 
-    if (transcriptionJobStatus === 'COMPLETED') {
+    if (transcriptionJobStatus === "COMPLETED") {
       // The `output` parameter becomes the result value of the
       // ExecuteTranscribeTask state
       await sfn.send(

@@ -1,5 +1,5 @@
-import { nmbr } from './util.js';
-import { inspect as ffprobe } from './ffprobe.js';
+import { nmbr } from "./util.js";
+import { inspect as ffprobe } from "./ffprobe.js";
 
 /** @typedef {import('./index.js').InspectTask} InspectTask */
 
@@ -26,7 +26,7 @@ export async function inspect(task, filePath) {
   try {
     const probe = await ffprobe(filePath);
     const stream = probe.streams.find(
-      (s) => s.codec_type === 'video' && +s.duration > 0,
+      (s) => s.codec_type === "video" && +s.duration > 0,
     );
 
     if (stream) {
@@ -52,6 +52,6 @@ export async function inspect(task, filePath) {
     return inspection;
   }
 
-  console.log('Video inspection yielded no results');
+  console.log("Video inspection yielded no results");
   return null;
 }

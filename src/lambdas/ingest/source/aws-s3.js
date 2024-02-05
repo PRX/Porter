@@ -6,17 +6,17 @@ import {
   UploadPartCopyCommand,
   CompleteMultipartUploadCommand,
   AbortMultipartUploadCommand,
-} from '@aws-sdk/client-s3';
+} from "@aws-sdk/client-s3";
 
 const s3 = new S3Client({
-  apiVersion: '2006-03-01',
+  apiVersion: "2006-03-01",
   followRegionRedirects: true,
 });
 
 class AwsS3MultipartCopyError extends Error {
   constructor(...params) {
     super(...params);
-    this.name = 'AwsS3MultipartCopyError';
+    this.name = "AwsS3MultipartCopyError";
   }
 }
 
@@ -80,7 +80,7 @@ async function multipartCopy(copySource, artifact, sourceObjectSize) {
             // CopySource expects: "/sourcebucket/path/to/object.extension"
             // CopySource expects "/sourcebucket/path/to/object.extension" to be URI-encoded
             CopySource: copySource,
-            CopySourceRange: `bytes=${range.join('-')}`,
+            CopySourceRange: `bytes=${range.join("-")}`,
           }),
         ),
       ),
@@ -110,7 +110,7 @@ async function multipartCopy(copySource, artifact, sourceObjectSize) {
       }),
     );
 
-    throw new AwsS3MultipartCopyError('Multipart copy was aborted');
+    throw new AwsS3MultipartCopyError("Multipart copy was aborted");
   }
 }
 

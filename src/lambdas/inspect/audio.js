@@ -1,7 +1,7 @@
-import { nmbr } from './util.js';
-import { inspect as ebur128 } from './ebu-r-128.js';
-import { inspect as ffprobe } from './ffprobe.js';
-import { inspect as mpck } from './mpck.js';
+import { nmbr } from "./util.js";
+import { inspect as ebur128 } from "./ebu-r-128.js";
+import { inspect as ffprobe } from "./ffprobe.js";
+import { inspect as mpck } from "./mpck.js";
 
 /** @typedef {import('./index.js').InspectTask} InspectTask */
 
@@ -33,7 +33,7 @@ export async function inspect(task, filePath) {
   // FFprobe data
   try {
     const probe = await ffprobe(filePath);
-    const stream = probe.streams.find((s) => s.codec_type === 'audio');
+    const stream = probe.streams.find((s) => s.codec_type === "audio");
 
     if (stream) {
       Object.assign(inspection, {
@@ -52,18 +52,18 @@ export async function inspect(task, filePath) {
   }
 
   // Additional inspection for mpeg streams
-  if (['mp2', 'mp3'].includes(inspection.Format)) {
+  if (["mp2", "mp3"].includes(inspection.Format)) {
     try {
       let check;
 
       // mpck will occasionally not return any output, even though it doesn't
       // fail. Let it run a few times if necessary as a workaround.
       for (let i = 0; i < 5; i += 1) {
-        console.log(JSON.stringify({ msg: 'mpck attempt', attempt: i }));
+        console.log(JSON.stringify({ msg: "mpck attempt", attempt: i }));
         // eslint-disable-next-line no-await-in-loop
         check = await mpck(filePath);
 
-        console.log(JSON.stringify({ msg: 'mpck result', mpckResult: check }));
+        console.log(JSON.stringify({ msg: "mpck result", mpckResult: check }));
 
         if (Object.keys(check).length) {
           break;
@@ -108,6 +108,6 @@ export async function inspect(task, filePath) {
     return inspection;
   }
 
-  console.log('Audio inspection yielded no results');
+  console.log("Audio inspection yielded no results");
   return null;
 }

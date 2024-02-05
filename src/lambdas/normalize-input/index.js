@@ -13,12 +13,12 @@
 //
 // The result path and output path MUST both be "$".
 
-import sendTelemetry from './telemetry.js';
+import sendTelemetry from "./telemetry.js";
 
 class MissingTaskTypeError extends Error {
   constructor(...params) {
     super(...params);
-    this.name = 'MissingTaskTypeError';
+    this.name = "MissingTaskTypeError";
   }
 }
 
@@ -26,10 +26,10 @@ export const handler = async (event) => {
   // This is the raw Step Functions execution input
   const { Input } = event;
 
-  console.log(JSON.stringify({ msg: 'Unmodified input', event }));
+  console.log(JSON.stringify({ msg: "Unmodified input", event }));
 
   // Set Job.Tasks to an empty array, unless it's already an array.
-  if (!Object.hasOwn(Input.Job, 'Tasks') || !Array.isArray(Input.Job.Tasks)) {
+  if (!Object.hasOwn(Input.Job, "Tasks") || !Array.isArray(Input.Job.Tasks)) {
     Input.Job.Tasks = [];
   }
 
@@ -39,31 +39,31 @@ export const handler = async (event) => {
     // and fails without the error being caught if it's missing. This forces
     // the execution to error out in a way that can be caught and handled as
     // expected. (Choice states don't support Catch)
-    if (!Object.hasOwn(task, 'Type')) {
-      throw new MissingTaskTypeError('Job included a task without a Type');
+    if (!Object.hasOwn(task, "Type")) {
+      throw new MissingTaskTypeError("Job included a task without a Type");
     }
 
-    if (task.Type !== 'Transcode') {
+    if (task.Type !== "Transcode") {
       return;
     }
 
-    if (!Object.hasOwn(task, 'FFmpeg')) {
+    if (!Object.hasOwn(task, "FFmpeg")) {
       task.FFmpeg = {};
     }
-    if (!Object.hasOwn(task.FFmpeg, 'GlobalOptions')) {
-      task.FFmpeg.GlobalOptions = '';
+    if (!Object.hasOwn(task.FFmpeg, "GlobalOptions")) {
+      task.FFmpeg.GlobalOptions = "";
     }
-    if (!Object.hasOwn(task.FFmpeg, 'InputFileOptions')) {
-      task.FFmpeg.InputFileOptions = '';
+    if (!Object.hasOwn(task.FFmpeg, "InputFileOptions")) {
+      task.FFmpeg.InputFileOptions = "";
     }
-    if (!Object.hasOwn(task.FFmpeg, 'OutputFileOptions')) {
-      task.FFmpeg.OutputFileOptions = '';
+    if (!Object.hasOwn(task.FFmpeg, "OutputFileOptions")) {
+      task.FFmpeg.OutputFileOptions = "";
     }
   });
 
   // Set Job.Callbacks to an empty array, unless it's already an array.
   if (
-    !Object.hasOwn(Input.Job, 'Callbacks') ||
+    !Object.hasOwn(Input.Job, "Callbacks") ||
     !Array.isArray(Input.Job.Callbacks)
   ) {
     Input.Job.Callbacks = [];
@@ -71,7 +71,7 @@ export const handler = async (event) => {
 
   // Set Job.SerializedJobs to an empty array, unless it's already an array.
   if (
-    !Object.hasOwn(Input.Job, 'SerializedJobs') ||
+    !Object.hasOwn(Input.Job, "SerializedJobs") ||
     !Array.isArray(Input.Job.SerializedJobs)
   ) {
     Input.Job.SerializedJobs = [];
@@ -79,18 +79,18 @@ export const handler = async (event) => {
 
   // Set Job.ExecutionTrace to an empty array, unless it's already an array.
   if (
-    !Object.hasOwn(Input.Job, 'ExecutionTrace') ||
+    !Object.hasOwn(Input.Job, "ExecutionTrace") ||
     !Array.isArray(Input.Job.ExecutionTrace)
   ) {
     Input.Job.ExecutionTrace = [];
   }
 
-  console.log(JSON.stringify({ msg: 'Normalized input', Input }));
+  console.log(JSON.stringify({ msg: "Normalized input", Input }));
 
   // These values are required to exist in the state machine definition at some
   // point, but are not guaranteed to be inserted during every execution, so
   // we pre-create them now to be safe.
-  Input.State = 'DONE';
+  Input.State = "DONE";
 
   await sendTelemetry(event);
 

@@ -1,31 +1,31 @@
 /* eslint-disable max-classes-per-file */
 
-import { join as pathJoin } from 'node:path';
-import { tmpdir } from 'node:os';
-import { unlinkSync } from 'node:fs';
-import { writeArtifact } from 'porter-util';
-import { s3Upload } from './s3-util.js';
-import { v1 as awfV1 } from './generators/audiowaveform.js';
+import { join as pathJoin } from "node:path";
+import { tmpdir } from "node:os";
+import { unlinkSync } from "node:fs";
+import { writeArtifact } from "porter-util";
+import { s3Upload } from "./s3-util.js";
+import { v1 as awfV1 } from "./generators/audiowaveform.js";
 
 class UnknownDestinationModeError extends Error {
   constructor(...params) {
     super(...params);
-    this.name = 'UnknownDestinationModeError';
+    this.name = "UnknownDestinationModeError";
   }
 }
 
 class UnknownGeneratorError extends Error {
   constructor(...params) {
     super(...params);
-    this.name = 'UnknownGeneratorError';
+    this.name = "UnknownGeneratorError";
   }
 }
 
 export const handler = async (event, context) => {
-  console.log(JSON.stringify({ msg: 'State input', input: event }));
+  console.log(JSON.stringify({ msg: "State input", input: event }));
 
   // Check destination type before spending any time doing the work
-  if (!['AWS/S3'].includes(event.Task.Destination.Mode)) {
+  if (!["AWS/S3"].includes(event.Task.Destination.Mode)) {
     throw new UnknownDestinationModeError(
       `Unexpected destination mode: ${event.Task.Destination.Mode}`,
     );
@@ -43,7 +43,7 @@ export const handler = async (event, context) => {
 
   // Run the selected generator. Each of these is reponsible for producing a
   // file at the expected path.
-  if (event.Task.Generator === 'BBC/audiowaveform/v1.x') {
+  if (event.Task.Generator === "BBC/audiowaveform/v1.x") {
     await awfV1(event, artifactTmpPath, waveformFileTmpPath);
   } else {
     throw new UnknownGeneratorError(
@@ -52,7 +52,7 @@ export const handler = async (event, context) => {
   }
 
   // Send the waveform data file to the destination
-  if (event.Task.Destination.Mode === 'AWS/S3') {
+  if (event.Task.Destination.Mode === "AWS/S3") {
     await s3Upload(event, waveformFileTmpPath);
   }
 
@@ -63,7 +63,7 @@ export const handler = async (event, context) => {
   const now = new Date();
 
   return {
-    Task: 'Waveform',
+    Task: "Waveform",
     Mode: event.Task.Destination.Mode,
     BucketName: event.Task.Destination.BucketName,
     ObjectKey: event.Task.Destination.ObjectKey,

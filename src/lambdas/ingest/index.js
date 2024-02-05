@@ -16,21 +16,21 @@
 // The result path is $.Artifact, so the output of the state looks like
 // { "Job": { … }, "Artifact": { "BucketName": "abc", "ObjectKey": "xyz" } }
 // eslint-disable-next-line import/no-extraneous-dependencies
-import { S3Client, HeadObjectCommand } from '@aws-sdk/client-s3';
-import fromHttp from './source/http.js';
-import fromDataUri from './source/data-uri.js';
-import fromS3 from './source/aws-s3.js';
-import fromGcpStorage from './source/gcp-storage.js';
+import { S3Client, HeadObjectCommand } from "@aws-sdk/client-s3";
+import fromHttp from "./source/http.js";
+import fromDataUri from "./source/data-uri.js";
+import fromS3 from "./source/aws-s3.js";
+import fromGcpStorage from "./source/gcp-storage.js";
 
 const s3 = new S3Client({
-  apiVersion: '2006-03-01',
+  apiVersion: "2006-03-01",
   followRegionRedirects: true,
 });
 
 class UnknownSourceModeError extends Error {
   constructor(...params) {
     super(...params);
-    this.name = 'UnknownSourceModeError';
+    this.name = "UnknownSourceModeError";
   }
 }
 
@@ -40,26 +40,26 @@ class UnknownSourceModeError extends Error {
  * @returns
  */
 export function filenameFromSource(source) {
-  if (source.Mode === 'HTTP') {
+  if (source.Mode === "HTTP") {
     const urlObj = new URL(source.URL);
     return (
-      decodeURIComponent(urlObj.pathname.split('/').pop()) || urlObj.hostname
+      decodeURIComponent(urlObj.pathname.split("/").pop()) || urlObj.hostname
     );
   }
 
-  if (source.Mode === 'AWS/S3') {
-    return source.ObjectKey.split('/').pop();
+  if (source.Mode === "AWS/S3") {
+    return source.ObjectKey.split("/").pop();
   }
 
-  if (source.Mode === 'GCP/Storage') {
-    return source.ObjectName.split('/').pop();
+  if (source.Mode === "GCP/Storage") {
+    return source.ObjectName.split("/").pop();
   }
 
   return false;
 }
 
 export const handler = async (event, context) => {
-  console.log(JSON.stringify({ msg: 'State input', input: event }));
+  console.log(JSON.stringify({ msg: "State input", input: event }));
 
   const sourceFilename = filenameFromSource(event.Job.Source);
 
@@ -69,20 +69,20 @@ export const handler = async (event, context) => {
   };
 
   switch (event.Job.Source.Mode) {
-    case 'HTTP':
+    case "HTTP":
       await fromHttp(event, artifact);
       break;
-    case 'AWS/S3':
+    case "AWS/S3":
       await fromS3(event, artifact);
       break;
-    case 'Data/URI':
+    case "Data/URI":
       await fromDataUri(event, artifact);
       break;
-    case 'GCP/Storage':
+    case "GCP/Storage":
       await fromGcpStorage(event, artifact);
       break;
     default:
-      throw new UnknownSourceModeError('Unexpected source mode');
+      throw new UnknownSourceModeError("Unexpected source mode");
   }
 
   // Add the file size of the actual object that was written to S3 to the

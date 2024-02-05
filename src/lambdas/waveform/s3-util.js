@@ -1,20 +1,20 @@
-import { createReadStream } from 'node:fs';
-import { S3Client } from '@aws-sdk/client-s3';
-import { STSClient, AssumeRoleCommand } from '@aws-sdk/client-sts';
-import { Upload } from '@aws-sdk/lib-storage';
+import { createReadStream } from "node:fs";
+import { S3Client } from "@aws-sdk/client-s3";
+import { STSClient, AssumeRoleCommand } from "@aws-sdk/client-sts";
+import { Upload } from "@aws-sdk/lib-storage";
 
-const sts = new STSClient({ apiVersion: '2011-06-15' });
+const sts = new STSClient({ apiVersion: "2011-06-15" });
 
 export async function s3Upload(event, waveformFileTmpPath) {
   const role = await sts.send(
     new AssumeRoleCommand({
       RoleArn: process.env.S3_DESTINATION_WRITER_ROLE,
-      RoleSessionName: 'porter_waveform_task',
+      RoleSessionName: "porter_waveform_task",
     }),
   );
 
   const s3writer = new S3Client({
-    apiVersion: '2006-03-01',
+    apiVersion: "2006-03-01",
     credentials: {
       accessKeyId: role.Credentials.AccessKeyId,
       secretAccessKey: role.Credentials.SecretAccessKey,
@@ -32,7 +32,7 @@ export async function s3Upload(event, waveformFileTmpPath) {
   // Assign all members of Parameters to params. Remove the properties required
   // for the Copy operation, so there is no collision
   if (
-    Object.prototype.hasOwnProperty.call(event.Task.Destination, 'Parameters')
+    Object.prototype.hasOwnProperty.call(event.Task.Destination, "Parameters")
   ) {
     delete event.Task.Destination.Parameters.Bucket;
     delete event.Task.Destination.Parameters.Key;
@@ -48,7 +48,7 @@ export async function s3Upload(event, waveformFileTmpPath) {
   const uploadEnd = process.hrtime(uploadStart);
   console.log(
     JSON.stringify({
-      msg: 'Finished S3 upload',
+      msg: "Finished S3 upload",
       duration: `${uploadEnd[0]} s ${uploadEnd[1] / 1000000} ms`,
     }),
   );

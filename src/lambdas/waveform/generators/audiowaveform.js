@@ -1,12 +1,12 @@
 /* eslint-disable max-classes-per-file */
 
-import { spawn } from 'node:child_process';
-import { tmpdir } from 'node:os';
+import { spawn } from "node:child_process";
+import { tmpdir } from "node:os";
 
 class InvalidDataFormatError extends Error {
   constructor(...params) {
     super(...params);
-    this.name = 'InvalidDataFormatError';
+    this.name = "InvalidDataFormatError";
   }
 }
 
@@ -20,7 +20,7 @@ export async function v1(event, inputFilePath, outputFilePath) {
     const mediaFormat = event.Artifact.Descriptor.Extension;
 
     // Ensure that the chosen output format is supported
-    if (!['Binary', 'JSON'].includes(event.Task.DataFormat)) {
+    if (!["Binary", "JSON"].includes(event.Task.DataFormat)) {
       reject(
         new InvalidDataFormatError(
           `Unexpected data format: ${event.Task.DataFormat}`,
@@ -30,7 +30,7 @@ export async function v1(event, inputFilePath, outputFilePath) {
 
     // Remap the human-readable task output format to the value expected by
     // audiowaveform
-    const outputFormat = { Binary: 'dat', JSON: 'json' }[event.Task.DataFormat];
+    const outputFormat = { Binary: "dat", JSON: "json" }[event.Task.DataFormat];
 
     // Use the defined bit depth if the value is allowed, otherwise default
     // to 16 bits.
@@ -56,67 +56,67 @@ export async function v1(event, inputFilePath, outputFilePath) {
     // allows for handling vastly more audio encodings than audiowaveform
     // supports natively.
     let cmd;
-    if (['wav', 'mp3'].includes(mediaFormat)) {
+    if (["wav", "mp3"].includes(mediaFormat)) {
       // WAV and MP3 are natively supported by audiowaveform, so they don't
       // run through FFmpeg
       cmd = [
-        '/opt/bin/audiowaveform',
+        "/opt/bin/audiowaveform",
         `--input-filename ${inputFilePath}`,
         `--input-format ${mediaFormat}`,
         `--output-filename ${outputFilePath}`,
         `--output-format ${outputFormat}`,
         `--bits ${bitDepth}`,
         `--pixels-per-second ${pointsPerSecond}`,
-      ].join(' ');
+      ].join(" ");
     } else {
       // All other formats are *not* supported by audiowaveform, so they are
       // transcoded first by FFmpeg with the result being piped to
       // audiowaveform.
       cmd = [
-        '/opt/bin/ffmpeg',
+        "/opt/bin/ffmpeg",
         // Input from file
         `-i ${inputFilePath}`,
         // Output to stdout; always transcode to WAV
-        '-f wav -',
-        '|',
-        '/opt/bin/audiowaveform',
+        "-f wav -",
+        "|",
+        "/opt/bin/audiowaveform",
         // Input from stdin
-        '--input-filename -',
+        "--input-filename -",
         // Audio coming from FFmpeg is always WAV
         `--input-format wav`,
         `--output-filename ${outputFilePath}`,
         `--output-format ${outputFormat}`,
         `--bits ${bitDepth}`,
         `--pixels-per-second ${pointsPerSecond}`,
-      ].join(' ');
+      ].join(" ");
     }
 
-    const args = ['-c', cmd];
+    const args = ["-c", cmd];
     console.log(
       JSON.stringify({
-        msg: 'audiowaveform arguments',
+        msg: "audiowaveform arguments",
         args,
       }),
     );
 
     // Run the program
-    const childProc = spawn('sh', args, {
+    const childProc = spawn("sh", args, {
       env: process.env,
       cwd: tmpdir(),
     });
 
     // Output from the program is only helpful for debugging purposes
-    childProc.stdout.on('data', (buffer) => console.info(buffer.toString()));
-    childProc.stderr.on('data', (buffer) => console.error(buffer.toString()));
+    childProc.stdout.on("data", (buffer) => console.info(buffer.toString()));
+    childProc.stderr.on("data", (buffer) => console.error(buffer.toString()));
 
     // When the program is done, if it exist successfully the data file
     // will be in the output path, and there's nothing else to return from
     // this function other than signal the success.
-    childProc.on('exit', (code, signal) => {
+    childProc.on("exit", (code, signal) => {
       const end = process.hrtime(start);
       console.log(
         JSON.stringify({
-          msg: 'Finished audiowaveform',
+          msg: "Finished audiowaveform",
           duration: `${end[0]} s ${end[1] / 1000000} ms`,
         }),
       );

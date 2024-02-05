@@ -2,14 +2,14 @@
 // machine. It passes the SNS message directly to the state machine as
 // the execution input.
 
-import { SFNClient, StartExecutionCommand } from '@aws-sdk/client-sfn';
+import { SFNClient, StartExecutionCommand } from "@aws-sdk/client-sfn";
 
-const sfn = new SFNClient({ apiVersion: '2016-11-23' });
+const sfn = new SFNClient({ apiVersion: "2016-11-23" });
 
 export const handler = async (event) => {
   console.log(
     JSON.stringify({
-      msg: 'Starting execution',
+      msg: "Starting execution",
       job: event.Records[0].body,
     }),
   );

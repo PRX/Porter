@@ -1,5 +1,5 @@
-import { spawn } from 'node:child_process';
-import { tmpdir } from 'node:os';
+import { spawn } from "node:child_process";
+import { tmpdir } from "node:os";
 
 /**
  * @typedef {object} MpckResult
@@ -17,7 +17,7 @@ import { tmpdir } from 'node:os';
  * @returns {MpckResult}
  */
 function extract(output) {
-  console.log(JSON.stringify({ msg: 'Raw mpck output', mpckOutput: output }));
+  console.log(JSON.stringify({ msg: "Raw mpck output", mpckOutput: output }));
   const result = {};
 
   const layer = output.match(/layer\s+([1-3])/);
@@ -42,7 +42,7 @@ function extract(output) {
 
   const time = output.match(/time\s+([0-9:.]+)/);
   if (time) {
-    const parts = time[1].split(':');
+    const parts = time[1].split(":");
     const min = +parts[0];
     const sec = +parts[1];
     const total = min * 60 + sec;
@@ -51,7 +51,7 @@ function extract(output) {
   }
 
   console.log(
-    JSON.stringify({ msg: 'mpck extraction', mpckExtraction: result }),
+    JSON.stringify({ msg: "mpck extraction", mpckExtraction: result }),
   );
   return result;
 }
@@ -69,20 +69,20 @@ export async function inspect(filePath) {
     //     version                       MPEG v1.0
     //     layer                         3
     //     frames                        1682
-    const childProc = spawn('/opt/bin/mpck', ['-v', filePath], {
+    const childProc = spawn("/opt/bin/mpck", ["-v", filePath], {
       env: process.env,
       cwd: tmpdir(),
     });
     const resultBuffers = [];
 
-    childProc.stdout.on('data', (buffer) => resultBuffers.push(buffer));
-    childProc.stderr.on('data', (buffer) => console.error(buffer.toString()));
+    childProc.stdout.on("data", (buffer) => resultBuffers.push(buffer));
+    childProc.stderr.on("data", (buffer) => console.error(buffer.toString()));
 
-    childProc.on('exit', (code, signal) => {
+    childProc.on("exit", (code, signal) => {
       const end = process.hrtime(start);
       console.log(
         JSON.stringify({
-          msg: 'Finished mpck',
+          msg: "Finished mpck",
           duration: `${end[0]} s ${end[1] / 1000000} ms`,
         }),
       );

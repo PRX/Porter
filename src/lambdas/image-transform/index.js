@@ -1,22 +1,22 @@
-import { S3Client } from '@aws-sdk/client-s3';
-import { STSClient, AssumeRoleCommand } from '@aws-sdk/client-sts';
-import { Upload } from '@aws-sdk/lib-storage';
-import { unlinkSync } from 'node:fs';
-import sharp from 'sharp';
-import { writeArtifact } from 'porter-util';
+import { S3Client } from "@aws-sdk/client-s3";
+import { STSClient, AssumeRoleCommand } from "@aws-sdk/client-sts";
+import { Upload } from "@aws-sdk/lib-storage";
+import { unlinkSync } from "node:fs";
+import sharp from "sharp";
+import { writeArtifact } from "porter-util";
 
-const sts = new STSClient({ apiVersion: '2011-06-15' });
+const sts = new STSClient({ apiVersion: "2011-06-15" });
 
 async function s3Upload(event, sharpInstance) {
   const role = await sts.send(
     new AssumeRoleCommand({
       RoleArn: process.env.S3_DESTINATION_WRITER_ROLE,
-      RoleSessionName: 'porter_image_task',
+      RoleSessionName: "porter_image_task",
     }),
   );
 
   const s3writer = new S3Client({
-    apiVersion: '2006-03-01',
+    apiVersion: "2006-03-01",
     credentials: {
       accessKeyId: role.Credentials.AccessKeyId,
       secretAccessKey: role.Credentials.SecretAccessKey,
@@ -35,17 +35,17 @@ async function s3Upload(event, sharpInstance) {
   // included with the artifact, that should be used as the new images's
   // content type
   if (
-    Object.hasOwn(event.Task.Destination, 'ContentType') &&
-    event.Task.Destination.ContentType === 'REPLACE' &&
-    Object.hasOwn(event.Artifact, 'Descriptor') &&
-    Object.hasOwn(event.Artifact.Descriptor, 'MIME')
+    Object.hasOwn(event.Task.Destination, "ContentType") &&
+    event.Task.Destination.ContentType === "REPLACE" &&
+    Object.hasOwn(event.Artifact, "Descriptor") &&
+    Object.hasOwn(event.Artifact.Descriptor, "MIME")
   ) {
     params.ContentType = event.Artifact.Descriptor.MIME;
   }
 
   // Assign all members of Parameters to params. Remove the properties required
   // for the Copy operation, so there is no collision
-  if (Object.hasOwn(event.Task.Destination, 'Parameters')) {
+  if (Object.hasOwn(event.Task.Destination, "Parameters")) {
     delete event.Task.Destination.Parameters.Bucket;
     delete event.Task.Destination.Parameters.Key;
     delete event.Task.Destination.Parameters.Body;
@@ -61,22 +61,22 @@ async function s3Upload(event, sharpInstance) {
 function sharpTransformer(inputFilePath, event) {
   let transformer = sharp(inputFilePath);
 
-  if (Object.hasOwn(event.Task, 'Resize')) {
+  if (Object.hasOwn(event.Task, "Resize")) {
     transformer = transformer.resize({
       width: event.Task.Resize.Width,
       height: event.Task.Resize.Height,
-      position: event.Task.Resize.Position || 'centre',
-      fit: event.Task.Resize.Fit || 'cover',
+      position: event.Task.Resize.Position || "centre",
+      fit: event.Task.Resize.Fit || "cover",
     });
   }
 
-  if (Object.hasOwn(event.Task, 'Format')) {
+  if (Object.hasOwn(event.Task, "Format")) {
     transformer = transformer.toFormat(event.Task.Format);
   }
 
   if (
-    Object.hasOwn(event.Task, 'Metadata') &&
-    event.Task.Metadata === 'PRESERVE'
+    Object.hasOwn(event.Task, "Metadata") &&
+    event.Task.Metadata === "PRESERVE"
   ) {
     transformer = transformer.withMetadata();
   }
@@ -85,7 +85,7 @@ function sharpTransformer(inputFilePath, event) {
 }
 
 export const handler = async (event, context) => {
-  console.log(JSON.stringify({ msg: 'State input', input: event }));
+  console.log(JSON.stringify({ msg: "State input", input: event }));
 
   // TODO If Sharp supports input streams some day, we can skip saving this
   // to a file
@@ -93,7 +93,7 @@ export const handler = async (event, context) => {
 
   const transformer = sharpTransformer(artifactTmpPath, event);
 
-  if (event.Task.Destination.Mode === 'AWS/S3') {
+  if (event.Task.Destination.Mode === "AWS/S3") {
     await s3Upload(event, transformer);
   }
 
@@ -102,7 +102,7 @@ export const handler = async (event, context) => {
   const now = new Date();
 
   return {
-    Task: 'Image',
+    Task: "Image",
     Mode: event.Task.Destination.Mode,
     BucketName: event.Task.Destination.BucketName,
     ObjectKey: event.Task.Destination.ObjectKey,

@@ -8,29 +8,29 @@
 // If the FTP operation was successful, there won't be an Error property, but
 // could be other properties like Mode, etc. All such properties will be
 // included in the task result.
-import { S3Client, GetObjectCommand } from '@aws-sdk/client-s3';
+import { S3Client, GetObjectCommand } from "@aws-sdk/client-s3";
 
 const s3 = new S3Client({
-  apiVersion: '2006-03-01',
+  apiVersion: "2006-03-01",
   followRegionRedirects: true,
 });
 
 class MissingFtpResultsError extends Error {
   constructor(...params) {
     super(...params);
-    this.name = 'MissingFtpResultsError';
+    this.name = "MissingFtpResultsError";
   }
 }
 
 class FtpOperationError extends Error {
   constructor(...params) {
     super(...params);
-    this.name = 'FtpOperationError';
+    this.name = "FtpOperationError";
   }
 }
 
 export const handler = async (event) => {
-  console.log(JSON.stringify({ msg: 'State input', input: event }));
+  console.log(JSON.stringify({ msg: "State input", input: event }));
 
   const file = await s3.send(
     new GetObjectCommand({
@@ -42,7 +42,7 @@ export const handler = async (event) => {
   const ftpResult = JSON.parse(json);
 
   if (!ftpResult) {
-    throw new MissingFtpResultsError('No Fargate results file found');
+    throw new MissingFtpResultsError("No Fargate results file found");
   } else if (ftpResult.Error) {
     // If the Fargate experienced an issue, reraise it here so it's visible
     // within the state machine
@@ -61,7 +61,7 @@ export const handler = async (event) => {
       Timestamp: +now / 1000,
     };
 
-    console.log(JSON.stringify({ msg: 'Result', result }));
+    console.log(JSON.stringify({ msg: "Result", result }));
 
     return result;
   }

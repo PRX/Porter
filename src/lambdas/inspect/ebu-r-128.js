@@ -1,5 +1,5 @@
-import { spawn } from 'node:child_process';
-import { tmpdir } from 'node:os';
+import { spawn } from "node:child_process";
+import { tmpdir } from "node:os";
 
 /**
  * @typedef {object} FfmpegLoudnormResult
@@ -20,19 +20,19 @@ export async function inspect(filePath) {
     // This will return JSON data after a lot of other FFmpeg process
     // information
     const childProc = spawn(
-      '/opt/bin/ffmpeg',
+      "/opt/bin/ffmpeg",
       [
-        '-v',
-        'info',
-        '-hide_banner',
-        '-nostats',
-        '-i',
+        "-v",
+        "info",
+        "-hide_banner",
+        "-nostats",
+        "-i",
         filePath,
-        '-af',
-        'loudnorm=dual_mono=true:print_format=json',
-        '-f',
-        'null',
-        '-',
+        "-af",
+        "loudnorm=dual_mono=true:print_format=json",
+        "-f",
+        "null",
+        "-",
       ],
       {
         env: process.env,
@@ -43,17 +43,17 @@ export async function inspect(filePath) {
 
     // The data we want seems to end up in stderr, so add that to the buffer
     // capture as well
-    childProc.stdout.on('data', (buffer) => resultBuffers.push(buffer));
-    childProc.stderr.on('data', (buffer) => {
+    childProc.stdout.on("data", (buffer) => resultBuffers.push(buffer));
+    childProc.stderr.on("data", (buffer) => {
       console.error(buffer.toString());
       resultBuffers.push(buffer);
     });
 
-    childProc.on('exit', (code, signal) => {
+    childProc.on("exit", (code, signal) => {
       const end = process.hrtime(start);
       console.log(
         JSON.stringify({
-          msg: 'Finished ffmpeg loudnorm',
+          msg: "Finished ffmpeg loudnorm",
           duration: `${end[0]} s ${end[1] / 1000000} ms`,
         }),
       );

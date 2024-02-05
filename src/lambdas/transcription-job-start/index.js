@@ -17,47 +17,47 @@
 //
 // https://docs.aws.amazon.com/transcribe/latest/dg/API_StartTranscriptionJob.html
 
-import { S3Client, PutObjectCommand } from '@aws-sdk/client-s3';
+import { S3Client, PutObjectCommand } from "@aws-sdk/client-s3";
 import {
   TranscribeClient,
   ListVocabularyFiltersCommand,
   CreateVocabularyFilterCommand,
   StartTranscriptionJobCommand,
-} from '@aws-sdk/client-transcribe';
+} from "@aws-sdk/client-transcribe";
 
 const s3 = new S3Client({
-  apiVersion: '2006-03-01',
+  apiVersion: "2006-03-01",
   followRegionRedirects: true,
 });
-const transcribe = new TranscribeClient({ apiVersion: '2017-10-26' });
+const transcribe = new TranscribeClient({ apiVersion: "2017-10-26" });
 
 class InvalidTranscribeTaskInputError extends Error {
   constructor(...params) {
     super(...params);
-    this.name = 'InvalidTranscribeTaskInputError';
+    this.name = "InvalidTranscribeTaskInputError";
   }
 }
 
 class UnknownDestinationModeError extends Error {
   constructor(...params) {
     super(...params);
-    this.name = 'UnknownDestinationModeError';
+    this.name = "UnknownDestinationModeError";
   }
 }
 
 export const handler = async (event) => {
-  console.log(JSON.stringify({ msg: 'State input', input: event }));
+  console.log(JSON.stringify({ msg: "State input", input: event }));
 
   let mediaFormat = event.Artifact.Descriptor.Extension;
 
   // Remap some common types to the equivalent required value that the
   // Transcribe API expects
-  if (mediaFormat === 'm4a') {
-    mediaFormat = 'mp4';
-  } else if (mediaFormat === '3ga') {
-    mediaFormat = 'amr';
-  } else if (mediaFormat === 'oga' || mediaFormat === 'opus') {
-    mediaFormat = 'ogg';
+  if (mediaFormat === "m4a") {
+    mediaFormat = "mp4";
+  } else if (mediaFormat === "3ga") {
+    mediaFormat = "amr";
+  } else if (mediaFormat === "oga" || mediaFormat === "opus") {
+    mediaFormat = "ogg";
   }
 
   // Take your life in your own hands, force a format
@@ -66,7 +66,7 @@ export const handler = async (event) => {
   }
 
   // Check destination type before spending any time doing the work
-  if (!['AWS/S3'].includes(event.Task.Destination.Mode)) {
+  if (!["AWS/S3"].includes(event.Task.Destination.Mode)) {
     throw new UnknownDestinationModeError(
       `Unexpected destination mode: ${event.Task.Destination.Mode}`,
     );
@@ -74,9 +74,9 @@ export const handler = async (event) => {
 
   // Only start the job if the artifact type (or passed in MediaFormat) is supported
   if (
-    !['mp3', 'mp4', 'wav', 'flac', 'ogg', 'amr', 'webm'].includes(mediaFormat)
+    !["mp3", "mp4", "wav", "flac", "ogg", "amr", "webm"].includes(mediaFormat)
   ) {
-    throw new InvalidTranscribeTaskInputError('Artifact format not supported');
+    throw new InvalidTranscribeTaskInputError("Artifact format not supported");
   }
 
   // Only start the job if the subtitle formats provided are supported
@@ -88,16 +88,16 @@ export const handler = async (event) => {
       // Fail if it's empty
       !event.Task.SubtitleFormats.length ||
       // Fail if it includes unsupported formats
-      event.Task.SubtitleFormats.filter((f) => !['srt', 'vtt'].includes(f))
+      event.Task.SubtitleFormats.filter((f) => !["srt", "vtt"].includes(f))
         .length)
   ) {
-    throw new InvalidTranscribeTaskInputError('Subtitle format not supported');
+    throw new InvalidTranscribeTaskInputError("Subtitle format not supported");
   }
 
   // Should be unique, even if an execution includes multiple transcribe jobs
   const prefix = process.env.TRANSCODE_JOB_NAME_PREFIX;
   const transcriptionJobName = `${prefix}${event.Execution.Id.split(
-    ':',
+    ":",
   ).pop()}-${event.TaskIteratorIndex}`;
 
   // Write the task token provided by the state machine context to S3
@@ -125,7 +125,7 @@ export const handler = async (event) => {
         VocabularyFilterName: filterName,
         LanguageCode: event.Task.LanguageCode,
         // This is meant to be a nonsense word
-        Words: ['abcdefghijklmnopqrstuvwxyz'],
+        Words: ["abcdefghijklmnopqrstuvwxyz"],
       }),
     );
   }
@@ -149,16 +149,16 @@ export const handler = async (event) => {
       }),
       Settings: {
         VocabularyFilterName: filterName,
-        VocabularyFilterMethod: 'tag',
+        VocabularyFilterMethod: "tag",
       },
       Tags: [
         {
-          Key: 'prx:ops:environment',
+          Key: "prx:ops:environment",
           Value: process.env.ENVIRONMENT_TYPE,
         },
         {
-          Key: 'prx:dev:application',
-          Value: 'Porter',
+          Key: "prx:dev:application",
+          Value: "Porter",
         },
       ],
     }),

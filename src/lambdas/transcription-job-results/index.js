@@ -8,16 +8,16 @@
 // This function will also copy the transcript file from its artifact location
 // to the destination defined on the Transcribe task.
 
-import { S3Client, CopyObjectCommand } from '@aws-sdk/client-s3';
-import { STSClient, AssumeRoleCommand } from '@aws-sdk/client-sts';
+import { S3Client, CopyObjectCommand } from "@aws-sdk/client-s3";
+import { STSClient, AssumeRoleCommand } from "@aws-sdk/client-sts";
 import {
   TranscribeClient,
   GetTranscriptionJobCommand,
-} from '@aws-sdk/client-transcribe';
-import { parse } from 'node:url';
+} from "@aws-sdk/client-transcribe";
+import { parse } from "node:url";
 
-const sts = new STSClient({ apiVersion: '2011-06-15' });
-const transcribe = new TranscribeClient({ apiVersion: '2017-10-26' });
+const sts = new STSClient({ apiVersion: "2011-06-15" });
+const transcribe = new TranscribeClient({ apiVersion: "2017-10-26" });
 
 // https://docs.aws.amazon.com/AWSJavaScriptSDK/latest/AWS/S3.html#copyObject-property
 // https://docs.aws.amazon.com/AmazonS3/latest/API/RESTObjectCOPY.html
@@ -36,7 +36,7 @@ async function awsS3copyObject(
 
   console.log(
     JSON.stringify({
-      msg: 'S3 Copy',
+      msg: "S3 Copy",
       source: s3path,
       destination: `${destinationBucketName}/${destinationObjectKey}`,
     }),
@@ -45,12 +45,12 @@ async function awsS3copyObject(
   const role = await sts.send(
     new AssumeRoleCommand({
       RoleArn: process.env.S3_DESTINATION_WRITER_ROLE,
-      RoleSessionName: 'porter_transcribe_task',
+      RoleSessionName: "porter_transcribe_task",
     }),
   );
 
   const s3 = new S3Client({
-    apiVersion: '2006-03-01',
+    apiVersion: "2006-03-01",
     credentials: {
       accessKeyId: role.Credentials.AccessKeyId,
       secretAccessKey: role.Credentials.SecretAccessKey,
@@ -73,14 +73,14 @@ async function awsS3copyObject(
 
   console.log(
     JSON.stringify({
-      msg: 'Finished S3 Copy',
+      msg: "Finished S3 Copy",
       duration: `${end[0]} s ${end[1] / 1000000} ms`,
     }),
   );
 }
 
 export const handler = async (event) => {
-  console.log(JSON.stringify({ msg: 'State input', input: event }));
+  console.log(JSON.stringify({ msg: "State input", input: event }));
 
   // Get the details of the Transcribe job
   const res = await transcribe.send(
@@ -91,7 +91,7 @@ export const handler = async (event) => {
 
   const transcriptionJob = res.TranscriptionJob;
 
-  if (event.Task.Destination.Mode === 'AWS/S3') {
+  if (event.Task.Destination.Mode === "AWS/S3") {
     const bucketName = event.Task.Destination.BucketName;
 
     // Copy the JSON transcript
@@ -111,13 +111,13 @@ export const handler = async (event) => {
       );
     }
   } else {
-    throw new Error('Unexpected destination mode');
+    throw new Error("Unexpected destination mode");
   }
 
   const now = new Date();
 
   return {
-    Task: 'Transcribe',
+    Task: "Transcribe",
     Mode: event.Task.Destination.Mode,
     BucketName: event.Task.Destination.BucketName,
     ObjectKey: event.Task.Destination.ObjectKey,

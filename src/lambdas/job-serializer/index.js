@@ -10,12 +10,12 @@
 // represents the execution IDs of the jobs that serialized other jobs prior to
 // this one.
 
-import { SNSClient, PublishCommand } from '@aws-sdk/client-sns';
+import { SNSClient, PublishCommand } from "@aws-sdk/client-sns";
 
-const sns = new SNSClient({ apiVersion: '2010-03-31' });
+const sns = new SNSClient({ apiVersion: "2010-03-31" });
 
 export const handler = async (event) => {
-  console.log(JSON.stringify({ msg: 'State input', input: event }));
+  console.log(JSON.stringify({ msg: "State input", input: event }));
 
   event.SerializedJob.ExecutionTrace = [
     ...event.ExecutionTrace,
@@ -23,7 +23,7 @@ export const handler = async (event) => {
   ];
 
   console.log(
-    JSON.stringify({ msg: 'Serialized Job', input: event.SerializedJob }),
+    JSON.stringify({ msg: "Serialized Job", input: event.SerializedJob }),
   );
 
   await sns.send(

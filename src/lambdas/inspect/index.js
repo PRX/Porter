@@ -1,9 +1,9 @@
-import { unlinkSync, statSync } from 'node:fs';
-import { writeArtifact } from 'porter-util';
+import { unlinkSync, statSync } from "node:fs";
+import { writeArtifact } from "porter-util";
 
-import { inspect as audio } from './audio.js';
-import { inspect as video } from './video.js';
-import { inspect as image } from './image.js';
+import { inspect as audio } from "./audio.js";
+import { inspect as video } from "./video.js";
+import { inspect as image } from "./image.js";
 
 /** @typedef {import('./audio.js').AudioInspection} AudioInspection */
 /** @typedef {import('./video.js').VideoInspection} VideoInspection */
@@ -23,7 +23,7 @@ import { inspect as image } from './image.js';
  */
 
 export const handler = async (event, context) => {
-  console.log(JSON.stringify({ msg: 'State input', input: event }));
+  console.log(JSON.stringify({ msg: "State input", input: event }));
 
   const artifactTmpPath = await writeArtifact(event, context);
 
@@ -49,8 +49,8 @@ export const handler = async (event, context) => {
   unlinkSync(artifactTmpPath);
 
   if (inspection.Audio && !inspection.Audio.Layer) {
-    console.log(JSON.stringify({ event, inspection, tag: 'NO_LAYER' }));
+    console.log(JSON.stringify({ event, inspection, tag: "NO_LAYER" }));
   }
 
-  return { Task: 'Inspect', Inspection: inspection };
+  return { Task: "Inspect", Inspection: inspection };
 };
