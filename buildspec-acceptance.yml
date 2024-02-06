@@ -1,3 +1,6 @@
+# Porter does not currently have a CI build. This buildspec is run as part of
+# the CodePipeline that deploys Porter via CloudFormation. It runs as an
+# acceptance test step between staging and production deploys.
 version: 0.2
 env:
   variables:
