@@ -8,6 +8,7 @@ import { inspect as mpck } from "./mpck.js";
 /**
  * @typedef {object} AudioInspection
  * @property {number} [Duration]
+ * @property {boolean} [DurationAmbigious]
  * @property {string} [Format]
  * @property {number} [Bitrate]
  * @property {number} [Frequency]
@@ -71,11 +72,20 @@ export async function inspect(task, filePath) {
       }
 
       if (check) {
+        const Duration = check.time && Math.round(nmbr(check.time) * 1000);
+
+        // if ffmpeg/mpck duration differ by more than 200ms
+        const DurationAmbiguous =
+          Duration &&
+          inspection.Duration &&
+          Math.abs(Duration - inspection.Duration) > 200;
+
         Object.assign(inspection, {
           ...(check.layer && { Layer: check.layer }),
           ...(check.frames && { Frames: check.frames }),
           ...(check.samples && { Samples: check.samples }),
-          ...(check.time && { Duration: Math.round(nmbr(check.time) * 1000) }),
+          ...(Duration && { Duration }),
+          ...(DurationAmbiguous && { DurationAmbiguous }),
           ...(check.unidentified && {
             UnidentifiedBytes: check.unidentified,
           }),
