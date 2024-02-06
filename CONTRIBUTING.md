@@ -21,8 +21,6 @@ Take a _least privilege_ approach to all aspects of security. Create discrete IA
 
 Git commits always should follow the [seven rules](https://chris.beams.io/posts/git-commit/#seven-rules).
 
-The `package-lock.json` file is not under version control. The NPM packages it tracks are only used in development, and the versions are largely irrelevant, so ignoring the lock file reduces unnecessary Git churn. The packages listed as `dependencies` are in there only to satisfy ESLint's path resolution checks.
-
 ### Code Style
 
 Basic code style guidelines, such as tabs versus spaces, are captured in the project's [`.editorconfig`](https://editorconfig.org/) file. Different file types may follow different style guides. Ensure that you editor or IDE is set up to follow that configuration automatically. If necessary, create an application-specific configuration (such as with the `.vscode` directory for VS Code) that matches `.editorconfig`, and check it in so that others can benefit.
@@ -32,12 +30,12 @@ Language-specific code styles are handled by various libraries, such as [ESLint]
 - [ESLint](https://eslint.org/)
 - [TypeScript](https://www.typescriptlang.org/docs/handbook/compiler-options.html)
 - [Prettier](https://prettier.io/)
-- [cfn-python-lint](https://github.com/aws-cloudformation/cfn-python-lint)
-- [RuboCop](https://rubocop.org)
+- [cfn-lint](https://github.com/aws-cloudformation/cfn-lint)
+- [standard](https://github.com/standardrb/standard)
 
-You should set up realtime checking with these tools in your IDE, such as type checking with TypeScript and linting with ESLint. You should also enable Prettier to format in realtime or on save. The test suite will fail if there are rules violations, so it's much easier to be validation code changes as you go.
+You should set up realtime checking with these tools in your IDE, such as type checking with TypeScript and linting with ESLint. You should also enable Prettier to format in realtime or on save. The test suite will fail if there are rules violations, so it's much easier to be validating code changes as you go.
 
-While the project utilizes TypeScript for type checking and other other JavaScript syntax checking, Node.js-relate code should be written in vanilla JavaScript, and not TypeScript.
+While the project utilizes TypeScript for type checking and other other JavaScript syntax checking, Node.js-relate code should be written in vanilla JavaScript, and **not** TypeScript.
 
 ### Commands & Toolchain
 
@@ -59,7 +57,7 @@ Various APIs and SDKs are inconsistent in how they refer to S3 buckets and objec
 
 For the sake of clarity, when building states in ASL always include the `InputPath`, `ResultPath`, and `OutputPath`, even if they are set to the default value.
 
-Timestamps should always be in seconds.
+Timestamps should always be in seconds (i.e., not milliseconds).
 
 Create Lambda Layers for external dependencies. Do not include packages and libraries in the deployable Lambda code iteself.
 
@@ -126,3 +124,13 @@ Here's a very generalized approach to adding a new task type, which should cover
 - For Lambda functions that generate data which needs to be returned through the callbacks, ensure that the return value includes a `Task` property (such as `"Task": "Copy"`). Fargate-backed states cannot currently retun data from their execution environment to the state machine. If necessary, you can write the data to a file in S3, and use a Lambda function state that runs after the Fargate task to fetch and return the data.
 - Update this CONTRIBUTING document if there are any significant changes to the **Execution Overview** or other areas.
 - Add documentation to the README to describe the task input requirementss and the task result output.
+
+## Shared code with porter-util
+
+During deployment, a Lambda layer is created for the lib/porter-util library. The layer is structured to appear as an npm package to Lambda functions that include the layer, but it is not a true, published npm package. `"porter-util": "file:./lib/porter-util"` is found in `package.json` to satisfy type checking and linting requirements.
+
+`porter-util` is intended to allow for creating reusable functionality that several different Lambda functions may need. For example, fetching a source file from S3 and writing it to the local Lambda function file system is needed by many Lambda-based states. Previously, each of these implemented that functionality independently. `porter-util` provides a function for this, which can be included using `import { writeArtifact } from "porter-util"`.
+
+Similarly, many states also write files to destinations. `porter-util` provides a `sendToDestination()` function that can write files to a variest of destination types. As long as a task uses the standard `Destination` property format for its destination, `sendToDestination()` can be used to handle that work.
+
+When adding new functions to `porter-util`, be sure to add corresponding definitions to `index.d.ts`.
