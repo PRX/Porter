@@ -8,7 +8,7 @@ import { inspect as mpck } from "./mpck.js";
 /**
  * @typedef {object} AudioInspection
  * @property {number} [Duration]
- * @property {boolean} [DurationAmbigious]
+ * @property {number} [DurationDiscrepancy]
  * @property {string} [Format]
  * @property {number} [Bitrate]
  * @property {number} [Frequency]
@@ -20,6 +20,7 @@ import { inspect as mpck } from "./mpck.js";
  * @property {number} [LoudnessIntegrated]
  * @property {number} [LoudnessTruePeak]
  * @property {number} [LoudnessRange]
+ * @property {number} [UnidentifiedBytes]
  */
 
 /**
@@ -72,20 +73,25 @@ export async function inspect(task, filePath) {
       }
 
       if (check) {
-        const Duration = check.time && Math.round(nmbr(check.time) * 1000);
+        // The duration reported by a previous analysis (usually FFmpeg)
+        const otherDuration = inspection.Duration;
+        // The duration as calculated by mpck. If present, this will replace
+        // any duration previously added to the inspection result
+        const mpckDuration = check.time && Math.round(nmbr(check.time) * 1000);
 
-        // if ffmpeg/mpck duration differ by more than 200ms
-        const DurationAmbiguous =
-          Duration &&
-          inspection.Duration &&
-          Math.abs(Duration - inspection.Duration) > 200;
+        const durationDiscrepancy =
+          otherDuration &&
+          mpckDuration &&
+          Math.abs(otherDuration - mpckDuration);
 
         Object.assign(inspection, {
           ...(check.layer && { Layer: check.layer }),
           ...(check.frames && { Frames: check.frames }),
           ...(check.samples && { Samples: check.samples }),
-          ...(Duration && { Duration }),
-          ...(DurationAmbiguous && { DurationAmbiguous }),
+          ...(mpckDuration && { Duration: mpckDuration }),
+          ...(durationDiscrepancy && {
+            DurationDiscrepancy: durationDiscrepancy,
+          }),
           ...(check.unidentified && {
             UnidentifiedBytes: check.unidentified,
           }),
