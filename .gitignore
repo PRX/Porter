@@ -8,6 +8,7 @@
 .env.stag
 .env.prod
 .npm
+.yarn
 node_modules
 samconfig.toml
 samconfig.dev.toml

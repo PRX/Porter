@@ -2,10 +2,10 @@
   "name": "porter",
   "version": "1.0.0",
   "license": "AGPL-3.0",
-  "private": "true",
   "engines": {
     "node": ">= 20.0.0"
   },
+  "packageManager": "yarn@3.6.4",
   "repository": {
     "type": "git",
     "url": "git://github.com/PRX/Porter.git"
