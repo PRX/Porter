@@ -11,7 +11,6 @@
 # STATE_MACHINE_AWS_REGION
 # STATE_MACHINE_ARTIFACT_BUCKET_NAME
 # STATE_MACHINE_ARTIFACT_OBJECT_KEY
-# STATE_MACHINE_ARTIFACT_DESCRIPTOR_EXTENSION
 # STATE_MACHINE_DESTINATION_JSON
 # STATE_MACHINE_DESTINATION_MODE
 # STATE_MACHINE_DESTINATION_BUCKET_NAME
@@ -20,6 +19,8 @@
 # STATE_MACHINE_FFMPEG_GLOBAL_OPTIONS
 # STATE_MACHINE_FFMPEG_INPUT_FILE_OPTIONS
 # STATE_MACHINE_FFMPEG_OUTPUT_FILE_OPTIONS
+# STATE_MACHINE_TASK_JSON
+# STATE_MACHINE_ARTIFACT_JSON
 
 require "aws-sdk-cloudwatch"
 require "aws-sdk-s3"
@@ -36,6 +37,8 @@ class String
       .downcase
   end
 end
+
+artifact = JSON.parse(ENV["STATE_MACHINE_ARTIFACT_JSON"])
 
 cloudwatch = Aws::CloudWatch::Client.new
 # This S3 client is used for reading the source file and writing artifacts, it
@@ -74,11 +77,15 @@ File.open("artifact.file", "wb") do |file|
   )
 end
 
+if ENV["STATE_MACHINE_DESTINATION_FORMAT"] == "INHERIT" && !artifact.dig("Descriptor", "Extension")
+  raise StandardError, "Output format could not be inheritted"
+end
+
 # Execute the transcode
 global_opts = ENV["STATE_MACHINE_FFMPEG_GLOBAL_OPTIONS"]
 input_opts = ENV["STATE_MACHINE_FFMPEG_INPUT_FILE_OPTIONS"]
 output_opts = ENV["STATE_MACHINE_FFMPEG_OUTPUT_FILE_OPTIONS"]
-output_format = (ENV["STATE_MACHINE_DESTINATION_FORMAT"] == "INHERIT") ? ENV["STATE_MACHINE_ARTIFACT_DESCRIPTOR_EXTENSION"] : ENV["STATE_MACHINE_DESTINATION_FORMAT"]
+output_format = (ENV["STATE_MACHINE_DESTINATION_FORMAT"] == "INHERIT") ? artifact["Descriptor"]["Extension"] : ENV["STATE_MACHINE_DESTINATION_FORMAT"]
 ffmpeg_cmd = [
   "./ffmpeg-bin/ffmpeg",
   global_opts,

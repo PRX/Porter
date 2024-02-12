@@ -414,8 +414,6 @@ States:
                       Value.$: "$.Artifact.BucketName"
                     - Name: STATE_MACHINE_ARTIFACT_OBJECT_KEY
                       Value.$: "$.Artifact.ObjectKey"
-                    - Name: STATE_MACHINE_ARTIFACT_DESCRIPTOR_EXTENSION
-                      Value.$: "$.Artifact.Descriptor.Extension"
                     - Name: STATE_MACHINE_DESTINATION_JSON
                       Value.$: States.JsonToString($.Task.Destination)
                     - Name: STATE_MACHINE_DESTINATION_MODE
@@ -432,6 +430,14 @@ States:
                       Value.$: "$.Task.FFmpeg.InputFileOptions"
                     - Name: STATE_MACHINE_FFMPEG_OUTPUT_FILE_OPTIONS
                       Value.$: "$.Task.FFmpeg.OutputFileOptions"
+                    # Guaranteed and required values should be listed and
+                    # accessed directly. Optional or conditional values can be
+                    # pulled from the JSON, to avoid state machine runtime
+                    # errors
+                    - Name: STATE_MACHINE_TASK_JSON
+                      Value.$: States.JsonToString($.Task)
+                    - Name: STATE_MACHINE_ARTIFACT_JSON
+                      Value.$: States.JsonToString($.Artifact)
                   Name: "${TranscodeContainerName}"
             NetworkConfiguration:
               AwsvpcConfiguration:
