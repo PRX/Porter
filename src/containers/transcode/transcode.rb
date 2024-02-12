@@ -22,6 +22,10 @@
 # STATE_MACHINE_TASK_JSON
 # STATE_MACHINE_ARTIFACT_JSON
 
+# Raising an error will cause the Fargate container to exit, resulting in a
+# States.TaskFailed error in the Step Function state. These will follow the
+# state machine retry logic and/or send a task error callback
+
 require "aws-sdk-cloudwatch"
 require "aws-sdk-s3"
 require "aws-sdk-sts"
