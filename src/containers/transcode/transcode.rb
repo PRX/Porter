@@ -182,6 +182,13 @@ if destination["Mode"] == "AWS/S3"
 
   put_object_params = {}
 
+  # When the optional `ContentType` property is set to `REPLACE`, if a MIME is
+  # included with the artifact, that should be used as the new file's
+  # content type
+  if destination["ContentType"] == "REPLACE" && artifact.dig("Descriptor", "MIME")
+    put_object_params[:content_type] = artifact["Descriptor"]["MIME"]
+  end
+
   # For historical reasons, the available parameters match ALLOWED_UPLOAD_ARGS
   # from Boto3's S3Transfer class.
   # https://boto3.amazonaws.com/v1/documentation/api/latest/reference/customizations/s3.html
