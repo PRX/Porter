@@ -2409,7 +2409,9 @@ Resources:
         - PolicyName: EcsSyncStaticResourcesPolicy
           PolicyDocument:
             Statement:
-              - Action: ecs:RunTask
+              - Action:
+                  - ecs:RunTask
+                  - ecs:TagResource
                 Effect: Allow
                 Resource:
                   - !Ref TranscodeEcsTaskDefinition
