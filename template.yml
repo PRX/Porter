@@ -266,6 +266,12 @@ Resources:
       Namespace: AWS/Lambda
       Period: 60
       Statistic: Sum
+      Tags:
+        - { Key: prx:meta:tagging-version, Value: "2021-04-07" }
+        - { Key: prx:cloudformation:stack-name, Value: !Ref AWS::StackName }
+        - { Key: prx:cloudformation:stack-id, Value: !Ref AWS::StackId }
+        - { Key: prx:ops:environment, Value: !Ref EnvironmentType }
+        - { Key: prx:dev:application, Value: Porter }
       Threshold: 0
       TreatMissingData: notBreaching
       Dimensions:
@@ -381,6 +387,12 @@ Resources:
       Namespace: AWS/Lambda
       Period: 60
       Statistic: Sum
+      Tags:
+        - { Key: prx:meta:tagging-version, Value: "2021-04-07" }
+        - { Key: prx:cloudformation:stack-name, Value: !Ref AWS::StackName }
+        - { Key: prx:cloudformation:stack-id, Value: !Ref AWS::StackId }
+        - { Key: prx:ops:environment, Value: !Ref EnvironmentType }
+        - { Key: prx:dev:application, Value: Porter }
       Threshold: 0
       TreatMissingData: notBreaching
       Dimensions:
@@ -523,6 +535,12 @@ Resources:
       Namespace: AWS/States
       Period: 60
       Statistic: Sum
+      Tags:
+        - { Key: prx:meta:tagging-version, Value: "2021-04-07" }
+        - { Key: prx:cloudformation:stack-name, Value: !Ref AWS::StackName }
+        - { Key: prx:cloudformation:stack-id, Value: !Ref AWS::StackId }
+        - { Key: prx:ops:environment, Value: !Ref EnvironmentType }
+        - { Key: prx:dev:application, Value: Porter }
       Threshold: 0
       TreatMissingData: notBreaching
       Dimensions:
@@ -1522,6 +1540,12 @@ Resources:
       Namespace: AWS/States
       Period: 60
       Statistic: Sum
+      Tags:
+        - { Key: prx:meta:tagging-version, Value: "2021-04-07" }
+        - { Key: prx:cloudformation:stack-name, Value: !Ref AWS::StackName }
+        - { Key: prx:cloudformation:stack-id, Value: !Ref AWS::StackId }
+        - { Key: prx:ops:environment, Value: !Ref EnvironmentType }
+        - { Key: prx:dev:application, Value: Porter }
       Threshold: 0
       TreatMissingData: notBreaching
       Dimensions:
@@ -1722,6 +1746,12 @@ Resources:
       Namespace: AWS/States
       Period: 60
       Statistic: Sum
+      Tags:
+        - { Key: prx:meta:tagging-version, Value: "2021-04-07" }
+        - { Key: prx:cloudformation:stack-name, Value: !Ref AWS::StackName }
+        - { Key: prx:cloudformation:stack-id, Value: !Ref AWS::StackId }
+        - { Key: prx:ops:environment, Value: !Ref EnvironmentType }
+        - { Key: prx:dev:application, Value: Porter }
       Threshold: 0
       TreatMissingData: notBreaching
       Dimensions:
@@ -1778,6 +1808,12 @@ Resources:
       Namespace: AWS/States
       Period: 60
       Statistic: Sum
+      Tags:
+        - { Key: prx:meta:tagging-version, Value: "2021-04-07" }
+        - { Key: prx:cloudformation:stack-name, Value: !Ref AWS::StackName }
+        - { Key: prx:cloudformation:stack-id, Value: !Ref AWS::StackId }
+        - { Key: prx:ops:environment, Value: !Ref EnvironmentType }
+        - { Key: prx:dev:application, Value: Porter }
       Threshold: 0
       TreatMissingData: notBreaching
       Dimensions:
@@ -2504,6 +2540,12 @@ Resources:
       Namespace: AWS/States
       Period: 60
       Statistic: Sum
+      Tags:
+        - { Key: prx:meta:tagging-version, Value: "2021-04-07" }
+        - { Key: prx:cloudformation:stack-name, Value: !Ref AWS::StackName }
+        - { Key: prx:cloudformation:stack-id, Value: !Ref AWS::StackId }
+        - { Key: prx:ops:environment, Value: !Ref EnvironmentType }
+        - { Key: prx:dev:application, Value: Porter }
       Threshold: 0
       TreatMissingData: notBreaching
       Dimensions:
@@ -2524,6 +2566,12 @@ Resources:
       Namespace: AWS/States
       Period: 60
       Statistic: Sum
+      Tags:
+        - { Key: prx:meta:tagging-version, Value: "2021-04-07" }
+        - { Key: prx:cloudformation:stack-name, Value: !Ref AWS::StackName }
+        - { Key: prx:cloudformation:stack-id, Value: !Ref AWS::StackId }
+        - { Key: prx:ops:environment, Value: !Ref EnvironmentType }
+        - { Key: prx:dev:application, Value: Porter }
       Threshold: 0
       TreatMissingData: notBreaching
       Dimensions:
@@ -2543,6 +2591,12 @@ Resources:
       Namespace: AWS/States
       Period: 60
       Statistic: Sum
+      Tags:
+        - { Key: prx:meta:tagging-version, Value: "2021-04-07" }
+        - { Key: prx:cloudformation:stack-name, Value: !Ref AWS::StackName }
+        - { Key: prx:cloudformation:stack-id, Value: !Ref AWS::StackId }
+        - { Key: prx:ops:environment, Value: !Ref EnvironmentType }
+        - { Key: prx:dev:application, Value: Porter }
       Threshold: 0
       TreatMissingData: notBreaching
       Dimensions:
@@ -2569,6 +2623,13 @@ Resources:
       Namespace: PRX/Porter
       Period: 60
       Statistic: Sum
+      Tags:
+        - { Key: prx:meta:tagging-version, Value: "2021-04-07" }
+        - { Key: prx:cloudformation:stack-name, Value: !Ref AWS::StackName }
+        - { Key: prx:cloudformation:stack-id, Value: !Ref AWS::StackId }
+        - { Key: prx:ops:environment, Value: !Ref EnvironmentType }
+        - { Key: prx:dev:application, Value: Porter }
+        - { Key: prx:ops:cloudwatch-log-group-name, Value: !Ref CallbackLambdaLogGroup }
       Threshold: 0
       TreatMissingData: notBreaching
 
