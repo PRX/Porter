@@ -213,7 +213,7 @@ The `Source.ClientConfiguration` property of the job input should contain the GC
 
 `Callbacks` is an array of endpoints to which callback messages about the job execution will be sent. Each endpoint object has a `Type` (supported types are `AWS/SNS`, `AWS/SQS`, `AWS/S3`, `AWS/EventBridge`, and `HTTP`). Different modes will have additional required properties.
 
-`HTTP` callbacks require a `URL` property. When using methods like `POST` or `PUT`, they also require a `Content-Type`. Possible values are `application/json` and `application/x-www-form-urlencoded`. When using HTTP `GET`, the entire callback message is sent as a URL query parameter value. The `QueryParameterName` property is required and determines the name of the query parameter used to send the message. Other query parameters on the callback URL are preserved, but the chosen parameter is replaced if it exists. There is no guarantee that callback messages will fit within the normal limits of a URL's length, therefore `GET` callbacks are not recommended. The endpoint should respond with an HTTP `200` to acknowledge receipt of the callback.
+`HTTP` callbacks require both a `URL` and `Method` (`GET`, `POST`, etc) property. When using methods like `POST` or `PUT`, they also require a `Content-Type`. Possible values are `application/json` and `application/x-www-form-urlencoded`. When using HTTP `GET`, the entire callback message is sent as a URL query parameter value. The `QueryParameterName` property is required and determines the name of the query parameter used to send the message. Other query parameters on the callback URL are preserved, but the chosen parameter is replaced if it exists. There is no guarantee that callback messages will fit within the normal limits of a URL's length, therefore `GET` callbacks are not recommended. The endpoint should respond with an HTTP `200` to acknowledge receipt of the callback.
 
 `AWS/SNS` callbacks must include a `Topic` ARN, and `AWS/SQS` callbacks must include a `Queue` in the form of a URL. An `AWS/EventBridge` callback can optionally include an `EventBusName`; if excluded the callback will be sent to the default event bus.
 
@@ -255,7 +255,7 @@ Callbacks are sent when a job has been received (after the input has been normal
 
 Callbacks are sent as individual tasks succeed or fail. For example, if a job includes three `Copy` tasks, a callback will be sent after each copy task completes. (Tasks are processed in parallel, so callbacks may arrive in any order). Task callbacks can be identified by the `TaskResult` key. The original task definition is also included in the callback under the `Task` key.
 
-The JSON message for a successful `Copy` task callback looks like this:
+The JSON message for a successful `Copy` task callback looks like this (note the `TaskResult.Result` key):
 
 ```json
 {
@@ -516,7 +516,7 @@ The `Time` and `Timestamp` in the output represent approximately when the file f
 
 #### AWS/S3
 
-S3 copy operations are done by the [copyObject()](https://docs.aws.amazon.com/AWSJavaScriptSDK/latest/AWS/S3.html#copyObject-property) method in the AWS Node SDK. Copying files larger than 5 GB is not supported by the AWS API.
+The AWS v3 JavaScript SDK is used to perform copy operations with S3 destinations (all source files are ingested to S3 at the start of a job execution, so all files, regardless of their original source, are being copied _from_ S3 in the context of a copy task). When the source file is smaller than 5 GB, the operation is performed with the [CopyObjectCommand](https://docs.aws.amazon.com/AWSJavaScriptSDK/v3/latest/client/s3/command/CopyObjectCommand/). For larger files, [multipart copy](https://docs.aws.amazon.com/AWSJavaScriptSDK/v3/latest/client/s3/command/UploadPartCopyCommand/) operations are used. (Parts are 16 MiB, or larger if necessary.)
 
 The `BucketName` and `ObjectKey` properties are required.
 
@@ -583,7 +583,7 @@ If port is not specified, it will default to the standard FTP command port, `21`
 
 There are additional parameters to specify how the file is transferred:
 
-`MD5`: The default is `false`, to indicate the md5 file should not be written.
+`MD5`: The default is `false`, to indicate the [MD5](https://en.wikipedia.org/wiki/MD5) file should not be written.
 If set to `true` Porter will write a text file containing the MD5 hash of the copied file (e.g. `<input file>.md5`).
 This is useful both as a semaphore file, as it is written after the primary file is written successfully,
 and useful to validate the file was transferred without error by checking the MD5 signature.
@@ -682,7 +682,7 @@ Output:
 
 ### Transcode
 
-`Transcode` tasks encode and otherwise manipulate the source file. These are intended for audio and video source files, though could operate on any file formats supported by FFmpeg. A job can include any number of transcode tasks; each will perform the operation against the original state of the source file. Currently the only supported destination mode is `AWS/S3`.
+`Transcode` tasks encode and otherwise manipulate the source file. These are intended for audio and video source files, though could operate on any file formats supported by [FFmpeg](https://www.ffmpeg.org/). A job can include any number of transcode tasks; each will perform the operation against the original state of the source file. Currently the only supported destination mode is `AWS/S3`.
 
 A `Format` is required, and is used to explicitly set the output format of the encoding operation; it is not implictly determined by the file extension. The available formats are indicted [in this list](https://johnvansickle.com/ffmpeg/release-readme.txt) with an `E`. If you set `Format` to `INHERIT`, the output format will be set to a [heuristically-determined](https://www.npmjs.com/package/file-type) type based on the source file.
 

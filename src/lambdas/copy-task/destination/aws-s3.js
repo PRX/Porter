@@ -86,20 +86,23 @@ async function multipartCopy(params, sourceObjectSize, s3Client) {
   const targetPartSizeInBytes = 16 * MiB; // min 5 MiB, max 5 GiB
 
   // There's a maximum of 10,000 parts per multi-part upload. Calculate the
-  // size of each part if the source object were split into the maximum number
+  // size of each part if the source object were split into that maximum number
   // of parts. Parts are always a whole number of bytes, so round this value
   // up to the nearest byte, to always stay below 10,000 after dividing (i.e.,
   // err on the side of fewer parts).
   const maxPartCount = 10000; // Limit set by S3
   const minPartSizeInBytes = Math.ceil(sourceObjectSize / maxPartCount);
 
-  // If the target part size is smaller than the minimum, it would result in
-  // more than 10,000 parts. Use the minimum instead to have larger parts and
-  // stay below the limit.
+  // If part sizes drop below the minimum calculated above, it would result in
+  // more parts (each part would be smaller, so more parts would be needed),
+  // which would exceed the 10,000 part limit. When the target part size is
+  // below that calculated minimum, use the minimum part size to stay within
+  // the limit. When the target part size results in fewer than 10,000 parts,
+  // use that as the part size.
   const partSizeInBytes = Math.max(targetPartSizeInBytes, minPartSizeInBytes);
 
   // Calculate the byte ranges for each part of the source file that we're
-  // going to upload, based on the target part size
+  // going to upload, based on the chosen part size.
   const partCount = Math.ceil(sourceObjectSize / partSizeInBytes);
   const partRanges = new Array(partCount).fill(0).map((r, idx) => {
     // For part size of 10, these would be: 0, 10, 20, etc
@@ -199,7 +202,7 @@ export default async function main(event) {
   // API. For objects larger than 5 GB, a multi-part upload must be used.
   if (head.ContentLength < 5000000000) {
     // Copies an existing S3 object to the S3 artifact bucket.
-    // https://docs.aws.amazon.com/AWSJavaScriptSDK/latest/AWS/S3.html#copyObject-property
+    // https://docs.aws.amazon.com/AWSJavaScriptSDK/v3/latest/client/s3/command/CopyObjectCommand/
     // https://docs.aws.amazon.com/AmazonS3/latest/API/RESTObjectCOPY.html
     await s3writer.send(new CopyObjectCommand(params));
   } else {
