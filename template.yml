@@ -1361,6 +1361,17 @@ Resources:
         - nodejs20.x
       Description: FFmpeg binary
       RetentionPolicy: Delete
+  MediaInfoLambdaLayer:
+    Type: AWS::Serverless::LayerVersion
+    Metadata:
+      BuildMethod: makefile
+    Properties:
+      CompatibleArchitectures: [x86_64]
+      ContentUri: lib/mediainfo
+      CompatibleRuntimes:
+        - nodejs20.x
+      Description: MediaInfo CLI binary
+      RetentionPolicy: Delete
   SoxLambdaLayer:
     Type: AWS::Serverless::LayerVersion
     Metadata:
