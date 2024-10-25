@@ -22,6 +22,7 @@
     "@aws-sdk/client-transcribe": "*",
     "@aws-sdk/lib-storage": "*",
     "@google-cloud/storage": "*",
+    "@smithy/node-http-handler": "*",
     "@tokenizer/s3": "*",
     "file-type": "*",
     "porter-util": "file:./lib/porter-util",
