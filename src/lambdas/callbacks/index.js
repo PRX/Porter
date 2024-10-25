@@ -243,9 +243,11 @@ export const handler = async (event) => {
 
     if (hasFailedTask || hasJobProblem) {
       await putErrorMetric();
+      console.log("Metrics sent");
     }
   }
 
+  console.log("Send callback");
   if (event.Callback.Type === "AWS/SNS") {
     const TopicArn = event.Callback.Topic;
     const Message = JSON.stringify(msg);
@@ -258,7 +260,9 @@ export const handler = async (event) => {
       requestHandler,
     });
 
+    console.log("Send SNS");
     await sns.send(new PublishCommand({ Message, TopicArn }));
+    console.log("SNS sent");
   } else if (event.Callback.Type === "AWS/SQS") {
     const QueueUrl = event.Callback.Queue;
     const MessageBody = JSON.stringify(msg);
@@ -271,12 +275,20 @@ export const handler = async (event) => {
       requestHandler,
     });
 
+    console.log("Send SQS");
     await sqs.send(new SendMessageCommand({ QueueUrl, MessageBody }));
+    console.log("SQS sent");
   } else if (event.Callback.Type === "AWS/S3") {
+    console.log("Send S3");
     await s3Put(event, msg);
+    console.log("S3 sent");
   } else if (event.Callback.Type === "AWS/EventBridge") {
+    console.log("Send bridge");
     await eventBridgePutEvent(event, msg, now);
+    console.log("Bridge sent");
   } else if (event.Callback.Type === "HTTP") {
+    console.log("Send http");
     await httpRequest(event, msg);
+    console.log("HTTP sent");
   }
 };
