@@ -11,5 +11,7 @@ build-AwsSdkJsV3LambdaLayer:
 	yarn add @aws-sdk/client-eventbridge
 	yarn add @aws-sdk/client-transcribe
 	yarn add @aws-sdk/lib-storage
+	yarn add @smithy/node-http-handler
+	yarn add @smithy/util-retry
 	yarn add @tokenizer/s3
 	yarn install --modules-folder "$(ARTIFACTS_DIR)/nodejs/node_modules"
