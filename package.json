@@ -18,6 +18,7 @@
     "@aws-sdk/client-sns": "*",
     "@aws-sdk/client-sqs": "*",
     "@aws-sdk/client-sts": "*",
+    "@aws-sdk/util-retry": "*",
     "@aws-sdk/client-transcribe": "*",
     "@aws-sdk/lib-storage": "*",
     "@google-cloud/storage": "*",
