@@ -8,7 +8,7 @@ import { SNSClient, PublishCommand } from "@aws-sdk/client-sns";
 import { SQSClient, SendMessageCommand } from "@aws-sdk/client-sqs";
 import { STSClient, AssumeRoleCommand } from "@aws-sdk/client-sts";
 import { ConfiguredRetryStrategy } from "@aws-sdk/util-retry";
-import { NodeHttpHandler } from "@smithy/node-http-handler";
+import { NodeHttpHandler } from "@aws-sdk/node-http-handler";
 import {
   CloudWatchClient,
   PutMetricDataCommand,
