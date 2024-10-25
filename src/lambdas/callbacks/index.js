@@ -7,6 +7,7 @@ import { S3Client, PutObjectCommand } from "@aws-sdk/client-s3";
 import { SNSClient, PublishCommand } from "@aws-sdk/client-sns";
 import { SQSClient, SendMessageCommand } from "@aws-sdk/client-sqs";
 import { STSClient, AssumeRoleCommand } from "@aws-sdk/client-sts";
+import { ConfiguredRetryStrategy } from "@aws-sdk/util-retry";
 import {
   CloudWatchClient,
   PutMetricDataCommand,
@@ -16,9 +17,20 @@ import {
   PutEventsCommand,
 } from "@aws-sdk/client-eventbridge";
 
+const retryStrategy = new ConfiguredRetryStrategy(
+  5, // Max attempts
+  (attempt) => 100 + attempt * 500,
+);
+
 const sts = new STSClient({ apiVersion: "2011-06-15" });
-const cloudwatch = new CloudWatchClient({ apiVersion: "2010-08-01" });
-const eventbridge = new EventBridgeClient({ apiVersion: "2015-10-07" });
+const cloudwatch = new CloudWatchClient({
+  apiVersion: "2010-08-01",
+  retryStrategy,
+});
+const eventbridge = new EventBridgeClient({
+  apiVersion: "2015-10-07",
+  retryStrategy,
+});
 
 function httpRequest(event, message, redirectCount, redirectUrl) {
   return new Promise((resolve, reject) => {
@@ -230,7 +242,11 @@ export const handler = async (event) => {
     const Message = JSON.stringify(msg);
 
     const region = TopicArn.split(":")[3];
-    const sns = new SNSClient({ apiVersion: "2010-03-31", region });
+    const sns = new SNSClient({
+      apiVersion: "2010-03-31",
+      region,
+      retryStrategy,
+    });
 
     await sns.send(new PublishCommand({ Message, TopicArn }));
   } else if (event.Callback.Type === "AWS/SQS") {
@@ -238,7 +254,11 @@ export const handler = async (event) => {
     const MessageBody = JSON.stringify(msg);
 
     const region = QueueUrl.match(/[a-z]{2}-[a-z]+-[0-9]+/)[0];
-    const sqs = new SQSClient({ apiVersion: "2012-11-05", region });
+    const sqs = new SQSClient({
+      apiVersion: "2012-11-05",
+      region,
+      retryStrategy,
+    });
 
     await sqs.send(new SendMessageCommand({ QueueUrl, MessageBody }));
   } else if (event.Callback.Type === "AWS/S3") {
