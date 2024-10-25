@@ -8,6 +8,7 @@ import { SNSClient, PublishCommand } from "@aws-sdk/client-sns";
 import { SQSClient, SendMessageCommand } from "@aws-sdk/client-sqs";
 import { STSClient, AssumeRoleCommand } from "@aws-sdk/client-sts";
 import { ConfiguredRetryStrategy } from "@aws-sdk/util-retry";
+import { NodeHttpHandler } from "@smithy/node-http-handler";
 import {
   CloudWatchClient,
   PutMetricDataCommand,
@@ -22,14 +23,22 @@ const retryStrategy = new ConfiguredRetryStrategy(
   (attempt) => 100 + attempt * 500,
 );
 
+const requestHandler = new NodeHttpHandler({
+  connectionTimeout: 800,
+  requestTimeout: 1200,
+  socketTimeout: 500,
+});
+
 const sts = new STSClient({ apiVersion: "2011-06-15" });
 const cloudwatch = new CloudWatchClient({
   apiVersion: "2010-08-01",
   retryStrategy,
+  requestHandler,
 });
 const eventbridge = new EventBridgeClient({
   apiVersion: "2015-10-07",
   retryStrategy,
+  requestHandler,
 });
 
 function httpRequest(event, message, redirectCount, redirectUrl) {
@@ -246,6 +255,7 @@ export const handler = async (event) => {
       apiVersion: "2010-03-31",
       region,
       retryStrategy,
+      requestHandler,
     });
 
     await sns.send(new PublishCommand({ Message, TopicArn }));
@@ -258,6 +268,7 @@ export const handler = async (event) => {
       apiVersion: "2012-11-05",
       region,
       retryStrategy,
+      requestHandler,
     });
 
     await sqs.send(new SendMessageCommand({ QueueUrl, MessageBody }));
