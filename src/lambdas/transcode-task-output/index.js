@@ -2,10 +2,25 @@
 // callback, this function takes the entire task input and builds a better
 // result that gets passed to the callback task.
 import { S3Client, GetObjectCommand } from "@aws-sdk/client-s3";
+import { ConfiguredRetryStrategy } from "@smithy/util-retry";
+import { NodeHttpHandler } from "@smithy/node-http-handler";
+
+const retryStrategy = new ConfiguredRetryStrategy(
+  5, // Max attempts
+  (attempt) => 100 + attempt * 500,
+);
+
+const requestHandler = new NodeHttpHandler({
+  connectionTimeout: 800,
+  requestTimeout: 2000,
+  socketTimeout: 500,
+});
 
 const s3 = new S3Client({
   apiVersion: "2006-03-01",
   followRegionRedirects: true,
+  retryStrategy,
+  requestHandler,
 });
 
 export const handler = async (event) => {

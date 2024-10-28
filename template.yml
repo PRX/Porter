@@ -1792,7 +1792,7 @@ Resources:
         prx:cloudformation:stack-id: !Ref AWS::StackId
         prx:ops:environment: !Ref EnvironmentType
         prx:dev:application: Porter
-      Timeout: 4
+      Timeout: 30
   TranscodeTaskOutputLambdaLogGroup:
     Type: AWS::Logs::LogGroup
     DeletionPolicy: Delete
