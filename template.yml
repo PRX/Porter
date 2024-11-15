@@ -2641,6 +2641,12 @@ Resources:
         - { Key: prx:ops:environment, Value: !Ref EnvironmentType }
         - { Key: prx:dev:application, Value: Porter }
         - { Key: prx:ops:cloudwatch-log-group-name, Value: !Ref CallbackLambdaLogGroup }
+        - Key: prx:ops:cloudwatch-logs-insights-query
+          Value: >-
+            sort @timestamp asc
+            | fields input.Message.JobResult.State as r
+            | display input.Execution.Id
+            | filter ispresent(input.Message.JobResult.FailedTasks.0.Type) or (ispresent(r) and r != "DONE")
       Threshold: 0
       TreatMissingData: notBreaching
   ProlongedJobExecutionAlarm:
