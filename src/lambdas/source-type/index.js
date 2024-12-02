@@ -2,7 +2,8 @@
 // state machine source artifact.
 
 import { fileTypeFromTokenizer } from "file-type";
-import { makeTokenizer } from "@tokenizer/s3";
+// eslint-disable-next-line import/no-unresolved
+import { makeChunkedTokenizerFromS3 } from "@tokenizer/s3";
 import { S3Client } from "@aws-sdk/client-s3";
 
 const s3 = new S3Client({
@@ -23,7 +24,7 @@ const s3 = new S3Client({
 export const handler = async (event) => {
   console.log(JSON.stringify({ msg: "State input", input: event }));
 
-  const s3Tokenizer = await makeTokenizer(s3, {
+  const s3Tokenizer = await makeChunkedTokenizerFromS3(s3, {
     Bucket: event.Artifact.BucketName,
     Key: event.Artifact.ObjectKey,
   });

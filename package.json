@@ -32,7 +32,7 @@
   "devDependencies": {
     "@prettier/plugin-ruby": "*",
     "dotenv": "*",
-    "eslint": "*",
+    "eslint": "^8",
     "eslint-config-airbnb-base": "*",
     "eslint-config-prettier": "*",
     "eslint-plugin-import": "*",
