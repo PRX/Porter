@@ -230,7 +230,7 @@ Resources:
               Resource: !Ref StateMachine
               Sid: AllowJobExecution
           Version: "2012-10-17"
-      Runtime: nodejs20.x
+      Runtime: nodejs22.x
       Tags:
         prx:meta:tagging-version: "2021-04-07"
         prx:cloudformation:stack-name: !Ref AWS::StackName
@@ -351,7 +351,7 @@ Resources:
         - !Ref AwsSdkJsV3LambdaLayer
       MemorySize: 128
       Role: !GetAtt JobExecutionSqsQueueLambdaIamRole.Arn
-      Runtime: nodejs20.x
+      Runtime: nodejs22.x
       Tags:
         prx:meta:tagging-version: "2021-04-07"
         prx:cloudformation:stack-name: !Ref AWS::StackName
@@ -498,7 +498,7 @@ Resources:
               Resource: !Ref StateMachine
               Sid: AllowSendTaskResults
           Version: "2012-10-17"
-      Runtime: nodejs20.x
+      Runtime: nodejs22.x
       Tags:
         prx:meta:tagging-version: "2021-04-07"
         prx:cloudformation:stack-name: !Ref AWS::StackName
@@ -1310,7 +1310,7 @@ Resources:
         - x86_64
         - arm64
       CompatibleRuntimes:
-        - nodejs20.x
+        - nodejs22.x
       ContentUri: lib/aws-sdk-js-v3
       Description: aws-sdk v3 NPM module
       RetentionPolicy: Delete
@@ -1323,7 +1323,7 @@ Resources:
         - x86_64
         - arm64
       CompatibleRuntimes:
-        - nodejs20.x
+        - nodejs22.x
       ContentUri: lib/file-type
       Description: file-type NPM module
       RetentionPolicy: Delete
@@ -1334,7 +1334,7 @@ Resources:
     Properties:
       ContentUri: lib/sharp
       CompatibleRuntimes:
-        - nodejs20.x
+        - nodejs22.x
       Description: sharp NPM module
       RetentionPolicy: Delete
   WavefileLambdaLayer:
@@ -1346,7 +1346,7 @@ Resources:
         - x86_64
         - arm64
       CompatibleRuntimes:
-        - nodejs20.x
+        - nodejs22.x
       ContentUri: lib/wavefile
       Description: wavefile NPM module
       RetentionPolicy: Delete
@@ -1358,7 +1358,7 @@ Resources:
       CompatibleArchitectures: [x86_64]
       ContentUri: lib/ffmpeg
       CompatibleRuntimes:
-        - nodejs20.x
+        - nodejs22.x
       Description: FFmpeg binary
       RetentionPolicy: Delete
   MediaInfoLambdaLayer:
@@ -1369,7 +1369,7 @@ Resources:
       CompatibleArchitectures: [x86_64]
       ContentUri: lib/mediainfo
       CompatibleRuntimes:
-        - nodejs20.x
+        - nodejs22.x
       Description: MediaInfo CLI binary
       RetentionPolicy: Delete
   SoxLambdaLayer:
@@ -1379,7 +1379,7 @@ Resources:
     Properties:
       ContentUri: lib/sox
       CompatibleRuntimes:
-        - nodejs20.x
+        - nodejs22.x
       Description: SoX binary
       RetentionPolicy: Delete
   MpckLambdaLayer:
@@ -1389,7 +1389,7 @@ Resources:
     Properties:
       ContentUri: lib/mpck
       CompatibleRuntimes:
-        - nodejs20.x
+        - nodejs22.x
       Description: mpck binary
       RetentionPolicy: Delete
   AudiowaveformLambdaLayer:
@@ -1399,7 +1399,7 @@ Resources:
     Properties:
       ContentUri: lib/audiowaveform
       CompatibleRuntimes:
-        - nodejs20.x
+        - nodejs22.x
       Description: audiowaveform binary
       RetentionPolicy: Delete
   GoogleCloudLambdaLayer:
@@ -1409,7 +1409,7 @@ Resources:
     Properties:
       ContentUri: lib/google-cloud
       CompatibleRuntimes:
-        - nodejs20.x
+        - nodejs22.x
       Description: Google Cloud Node.js SDK
       RetentionPolicy: Delete
   PorterUtilLambdaLayer:
@@ -1419,7 +1419,7 @@ Resources:
     Properties:
       ContentUri: lib/porter-util
       CompatibleRuntimes:
-        - nodejs20.x
+        - nodejs22.x
       Description: Shared Porter utilities
       RetentionPolicy: Delete
   # Normalize Input Lambda
@@ -1440,7 +1440,7 @@ Resources:
               Effect: Allow
               Resource: "*"
           Version: "2012-10-17"
-      Runtime: nodejs20.x
+      Runtime: nodejs22.x
       Tags:
         prx:meta:tagging-version: "2021-04-07"
         prx:cloudformation:stack-name: !Ref AWS::StackName
@@ -1511,7 +1511,7 @@ Resources:
         - !Ref GoogleCloudLambdaLayer
       MemorySize: 512
       Role: !GetAtt IngestLambdaIamRole.Arn
-      Runtime: nodejs20.x
+      Runtime: nodejs22.x
       Tags:
         prx:meta:tagging-version: "2021-04-07"
         prx:cloudformation:stack-name: !Ref AWS::StackName
@@ -1581,7 +1581,7 @@ Resources:
       MemorySize: 256
       Policies:
         - !Ref ArtifactBucketReadOnlyAccessPolicy
-      Runtime: nodejs20.x
+      Runtime: nodejs22.x
       Tags:
         prx:meta:tagging-version: "2021-04-07"
         prx:cloudformation:stack-name: !Ref AWS::StackName
@@ -1621,7 +1621,7 @@ Resources:
       MemorySize: 2048
       Policies:
         - !Ref ArtifactBucketReadOnlyAccessPolicy
-      Runtime: nodejs20.x
+      Runtime: nodejs22.x
       Tags:
         prx:meta:tagging-version: "2021-04-07"
         prx:cloudformation:stack-name: !Ref AWS::StackName
@@ -1682,7 +1682,7 @@ Resources:
         - !Ref GoogleCloudLambdaLayer
       MemorySize: 512
       Role: !GetAtt CopyLambdaIamRole.Arn
-      Runtime: nodejs20.x
+      Runtime: nodejs22.x
       Tags:
         prx:meta:tagging-version: "2021-04-07"
         prx:cloudformation:stack-name: !Ref AWS::StackName
@@ -1720,7 +1720,7 @@ Resources:
       MemorySize: 128
       Policies:
         - !Ref ArtifactBucketReadOnlyAccessPolicy
-      Runtime: nodejs20.x
+      Runtime: nodejs22.x
       Tags:
         prx:meta:tagging-version: "2021-04-07"
         prx:cloudformation:stack-name: !Ref AWS::StackName
@@ -1785,7 +1785,7 @@ Resources:
       MemorySize: 128
       Policies:
         - !Ref ArtifactBucketReadOnlyAccessPolicy
-      Runtime: nodejs20.x
+      Runtime: nodejs22.x
       Tags:
         prx:meta:tagging-version: "2021-04-07"
         prx:cloudformation:stack-name: !Ref AWS::StackName
@@ -1867,7 +1867,7 @@ Resources:
         - !Ref SharpLambdaLayer
       MemorySize: 1024
       Role: !GetAtt ImageTransformLambdaIamRole.Arn
-      Runtime: nodejs20.x
+      Runtime: nodejs22.x
       Tags:
         prx:meta:tagging-version: "2021-04-07"
         prx:cloudformation:stack-name: !Ref AWS::StackName
@@ -1926,7 +1926,7 @@ Resources:
         - !Ref WavefileLambdaLayer
       MemorySize: 3008
       Role: !GetAtt WavWrapLambdaIamRole.Arn
-      Runtime: nodejs20.x
+      Runtime: nodejs22.x
       Tags:
         prx:meta:tagging-version: "2021-04-07"
         prx:cloudformation:stack-name: !Ref AWS::StackName
@@ -1986,7 +1986,7 @@ Resources:
         - !Ref PorterUtilLambdaLayer
       MemorySize: 3008
       Role: !GetAtt SilenceDetectionLambdaIamRole.Arn
-      Runtime: nodejs20.x
+      Runtime: nodejs22.x
       Tags:
         prx:meta:tagging-version: "2021-04-07"
         prx:cloudformation:stack-name: !Ref AWS::StackName
@@ -2046,7 +2046,7 @@ Resources:
         - !Ref FfmpegLambdaLayer
       MemorySize: 3008
       Role: !GetAtt ToneDetectionLambdaIamRole.Arn
-      Runtime: nodejs20.x
+      Runtime: nodejs22.x
       Tags:
         prx:meta:tagging-version: "2021-04-07"
         prx:cloudformation:stack-name: !Ref AWS::StackName
@@ -2107,7 +2107,7 @@ Resources:
         - !Ref FfmpegLambdaLayer
       MemorySize: 3008
       Role: !GetAtt WaveformLambdaIamRole.Arn
-      Runtime: nodejs20.x
+      Runtime: nodejs22.x
       Tags:
         prx:meta:tagging-version: "2021-04-07"
         prx:cloudformation:stack-name: !Ref AWS::StackName
@@ -2158,7 +2158,7 @@ Resources:
               Effect: Allow
               Resource: "*"
           Version: "2012-10-17"
-      Runtime: nodejs20.x
+      Runtime: nodejs22.x
       Tags:
         prx:meta:tagging-version: "2021-04-07"
         prx:cloudformation:stack-name: !Ref AWS::StackName
@@ -2222,7 +2222,7 @@ Resources:
         - !Ref AwsSdkJsV3LambdaLayer
       MemorySize: 512
       Role: !GetAtt TranscriptionJobResultsLambdaIamRole.Arn
-      Runtime: nodejs20.x
+      Runtime: nodejs22.x
       Tags:
         prx:meta:tagging-version: "2021-04-07"
         prx:cloudformation:stack-name: !Ref AWS::StackName
@@ -2303,7 +2303,7 @@ Resources:
         - !Ref AwsSdkJsV3LambdaLayer
       MemorySize: 128
       Role: !GetAtt CallbackLambdaIamRole.Arn
-      Runtime: nodejs20.x
+      Runtime: nodejs22.x
       Tags:
         prx:meta:tagging-version: "2021-04-07"
         prx:cloudformation:stack-name: !Ref AWS::StackName
@@ -2345,7 +2345,7 @@ Resources:
               Effect: Allow
               Resource: !Ref JobExecutionSnsTopic
           Version: "2012-10-17"
-      Runtime: nodejs20.x
+      Runtime: nodejs22.x
       Tags:
         prx:meta:tagging-version: "2021-04-07"
         prx:cloudformation:stack-name: !Ref AWS::StackName
@@ -2384,7 +2384,7 @@ Resources:
               Effect: Allow
               Resource: "*"
           Version: "2012-10-17"
-      Runtime: nodejs20.x
+      Runtime: nodejs22.x
       Tags:
         prx:meta:tagging-version: "2021-04-07"
         prx:cloudformation:stack-name: !Ref AWS::StackName
