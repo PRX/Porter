@@ -5,8 +5,8 @@
     "jsx": "preserve",
     "checkJs": true,
     "noEmit": true,
-    "allowJs": true,
+    "allowJs": true
   },
   "exclude": ["node_modules", "**/node_modules/*"],
-  "include": ["src/lambdas"],
+  "include": ["src/lambdas"]
 }
