@@ -50,6 +50,10 @@ function extract(output) {
     result.time = total;
   }
 
+  if (output.includes("(VBR)")) {
+    result.vbr = true;
+  }
+
   console.log(
     JSON.stringify({ msg: "mpck extraction", mpckExtraction: result }),
   );
