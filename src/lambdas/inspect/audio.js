@@ -95,6 +95,7 @@ export async function inspect(task, filePath) {
           ...(check.unidentified && {
             UnidentifiedBytes: check.unidentified,
           }),
+          ...(check.vbr && { VariableBitrate: true }),
         });
       }
     } catch (error) {
