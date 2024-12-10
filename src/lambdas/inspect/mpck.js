@@ -8,6 +8,7 @@ import { tmpdir } from "node:os";
  * @property {number} [frames]
  * @property {number} [time]
  * @property {number} [unidentified]
+ * @property {boolean} [vbr]
  */
 
 /**
