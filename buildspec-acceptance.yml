@@ -11,7 +11,7 @@ env:
 phases:
   install:
     runtime-versions:
-      ruby: latest
+      ruby: 3.2
   pre_build:
     commands:
       - make bootstrap
