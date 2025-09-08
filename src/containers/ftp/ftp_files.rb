@@ -101,7 +101,7 @@ class FtpFiles
         ftp.use_pasv_ip = false
 
         ftp.passive = passive
-        ftp.binary = options[:binary].nil? ? true : options[:binary]
+        ftp.binary = options.fetch(:binary, true)
         ftp.open_timeout = nil # default is nil
         ftp.read_timeout = 60 # default is 60
         # ftp.ssl = use_tls if use_tls
