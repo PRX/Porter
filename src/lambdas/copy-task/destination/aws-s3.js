@@ -1,13 +1,13 @@
-import { STSClient, AssumeRoleCommand } from "@aws-sdk/client-sts";
 import {
-  S3Client,
-  HeadObjectCommand,
+  AbortMultipartUploadCommand,
+  CompleteMultipartUploadCommand,
   CopyObjectCommand,
   CreateMultipartUploadCommand,
+  HeadObjectCommand,
+  S3Client,
   UploadPartCopyCommand,
-  CompleteMultipartUploadCommand,
-  AbortMultipartUploadCommand,
 } from "@aws-sdk/client-s3";
+import { AssumeRoleCommand, STSClient } from "@aws-sdk/client-sts";
 
 const sts = new STSClient({ apiVersion: "2011-06-15" });
 const s3reader = new S3Client({
@@ -104,7 +104,7 @@ async function multipartCopy(params, sourceObjectSize, s3Client) {
   // Calculate the byte ranges for each part of the source file that we're
   // going to upload, based on the chosen part size.
   const partCount = Math.ceil(sourceObjectSize / partSizeInBytes);
-  const partRanges = new Array(partCount).fill(0).map((r, idx) => {
+  const partRanges = new Array(partCount).fill(0).map((_r, idx) => {
     // For part size of 10, these would be: 0, 10, 20, etc
     const start = idx * partSizeInBytes;
     // For part size of 10 these would be: 9, 19, 29, etc
@@ -150,7 +150,7 @@ async function multipartCopy(params, sourceObjectSize, s3Client) {
         },
       }),
     );
-  } catch (error) {
+  } catch (_error) {
     // Clean up the incomplete upload if it fails
     await s3Client.send(
       new AbortMultipartUploadCommand({

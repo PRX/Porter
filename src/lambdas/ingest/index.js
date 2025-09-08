@@ -16,11 +16,11 @@
 // The result path is $.Artifact, so the output of the state looks like
 // { "Job": { … }, "Artifact": { "BucketName": "abc", "ObjectKey": "xyz" } }
 // eslint-disable-next-line import/no-extraneous-dependencies
-import { S3Client, HeadObjectCommand } from "@aws-sdk/client-s3";
-import fromHttp from "./source/http.js";
-import fromDataUri from "./source/data-uri.js";
+import { HeadObjectCommand, S3Client } from "@aws-sdk/client-s3";
 import fromS3 from "./source/aws-s3.js";
+import fromDataUri from "./source/data-uri.js";
 import fromGcpStorage from "./source/gcp-storage.js";
+import fromHttp from "./source/http.js";
 
 const s3 = new S3Client({
   apiVersion: "2006-03-01",

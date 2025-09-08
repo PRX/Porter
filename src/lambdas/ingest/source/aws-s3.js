@@ -1,11 +1,11 @@
 import {
-  S3Client,
-  HeadObjectCommand,
+  AbortMultipartUploadCommand,
+  CompleteMultipartUploadCommand,
   CopyObjectCommand,
   CreateMultipartUploadCommand,
+  HeadObjectCommand,
+  S3Client,
   UploadPartCopyCommand,
-  CompleteMultipartUploadCommand,
-  AbortMultipartUploadCommand,
 } from "@aws-sdk/client-s3";
 
 const s3 = new S3Client({
@@ -54,7 +54,7 @@ async function multipartCopy(copySource, artifact, sourceObjectSize) {
   // Calculate the byte ranges for each part of the source file that we're
   // going to upload, based on the target part size
   const partCount = Math.ceil(sourceObjectSize / partSizeInBytes);
-  const partRanges = new Array(partCount).fill(0).map((r, idx) => {
+  const partRanges = new Array(partCount).fill(0).map((_r, idx) => {
     // For part size of 10, these would be: 0, 10, 20, etc
     const start = idx * partSizeInBytes;
     // For part size of 10 these would be: 9, 19, 29, etc
@@ -100,7 +100,7 @@ async function multipartCopy(copySource, artifact, sourceObjectSize) {
         },
       }),
     );
-  } catch (error) {
+  } catch (_error) {
     // Clean up the incomplete upload if it fails
     await s3.send(
       new AbortMultipartUploadCommand({

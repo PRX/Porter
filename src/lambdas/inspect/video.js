@@ -1,5 +1,5 @@
-import { nmbr } from "./util.js";
 import { inspect as ffprobe } from "./ffprobe.js";
+import { nmbr } from "./util.js";
 
 /** @typedef {import('./index.js').InspectTask} InspectTask */
 
@@ -14,11 +14,11 @@ import { inspect as ffprobe } from "./ffprobe.js";
  */
 
 /**
- * @param {InspectTask} task
+ * @param {InspectTask} _task
  * @param {string} filePath
  * @returns {Promise<VideoInspection>}
  */
-export async function inspect(task, filePath) {
+export async function inspect(_task, filePath) {
   /** @type {VideoInspection} */
   const inspection = {};
 

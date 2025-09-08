@@ -17,12 +17,12 @@
 //
 // https://docs.aws.amazon.com/transcribe/latest/dg/API_StartTranscriptionJob.html
 
-import { S3Client, PutObjectCommand } from "@aws-sdk/client-s3";
+import { PutObjectCommand, S3Client } from "@aws-sdk/client-s3";
 import {
-  TranscribeClient,
-  ListVocabularyFiltersCommand,
   CreateVocabularyFilterCommand,
+  ListVocabularyFiltersCommand,
   StartTranscriptionJobCommand,
+  TranscribeClient,
 } from "@aws-sdk/client-transcribe";
 
 const s3 = new S3Client({

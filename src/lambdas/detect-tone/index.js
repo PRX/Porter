@@ -1,9 +1,9 @@
-import { join as pathJoin } from "node:path";
-import { tmpdir } from "node:os";
 import { spawn } from "node:child_process";
 import { once } from "node:events";
+import { createReadStream, unlinkSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join as pathJoin } from "node:path";
 import { createInterface } from "node:readline";
-import { unlinkSync, createReadStream } from "node:fs";
 import { writeArtifact } from "porter-util";
 
 const DEFAULT_MIN_VALUE = 0.025;

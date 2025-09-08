@@ -1,14 +1,6 @@
-import querystring from "node:querystring";
-
 import http from "node:http";
 import https from "node:https";
-
-import { S3Client, PutObjectCommand } from "@aws-sdk/client-s3";
-import { SNSClient, PublishCommand } from "@aws-sdk/client-sns";
-import { SQSClient, SendMessageCommand } from "@aws-sdk/client-sqs";
-import { STSClient, AssumeRoleCommand } from "@aws-sdk/client-sts";
-import { ConfiguredRetryStrategy } from "@smithy/util-retry";
-import { NodeHttpHandler } from "@smithy/node-http-handler";
+import querystring from "node:querystring";
 import {
   CloudWatchClient,
   PutMetricDataCommand,
@@ -17,6 +9,12 @@ import {
   EventBridgeClient,
   PutEventsCommand,
 } from "@aws-sdk/client-eventbridge";
+import { PutObjectCommand, S3Client } from "@aws-sdk/client-s3";
+import { PublishCommand, SNSClient } from "@aws-sdk/client-sns";
+import { SendMessageCommand, SQSClient } from "@aws-sdk/client-sqs";
+import { AssumeRoleCommand, STSClient } from "@aws-sdk/client-sts";
+import { NodeHttpHandler } from "@smithy/node-http-handler";
+import { ConfiguredRetryStrategy } from "@smithy/util-retry";
 
 const retryStrategy = new ConfiguredRetryStrategy(
   5, // Max attempts
@@ -136,7 +134,7 @@ async function s3Put(event, message) {
   } else if (message.JobResult) {
     key = "/job_result.json";
   } else {
-    key = `/unknown_${+new Date()}.json`;
+    key = `/unknown_${Date.now()}.json`;
   }
 
   const role = await sts.send(

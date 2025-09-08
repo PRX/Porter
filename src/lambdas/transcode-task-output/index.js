@@ -1,9 +1,9 @@
 // Because the result of a Fargate task is not sufficient for sending a proper
 // callback, this function takes the entire task input and builds a better
 // result that gets passed to the callback task.
-import { S3Client, GetObjectCommand } from "@aws-sdk/client-s3";
-import { ConfiguredRetryStrategy } from "@smithy/util-retry";
+import { GetObjectCommand, S3Client } from "@aws-sdk/client-s3";
 import { NodeHttpHandler } from "@smithy/node-http-handler";
+import { ConfiguredRetryStrategy } from "@smithy/util-retry";
 
 const retryStrategy = new ConfiguredRetryStrategy(
   5, // Max attempts

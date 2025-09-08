@@ -1,6 +1,6 @@
 import { createReadStream } from "node:fs";
 import { S3Client } from "@aws-sdk/client-s3";
-import { STSClient, AssumeRoleCommand } from "@aws-sdk/client-sts";
+import { AssumeRoleCommand, STSClient } from "@aws-sdk/client-sts";
 import { Upload } from "@aws-sdk/lib-storage";
 
 const sts = new STSClient({ apiVersion: "2011-06-15" });
@@ -31,9 +31,7 @@ export async function s3Upload(event, waveformFileTmpPath) {
 
   // Assign all members of Parameters to params. Remove the properties required
   // for the Copy operation, so there is no collision
-  if (
-    Object.prototype.hasOwnProperty.call(event.Task.Destination, "Parameters")
-  ) {
+  if (Object.hasOwn(event.Task.Destination, "Parameters")) {
     delete event.Task.Destination.Parameters.Bucket;
     delete event.Task.Destination.Parameters.Key;
     delete event.Task.Destination.Parameters.Body;

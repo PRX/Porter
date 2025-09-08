@@ -1,9 +1,9 @@
-import { S3Client } from "@aws-sdk/client-s3";
-import { STSClient, AssumeRoleCommand } from "@aws-sdk/client-sts";
-import { Upload } from "@aws-sdk/lib-storage";
 import { unlinkSync } from "node:fs";
-import sharp from "sharp";
+import { S3Client } from "@aws-sdk/client-s3";
+import { AssumeRoleCommand, STSClient } from "@aws-sdk/client-sts";
+import { Upload } from "@aws-sdk/lib-storage";
 import { writeArtifact } from "porter-util";
+import sharp from "sharp";
 
 const sts = new STSClient({ apiVersion: "2011-06-15" });
 

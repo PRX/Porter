@@ -1,7 +1,7 @@
-import { nmbr } from "./util.js";
 import { inspect as ebur128 } from "./ebu-r-128.js";
 import { inspect as ffprobe } from "./ffprobe.js";
 import { inspect as mpck } from "./mpck.js";
+import { nmbr } from "./util.js";
 
 /** @typedef {import('./index.js').InspectTask} InspectTask */
 

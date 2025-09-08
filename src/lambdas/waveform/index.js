@@ -1,11 +1,11 @@
 /* eslint-disable max-classes-per-file */
 
-import { join as pathJoin } from "node:path";
-import { tmpdir } from "node:os";
 import { unlinkSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join as pathJoin } from "node:path";
 import { writeArtifact } from "porter-util";
-import { s3Upload } from "./s3-util.js";
 import { v1 as awfV1 } from "./generators/audiowaveform.js";
+import { s3Upload } from "./s3-util.js";
 
 class UnknownDestinationModeError extends Error {
   constructor(...params) {

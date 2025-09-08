@@ -1,10 +1,10 @@
 // Using the file-type NPM module, this attempts to identify MIME type of the
 // state machine source artifact.
 
-import { fileTypeFromTokenizer } from "file-type";
+import { S3Client } from "@aws-sdk/client-s3";
 // eslint-disable-next-line import/no-unresolved
 import { makeChunkedTokenizerFromS3 } from "@tokenizer/s3";
-import { S3Client } from "@aws-sdk/client-s3";
+import { fileTypeFromTokenizer } from "file-type";
 
 const s3 = new S3Client({
   apiVersion: "2006-03-01",

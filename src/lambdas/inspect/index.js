@@ -1,9 +1,9 @@
-import { unlinkSync, statSync } from "node:fs";
+import { statSync, unlinkSync } from "node:fs";
 import { writeArtifact } from "porter-util";
 
 import { inspect as audio } from "./audio.js";
-import { inspect as video } from "./video.js";
 import { inspect as image } from "./image.js";
+import { inspect as video } from "./video.js";
 
 /** @typedef {import('./audio.js').AudioInspection} AudioInspection */
 /** @typedef {import('./video.js').VideoInspection} VideoInspection */

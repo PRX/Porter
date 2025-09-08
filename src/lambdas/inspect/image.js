@@ -19,10 +19,10 @@ function sharpMetadata(filePath) {
 }
 
 /**
- * @param {InspectTask} task
+ * @param {InspectTask} _task
  * @param {string} filePath
  */
-export async function inspect(task, filePath) {
+export async function inspect(_task, filePath) {
   /** @type {ImageInspection} */
   const inspection = {};
 

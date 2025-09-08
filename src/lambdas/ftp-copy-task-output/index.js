@@ -8,7 +8,7 @@
 // If the FTP operation was successful, there won't be an Error property, but
 // could be other properties like Mode, etc. All such properties will be
 // included in the task result.
-import { S3Client, GetObjectCommand } from "@aws-sdk/client-s3";
+import { GetObjectCommand, S3Client } from "@aws-sdk/client-s3";
 
 const s3 = new S3Client({
   apiVersion: "2006-03-01",

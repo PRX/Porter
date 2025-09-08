@@ -10,7 +10,7 @@
 // represents the execution IDs of the jobs that serialized other jobs prior to
 // this one.
 
-import { SNSClient, PublishCommand } from "@aws-sdk/client-sns";
+import { PublishCommand, SNSClient } from "@aws-sdk/client-sns";
 
 const sns = new SNSClient({ apiVersion: "2010-03-31" });
 

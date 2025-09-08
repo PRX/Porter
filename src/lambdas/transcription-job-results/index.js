@@ -8,13 +8,13 @@
 // This function will also copy the transcript file from its artifact location
 // to the destination defined on the Transcribe task.
 
-import { S3Client, CopyObjectCommand } from "@aws-sdk/client-s3";
-import { STSClient, AssumeRoleCommand } from "@aws-sdk/client-sts";
-import {
-  TranscribeClient,
-  GetTranscriptionJobCommand,
-} from "@aws-sdk/client-transcribe";
 import { parse } from "node:url";
+import { CopyObjectCommand, S3Client } from "@aws-sdk/client-s3";
+import { AssumeRoleCommand, STSClient } from "@aws-sdk/client-sts";
+import {
+  GetTranscriptionJobCommand,
+  TranscribeClient,
+} from "@aws-sdk/client-transcribe";
 
 const sts = new STSClient({ apiVersion: "2011-06-15" });
 const transcribe = new TranscribeClient({ apiVersion: "2017-10-26" });

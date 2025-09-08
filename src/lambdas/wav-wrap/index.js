@@ -1,5 +1,5 @@
-import { S3Client, GetObjectCommand } from "@aws-sdk/client-s3";
-import { STSClient, AssumeRoleCommand } from "@aws-sdk/client-sts";
+import { GetObjectCommand, S3Client } from "@aws-sdk/client-s3";
+import { AssumeRoleCommand, STSClient } from "@aws-sdk/client-sts";
 import { Upload } from "@aws-sdk/lib-storage";
 import wavefile from "prx-wavefile";
 
@@ -46,22 +46,17 @@ async function s3Upload(sts, event, uploadBuffer) {
   // included with the artifact, that should be used as the new audio file's
   // content type
   if (
-    Object.prototype.hasOwnProperty.call(
-      event.Task.Destination,
-      "ContentType",
-    ) &&
+    Object.hasOwn(event.Task.Destination, "ContentType") &&
     event.Task.Destination.ContentType === "REPLACE" &&
-    Object.prototype.hasOwnProperty.call(event.Artifact, "Descriptor") &&
-    Object.prototype.hasOwnProperty.call(event.Artifact.Descriptor, "MIME")
+    Object.hasOwn(event.Artifact, "Descriptor") &&
+    Object.hasOwn(event.Artifact.Descriptor, "MIME")
   ) {
     params.ContentType = event.Artifact.Descriptor.MIME;
   }
 
   // Assign all members of Parameters to params. Remove the properties required
   // for the Copy operation, so there is no collision
-  if (
-    Object.prototype.hasOwnProperty.call(event.Task.Destination, "Parameters")
-  ) {
+  if (Object.hasOwn(event.Task.Destination, "Parameters")) {
     delete event.Task.Destination.Parameters.Bucket;
     delete event.Task.Destination.Parameters.Key;
     delete event.Task.Destination.Parameters.Body;
@@ -122,12 +117,12 @@ export const handler = async (event) => {
   event.Task.Chunks.forEach((taskChunk) => {
     // Set data if this is a chunk supported by wavefile
     const chunkId = taskChunk.ChunkId;
-    if (Object.prototype.hasOwnProperty.call(wav, chunkId)) {
+    if (Object.hasOwn(wav, chunkId)) {
       Object.keys(taskChunk).forEach((taskKey) => {
         const wavKey = camelize(taskKey);
         if (
           !["chunkSize"].includes(wavKey) &&
-          Object.prototype.hasOwnProperty.call(wav[chunkId], wavKey)
+          Object.hasOwn(wav[chunkId], wavKey)
         ) {
           wav[chunkId][wavKey] = taskChunk[taskKey];
         }

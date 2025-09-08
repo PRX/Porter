@@ -8,11 +8,11 @@
 // This will get triggered by *all* transcribe jobs, so the predefined prefix
 // is used to filter out jobs originating elsewhere.
 
-import { S3Client, GetObjectCommand } from "@aws-sdk/client-s3";
+import { GetObjectCommand, S3Client } from "@aws-sdk/client-s3";
 import {
-  SFNClient,
   SendTaskFailureCommand,
   SendTaskSuccessCommand,
+  SFNClient,
 } from "@aws-sdk/client-sfn";
 
 const s3 = new S3Client({
@@ -61,7 +61,7 @@ export const handler = async (event) => {
         }),
       );
     }
-  } catch (error) {
+  } catch (_error) {
     // TODO
   }
 };
