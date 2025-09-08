@@ -38,8 +38,6 @@
     "yaml-cfn": "*"
   },
   "scripts": {
-    "jest": "jest",
-    "test": "npm run jest",
-    "tsc": "tsc"
+    "test": "npm exec jest"
   }
 }

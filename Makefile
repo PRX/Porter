@@ -14,23 +14,20 @@ build:
 
 check: lint test
 deploy-check: lint jest
-lint: cfnlint prettier eslint typescript
+lint: cfnlint biome typescript standardrb
 test: minitest jest
 
 cfnlint:
 	cfn-lint --ignore-checks W --template template.yml
 
-prettier:
-	npm run prettier -- --check "**/*.{js,json,yaml,yml}"
-
-eslint:
-	npm run eslint -- "**/*.js"
+biome:
+	npm exec biome -- check
 
 typescript:
-	npm run tsc
+	npm exec tsc
 
-rubocop:
-	bundle exec rubocop
+standardrb:
+	bundle exec standardrb
 
 minitest:
 	bundle exec rake test
