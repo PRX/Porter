@@ -1,3 +1,5 @@
 # .git-blame-ignore-revs
 # Use double quotes
 01b95b169ccf1ad25ce3a96e830902f59d98094c
+# Switch to Biome
+c780df275ef7ebc13042adabd3122a3c5d1a38ea
