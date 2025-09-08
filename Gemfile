@@ -2,6 +2,8 @@
 
 source "https://rubygems.org"
 
+ruby "3.2.8"
+
 gem "aws-sdk-states", "~> 1"
 gem "minitest"
 gem "minitest-focus"

@@ -75,5 +75,8 @@ DEPENDENCIES
   rake
   standard
 
+RUBY VERSION
+   ruby 3.2.8p263
+
 BUNDLED WITH
-   2.1.2
+   2.7.1
