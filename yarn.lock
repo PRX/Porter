@@ -164,9 +164,9 @@
     tslib "^2.6.2"
 
 "@aws-sdk/client-s3@*":
-  version "3.883.0"
-  resolved "https://registry.yarnpkg.com/@aws-sdk/client-s3/-/client-s3-3.883.0.tgz#5a3ca0737534b7d96ea6b41c12f4b14da1cc63fe"
-  integrity sha512-+l/p5G/bbobzcils5wKSV1vQEITvJIXDkLfkMWLpF6CC3YfdSDlVn1VOD+NcfuOuVGv4UkwcJzWuC6eaX6t8jg==
+  version "3.884.0"
+  resolved "https://registry.yarnpkg.com/@aws-sdk/client-s3/-/client-s3-3.884.0.tgz#0d53c3a7d118dd0216e20796a16818c4e62a20e8"
+  integrity sha512-Okwg52/iho5wMCzd7A70g50k+bEYS+VUbSjD3NOzwrvZ3c7DwYjDUt13hVnUwMGygTVL+NGSpXSziTZe9P3/Cg==
   dependencies:
     "@aws-crypto/sha1-browser" "5.2.0"
     "@aws-crypto/sha256-browser" "5.2.0"
@@ -624,9 +624,9 @@
     tslib "^2.6.2"
 
 "@aws-sdk/lib-storage@*":
-  version "3.883.0"
-  resolved "https://registry.yarnpkg.com/@aws-sdk/lib-storage/-/lib-storage-3.883.0.tgz#d5691a663278b2f94c8263dfcbd827b720c29960"
-  integrity sha512-6E7WEeFjbENGA3rilQoHwCtr8EHOxmQgPHcWQ+5o0jhG832xJZ8qzb+e2PXqZqj0N/yfkQAIVkRWzKFAb3/u1Q==
+  version "3.884.0"
+  resolved "https://registry.yarnpkg.com/@aws-sdk/lib-storage/-/lib-storage-3.884.0.tgz#620200b654e8b5f11a47ee687ddfca06f0755408"
+  integrity sha512-+S/aNEPDFY/IxRWC0GNvCO0yt9yEceLQlD5JIpZQVL2oSMXUQGW+EjvjsNDJLpHvrvrYJSPDB6SqM/6TIqyLYA==
   dependencies:
     "@smithy/abort-controller" "^4.0.5"
     "@smithy/middleware-endpoint" "^4.1.21"
