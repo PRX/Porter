@@ -1,0 +1,13 @@
+# DO NOT use this file to configure cops. All cop configuration should be
+# handled by standardrb (or standardrb plugins).
+#
+# This file exists so that tooling which can integrate with RuboCop, but not
+# directly with standardrb, will produce the expected results.
+inherit_gem:
+  standard: config/base.yml
+  standard-performance: config/base.yml
+  standard-custom: config/base.yml
+  standard-rails: config/base.yml
+plugins:
+  - standard-performance
+  - standard-custom
