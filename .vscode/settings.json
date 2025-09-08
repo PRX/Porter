@@ -27,7 +27,7 @@
     "editor.tabSize": 4
   },
   "[ruby]": {
-    "editor.defaultFormatter": "testdouble.vscode-standard-ruby",
+    "editor.defaultFormatter": "Shopify.ruby-lsp",
     "editor.formatOnSave": true,
     "editor.formatOnSaveMode": "file"
   },
