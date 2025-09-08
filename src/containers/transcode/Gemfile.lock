@@ -24,11 +24,11 @@ GEM
     aws-sigv4 (1.5.2)
       aws-eventstream (~> 1, >= 1.0.2)
     jmespath (1.6.2)
-    nokogiri (1.14.3-arm64-darwin)
+    nokogiri (1.18.9-arm64-darwin)
       racc (~> 1.4)
-    nokogiri (1.14.3-x86_64-linux)
+    nokogiri (1.18.9-x86_64-linux-gnu)
       racc (~> 1.4)
-    racc (1.6.2)
+    racc (1.8.1)
 
 PLATFORMS
   arm64-darwin-22
