@@ -30,23 +30,15 @@
     "sharp": "*"
   },
   "devDependencies": {
-    "@prettier/plugin-ruby": "*",
+    "@biomejs/biome": "*",
+    "@types/node": "*",
     "dotenv": "*",
-    "eslint": "^8",
-    "eslint-config-airbnb-base": "*",
-    "eslint-config-prettier": "*",
-    "eslint-plugin-import": "*",
-    "eslint-plugin-jest": "*",
-    "eslint-plugin-prettier": "*",
     "jest": "*",
-    "prettier": "*",
     "typescript": "*",
     "yaml-cfn": "*"
   },
   "scripts": {
-    "eslint": "eslint",
     "jest": "jest",
-    "prettier": "prettier",
     "test": "npm run jest",
     "tsc": "tsc"
   }
