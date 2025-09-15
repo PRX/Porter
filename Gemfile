@@ -9,6 +9,7 @@ gem "minitest"
 gem "minitest-focus"
 gem "minitest-reporters"
 gem "rake"
+gem "nokogiri"
 
 group :development do
   gem "dotenv"
