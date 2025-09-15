@@ -12,6 +12,7 @@ phases:
   install:
     runtime-versions:
       ruby: 3.2
+      nodejs: 22
   pre_build:
     commands:
       - make bootstrap
