@@ -2,13 +2,13 @@ FROM public.ecr.aws/amazonlinux/amazonlinux:2023
 
 RUN dnf update -y \
     && dnf install -y wget tar xz \
-    && dnf install -y ruby3.2
+    && dnf install -y ruby3.2 ruby3.2-devel
 
 # See https://docs.aws.amazon.com/linux/al2023/release-notes/all-packages.html
 # to figure out which specific version of Ruby is installed using the ruby3.2
 # package.
 
-ENV APP_HOME /transcode
+ENV APP_HOME=/transcode
 RUN mkdir -p $APP_HOME
 WORKDIR $APP_HOME
 
