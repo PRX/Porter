@@ -3,6 +3,7 @@ FROM public.ecr.aws/amazonlinux/amazonlinux:2023
 RUN dnf update -y \
     && dnf install -y wget tar xz \
     && dnf install -y ruby3.2 ruby3.2-devel
+RUN dnf groupinstall -y "Development Tools"
 
 # See https://docs.aws.amazon.com/linux/al2023/release-notes/all-packages.html
 # to figure out which specific version of Ruby is installed using the ruby3.2
