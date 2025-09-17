@@ -4,6 +4,8 @@ require "test_helper"
 require "json"
 
 describe :porter do
+  parallelize_me!
+
   describe :waveform do
     it "returns execution output for a binary waveform task" do
       job = {

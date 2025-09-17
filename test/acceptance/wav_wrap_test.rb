@@ -4,6 +4,8 @@ require "test_helper"
 require "json"
 
 describe :porter do
+  parallelize_me!
+
   describe :wavwrap do
     it "returns execution output for a wav-wrap task" do
       job = {

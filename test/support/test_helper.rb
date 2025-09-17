@@ -17,6 +17,8 @@ Minitest::Reporters.use! Minitest::Reporters::SpecReporter.new
 MAX_RETRIES = 60
 DEFAULT_TIMEOUT = 3
 
+Minitest.parallel_executor = Minitest::Parallel::Executor.new(4) # 4 threads
+
 def job_test(job, timeout = DEFAULT_TIMEOUT)
   params = {
     state_machine_arn: CONFIG.PORTER_STATE_MACHINE_ARN,

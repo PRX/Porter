@@ -4,6 +4,8 @@ require "test_helper"
 require "json"
 
 describe :porter do
+  parallelize_me!
+
   describe :image do
     it "returns execution output for an image task" do
       job = {

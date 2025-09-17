@@ -4,6 +4,8 @@ require "test_helper"
 require "json"
 
 describe :porter do
+  parallelize_me!
+
   describe :noop do
     it "returns the basic execution output2" do
       job = {

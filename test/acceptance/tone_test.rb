@@ -4,6 +4,8 @@ require "test_helper"
 require "json"
 
 describe :porter do
+  parallelize_me!
+
   describe :tone do
     it "returns execution output for a detect tone task" do
       job = {

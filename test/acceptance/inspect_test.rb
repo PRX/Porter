@@ -4,6 +4,8 @@ require "test_helper"
 require "json"
 
 describe :porter do
+  parallelize_me!
+
   describe :inspect do
     it "returns execution output for an inspect task" do
       job = {

@@ -4,6 +4,8 @@ require "test_helper"
 require "json"
 
 describe :porter do
+  parallelize_me!
+
   describe :ingesterror do
     it "correctly handles an ingest error" do
       job = {

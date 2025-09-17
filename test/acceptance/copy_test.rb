@@ -4,6 +4,8 @@ require "test_helper"
 require "json"
 
 describe :porter do
+  parallelize_me!
+
   describe :s3_copy do
     describe :to_key_with_spaces do
       it "handles HTTP source files with spaces" do
