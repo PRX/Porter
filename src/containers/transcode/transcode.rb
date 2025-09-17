@@ -115,7 +115,7 @@ put_probe_s3_client = Aws::S3::Client.new(region: ENV["STATE_MACHINE_AWS_REGION"
 put_probe_s3tm = Aws::S3::TransferManager.new(client: put_probe_s3_client)
 bucket_name = ENV["STATE_MACHINE_ARTIFACT_BUCKET_NAME"]
 object_key = "#{ENV["STATE_MACHINE_EXECUTION_ID"]}/transcode/ffprobe-#{ENV["STATE_MACHINE_TASK_INDEX"]}.json"
-put_probe_s3tm.upload_file("ffprobe.json", bucket: bucket_name, object: object_key)
+put_probe_s3tm.upload_file("ffprobe.json", bucket: bucket_name, key: object_key)
 
 # Record transcode duration in CloudWatch Metrics
 cloudwatch.put_metric_data({
