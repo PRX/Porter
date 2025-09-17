@@ -45,9 +45,7 @@ end
 artifact = JSON.parse(ENV["STATE_MACHINE_ARTIFACT_JSON"])
 
 cloudwatch = Aws::CloudWatch::Client.new
-# This S3 client is used for reading the source file and writing artifacts, it
-# doesn't touch the destination
-s3 = Aws::S3::Client.new
+get_artifact_s3tm = TransferManager.new
 
 start_time = Time.now.to_i
 
@@ -71,15 +69,7 @@ cloudwatch.put_metric_data({
 
 # Get the artifact file from S3
 puts "Downloading artifact"
-File.open("artifact.file", "wb") do |file|
-  s3.get_object(
-    {
-      bucket: ENV["STATE_MACHINE_ARTIFACT_BUCKET_NAME"],
-      key: ENV["STATE_MACHINE_ARTIFACT_OBJECT_KEY"]
-    },
-    target: file
-  )
-end
+get_artifact_s3tm.download_file("artifact.file", bucket: ENV["STATE_MACHINE_ARTIFACT_BUCKET_NAME"], key: ENV["STATE_MACHINE_ARTIFACT_OBJECT_KEY"])
 
 if ENV["STATE_MACHINE_DESTINATION_FORMAT"] == "INHERIT" && !artifact.dig("Descriptor", "Extension")
   raise StandardError, "Output format could not be inheritted"
@@ -120,11 +110,12 @@ raise StandardError, "FFmpeg probe failed" unless system ffprobe_cmd
 
 # Write the probe output to S3
 puts "Writing probe output to S3 artifact bucket"
-s3 = Aws::S3::Resource.new(region: ENV["STATE_MACHINE_AWS_REGION"])
+
+put_probe_s3_client = Aws::S3::Client.new(region: ENV["STATE_MACHINE_AWS_REGION"])
+put_probe_s3tm = TransferManager.new(client: put_probe_s3_client)
 bucket_name = ENV["STATE_MACHINE_ARTIFACT_BUCKET_NAME"]
 object_key = "#{ENV["STATE_MACHINE_EXECUTION_ID"]}/transcode/ffprobe-#{ENV["STATE_MACHINE_TASK_INDEX"]}.json"
-obj = s3.bucket(bucket_name).object(object_key)
-obj.upload_file("ffprobe.json")
+put_probe_s3tm.upload_file("ffprobe.json", bucket: bucket_name, object: object_key)
 
 # Record transcode duration in CloudWatch Metrics
 cloudwatch.put_metric_data({
@@ -158,6 +149,12 @@ if destination["Mode"] == "AWS/S3"
     role_session_name: "porter_transcode_task"
   })
 
+  credentials = Aws::Credentials.new(
+    role.credentials.access_key_id,
+    role.credentials.secret_access_key,
+    role.credentials.session_token
+  )
+
   # The Ruby AWS SDK does not intelligently handle cases where the client isn't
   # explicitly set for the region where the bucket exists. We have to detect
   # the region using HeadBucket, and then create the client with the returned
@@ -168,7 +165,7 @@ if destination["Mode"] == "AWS/S3"
 
   # Create a client with permission to HeadBucket
   begin
-    s3_writer = Aws::S3::Client.new(credentials: role, endpoint: "https://s3.amazonaws.com")
+    s3_writer = Aws::S3::Client.new(credentials: credentials, endpoint: "https://s3.amazonaws.com")
     bucket_head = s3_writer.head_bucket({bucket: ENV["STATE_MACHINE_DESTINATION_BUCKET_NAME"]})
     bucket_region = bucket_head.context.http_response.headers["x-amz-bucket-region"]
   rescue Aws::S3::Errors::Http301Error, Aws::S3::Errors::PermanentRedirect => e
@@ -178,7 +175,7 @@ if destination["Mode"] == "AWS/S3"
   puts "Destination bucket in region: #{bucket_region}"
 
   # Create a new client with the permissions and the correct region
-  s3_writer = Aws::S3::Client.new(credentials: role, region: bucket_region)
+  s3_writer = Aws::S3::Client.new(credentials: credentials, region: bucket_region)
 
   put_object_params = {}
 
@@ -200,13 +197,11 @@ if destination["Mode"] == "AWS/S3"
     end
   end
 
+  put_object_params[:bucket] = ENV["STATE_MACHINE_DESTINATION_BUCKET_NAME"]
+  put_object_params[:key] = ENV["STATE_MACHINE_DESTINATION_OBJECT_KEY"]
+
   # Upload the encoded file to the S3
   puts "Writing output to S3 destination"
-  File.open("output.file", "rb") do |file|
-    put_object_params[:bucket] = ENV["STATE_MACHINE_DESTINATION_BUCKET_NAME"]
-    put_object_params[:key] = ENV["STATE_MACHINE_DESTINATION_OBJECT_KEY"]
-    put_object_params[:body] = file
-
-    s3_writer.put_object(put_object_params)
-  end
+  put_ouput_s3tm = TransferManager.new(client: s3_writer)
+  put_ouput_s3tm.upload_file("output.file", **put_object_params)
 end
