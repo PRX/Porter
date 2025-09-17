@@ -45,7 +45,7 @@ end
 artifact = JSON.parse(ENV["STATE_MACHINE_ARTIFACT_JSON"])
 
 cloudwatch = Aws::CloudWatch::Client.new
-get_artifact_s3tm = TransferManager.new
+get_artifact_s3tm = Aws::S3::TransferManager.new
 
 start_time = Time.now.to_i
 
@@ -112,7 +112,7 @@ raise StandardError, "FFmpeg probe failed" unless system ffprobe_cmd
 puts "Writing probe output to S3 artifact bucket"
 
 put_probe_s3_client = Aws::S3::Client.new(region: ENV["STATE_MACHINE_AWS_REGION"])
-put_probe_s3tm = TransferManager.new(client: put_probe_s3_client)
+put_probe_s3tm = Aws::S3::TransferManager.new(client: put_probe_s3_client)
 bucket_name = ENV["STATE_MACHINE_ARTIFACT_BUCKET_NAME"]
 object_key = "#{ENV["STATE_MACHINE_EXECUTION_ID"]}/transcode/ffprobe-#{ENV["STATE_MACHINE_TASK_INDEX"]}.json"
 put_probe_s3tm.upload_file("ffprobe.json", bucket: bucket_name, object: object_key)
@@ -202,6 +202,6 @@ if destination["Mode"] == "AWS/S3"
 
   # Upload the encoded file to the S3
   puts "Writing output to S3 destination"
-  put_ouput_s3tm = TransferManager.new(client: s3_writer)
+  put_ouput_s3tm = Aws::S3::TransferManager.new(client: s3_writer)
   put_ouput_s3tm.upload_file("output.file", **put_object_params)
 end
