@@ -487,6 +487,8 @@ Resources:
               Id: !Sub ${AWS::StackName}.Transcribe-JobState
           Type: EventBridgeRule
       Handler: index.handler
+      Layers:
+        - !Ref AwsSdkJsV3LambdaLayer
       MemorySize: 128
       Policies:
         - !Ref ArtifactBucketReadOnlyAccessPolicy
