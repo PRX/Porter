@@ -36,5 +36,7 @@ test("Inspect an audio file", async () => {
     },
   );
   expect(result.Task).toEqual("Inspect");
-  expect(result.Inspection.Audio.Tags).toEqual({ comment: "AIS_AD_BREAK_1=2000,0;" });
+  expect(result.Inspection.Audio.Tags).toEqual({
+    comment: "AIS_AD_BREAK_1=2000,0;",
+  });
 }, 20000);
