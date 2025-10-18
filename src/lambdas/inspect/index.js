@@ -11,8 +11,9 @@ import { inspect as video } from "./video.js";
 
 /**
  * @typedef {object} InspectTask
- * @property {string} Type
+ * @property {string} [Type]
  * @property {boolean} [EBUR128]
+ * @property {string} [MatchTags]
  */
 
 /**

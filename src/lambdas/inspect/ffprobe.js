@@ -1,5 +1,6 @@
 import { spawn } from "node:child_process";
 import { tmpdir } from "node:os";
+import { binDir } from "porter-util";
 
 /**
  * @typedef {object} FfprobeFormat
@@ -48,12 +49,15 @@ export async function inspect(filePath) {
 
     // This should normally output only JSON data
     const childProc = spawn(
-      "/opt/bin/ffprobe",
+      binDir("ffprobe"),
       [
-        "-v",
+        "-hide_banner",
+        "-loglevel",
         "error",
         "-show_streams",
         "-show_format",
+        "-show_entries",
+        "format_tags",
         "-i",
         filePath,
         "-print_format",

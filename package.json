@@ -1,6 +1,7 @@
 {
   "name": "porter",
   "version": "1.0.0",
+  "type": "module",
   "license": "AGPL-3.0",
   "private": "true",
   "engines": {
@@ -32,12 +33,24 @@
   "devDependencies": {
     "@biomejs/biome": "*",
     "@types/node": "*",
+    "aws-sdk-client-mock": "^4.1.0",
+    "aws-sdk-client-mock-jest": "^4.1.0",
     "dotenv": "*",
-    "jest": "*",
+    "jest": "^30.2.0",
     "typescript": "*",
     "yaml-cfn": "*"
   },
   "scripts": {
-    "test": "npm exec jest"
+    "test": "NODE_OPTIONS='--experimental-vm-modules --no-warnings=ExperimentalWarning' jest"
+  },
+  "jest": {
+    "restoreMocks": true,
+    "moduleNameMapper": {
+      "^aws-sdk-client-mock-jest$": "<rootDir>/node_modules/aws-sdk-client-mock-jest/dist/cjs/jest.js"
+    },
+    "testPathIgnorePatterns": [
+      "/node_modules/",
+      "integration"
+    ]
   }
 }

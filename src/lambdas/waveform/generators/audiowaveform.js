@@ -2,6 +2,7 @@
 
 import { spawn } from "node:child_process";
 import { tmpdir } from "node:os";
+import { binDir } from "porter-util";
 
 class InvalidDataFormatError extends Error {
   constructor(...params) {
@@ -60,7 +61,7 @@ export async function v1(event, inputFilePath, outputFilePath) {
       // WAV and MP3 are natively supported by audiowaveform, so they don't
       // run through FFmpeg
       cmd = [
-        "/opt/bin/audiowaveform",
+        binDir("audiowaveform"),
         `--input-filename ${inputFilePath}`,
         `--input-format ${mediaFormat}`,
         `--output-filename ${outputFilePath}`,
@@ -73,13 +74,13 @@ export async function v1(event, inputFilePath, outputFilePath) {
       // transcoded first by FFmpeg with the result being piped to
       // audiowaveform.
       cmd = [
-        "/opt/bin/ffmpeg",
+        binDir("ffmpeg"),
         // Input from file
         `-i ${inputFilePath}`,
         // Output to stdout; always transcode to WAV
         "-f wav -",
         "|",
-        "/opt/bin/audiowaveform",
+        binDir("audiowaveform"),
         // Input from stdin
         "--input-filename -",
         // Audio coming from FFmpeg is always WAV
