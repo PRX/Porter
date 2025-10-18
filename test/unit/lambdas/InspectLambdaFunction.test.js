@@ -7,7 +7,7 @@ import "aws-sdk-client-mock-jest";
 
 const s3Mock = mockClient(S3Client);
 
-test("Inspect an audio file", async () => {
+test("Inspect an audio file for tags", async () => {
   const stream = createReadStream("./test/samples/two-tone.mp3");
   process.env.S3_DESTINATION_WRITER_ROLE = "arn:thisisafake";
   const sdkStream = sdkStreamMixin(stream);
