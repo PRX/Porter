@@ -21,6 +21,7 @@ import { nmbr } from "./util.js";
  * @property {number} [LoudnessTruePeak]
  * @property {number} [LoudnessRange]
  * @property {number} [UnidentifiedBytes]
+ * @property {object} [Tags]
  */
 
 /**
@@ -49,6 +50,20 @@ export async function inspect(task, filePath) {
         ...(stream.channel_layout && { Layout: stream.channel_layout }),
       });
     }
+
+  const tags = probe.format && probe.format.tags;
+  // Find tags in the format section that match MatchTags from the task
+  if (tags && task.MatchTags && task.MatchTags.length > 0) {
+    const regex = new RegExp(task.MatchTags);
+    inspection.Tags = {};
+
+    // use regex to extract only the matching tags
+    Object.keys(tags).forEach((key) => {
+      if (regex.test(key) || regex.test(tags[key])) {
+        inspection.Tags[key] = tags[key];
+      }
+    });
+  }
   } catch (error) {
     console.log(error);
   }

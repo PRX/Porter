@@ -1,5 +1,6 @@
 import { spawn } from "node:child_process";
 import { tmpdir } from "node:os";
+import { binDir } from "porter-util";
 
 /**
  * @typedef {object} MpckResult
@@ -74,7 +75,7 @@ export async function inspect(filePath) {
     //     version                       MPEG v1.0
     //     layer                         3
     //     frames                        1682
-    const childProc = spawn("/opt/bin/mpck", ["-v", filePath], {
+    const childProc = spawn(binDir("mpck"), ["-v", filePath], {
       env: process.env,
       cwd: tmpdir(),
     });
