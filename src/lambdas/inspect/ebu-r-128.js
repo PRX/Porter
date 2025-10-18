@@ -1,5 +1,6 @@
 import { spawn } from "node:child_process";
 import { tmpdir } from "node:os";
+import { binDir } from "porter-util";
 
 /**
  * @typedef {object} FfmpegLoudnormResult
@@ -20,7 +21,7 @@ export async function inspect(filePath) {
     // This will return JSON data after a lot of other FFmpeg process
     // information
     const childProc = spawn(
-      "/opt/bin/ffmpeg",
+      binDir("ffmpeg"),
       [
         "-v",
         "info",

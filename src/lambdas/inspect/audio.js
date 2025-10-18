@@ -51,19 +51,19 @@ export async function inspect(task, filePath) {
       });
     }
 
-  const tags = probe.format && probe.format.tags;
-  // Find tags in the format section that match MatchTags from the task
-  if (tags && task.MatchTags && task.MatchTags.length > 0) {
-    const regex = new RegExp(task.MatchTags);
-    inspection.Tags = {};
+    const tags = probe.format?.tags;
+    // Find tags in the format section that match MatchTags from the task
+    if (tags && task.MatchTags && task.MatchTags.length > 0) {
+      const regex = new RegExp(task.MatchTags);
+      inspection.Tags = {};
 
-    // use regex to extract only the matching tags
-    Object.keys(tags).forEach((key) => {
-      if (regex.test(key) || regex.test(tags[key])) {
-        inspection.Tags[key] = tags[key];
-      }
-    });
-  }
+      // use regex to extract only the matching tags
+      Object.keys(tags).forEach((key) => {
+        if (regex.test(key) || regex.test(tags[key])) {
+          inspection.Tags[key] = tags[key];
+        }
+      });
+    }
   } catch (error) {
     console.log(error);
   }

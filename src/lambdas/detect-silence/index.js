@@ -4,7 +4,7 @@ import { createReadStream, unlinkSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join as pathJoin } from "node:path";
 import { createInterface } from "node:readline";
-import { writeArtifact } from "porter-util";
+import { binDir, writeArtifact } from "porter-util";
 
 const DEFAULT_MAX_VALUE = 0.001;
 const DEFAULT_MIN_DURATION = 0.2;
@@ -33,7 +33,7 @@ function createMetadataFile(
     ].join(",");
 
     const childProc = spawn(
-      "/opt/bin/ffmpeg",
+      binDir("ffmpeg"),
       ["-i", inputFilePath, "-af", filterString, "-f", "null", "-"],
       {
         env: process.env,
