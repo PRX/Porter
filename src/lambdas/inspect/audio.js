@@ -6,6 +6,10 @@ import { nmbr } from "./util.js";
 /** @typedef {import('./index.js').InspectTask} InspectTask */
 
 /**
+ * @typedef {{ [key: string]: string }} Tags
+ */
+
+/**
  * @typedef {object} AudioInspection
  * @property {number} [Duration]
  * @property {number} [DurationDiscrepancy]
@@ -21,7 +25,7 @@ import { nmbr } from "./util.js";
  * @property {number} [LoudnessTruePeak]
  * @property {number} [LoudnessRange]
  * @property {number} [UnidentifiedBytes]
- * @property {object} [Tags]
+ * @property {Tags} [Tags]
  */
 
 /**
@@ -52,15 +56,31 @@ export async function inspect(task, filePath) {
     }
 
     const tags = probe.format?.tags;
+    console.log(JSON.stringify({ tags: tags }));
     // Find tags in the format section that match MatchTags from the task
-    if (tags && task.MatchTags && task.MatchTags.length > 0) {
-      const regex = new RegExp(task.MatchTags);
+    if (tags && task.IncludeMetadata) {
+      var keysRegex = null;
+      var valuesRegex = null;
+      const keyIncludes = task.IncludeMetadata?.Keys?.StringIncludes;
+      if (keyIncludes) {
+        keysRegex = new RegExp(keyIncludes);
+      }
+      const valueIncludes = task.IncludeMetadata.Values?.StringIncludes;
+      if (valueIncludes) {
+        valuesRegex = new RegExp(valueIncludes);
+      }
+
       inspection.Tags = {};
 
-      // use regex to extract only the matching tags
+      // use each regex to extract only the matching tags
       Object.keys(tags).forEach((key) => {
-        if (regex.test(key) || regex.test(tags[key])) {
-          inspection.Tags[key] = tags[key];
+        const val = tags[key];
+        console.log(JSON.stringify({ key: key, val: val  }));
+
+        if (keysRegex && keysRegex.test(key)) {
+          inspection.Tags[key] = val;
+        } else if (valuesRegex && valuesRegex.test(val)) {
+          inspection.Tags[key] = val;
         }
       });
     }
