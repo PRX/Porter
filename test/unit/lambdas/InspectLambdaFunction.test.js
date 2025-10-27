@@ -28,7 +28,11 @@ test("Inspect an audio file for tags", async () => {
       },
       Task: {
         Type: "Inspect",
-        MatchTags: "AIS_AD_BREAK_",
+        IncludeMetadata: {
+          Values: {
+            StringIncludes: "AIS_AD_BREAK_",
+          },
+        },
       },
     },
     {
