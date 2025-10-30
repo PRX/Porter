@@ -732,12 +732,22 @@ Output:
 
 If the optional `EBUR128` property is set to `true`, several loudness measurements will be taken based on the [EBU R 128](https://en.wikipedia.org/wiki/EBU_R_128) standard. Given that this takes significantly longer than the rest of the inspection task, when submitting jobs that include loudness measurement, you may want to include two `Inspect` tasks, so that one can return results more quickly. `EBUR128` measurements are intended for audio and video source files.
 
+Inspect can also selectively return metadata from the file. This only currently works for audio files using `ffprobe -show_entries format_tags` which returns whatever tags are detected in the file metadata. Metadata can be matched using the `IncludeMetadata` object, either on tag `Keys` or `Values`. Currently only `StringIncludes` is supported, which allows specifying a value to match as a regular expression against the tag key or value.
+
 Input:
 
 ```json
 {
     "Type": "Inspect",
-    "EBUR128": true
+    "EBUR128": true,
+    "IncludeMetadata": {
+        "Values": {
+            "StringIncludes": "AIS_AD_BREAK_",
+        },
+        "Keys": {
+            "StringIncludes": "AIS_AD_BREAK_",
+        }
+    }
 }
 ```
 
