@@ -58,9 +58,9 @@ export async function inspect(task, filePath) {
     const tags = probe.format?.tags;
     // Find tags in the format section that match MatchTags from the task
     if (tags && task.IncludeMetadata) {
-      var keysRegex = null;
-      var valuesRegex = null;
       const keyIncludes = task.IncludeMetadata?.Keys?.StringIncludes;
+      let keysRegex = null;
+      let valuesRegex = null;
       if (keyIncludes) {
         keysRegex = new RegExp(keyIncludes);
       }
@@ -74,9 +74,9 @@ export async function inspect(task, filePath) {
       // use each regex to extract only the matching tags
       Object.keys(tags).forEach((key) => {
         const val = tags[key];
-        if (keysRegex && keysRegex.test(key)) {
+        if (keysRegex?.test(key)) {
           inspection.Tags[key] = val;
-        } else if (valuesRegex && valuesRegex.test(val)) {
+        } else if (valuesRegex?.test(val)) {
           inspection.Tags[key] = val;
         }
       });
