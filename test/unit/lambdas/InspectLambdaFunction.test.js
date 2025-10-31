@@ -7,6 +7,43 @@ import "aws-sdk-client-mock-jest";
 
 const s3Mock = mockClient(S3Client);
 
+test("Inspect an audio file for EBUR128 loudness", async () => {
+  const stream = createReadStream("./test/samples/two-tone.mp3");
+  process.env.S3_DESTINATION_WRITER_ROLE = "arn:thisisafake";
+  const sdkStream = sdkStreamMixin(stream);
+  s3Mock.on(GetObjectCommand).resolves({ Body: sdkStream });
+
+  const result = await handler(
+    {
+      Artifact: {
+        BucketName: "myStackName-artifactbucket-1hnyu12xzvbel",
+        ObjectKey: "test000/c6cd0af8/test.mp3",
+        Descriptor: {
+          Extension: "mp3",
+          MIME: "audio/mpeg",
+        },
+      },
+      Job: {
+        Id: "asdfghjkl1234567890",
+      },
+      Task: {
+        Type: "Inspect",
+        EBUR128: true,
+      },
+    },
+    {
+      awsRequestId: "test-request-id",
+    },
+  );
+
+  console.log(result.Inspection.Audio);
+
+  expect(result.Task).toEqual("Inspect");
+  expect(result.Inspection.Audio.LoudnessIntegrated).toEqual(-10.3);
+  expect(result.Inspection.Audio.LoudnessTruePeak).toEqual(-8.32);
+  expect(result.Inspection.Audio.LoudnessRange).toEqual(14.6);
+});
+
 test("Inspect an audio file for tags", async () => {
   const stream = createReadStream("./test/samples/two-tone.mp3");
   process.env.S3_DESTINATION_WRITER_ROLE = "arn:thisisafake";
