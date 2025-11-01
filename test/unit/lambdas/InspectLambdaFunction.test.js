@@ -67,7 +67,7 @@ test("Inspect an audio file for tags", async () => {
         Type: "Inspect",
         IncludeMetadata: {
           Values: {
-            StringIncludes: "AIS_AD_BREAK_",
+            StringMatches: "AIS_AD_BREAK_",
           },
         },
       },

@@ -56,17 +56,17 @@ export async function inspect(task, filePath) {
     }
 
     const tags = probe.format?.tags;
-    // Find tags in the format section that match MatchTags from the task
+    // Find tags in the format section that match the criteria
     if (tags && task.IncludeMetadata) {
-      const keyIncludes = task.IncludeMetadata?.Keys?.StringIncludes;
+      const keyMatches = task.IncludeMetadata?.Keys?.StringMatches;
       let keysRegex = null;
       let valuesRegex = null;
-      if (keyIncludes) {
-        keysRegex = new RegExp(keyIncludes);
+      if (keyMatches) {
+        keysRegex = new RegExp(keyMatches);
       }
-      const valueIncludes = task.IncludeMetadata.Values?.StringIncludes;
-      if (valueIncludes) {
-        valuesRegex = new RegExp(valueIncludes);
+      const valueMatches = task.IncludeMetadata.Values?.StringMatches;
+      if (valueMatches) {
+        valuesRegex = new RegExp(valueMatches);
       }
 
       inspection.Tags = {};

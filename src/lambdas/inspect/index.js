@@ -11,7 +11,7 @@ import { inspect as video } from "./video.js";
 
 /**
  * @typedef {object} MetadataMatchOptions
- * @property {string} [StringIncludes]
+ * @property {string} [StringMatches]
  */
 
 /**
