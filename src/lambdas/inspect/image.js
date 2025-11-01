@@ -1,7 +1,7 @@
 import sharp from "sharp";
 
 /** @typedef {import('./index.js').InspectTask} InspectTask */
-/** @typedef {import('./index.js').Tag} Tag */
+/** @typedef {import('./tags.js').Tag} Tag */
 
 /**
  * @typedef {object} ImageInspection

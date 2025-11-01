@@ -1,7 +1,9 @@
 import { inspect as ffprobe } from "./ffprobe.js";
 import { nmbr } from "./util.js";
+import { ffprobeTags } from "./tags.js";
 
 /** @typedef {import('./index.js').InspectTask} InspectTask */
+/** @typedef {import('./tags.js').Tag} Tag */
 
 /**
  * @typedef {object} VideoInspection
@@ -11,14 +13,15 @@ import { nmbr } from "./util.js";
  * @property {number} [Width]
  * @property {number} [Height]
  * @property {number} [Framerate]
+ * @property {Tag[]} [Tags]
  */
 
 /**
- * @param {InspectTask} _task
+ * @param {InspectTask} task
  * @param {string} filePath
  * @returns {Promise<VideoInspection>}
  */
-export async function inspect(_task, filePath) {
+export async function inspect(task, filePath) {
   /** @type {VideoInspection} */
   const inspection = {};
 
@@ -42,6 +45,11 @@ export async function inspect(_task, filePath) {
         }),
         ...(stream.r_frame_rate && { Framerate: nmbr(stream.r_frame_rate) }),
       });
+    }
+    const tags = probe.format?.tags;
+    // Find tags in the format section that match the criteria
+    if (tags && task.IncludeMetadata) {
+      inspection.Tags = ffprobeTags(tags, task.IncludeMetadata);
     }
   } catch (error) {
     console.log(error);

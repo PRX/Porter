@@ -118,3 +118,43 @@ test("Inspect an audio file for tags", async () => {
     { key: "comment", value: "AIS_AD_BREAK_1=2000,0;" },
   ]);
 }, 20000);
+
+test("Inspect a video file for tags", async () => {
+  const stream = createReadStream("./test/samples/trax.mp4");
+  process.env.S3_DESTINATION_WRITER_ROLE = "arn:thisisafake";
+  const sdkStream = sdkStreamMixin(stream);
+  s3Mock.on(GetObjectCommand).resolves({ Body: sdkStream });
+
+  const result = await handler(
+    {
+      Artifact: {
+        BucketName: "myStackName-artifactbucket-1hnyu12xzvbel",
+        ObjectKey: "test000/c6cd0af8/test.mp4",
+        Descriptor: {
+          Extension: "mp4",
+          MIME: "video/mp4",
+        },
+      },
+      Job: {
+        Id: "asdfghjkl1234567890",
+      },
+      Task: {
+        Type: "Inspect",
+        IncludeMetadata: {
+          Keys: {
+            StringMatches: "encoder",
+          },
+        },
+      },
+    },
+    {
+      awsRequestId: "test-request-id",
+    },
+  );
+
+  expect(result.Task).toEqual("Inspect");
+  expect(result.Inspection.Video.Tags).toEqual([
+    { key: "encoder", value: "Lavf58.45.100" },
+  ]);
+});
+

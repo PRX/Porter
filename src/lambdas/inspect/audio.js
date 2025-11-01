@@ -2,9 +2,10 @@ import { inspect as ebur128 } from "./ebu-r-128.js";
 import { inspect as ffprobe } from "./ffprobe.js";
 import { inspect as mpck } from "./mpck.js";
 import { nmbr } from "./util.js";
+import { ffprobeTags } from "./tags.js";
 
 /** @typedef {import('./index.js').InspectTask} InspectTask */
-/** @typedef {import('./index.js').Tag} Tag */
+/** @typedef {import('./tags.js').Tag} Tag */
 
 /**
  * @typedef {object} AudioInspection
@@ -55,28 +56,7 @@ export async function inspect(task, filePath) {
     const tags = probe.format?.tags;
     // Find tags in the format section that match the criteria
     if (tags && task.IncludeMetadata) {
-      const keyMatches = task.IncludeMetadata?.Keys?.StringMatches;
-      let keysRegex = null;
-      let valuesRegex = null;
-      if (keyMatches) {
-        keysRegex = new RegExp(keyMatches);
-      }
-      const valueMatches = task.IncludeMetadata.Values?.StringMatches;
-      if (valueMatches) {
-        valuesRegex = new RegExp(valueMatches);
-      }
-
-      inspection.Tags = [];
-
-      // use each regex to extract only the matching tags
-      Object.keys(tags).forEach((key) => {
-        const value = tags[key];
-        if (keysRegex?.test(key)) {
-          inspection.Tags.push({ key, value });
-        } else if (valuesRegex?.test(value)) {
-          inspection.Tags.push({ key, value });
-        }
-      });
+      inspection.Tags = ffprobeTags(tags, task.IncludeMetadata);
     }
   } catch (error) {
     console.log(error);
