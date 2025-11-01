@@ -4,10 +4,7 @@ import { inspect as mpck } from "./mpck.js";
 import { nmbr } from "./util.js";
 
 /** @typedef {import('./index.js').InspectTask} InspectTask */
-
-/**
- * @typedef {{ [key: string]: string }} Tags
- */
+/** @typedef {import('./index.js').Tag} Tag */
 
 /**
  * @typedef {object} AudioInspection
@@ -25,7 +22,7 @@ import { nmbr } from "./util.js";
  * @property {number} [LoudnessTruePeak]
  * @property {number} [LoudnessRange]
  * @property {number} [UnidentifiedBytes]
- * @property {Tags} [Tags]
+ * @property {Tag[]} [Tags]
  */
 
 /**
@@ -69,15 +66,15 @@ export async function inspect(task, filePath) {
         valuesRegex = new RegExp(valueMatches);
       }
 
-      inspection.Tags = {};
+      inspection.Tags = [];
 
       // use each regex to extract only the matching tags
       Object.keys(tags).forEach((key) => {
-        const val = tags[key];
+        const value = tags[key];
         if (keysRegex?.test(key)) {
-          inspection.Tags[key] = val;
-        } else if (valuesRegex?.test(val)) {
-          inspection.Tags[key] = val;
+          inspection.Tags.push({ key, value });
+        } else if (valuesRegex?.test(value)) {
+          inspection.Tags.push({ key, value });
         }
       });
     }

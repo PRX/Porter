@@ -7,6 +7,45 @@ import "aws-sdk-client-mock-jest";
 
 const s3Mock = mockClient(S3Client);
 
+test("Inspect a png image file for comments", async () => {
+  const stream = createReadStream("./test/samples/testJoinChannel.png");
+  process.env.S3_DESTINATION_WRITER_ROLE = "arn:thisisafake";
+  const sdkStream = sdkStreamMixin(stream);
+  s3Mock.on(GetObjectCommand).resolves({ Body: sdkStream });
+
+  const result = await handler(
+    {
+      Artifact: {
+        BucketName: "myStackName-artifactbucket-1hnyu12xzvbel",
+        ObjectKey: "test000/c6cd0af8/test.png",
+        Descriptor: {
+          Extension: "png",
+          MIME: "image/png",
+        },
+      },
+      Job: {
+        Id: "asdfghjkl1234567890",
+      },
+      Task: {
+        Type: "Inspect",
+        IncludeMetadata: {
+          Keys: {
+            StringMatches: "Comment",
+          },
+        },
+      },
+    },
+    {
+      awsRequestId: "test-request-id",
+    },
+  );
+
+  expect(result.Task).toEqual("Inspect");
+  expect(result.Inspection.Image.Tags).toEqual([
+    { key: "Comment", value: "Created with GIMP" },
+  ]);
+});
+
 test("Inspect an audio file for EBUR128 loudness", async () => {
   const stream = createReadStream("./test/samples/two-tone.mp3");
   process.env.S3_DESTINATION_WRITER_ROLE = "arn:thisisafake";
@@ -35,8 +74,6 @@ test("Inspect an audio file for EBUR128 loudness", async () => {
       awsRequestId: "test-request-id",
     },
   );
-
-  console.log(result.Inspection.Audio);
 
   expect(result.Task).toEqual("Inspect");
   expect(result.Inspection.Audio.LoudnessIntegrated).toEqual(-10.3);
@@ -77,7 +114,7 @@ test("Inspect an audio file for tags", async () => {
     },
   );
   expect(result.Task).toEqual("Inspect");
-  expect(result.Inspection.Audio.Tags).toEqual({
-    comment: "AIS_AD_BREAK_1=2000,0;",
-  });
+  expect(result.Inspection.Audio.Tags).toEqual([
+    { key: "comment", value: "AIS_AD_BREAK_1=2000,0;" },
+  ]);
 }, 20000);
