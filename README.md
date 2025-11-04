@@ -624,7 +624,7 @@ Output:
 
 `Image` tasks perform image manipulations on the source file. These are intended for static image files (e.g., JPEG, PNG, WebP, GIF, SVG). Currently the only supported destination mode is `AWS/S3`. A job can include any number of image tasks; each will perform the operation against the original state of the source file.
 
-Resize supports the following parameters: `Fit`, `Height`, `Position`, and `Width`. These follow the same rules as [sharp's](http://sharp.pixelplumbing.com/en/stable/api-resize/#parameters) parameters. The `Resize` property is optional; if excluded the task will not attempt to resize the image. All child properties of the `Resize` object are optional.
+Resize supports the following parameters: `Fit`, `Height`, `Position`, and `Width`. These follow the same rules as [sharp's](https://sharp.pixelplumbing.com/en/stable/api-resize/#parameters) parameters. The `Resize` property is optional; if excluded the task will not attempt to resize the image. All child properties of the `Resize` object are optional.
 
 `Format` indicates the desired output format. Supported formats are: `jpeg`, `png`, `webp`, and `tiff`. The `Format` property is optional; if excluded the output format will be inferred from the file extension of the destination object.
 
@@ -732,12 +732,24 @@ Output:
 
 If the optional `EBUR128` property is set to `true`, several loudness measurements will be taken based on the [EBU R 128](https://en.wikipedia.org/wiki/EBU_R_128) standard. Given that this takes significantly longer than the rest of the inspection task, when submitting jobs that include loudness measurement, you may want to include two `Inspect` tasks, so that one can return results more quickly. `EBUR128` measurements are intended for audio and video source files.
 
+Inspect can also optionally return select metadata from the file. This works for audio and video files using `ffprobe -show_entries format_tags` which returns whatever tags are detected in the file metadata. It can also return comments from PNG image files. Metadata can be matched using the optional `IncludeMetadata` property, either on tag `Keys` or `Values`. Currently only `StringMatches` is supported, which allows specifying a value to match as a regular expression against the tag key or value.
+
+The string value for `StringMatches` does not need to have symbols surrounding it to indicate it is a regex, but will be interpreted as one and not just a string, for example `".png$"` will match any character for the `.` and the end of the checked string for the `$`, while `"\.png"` with the period escaped will match a literal `.` like in `"image.png"` but not `"pngpngpng"`.
+
 Input:
 
 ```json
 {
     "Type": "Inspect",
-    "EBUR128": true
+    "EBUR128": true,
+    "IncludeMetadata": {
+        "Values": {
+            "StringMatches": "AIS_AD_BREAK_",
+        },
+        "Keys": {
+            "StringMatches": "AIS_AD_BREAK_",
+        }
+    }
 }
 ```
 

@@ -10,9 +10,21 @@ import { inspect as video } from "./video.js";
 /** @typedef {import('./image.js').ImageInspection} ImageInspection */
 
 /**
+ * @typedef {object} MetadataMatchOptions
+ * @property {string} [StringMatches]
+ */
+
+/**
+ * @typedef {object} MetadataRequest
+ * @property {MetadataMatchOptions} [Keys]
+ * @property {MetadataMatchOptions} [Values]
+ */
+
+/**
  * @typedef {object} InspectTask
- * @property {string} Type
+ * @property {string} [Type]
  * @property {boolean} [EBUR128]
+ * @property {MetadataRequest} [IncludeMetadata]
  */
 
 /**

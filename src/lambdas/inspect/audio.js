@@ -1,9 +1,11 @@
 import { inspect as ebur128 } from "./ebu-r-128.js";
 import { inspect as ffprobe } from "./ffprobe.js";
 import { inspect as mpck } from "./mpck.js";
+import { ffprobeTags } from "./tags.js";
 import { nmbr } from "./util.js";
 
 /** @typedef {import('./index.js').InspectTask} InspectTask */
+/** @typedef {import('./tags.js').Tag} Tag */
 
 /**
  * @typedef {object} AudioInspection
@@ -21,6 +23,7 @@ import { nmbr } from "./util.js";
  * @property {number} [LoudnessTruePeak]
  * @property {number} [LoudnessRange]
  * @property {number} [UnidentifiedBytes]
+ * @property {Tag[]} [Tags]
  */
 
 /**
@@ -48,6 +51,12 @@ export async function inspect(task, filePath) {
         ...(stream.channels && { Channels: stream.channels }),
         ...(stream.channel_layout && { Layout: stream.channel_layout }),
       });
+    }
+
+    const tags = probe.format?.tags;
+    // Find tags in the format section that match the criteria
+    if (tags && task.IncludeMetadata) {
+      inspection.Tags = ffprobeTags(tags, task.IncludeMetadata);
     }
   } catch (error) {
     console.log(error);
