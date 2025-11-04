@@ -117,7 +117,7 @@ test("Inspect an audio file for tags", async () => {
   expect(result.Inspection.Audio.Tags).toEqual([
     { key: "comment", value: "AIS_AD_BREAK_1=2000,0;" },
   ]);
-}, 20000);
+});
 
 test("Inspect a video file for tags", async () => {
   const stream = createReadStream("./test/samples/trax.mp4");
