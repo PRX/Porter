@@ -734,6 +734,8 @@ If the optional `EBUR128` property is set to `true`, several loudness measuremen
 
 Inspect can also optionally return select metadata from the file. This works for audio and video files using `ffprobe -show_entries format_tags` which returns whatever tags are detected in the file metadata. It can also return comments from PNG image files. Metadata can be matched using the optional `IncludeMetadata` property, either on tag `Keys` or `Values`. Currently only `StringMatches` is supported, which allows specifying a value to match as a regular expression against the tag key or value.
 
+The string value for `StringMatches` does not need to have symbols surrounding it to indicate it is a regex, but will be interpreted as one and not just a string, for example `".png$"` will match any character for the `.` and the end of the checked string for the `$`, while `"\.png"` with the period escaped will match a literal `.` like in `"image.png"` but not `"pngpngpng"`.
+
 Input:
 
 ```json
