@@ -747,7 +747,7 @@ Input:
             "StringMatches": "AIS_AD_BREAK_",
         },
         "Keys": {
-            "StringMatches": "AIS_AD_BREAK_",
+            "StringMatches": "^comment.*",
         }
     }
 }
