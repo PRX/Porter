@@ -3,4 +3,4 @@ PORTER_STATE_MACHINE_ARN=
 # An S3 bucket that the above state machine has write access to
 PORTER_TEST_BUCKET_NAME=
 # Override the location of the bin executables
-BIN_DIR=
+# BIN_DIR=
