@@ -7,6 +7,7 @@ load "./utils.rb"
 # rubocop:disable Metrics/ClassLength
 class FtpFiles
   include Utils
+
   attr_reader :logger, :recorder
 
   def initialize(logger, recorder)

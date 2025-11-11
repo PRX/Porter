@@ -7,6 +7,7 @@ load "./utils.rb"
 # Class to act as SFTP client for uploading files to SFTP servers
 class SftpFiles
   include Utils
+
   attr_reader :logger, :recorder
 
   def initialize(logger, recorder)

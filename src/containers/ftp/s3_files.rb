@@ -11,6 +11,7 @@ load "./utils.rb"
 # based on all the various errors that have been handled in fixer.
 class S3Files
   include Utils
+
   attr_reader :s3, :logger, :retry_count
 
   def initialize(client = nil, logger = nil, retry_count = 10)
