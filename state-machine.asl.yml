@@ -305,7 +305,7 @@ States:
         FTP Copy Task Fargate Execution:
           Type: Task
           Comment: Sends artifact to an FTP destination
-          Resource: arn:aws:states:::ecs:runTask.sync
+          Resource: arn:aws:states:::ecs:runTask.waitForTaskToken
           InputPath: "$"
           Parameters:
             Cluster: "${EcsClusterArn}"
@@ -331,6 +331,10 @@ States:
                       Value.$: "$.Artifact.ObjectKey"
                     - Name: STATE_MACHINE_TASK_JSON
                       Value.$: States.JsonToString($.Task)
+                    - Name: STATE_MACHINE_TASK_TOKEN
+                      Value.$: "$$.Task.Token"
+                    - Name: STATE_MACHINE_TASK_TYPE
+                      Value.$: "$.Task.Type"
                   Name: "${FtpCopyContainerName}"
             NetworkConfiguration:
               AwsvpcConfiguration:
@@ -342,9 +346,9 @@ States:
                   - "${VpcPublicSubnet2}"
             PropagateTags: TASK_DEFINITION
             TaskDefinition: "${FtpCopyEcsTaskDefinitionArn}"
-          ResultPath: "$.Void"
+          ResultPath: "$.TaskResult"
           OutputPath: "$"
-          Next: FTP Copy Task Results Formatter
+          Next: TaskResult Callbacks Map
           Retry:
             - ErrorEquals:
                 - States.ALL
@@ -356,39 +360,10 @@ States:
                 - States.ALL
               ResultPath: "$.Error"
               Next: TaskResult Error Callback Map
-        FTP Copy Task Results Formatter:
-          Type: Task
-          Comment: Formats the output of an FTP copy task
-          Resource: "${FtpCopyTaskOutputLambdaFunctionArn}"
-          InputPath: "$"
-          Parameters:
-            Job:
-              Id.$: "$.Job.Id"
-            Execution:
-              Id.$: "$$.Execution.Id"
-            Task.$: "$.Task"
-            TaskIteratorIndex.$: "$.TaskIndex"
-          ResultPath: "$.TaskResult"
-          OutputPath: "$"
-          Next: TaskResult Callbacks Map
-          Retry:
-            - ErrorEquals:
-                - FtpOperationError
-              MaxAttempts: 0
-            - ErrorEquals:
-                - States.ALL
-              IntervalSeconds: 5
-              MaxAttempts: 3
-              BackoffRate: 2
-          Catch:
-            - ErrorEquals:
-                - States.ALL
-              ResultPath: "$.Error"
-              Next: TaskResult Error Callback Map
         Transcode Task Fargate Execution:
           Type: Task
           Comment: Transcodes multimedia artifact
-          Resource: arn:aws:states:::ecs:runTask.sync
+          Resource: arn:aws:states:::ecs:runTask.waitForTaskToken
           InputPath: "$"
           Parameters:
             Cluster: "${EcsClusterArn}"
@@ -438,6 +413,10 @@ States:
                       Value.$: States.JsonToString($.Task)
                     - Name: STATE_MACHINE_ARTIFACT_JSON
                       Value.$: States.JsonToString($.Artifact)
+                    - Name: STATE_MACHINE_TASK_TOKEN
+                      Value.$: "$$.Task.Token"
+                    - Name: STATE_MACHINE_TASK_TYPE
+                      Value.$: "$.Task.Type"
                   Name: "${TranscodeContainerName}"
             NetworkConfiguration:
               AwsvpcConfiguration:
@@ -447,40 +426,14 @@ States:
                   - "${VpcPublicSubnet2}"
             PropagateTags: TASK_DEFINITION
             TaskDefinition: "${TranscodeEcsTaskDefinitionArn}"
-          ResultPath: "$.Void"
-          OutputPath: "$"
-          Next: Transcode Task Results Formatter
-          Retry:
-            - ErrorEquals:
-                - States.ALL
-              IntervalSeconds: 15
-              MaxAttempts: 5
-              BackoffRate: 2
-          Catch:
-            - ErrorEquals:
-                - States.ALL
-              ResultPath: "$.Error"
-              Next: TaskResult Error Callback Map
-        Transcode Task Results Formatter:
-          Type: Task
-          Comment: Formats the output of a transcode task
-          Resource: "${TranscodeTaskOutputLambdaFunctionArn}"
-          InputPath: "$"
-          Parameters:
-            Job:
-              Id.$: "$.Job.Id"
-            Execution:
-              Id.$: "$$.Execution.Id"
-            Task.$: "$.Task"
-            TaskIteratorIndex.$: "$.TaskIndex"
           ResultPath: "$.TaskResult"
           OutputPath: "$"
           Next: TaskResult Callbacks Map
           Retry:
             - ErrorEquals:
                 - States.ALL
-              IntervalSeconds: 5
-              MaxAttempts: 3
+              IntervalSeconds: 15
+              MaxAttempts: 5
               BackoffRate: 2
           Catch:
             - ErrorEquals:
