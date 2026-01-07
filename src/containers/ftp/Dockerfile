@@ -1,9 +1,9 @@
-FROM amazonlinux:2023
+FROM public.ecr.aws/amazonlinux/amazonlinux:2023
 
 RUN dnf update -y \
     && dnf install -y ruby3.2 ruby-devel make gcc
 
-ENV APP_HOME /ftp
+ENV APP_HOME=/ftp
 RUN mkdir -p $APP_HOME
 WORKDIR $APP_HOME
 

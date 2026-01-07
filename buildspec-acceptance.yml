@@ -11,7 +11,10 @@ env:
 phases:
   install:
     runtime-versions:
-      ruby: 3.2
+      # This Ruby version does NOT need to match the version used in containers
+      # like FTP or Transcode. It should be whatever is best for executing this
+      # buildspec, such as performing acceptance tests.
+      ruby: 3.4
       nodejs: 22
   pre_build:
     commands:

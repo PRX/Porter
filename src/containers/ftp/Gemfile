@@ -2,6 +2,12 @@
 
 source "https://rubygems.org"
 
+# This is locked to a specific version precisely so that builds fail when
+# the version shipping with amazonlinux:2023 (latest) changes, to make it
+# very obvious that there's been a change. You may be tempted to remove this so
+# builds always work; please don't.
+ruby "3.2.8"
+
 gem "nokogiri"
 gem "aws-sdk-cloudwatch", "~> 1"
 gem "aws-sdk-ec2", "~> 1"

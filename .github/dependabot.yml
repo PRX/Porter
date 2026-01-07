@@ -10,9 +10,12 @@ updates:
         patterns:
           - "*"
   - package-ecosystem: bundler
-    directory: "/"
+    directories:
+      - "/"
+      - "/src/containers/ftp"
+      - "/src/containers/transcode"
     schedule:
-      interval: monthly
+      interval: weekly
     open-pull-requests-limit: 10
     groups:
       all-bundler:

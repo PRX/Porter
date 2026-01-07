@@ -47,5 +47,8 @@ DEPENDENCIES
   aws-sdk-sts (~> 1)
   nokogiri
 
+RUBY VERSION
+  ruby 3.2.8
+
 BUNDLED WITH
-   2.4.19
+  4.0.3
