@@ -2,7 +2,7 @@
 
 source "https://rubygems.org"
 
-ruby "3.2.9"
+ruby "3.4.7"
 
 gem "aws-sdk-states", "~> 1"
 gem "minitest"

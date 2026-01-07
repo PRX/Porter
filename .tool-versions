@@ -1,2 +1,2 @@
-ruby 3.2.9 # Should roughly match the runtime installed in buildspec-acceptance.yml
+ruby 3.4.7 # Should roughly match the runtime installed in buildspec-acceptance.yml
 nodejs 22.11.0 # Should roughly match the runtime installed in buildspec-acceptance.yml
