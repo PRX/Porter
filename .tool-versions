@@ -1,2 +1,13 @@
-ruby 3.4.7 # Should roughly match the runtime installed in buildspec-acceptance.yml
+# This version ends up being used by both the SAM build project and acceptance
+# tests. It does **NOT** need to match the Ruby versions used in tasks' Docker
+# containers, like for FTP and Transcode.
+#
+# This version should match the Ruby runtime version installed in both the
+# acceptance tests buildspec (buildspec-acceptance.yml in this repo) and the
+# SamCodeBuildProject buildspect (porter-cd-pipeline.yml in Infrastructure).
+#
+# Runtimes are specified like "3.4", and do get updated over time, so these may
+# drift apart, requiring this value to be upated to match.
+ruby 3.4.7
+
 nodejs 22.11.0 # Should roughly match the runtime installed in buildspec-acceptance.yml
