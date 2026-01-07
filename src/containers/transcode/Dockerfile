@@ -21,6 +21,7 @@ RUN mv ffmpeg-git-*-amd64-static/ffprobe ffmpeg-bin/
 
 ADD Gemfile .
 ADD Gemfile.lock .
+ADD .tool-versions .
 RUN bundle install
 
 ADD transcode.rb .
