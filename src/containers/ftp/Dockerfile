@@ -8,7 +8,7 @@ RUN mkdir -p $APP_HOME
 WORKDIR $APP_HOME
 
 ADD Gemfile* ./
-RUN bundle install --without development test
+RUN bundle config set without 'development test' && bundle install
 ADD *.rb ./
 
 ADD run ./
