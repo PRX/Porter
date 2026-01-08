@@ -1097,6 +1097,14 @@ Resources:
                 Effect: Allow
                 Resource: "*"
             Version: "2012-10-17"
+        # Allow it to send task results
+        - PolicyName: SendTaskStatus
+          PolicyDocument:
+            Statement:
+              - Action: states:SendTask*
+                Effect: Allow
+                Resource: "*"
+            Version: "2012-10-17"
       ManagedPolicyArns:
         # Transcode operations are always pulling FROM the artifact bucket
         - !Ref ArtifactBucketReadOnlyAccessPolicy
@@ -1214,6 +1222,14 @@ Resources:
           PolicyDocument:
             Statement:
               - Action: ecs:DescribeTasks
+                Effect: Allow
+                Resource: "*"
+            Version: "2012-10-17"
+        # Allow it to send task results
+        - PolicyName: SendTaskStatus
+          PolicyDocument:
+            Statement:
+              - Action: states:SendTask*
                 Effect: Allow
                 Resource: "*"
             Version: "2012-10-17"
@@ -1705,133 +1721,6 @@ Resources:
         - { Key: prx:cloudformation:stack-id, Value: !Ref AWS::StackId }
         - { Key: prx:ops:environment, Value: !Ref EnvironmentType }
         - { Key: prx:dev:application, Value: Porter }
-  # FTP Copy Output Lambda
-  FtpCopyTaskOutputLambdaFunction:
-    Type: AWS::Serverless::Function
-    Properties:
-      Architectures: [arm64]
-      CodeUri: src/lambdas/ftp-copy-task-output/
-      Description: >-
-        Formats the output of a transcode task result
-      Environment:
-        Variables:
-          ARTIFACT_BUCKET_NAME: !Ref ArtifactBucket
-      Handler: index.handler
-      Layers:
-        - !Ref AwsSdkJsV3LambdaLayer
-      MemorySize: 128
-      Policies:
-        - !Ref ArtifactBucketReadOnlyAccessPolicy
-      Runtime: nodejs24.x
-      Tags:
-        prx:meta:tagging-version: "2021-04-07"
-        prx:cloudformation:stack-name: !Ref AWS::StackName
-        prx:cloudformation:stack-id: !Ref AWS::StackId
-        prx:ops:environment: !Ref EnvironmentType
-        prx:dev:application: Porter
-      Timeout: 4
-  FtpCopyTaskOutputLambdaLogGroup:
-    Type: AWS::Logs::LogGroup
-    DeletionPolicy: Delete
-    UpdateReplacePolicy: Delete
-    Properties:
-      LogGroupName: !Sub /aws/lambda/${FtpCopyTaskOutputLambdaFunction}
-      RetentionInDays: 30
-      Tags:
-        - { Key: prx:meta:tagging-version, Value: "2021-04-07" }
-        - { Key: prx:cloudformation:stack-name, Value: !Ref AWS::StackName }
-        - { Key: prx:cloudformation:stack-id, Value: !Ref AWS::StackId }
-        - { Key: prx:ops:environment, Value: !Ref EnvironmentType }
-        - { Key: prx:dev:application, Value: Porter }
-  FtpCopyTaskOutputLambdaErrorAlarm:
-    Type: AWS::CloudWatch::Alarm
-    Condition: CreateProductionResources
-    Properties:
-      AlarmName: !Sub MINOR [Porter] FTP output Lambda <${EnvironmentTypeAbbreviation}> INVOCATION FAILED (${AWS::StackName})
-      AlarmDescription: >-
-        FTP copy output function has failed. This is generally an indication
-        that an FTP copy task failed. (Fargate FTP copy tasks cannot trigger
-        alarms themselves, so this Lambda function is used as a proxy.) The
-        Lambda logs should include the FTP error message.
-      ComparisonOperator: GreaterThanThreshold
-      EvaluationPeriods: 1
-      MetricName: LambdaFunctionsFailed
-      Namespace: AWS/States
-      Period: 60
-      Statistic: Sum
-      Tags:
-        - { Key: prx:meta:tagging-version, Value: "2021-04-07" }
-        - { Key: prx:cloudformation:stack-name, Value: !Ref AWS::StackName }
-        - { Key: prx:cloudformation:stack-id, Value: !Ref AWS::StackId }
-        - { Key: prx:ops:environment, Value: !Ref EnvironmentType }
-        - { Key: prx:dev:application, Value: Porter }
-      Threshold: 0
-      TreatMissingData: notBreaching
-      Dimensions:
-        - Name: LambdaFunctionArn
-          Value: !GetAtt FtpCopyTaskOutputLambdaFunction.Arn
-  # Transcode Output Lambda
-  TranscodeTaskOutputLambdaFunction:
-    Type: AWS::Serverless::Function
-    Properties:
-      Architectures: [arm64]
-      CodeUri: src/lambdas/transcode-task-output/
-      Description: >-
-        Formats the output of a transcode task result
-      Environment:
-        Variables:
-          ARTIFACT_BUCKET_NAME: !Ref ArtifactBucket
-      Handler: index.handler
-      Layers:
-        - !Ref AwsSdkJsV3LambdaLayer
-      MemorySize: 128
-      Policies:
-        - !Ref ArtifactBucketReadOnlyAccessPolicy
-      Runtime: nodejs24.x
-      Tags:
-        prx:meta:tagging-version: "2021-04-07"
-        prx:cloudformation:stack-name: !Ref AWS::StackName
-        prx:cloudformation:stack-id: !Ref AWS::StackId
-        prx:ops:environment: !Ref EnvironmentType
-        prx:dev:application: Porter
-      Timeout: 30
-  TranscodeTaskOutputLambdaLogGroup:
-    Type: AWS::Logs::LogGroup
-    DeletionPolicy: Delete
-    UpdateReplacePolicy: Delete
-    Properties:
-      LogGroupName: !Sub /aws/lambda/${TranscodeTaskOutputLambdaFunction}
-      RetentionInDays: 30
-      Tags:
-        - { Key: prx:meta:tagging-version, Value: "2021-04-07" }
-        - { Key: prx:cloudformation:stack-name, Value: !Ref AWS::StackName }
-        - { Key: prx:cloudformation:stack-id, Value: !Ref AWS::StackId }
-        - { Key: prx:ops:environment, Value: !Ref EnvironmentType }
-        - { Key: prx:dev:application, Value: Porter }
-  TranscodeTaskOutputLambdaErrorAlarm:
-    Type: AWS::CloudWatch::Alarm
-    Condition: CreateProductionResources
-    Properties:
-      AlarmName: !Sub MINOR [Porter] Transcode output Lambda <${EnvironmentTypeAbbreviation}> INVOCATION FAILED (${AWS::StackName})
-      AlarmDescription: >-
-        Transcode output format function has encountered an invocation error
-      ComparisonOperator: GreaterThanThreshold
-      EvaluationPeriods: 1
-      MetricName: LambdaFunctionsFailed
-      Namespace: AWS/States
-      Period: 60
-      Statistic: Sum
-      Tags:
-        - { Key: prx:meta:tagging-version, Value: "2021-04-07" }
-        - { Key: prx:cloudformation:stack-name, Value: !Ref AWS::StackName }
-        - { Key: prx:cloudformation:stack-id, Value: !Ref AWS::StackId }
-        - { Key: prx:ops:environment, Value: !Ref EnvironmentType }
-        - { Key: prx:dev:application, Value: Porter }
-      Threshold: 0
-      TreatMissingData: notBreaching
-      Dimensions:
-        - Name: LambdaFunctionArn
-          Value: !GetAtt TranscodeTaskOutputLambdaFunction.Arn
   # Image Manipulation Lambda
   ImageTransformLambdaIamRole:
     Type: AWS::IAM::Role
@@ -2435,10 +2324,8 @@ Resources:
                   - !GetAtt TranscriptionJobStartLambdaFunction.Arn
                   - !GetAtt TranscriptionJobResultsLambdaFunction.Arn
                   - !GetAtt CallbackLambdaFunction.Arn
-                  - !GetAtt TranscodeTaskOutputLambdaFunction.Arn
                   - !GetAtt NormalizeOutputLambdaFunction.Arn
                   - !GetAtt JobSerializerLambdaFunction.Arn
-                  - !GetAtt FtpCopyTaskOutputLambdaFunction.Arn
                   - !GetAtt SilenceDetectionLambdaFunction.Arn
                   - !GetAtt ToneDetectionLambdaFunction.Arn
                   - !GetAtt WaveformLambdaFunction.Arn
@@ -2523,10 +2410,8 @@ Resources:
         SourceTypeLambdaFunctionArn: !GetAtt SourceTypeLambdaFunction.Arn
         FtpCopyContainerName: !Sub ${AWS::StackName}-ftp-copy-container
         FtpCopyEcsTaskDefinitionArn: !Ref FtpCopyEcsTaskDefinition
-        FtpCopyTaskOutputLambdaFunctionArn: !GetAtt FtpCopyTaskOutputLambdaFunction.Arn
         TranscodeContainerName: !Sub ${AWS::StackName}-transcode-container
         TranscodeEcsTaskDefinitionArn: !Ref TranscodeEcsTaskDefinition
-        TranscodeTaskOutputLambdaFunctionArn: !GetAtt TranscodeTaskOutputLambdaFunction.Arn
         TranscriptionJobResultsLambdaFunctionArn: !GetAtt TranscriptionJobResultsLambdaFunction.Arn
         TranscriptionJobStartLambdaFunctionArn: !GetAtt TranscriptionJobStartLambdaFunction.Arn
         VpcPublicSubnet1: !Ref PublicSubnet1
