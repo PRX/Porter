@@ -123,7 +123,7 @@ begin
   # Add the probe results for this output to the task result
   probe_results = JSON.parse(stdout)
   task_result[:Duration] = probe_results["format"]["duration"].to_f * 1000
-  task_result[:Size] = probe_results["format"]["size"].to_f
+  task_result[:Size] = probe_results["format"]["size"].to_i
 
   # Record transcode duration in CloudWatch Metrics
   cloudwatch.put_metric_data({
