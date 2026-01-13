@@ -113,8 +113,7 @@ begin
     "-show_streams",
     "-show_format",
     "-i output.file",
-    "-print_format json",
-    "> ffprobe.json"
+    "-print_format json"
   ].join(" ")
 
   stdout, _stderr, status = Open3.capture3(ffprobe_cmd)
