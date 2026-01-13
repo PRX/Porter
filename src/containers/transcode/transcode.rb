@@ -120,7 +120,6 @@ begin
   raise StandardError, "FFmpeg probe failed" unless status.success?
 
   # Add the probe results for this output to the task result
-  puts stdout
   probe_results = JSON.parse(stdout)
   task_result[:Duration] = probe_results["format"]["duration"].to_f * 1000
   task_result[:Size] = probe_results["format"]["size"].to_i
