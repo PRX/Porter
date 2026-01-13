@@ -45,6 +45,8 @@ logger.debug(JSON.dump({
 }))
 
 begin
+  sf = Aws::States::Client.new
+
   task_result = {
     Task: ENV["STATE_MACHINE_TASK_TYPE"]
   }
