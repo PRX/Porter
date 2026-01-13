@@ -12,6 +12,8 @@
 # STATE_MACHINE_ARTIFACT_BUCKET_NAME
 # STATE_MACHINE_ARTIFACT_OBJECT_KEY
 # STATE_MACHINE_TASK_JSON
+# STATE_MACHINE_TASK_TOKEN
+# STATE_MACHINE_TASK_TYPE
 # Set elsewhere
 # FTP_LISTEN_PORT
 # PUBLIC_IP
@@ -22,6 +24,7 @@ $stderr.sync = true
 require "rubygems"
 require "bundler/setup"
 require "aws-sdk-cloudwatch"
+require "aws-sdk-states"
 require "net/sftp"
 require "net/ftp"
 require "logger"
@@ -42,6 +45,10 @@ logger.debug(JSON.dump({
 }))
 
 begin
+  task_result = {
+    Task: ENV["STATE_MACHINE_TASK_TYPE"]
+  }
+
   # Count the transfers in CloudWatch Metrics
   recorder =
     Recorder.new(
@@ -85,41 +92,23 @@ begin
     }
     used_mode = ftp_files.upload_file(uri, file, ftp_options)
 
-    if used_mode
-      logger.debug(JSON.dump({
-        msg: "Copying state machine results file",
-        bucket_name: bucket,
-        object_key: RESULT_KEY
-      }))
-      s3.put_object(
-        bucket: bucket,
-        key: RESULT_KEY,
-        body: JSON.dump({
-          # All properties listed here will be included in the task result for
-          # this task.
-          Mode: used_mode
-        })
-      )
-    end
+    task_result["Mode"] = used_mode if used_mode
   elsif uri.scheme == "sftp"
     sftp_files = SftpFiles.new(logger, recorder)
     sftp_files.upload_file(uri, file, md5: md5, timeout: timeout)
-
-    logger.debug(JSON.dump({
-      msg: "Copying state machine results file",
-      bucket_name: bucket,
-      object_key: RESULT_KEY
-    }))
-    s3.put_object(
-      bucket: bucket,
-      key: RESULT_KEY,
-      body: JSON.dump({
-        # All properties listed here will be included in the task result for
-        # this task.
-        # Foo: "bar"
-      })
-    )
   end
+
+  task_result["URL"] = task["URL"]
+
+  now = Time.now
+  task_result["Time"] = now.getutc.iso8601
+  task_result["Timestamp"] = now.to_i
+
+  puts JSON.dump({msg: "Task output", output: task_result})
+  sf.send_task_success({
+    task_token: ENV["STATE_MACHINE_TASK_TOKEN"],
+    output: task_result.to_json
+  })
 rescue => e
   puts e.class.name
   puts e.message
@@ -130,14 +119,11 @@ rescue => e
     bucket_name: bucket,
     object_key: RESULT_KEY
   }))
-  s3.put_object(
-    bucket: bucket,
-    key: RESULT_KEY,
-    body: JSON.dump({
-      Error: e.class.name,
-      ErrorMessage: e.message
-    })
-  )
+  sf.send_task_failure({
+    task_token: ENV["STATE_MACHINE_TASK_TOKEN"],
+    error: e.class.name,
+    cause: e.message
+  })
 end
 
 # Count the transfers in CloudWatch Metrics
