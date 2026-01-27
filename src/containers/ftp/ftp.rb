@@ -112,13 +112,12 @@ begin
     output: task_result.to_json
   })
 rescue => e
-  puts e.class.name
-  puts e.message
   puts e.backtrace
 
   logger.debug(JSON.dump({
-    msg: "Copying state machine results file for error",
-    bucket_name: bucket,
+    msg: "Sending task failure",
+    error: e.class.name,
+    message: e.message,
     object_key: RESULT_KEY
   }))
   sf.send_task_failure({
