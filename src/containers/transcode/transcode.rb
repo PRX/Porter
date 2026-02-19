@@ -101,7 +101,7 @@ begin
   puts "Calling FFmpeg"
   puts ffmpeg_cmd
 
-  ff_stdout, ff_stderr, ff_status = Open3.capture3(ffmpeg_cmd)
+  _ff_stdout, ff_stderr, ff_status = Open3.capture3(ffmpeg_cmd)
   raise StandardError, "FFmpeg failed" unless ff_status.success?
 
   end_time = Time.now.to_i
