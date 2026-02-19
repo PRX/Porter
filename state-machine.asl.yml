@@ -696,7 +696,7 @@ States:
                 Execution:
                   Id.$: "$$.Execution.Id"
                 # $.Error will exist when a state takes the Catch path (because
-                # of `ResultPath: "$.Error"`, and will generally be an object
+                # of `ResultPath: "$.Error"`) and will generally be an object
                 # like:
                 # { Error: "SomeError", Cause: "Something went wrong" }
                 Error.$: "$.Error"
