@@ -695,6 +695,10 @@ States:
                   Id.$: "$.Job.Id"
                 Execution:
                   Id.$: "$$.Execution.Id"
+                # $.Error will exist when a state takes the Catch path (because
+                # of `ResultPath: "$.Error"`, and will generally be an object
+                # like:
+                # { Error: "SomeError", Cause: "Something went wrong" }
                 Error.$: "$.Error"
           ResultPath: "$.Void" # The output of the iterator states is discarded
           OutputPath: "$.Task"

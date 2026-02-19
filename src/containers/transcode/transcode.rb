@@ -101,7 +101,8 @@ begin
   puts "Calling FFmpeg"
   puts ffmpeg_cmd
 
-  raise StandardError, "FFmpeg failed" unless system ffmpeg_cmd
+  ff_stdout, ff_stderr, ff_status = Open3.capture3(ffmpeg_cmd)
+  raise StandardError, "FFmpeg failed" unless ff_status.success?
 
   end_time = Time.now.to_i
   duration = end_time - start_time
@@ -116,11 +117,11 @@ begin
     "-print_format json"
   ].join(" ")
 
-  stdout, _stderr, status = Open3.capture3(ffprobe_cmd)
-  raise StandardError, "FFmpeg probe failed" unless status.success?
+  probe_stdout, probe_stderr, probe_status = Open3.capture3(ffprobe_cmd)
+  raise StandardError, "FFmpeg probe failed" unless probe_status.success?
 
   # Add the probe results for this output to the task result
-  probe_results = JSON.parse(stdout)
+  probe_results = JSON.parse(probe_stdout)
   task_result[:Duration] = probe_results["format"]["duration"].to_f * 1000
   task_result[:Size] = probe_results["format"]["size"].to_i
 
@@ -229,9 +230,11 @@ begin
 rescue => e
   puts JSON.dump({msg: "Task failed!", error: e.class.name, cause: e.message})
   puts e.backtrace
+  p ff_stderr
+  p probe_stderr
   sf.send_task_failure({
     task_token: ENV["STATE_MACHINE_TASK_TOKEN"],
     error: e.class.name,
-    cause: e.message
+    cause: [e.message, ff_stderr, probe_stderr].compact.join("\n\n")
   })
 end
