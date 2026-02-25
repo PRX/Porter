@@ -3,8 +3,8 @@ GEM
   specs:
     ast (2.4.3)
     aws-eventstream (1.4.0)
-    aws-partitions (1.1216.0)
-    aws-sdk-cloudwatch (1.130.0)
+    aws-partitions (1.1220.0)
+    aws-sdk-cloudwatch (1.131.0)
       aws-sdk-core (~> 3, >= 3.241.4)
       aws-sigv4 (~> 1.5)
     aws-sdk-core (3.242.0)
@@ -15,10 +15,10 @@ GEM
       bigdecimal
       jmespath (~> 1, >= 1.6.1)
       logger
-    aws-sdk-ec2 (1.603.0)
+    aws-sdk-ec2 (1.605.0)
       aws-sdk-core (~> 3, >= 3.241.4)
       aws-sigv4 (~> 1.5)
-    aws-sdk-ecs (1.220.0)
+    aws-sdk-ecs (1.221.0)
       aws-sdk-core (~> 3, >= 3.241.4)
       aws-sigv4 (~> 1.5)
     aws-sdk-kms (1.121.0)
@@ -119,11 +119,11 @@ DEPENDENCIES
 CHECKSUMS
   ast (2.4.3) sha256=954615157c1d6a382bc27d690d973195e79db7f55e9765ac7c481c60bdb4d383
   aws-eventstream (1.4.0) sha256=116bf85c436200d1060811e6f5d2d40c88f65448f2125bc77ffce5121e6e183b
-  aws-partitions (1.1216.0) sha256=86bd1ef7533caa4574578c9d8050531d58713553e560a9fd649fce0a60542da6
-  aws-sdk-cloudwatch (1.130.0) sha256=6dc17db4636ed8cbeeccf929d4fe21a894e8e11ed8384f6879bee454ca3feac8
+  aws-partitions (1.1220.0) sha256=1567da9ae45cba28e1d31f5e996928b2eb92ad01700000846d6d90043be8670f
+  aws-sdk-cloudwatch (1.131.0) sha256=85982bccf1002af67475062a617eef29dd580f871deb86f20a9a3b8b3497b873
   aws-sdk-core (3.242.0) sha256=c17b3003acc78d80c1a8437b285a1cfc5e4d7749ce7821cf3071e847535a29a0
-  aws-sdk-ec2 (1.603.0) sha256=7c076991e9ad142c1cd440314baf39a625ec7cf109ee85fad8d68c069519545b
-  aws-sdk-ecs (1.220.0) sha256=3ea7c0eb5c9e7abd67f9e393f1a5d05a7a1fe0a330d290f913d77977170d5676
+  aws-sdk-ec2 (1.605.0) sha256=76790715d0f13fe4c5431d9455b02123f9da4faab9403f8ed5a22f3b197ed629
+  aws-sdk-ecs (1.221.0) sha256=ac4eb38fc8ed8628252c89e9eb27c721f390f73bb2703fc672572d0bf5f0515e
   aws-sdk-kms (1.121.0) sha256=d563c1cfb4b5754efbc671216c8eca875338748adad0f42518c28dfa0a2d01e0
   aws-sdk-s3 (1.213.0) sha256=af596ccf544582406db610e95cc9099276eaf03142f57a2f30f76940e598e50d
   aws-sdk-states (1.104.0) sha256=c0e192c1f070001135b86f8215ddafb55c013180857cec96bfb1cb1a44e72202
