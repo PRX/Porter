@@ -9,7 +9,6 @@ updates:
       all-npm:
         patterns:
           - "*"
-        group-by: dependency-name
   - package-ecosystem: bundler
     directories:
       - "/"
@@ -22,7 +21,6 @@ updates:
       all-bundler:
         patterns:
           - "*"
-        group-by: dependency-name
   - package-ecosystem: github-actions
     directory: "/"
     schedule:
