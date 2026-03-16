@@ -8,6 +8,6 @@
 #
 # Runtimes are specified like "3.4", and do get updated over time, so these may
 # drift apart, requiring this value to be upated to match.
-ruby 3.4.7
+ruby 3.4.8
 
 nodejs 22.11.0 # Should roughly match the runtime installed in buildspec-acceptance.yml
