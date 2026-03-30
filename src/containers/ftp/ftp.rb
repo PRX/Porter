@@ -34,8 +34,6 @@ load "./sftp_files.rb"
 load "./s3_files.rb"
 load "./recorder.rb"
 
-RESULT_KEY = "#{ENV["STATE_MACHINE_EXECUTION_ID"]}/copy/ftp-result-#{ENV["STATE_MACHINE_TASK_INDEX"]}.json"
-
 logger = Logger.new($stdout)
 start_time = Time.now
 
@@ -117,8 +115,7 @@ rescue => e
   logger.debug(JSON.dump({
     msg: "Sending task failure",
     error: e.class.name,
-    message: e.message,
-    object_key: RESULT_KEY
+    message: e.message
   }))
   sf.send_task_failure({
     task_token: ENV["STATE_MACHINE_TASK_TOKEN"],
