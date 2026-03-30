@@ -1368,6 +1368,19 @@ Resources:
       ContentUri: lib/wavefile
       Description: wavefile NPM module
       RetentionPolicy: Delete
+  EasDetectLambdaLayer:
+    Type: AWS::Serverless::LayerVersion
+    Metadata:
+      BuildMethod: makefile
+    Properties:
+      CompatibleArchitectures:
+        - x86_64
+        - arm64
+      CompatibleRuntimes:
+        - nodejs24.x
+      ContentUri: lib/eas-detect
+      Description: eas-detect NPM module
+      RetentionPolicy: Delete
   FfmpegLambdaLayer:
     Type: AWS::Serverless::LayerVersion
     Metadata:
@@ -1958,6 +1971,63 @@ Resources:
         - { Key: prx:cloudformation:stack-id, Value: !Ref AWS::StackId }
         - { Key: prx:ops:environment, Value: !Ref EnvironmentType }
         - { Key: prx:dev:application, Value: Porter }
+  # EAS Detection Lambda
+  EasDetectionLambdaIamRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Statement:
+          - Action: sts:AssumeRole
+            Effect: Allow
+            Principal:
+              Service: lambda.amazonaws.com
+        Version: "2012-10-17"
+      ManagedPolicyArns:
+        - !Ref ArtifactBucketReadOnlyAccessPolicy
+        - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+      Tags:
+        - { Key: prx:meta:tagging-version, Value: "2021-04-07" }
+        - { Key: prx:cloudformation:stack-name, Value: !Ref AWS::StackName }
+        - { Key: prx:cloudformation:stack-id, Value: !Ref AWS::StackId }
+        - { Key: prx:ops:environment, Value: !Ref EnvironmentType }
+        - { Key: prx:dev:application, Value: Porter }
+  EasDetectionLambdaFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      Architectures: [x86_64]
+      CodeUri: src/lambdas/detect-eas/
+      Description: >-
+        Detect EAS tone timings in an audio file
+      EphemeralStorage:
+        Size: 4096
+      Handler: index.handler
+      Layers:
+        - !Ref AwsSdkJsV3LambdaLayer
+        - !Ref PorterUtilLambdaLayer
+        - !Ref EasDetectLambdaLayer
+      MemorySize: 3008
+      Role: !GetAtt EasDetectionLambdaIamRole.Arn
+      Runtime: nodejs24.x
+      Tags:
+        prx:meta:tagging-version: "2021-04-07"
+        prx:cloudformation:stack-name: !Ref AWS::StackName
+        prx:cloudformation:stack-id: !Ref AWS::StackId
+        prx:ops:environment: !Ref EnvironmentType
+        prx:dev:application: Porter
+      Timeout: 900
+  EasDetectionLambdaLogGroup:
+    Type: AWS::Logs::LogGroup
+    DeletionPolicy: Delete
+    UpdateReplacePolicy: Delete
+    Properties:
+      LogGroupName: !Sub /aws/lambda/${EasDetectionLambdaFunction}
+      RetentionInDays: 30
+      Tags:
+        - { Key: prx:meta:tagging-version, Value: "2021-04-07" }
+        - { Key: prx:cloudformation:stack-name, Value: !Ref AWS::StackName }
+        - { Key: prx:cloudformation:stack-id, Value: !Ref AWS::StackId }
+        - { Key: prx:ops:environment, Value: !Ref EnvironmentType }
+        - { Key: prx:dev:application, Value: Porter }
   # Wave Form Lambda
   WaveformLambdaIamRole:
     Type: AWS::IAM::Role
@@ -2400,6 +2470,7 @@ Resources:
         ImageTransformLambdaFunctionArn: !GetAtt ImageTransformLambdaFunction.Arn
         SilenceDetectionLambdaFunctionArn: !GetAtt SilenceDetectionLambdaFunction.Arn
         ToneDetectionLambdaFunctionArn: !GetAtt ToneDetectionLambdaFunction.Arn
+        EasDetectionLambdaFunctionArn: !GetAtt EasDetectionLambdaFunction.Arn
         WaveformLambdaFunctionArn: !GetAtt WaveformLambdaFunction.Arn
         IngestLambdaFunctionArn: !GetAtt IngestLambdaFunction.Arn
         InspectMediaLambdaFunctionArn: !GetAtt InspectMediaLambdaFunction.Arn

@@ -229,6 +229,9 @@ States:
               StringEquals: DetectTone
               Next: Detect Tone Task Handler
             - Variable: "$.Task.Type"
+              StringEquals: DetectEas
+              Next: Detect EAS Task Handler
+            - Variable: "$.Task.Type"
               StringEquals: Waveform
               Next: Waveform Task Handler
 
@@ -516,6 +519,30 @@ States:
           Type: Task
           Comment: Detects tones in audio files
           Resource: "${ToneDetectionLambdaFunctionArn}"
+          InputPath: "$"
+          Parameters:
+            Job:
+              Id.$: "$.Job.Id"
+            Artifact.$: "$.Artifact"
+            Task.$: "$.Task"
+          ResultPath: "$.TaskResult"
+          OutputPath: "$"
+          Next: TaskResult Callbacks Map
+          Retry:
+            - ErrorEquals:
+                - States.ALL
+              IntervalSeconds: 5
+              MaxAttempts: 3
+              BackoffRate: 2
+          Catch:
+            - ErrorEquals:
+                - States.ALL
+              ResultPath: "$.Error"
+              Next: TaskResult Error Callback Map
+        Detect EAS Task Handler:
+          Type: Task
+          Comment: Detects alert tones in audio files
+          Resource: "${EasDetectionLambdaFunctionArn}"
           InputPath: "$"
           Parameters:
             Job:
