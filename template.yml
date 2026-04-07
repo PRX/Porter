@@ -2017,6 +2017,8 @@ Resources:
         - !Ref AwsSdkJsV3LambdaLayer
         - !Ref PorterUtilLambdaLayer
         - !Ref EasDetectLambdaLayer
+        - !Ref FfmpegLambdaLayer
+        - !Ref MultimonNgLambdaLayer
       MemorySize: 3008
       Role: !GetAtt EasDetectionLambdaIamRole.Arn
       Runtime: nodejs24.x
