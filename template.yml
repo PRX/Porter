@@ -1423,6 +1423,18 @@ Resources:
         - nodejs24.x
       Description: mpck binary
       RetentionPolicy: Delete
+  MultimonNgLambdaLayer:
+    Type: AWS::Serverless::LayerVersion
+    Metadata:
+      BuildMethod: makefile
+    Properties:
+      CompatibleArchitectures:
+        - x86_64
+      ContentUri: lib/multimon-ng
+      CompatibleRuntimes:
+        - nodejs24.x
+      Description: multimon-ng binary
+      RetentionPolicy: Delete
   AudiowaveformLambdaLayer:
     Type: AWS::Serverless::LayerVersion
     Metadata:
