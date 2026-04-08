@@ -1756,9 +1756,9 @@
   integrity sha512-QNqXyfVS2wm9hweSYD2O7F0G06uurj9kZ96TRQE5Y9hU7+tgdZwIkbAKc5Ocy1HxEY2kuDQa6cQ1WRs/O5LFKA==
 
 "@prx.org/eas-detect@*":
-  version "0.1.0"
-  resolved "https://registry.yarnpkg.com/@prx.org/eas-detect/-/eas-detect-0.1.0.tgz#53acb91c8aa19805c76da975826f5c1a9c37ae02"
-  integrity sha512-rlGncv61H6sLoAQbnPVEIN2AxAIWVt0oEquTrwTOK98KSWiun+2DSqMYrNN3jv7Qp/UR7pipcnpYkMvE8W9gjg==
+  version "0.2.0"
+  resolved "https://registry.yarnpkg.com/@prx.org/eas-detect/-/eas-detect-0.2.0.tgz#eaba6ab93949c6fcf2779013541ac0206c41edba"
+  integrity sha512-lB978VGQreBByXby2Z++FjmutaFrl9xdmBGupYfDcCnUN4Egojb2RKYaeG/+hA820cKbfZ2PG44jmW9OprYyjA==
 
 "@sinclair/typebox@^0.34.0":
   version "0.34.47"
