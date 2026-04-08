@@ -31,6 +31,7 @@ Many input and output methods are supported to allow flexibility with other appl
     -   [Detect Silence](#detect-silence)
     -   [Detect Tone](#detect-tone)
     -   [Waveform](#waveform)
+    -   [Detect EAS](#detect-eas)
 -   [Serialized Jobs](#serialized-jobs)
 -   [S3 Read Permissions](#s3-read-permissions)
 -   [S3 Destination Permissions](#s3-destination-permissions)
@@ -995,6 +996,38 @@ Output:
     "Mode": "AWS/S3",
     "BucketName": "myBucket",
     "ObjectKey": "myWaveform.json",
+}
+```
+
+### Detect EAS
+
+`DetectEas` tasks analyze audio files and attempt to identify tones, signals and codes used by the [EAS](https://en.wikipedia.org/wiki/Emergency_Alert_System) and other warning systems.
+
+This functionality is intended to be a best-effort attempt at identifying such codes to prevent their inclusion in content where the should not be present. It is not intended to detect EAS alerts as part of a warning system and should not be relied on for any matters of health or safety.
+
+Details of the output format can be found in the [eas-detect](https://github.com/PRX/eas-detect/tree/main?tab=readme-ov-file#output-format) library.
+
+Setting `FSKMode` to `Sensitive` can yield better results in audio where the tone is buried under speech or music, but may produce more false positives.
+
+Input:
+
+```json
+{
+    "Type": "DetectEas",
+    "FSKMode": "Sensitive"
+}
+```
+
+Output:
+
+```json
+{
+    "Task": "DetectEas",
+    "EAS": {
+        "easDetected": true,
+        "matchType": "full",
+        "timecodes": []
+    }
 }
 ```
 
