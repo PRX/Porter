@@ -7,7 +7,8 @@ export const handler = async (event, context) => {
 
   const artifactTmpPath = await writeArtifact(event, context);
 
-  const result = await detect(artifactTmpPath);
+  const fskMode = event?.FSKMode === "Sensitive" ? "sensitive" : "default";
+  const result = await detect(artifactTmpPath, { fskMode });
 
   unlinkSync(artifactTmpPath);
 
