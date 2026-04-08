@@ -2412,6 +2412,7 @@ Resources:
                   - !GetAtt JobSerializerLambdaFunction.Arn
                   - !GetAtt SilenceDetectionLambdaFunction.Arn
                   - !GetAtt ToneDetectionLambdaFunction.Arn
+                  - !GetAtt EasDetectionLambdaFunction.Arn
                   - !GetAtt WaveformLambdaFunction.Arn
             Version: "2012-10-17"
         - PolicyName: PassRoleToEcsPolicy
