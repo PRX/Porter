@@ -7,7 +7,8 @@ export const handler = async (event, context) => {
 
   const artifactTmpPath = await writeArtifact(event, context);
 
-  const fskMode = event?.FSKMode === "Sensitive" ? "sensitive" : "default";
+  const fskMode =
+    event?.Task?.FSKMode === "Sensitive" ? "sensitive" : "default";
   const result = await detect(artifactTmpPath, { fskMode });
 
   unlinkSync(artifactTmpPath);
@@ -15,6 +16,6 @@ export const handler = async (event, context) => {
   return {
     Task: "DetectEas",
     EAS: result,
-    ...(fskMode === "sensitive" && { FSKMode: event?.FSKMode }),
+    ...(fskMode === "sensitive" && { FSKMode: event?.Task?.FSKMode }),
   };
 };
