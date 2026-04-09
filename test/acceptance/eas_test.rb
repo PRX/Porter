@@ -48,7 +48,7 @@ describe :porter do
           Tasks: [
             {
               Type: "DetectEas",
-              FSKMode: "Sensitve"
+              FSKMode: "Sensitive"
             }
           ]
         }
