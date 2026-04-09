@@ -1023,6 +1023,7 @@ Output:
 ```json
 {
     "Task": "DetectEas",
+    "FSKMode": "Sensitive",
     "EAS": {
         "easDetected": true,
         "matchType": "full",

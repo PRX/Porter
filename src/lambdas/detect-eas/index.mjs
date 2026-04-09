@@ -15,5 +15,6 @@ export const handler = async (event, context) => {
   return {
     Task: "DetectEas",
     EAS: result,
+    ...(fskMode === "sensitive" && { FSKMode: event?.FSKMode }),
   };
 };
