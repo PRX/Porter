@@ -4361,10 +4361,10 @@ pretty-format@30.3.0:
     ansi-styles "^5.2.0"
     react-is "^18.3.1"
 
-prx-wavefile@11.0.0-prx.4:
-  version "11.0.0-prx.4"
-  resolved "https://registry.yarnpkg.com/prx-wavefile/-/prx-wavefile-11.0.0-prx.4.tgz#7fbbd5222260783cefb1d4bf1d75efe495219b91"
-  integrity sha512-E7hKuq28vqfuq6qF4MpFMXohjohmraBFSC6LSKaOfjRGcrWuckmQeqJ7fQ46NV9I8ljMlu89Iw6ycfw8Rhg+sw==
+prx-wavefile@11.0.0-prx.5:
+  version "11.0.0-prx.5"
+  resolved "https://registry.yarnpkg.com/prx-wavefile/-/prx-wavefile-11.0.0-prx.5.tgz#090660af87b89018566f9d2b3de0b4366561ad4c"
+  integrity sha512-4zTKnHzHG2RFerEfw3hFhk54CmPsVB10byV+PV1Y3sRA7kl+h3IM3JPywedVP5LfTVEh637SjuM4djhU5bWh9A==
 
 pure-rand@^7.0.0:
   version "7.0.1"

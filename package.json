@@ -27,7 +27,7 @@
     "@tokenizer/s3": "*",
     "file-type": "*",
     "porter-util": "file:./lib/porter-util",
-    "prx-wavefile": "11.0.0-prx.4",
+    "prx-wavefile": "11.0.0-prx.5",
     "sharp": "*"
   },
   "devDependencies": {
