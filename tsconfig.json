@@ -5,7 +5,10 @@
     "jsx": "preserve",
     "checkJs": true,
     "noEmit": true,
-    "allowJs": true
+    "allowJs": true,
+    "types": ["node"],
+    "strictNullChecks": false,
+    "noImplicitAny": false
   },
   "exclude": ["node_modules", "**/node_modules/*"],
   "include": ["src/lambdas"]
