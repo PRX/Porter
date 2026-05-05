@@ -28,5 +28,5 @@ Also, add tests.
 In the meantime, tweak `.env` to create different conditions, then run `ftp`.
 
 ## ToDos
-* Tests!
-* ftps support
+- Tests!
+- ftps support
