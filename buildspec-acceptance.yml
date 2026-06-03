@@ -20,7 +20,7 @@ phases:
       # https://github.com/PRX/Infrastructure/blob/main/devops/porter-cd-pipeline.yml#L492
       # https://docs.aws.amazon.com/codebuild/latest/userguide/runtime-versions.html
       ruby: 3.4
-      nodejs: 22
+      nodejs: 24
   pre_build:
     commands:
       - make bootstrap
