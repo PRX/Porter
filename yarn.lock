@@ -1511,6 +1511,14 @@
     "@smithy/core" "^3.24.6"
     tslib "^2.6.2"
 
+"@smithy/util-stream@*":
+  version "4.6.6"
+  resolved "https://registry.yarnpkg.com/@smithy/util-stream/-/util-stream-4.6.6.tgz#d83ebf3f8166bc772a1650fae45f62d6dc3aebc6"
+  integrity sha512-g+hQ45sPnaIDU4CnaG8EufmeWwziQlcpIvPG6hVY7v65RcUgasM63J/WNfSsXEcZ1zFu9rS/r/qqfDxkIrQtDw==
+  dependencies:
+    "@smithy/core" "^3.24.6"
+    tslib "^2.6.2"
+
 "@smithy/util-utf8@^2.0.0":
   version "2.3.0"
   resolved "https://registry.yarnpkg.com/@smithy/util-utf8/-/util-utf8-2.3.0.tgz#dd96d7640363259924a214313c3cf16e7dd329c5"

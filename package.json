@@ -25,6 +25,7 @@
     "@prx.org/eas-detect": "*",
     "@smithy/node-http-handler": "*",
     "@smithy/util-retry": "*",
+    "@smithy/util-stream": "*",
     "@tokenizer/s3": "*",
     "file-type": "*",
     "porter-util": "file:./lib/porter-util",
