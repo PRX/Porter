@@ -130,7 +130,9 @@ export default async function main(event, artifact) {
 
   // S3 can perform a native copy of objects up to 5 GB using the CopyObject
   // API. For objects larger than 5 GB, a multi-part upload must be used.
-  if (head.ContentLength < 5000000000) {
+  // We use multi-part uploads for files over 50 MB
+  const MB = 10 ** 6; // 10^6 bytes = 1,000,000 B = 1 MB
+  if (head.ContentLength < 50 * MB) {
     // Copies an existing S3 object to the S3 artifact bucket.
     // https://docs.aws.amazon.com/AWSJavaScriptSDK/latest/AWS/S3.html#copyObject-property
     // https://docs.aws.amazon.com/AmazonS3/latest/API/RESTObjectCOPY.html
