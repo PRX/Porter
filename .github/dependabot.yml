@@ -4,6 +4,8 @@ updates:
     directory: "/"
     schedule:
       interval: monthly
+    cooldown:
+      default-days: 10
     open-pull-requests-limit: 10
     groups:
       all-npm:
@@ -16,6 +18,8 @@ updates:
       - "/src/containers/transcode"
     schedule:
       interval: weekly
+    cooldown:
+      default-days: 10
     open-pull-requests-limit: 10
     groups:
       all-bundler:
@@ -25,4 +29,6 @@ updates:
     directory: "/"
     schedule:
       interval: weekly
+    cooldown:
+      default-days: 4
     open-pull-requests-limit: 10
