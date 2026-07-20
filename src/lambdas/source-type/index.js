@@ -9,6 +9,8 @@ import { fileTypeFromTokenizer } from "file-type";
 const s3 = new S3Client({
   apiVersion: "2006-03-01",
   followRegionRedirects: true,
+  requestChecksumCalculation: "WHEN_REQUIRED",
+  responseChecksumValidation: "WHEN_REQUIRED",
 });
 
 /**
