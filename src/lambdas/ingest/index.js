@@ -55,6 +55,10 @@ export function filenameFromSource(source) {
     return source.ObjectName.split("/").pop();
   }
 
+  if (source.Mode === "Data/URI") {
+    return "artifact-from-data-uri";
+  }
+
   return false;
 }
 
