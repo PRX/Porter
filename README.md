@@ -742,13 +742,15 @@ The `HLS` task provides various presets, which determines the specific encoding 
 
 When running a task with a preset, the resulting variants will be labeled. Each preset publishes a list of possible labels that may be included in the set of variants. For example, a preset may publish a list like `["480P", "720P", "1080P]`, to indicate that it is able to generate video variants at those three frame sizes. Any given job using that preset may not produce all possible variants. For example, if the source file is 720p, the preset configuration may only generate variants that are equal-to-or-smaller-than the source media (i.e., the job would not produce an upscaled 1080p variant). See below for details about specific presets.
 
-The variant details in the task output will include the appropriate label, so an application receiving the callback can easily extract information about a specific, expected variant.
+Individual variant details in the task output will include the appropriate label, so an application receiving the callback can easily extract information about a specific, expected variant.
 
 #### AWS/S3
 
 The `BucketName` and `ObjectKeyPrefix` properties are required.
 
-For `AWS/S3` destinations, the contents of `Parameters` are set as options on [`#put_object`](https://docs.aws.amazon.com/sdk-for-ruby/v3/api/Aws/S3/Client.html#put_object-instance_method), but should be listed using the format of [`ALLOWED_UPLOAD_ARGS`](https://boto3.amazonaws.com/v1/documentation/api/latest/reference/customizations/s3.html) from Boto3's `S3Transfer` class. For example, to set the content disposition of the object, use `ContentDisposition`, not `content_disposition`.
+File names for all files created by the task will begin with the `ObjectKeyPrefix`. For example, `"ObjectKeyPrefix": "myPrefix/"` may produce a files like `myPrefix/720p.ts` and `myPrefix/1080p.ts`. The prefix must include a trailing slash if directory-style file names are desired (i.e., `"ObjectKeyPrefix": "myPrefix"`, without a trailing slash, would produce `myPrefix720p.ts`). Other than the prefix, the names of the resulting files are determined by the task, and reported via the task results callback.
+
+The contents of `Parameters` are set as options on [`#put_object`](https://docs.aws.amazon.com/sdk-for-ruby/v3/api/Aws/S3/Client.html#put_object-instance_method), but should be listed using the format of [`ALLOWED_UPLOAD_ARGS`](https://boto3.amazonaws.com/v1/documentation/api/latest/reference/customizations/s3.html) from Boto3's `S3Transfer` class. For example, to set the content disposition of the object, use `ContentDisposition`, not `content_disposition`.
 
 Any `Parameters` set on the task will be used for all objects that are created. The `content-type` for each variant will be set automatically; if `Parameters.ContentType` is set on the destination, the value will be ignored.
 
