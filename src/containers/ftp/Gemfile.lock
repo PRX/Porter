@@ -3,8 +3,8 @@ GEM
   specs:
     ast (2.4.3)
     aws-eventstream (1.4.0)
-    aws-partitions (1.1275.0)
-    aws-sdk-cloudwatch (1.144.0)
+    aws-partitions (1.1277.0)
+    aws-sdk-cloudwatch (1.145.0)
       aws-sdk-core (~> 3, >= 3.254.0)
       aws-sigv4 (~> 1.5)
     aws-sdk-core (3.254.0)
@@ -24,7 +24,7 @@ GEM
     aws-sdk-kms (1.130.0)
       aws-sdk-core (~> 3, >= 3.254.0)
       aws-sigv4 (~> 1.5)
-    aws-sdk-s3 (1.228.0)
+    aws-sdk-s3 (1.228.1)
       aws-sdk-core (~> 3, >= 3.254.0)
       aws-sdk-kms (~> 1)
       aws-sigv4 (~> 1.5)
@@ -119,13 +119,13 @@ DEPENDENCIES
 CHECKSUMS
   ast (2.4.3) sha256=954615157c1d6a382bc27d690d973195e79db7f55e9765ac7c481c60bdb4d383
   aws-eventstream (1.4.0) sha256=116bf85c436200d1060811e6f5d2d40c88f65448f2125bc77ffce5121e6e183b
-  aws-partitions (1.1275.0) sha256=8de74375cde5cd54b8f850be7afd834cdc28d08c7c5e348d17496489208fbda9
-  aws-sdk-cloudwatch (1.144.0) sha256=d10fe44e6adb663a3bdece80c6c10e22453a788433512e4d25f1b794072a54ae
+  aws-partitions (1.1277.0) sha256=40bda996876a45a60c43fbf489b04b46216e98c1814c1ac6453b942e0df6501e
+  aws-sdk-cloudwatch (1.145.0) sha256=9610208fa95145deec8ffb03f94ac048d3cc6c90d64c012c73443f0afd5117fa
   aws-sdk-core (3.254.0) sha256=ee3e3220b8468a3c9e59daba18e6ec897bf5c7ce8adcc0670cfa2f1f092112fe
   aws-sdk-ec2 (1.632.0) sha256=302ffcff58c9b630980862efc1132629cef537c486fd3bf1b8e73487e31e5e8b
   aws-sdk-ecs (1.242.0) sha256=c3ed5b9d7cc8f91a55c2918ab36a22cc388f0270c0f992ee3d9d1f96502806ae
   aws-sdk-kms (1.130.0) sha256=a2e83662ca31b77a2a19c9aa2f40a98165a67270c18c718fe1c70d0cbd7cd749
-  aws-sdk-s3 (1.228.0) sha256=9b0cd7655d32643e2969030acbfa67326afcd5fd91325239a4ad5f3365f0f801
+  aws-sdk-s3 (1.228.1) sha256=8865f6c6d068a9713a2aa6fe8107d11b0020a93cd5110b3994526bd9560f553e
   aws-sdk-states (1.110.0) sha256=2c0876e7e40d794b219d770c00856637daa4391f478a53390d5c6b8758440a25
   aws-sigv4 (1.12.1) sha256=6973ff95cb0fd0dc58ba26e90e9510a2219525d07620c8babeb70ef831826c00
   base64 (0.3.0) sha256=27337aeabad6ffae05c265c450490628ef3ebd4b67be58257393227588f5a97b
