@@ -56,9 +56,7 @@ begin
       Name: preset::NAME,
       PossibleLabels: preset::POSSIBLE_LABELS
     },
-    Assets: {
-
-    }
+    Assets: {}
   }
 
   start_time = Time.now.to_i
@@ -159,7 +157,7 @@ begin
     ].join(" "),
     "-hls_segment_filename hls_build/hls/%v.ts",
     "hls_build/hls/%v.m3u8"
-].join(" ")
+  ].join(" ")
 
   puts JSON.dump({
     msg: "Running FFmpeg",
