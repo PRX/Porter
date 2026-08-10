@@ -214,6 +214,9 @@ States:
               StringEquals: Transcode
               Next: Transcode Task Fargate Execution
             - Variable: "$.Task.Type"
+              StringEquals: HLS
+              Next: HLS Task Fargate Execution
+            - Variable: "$.Task.Type"
               StringEquals: Image
               Next: Image Task Handler
             - Variable: "$.Task.Type"
@@ -429,6 +432,78 @@ States:
                   - "${VpcPublicSubnet2}"
             PropagateTags: TASK_DEFINITION
             TaskDefinition: "${TranscodeEcsTaskDefinitionArn}"
+          ResultPath: "$.TaskResult"
+          OutputPath: "$"
+          Next: TaskResult Callbacks Map
+          Retry:
+            - ErrorEquals:
+                - States.ALL
+              IntervalSeconds: 15
+              MaxAttempts: 5
+              BackoffRate: 2
+          Catch:
+            - ErrorEquals:
+                - States.ALL
+              ResultPath: "$.Error"
+              Next: TaskResult Error Callback Map
+        HLS Task Fargate Execution:
+          Type: Task
+          Comment: Prepares an artifact for HLS delivery
+          Resource: arn:aws:states:::ecs:runTask.waitForTaskToken
+          InputPath: "$"
+          Parameters:
+            Cluster: "${EcsClusterArn}"
+            LaunchType: FARGATE
+            Overrides:
+              ContainerOverrides:
+                - Environment:
+                    - Name: STATE_MACHINE_ARN
+                      Value.$: "$$.StateMachine.Id"
+                    - Name: STATE_MACHINE_NAME
+                      Value.$: "$$.StateMachine.Name"
+                    - Name: STATE_MACHINE_EXECUTION_ID
+                      Value.$: "$$.Execution.Id"
+                    - Name: STATE_MACHINE_JOB_ID
+                      Value.$: "$.Job.Id"
+                    - Name: STATE_MACHINE_TASK_INDEX
+                      Value.$: States.Format('{}', $.TaskIndex)
+                    - Name: STATE_MACHINE_S3_DESTINATION_WRITER_ROLE
+                      Value: "${S3DestinationWriterRoleArn}"
+                    - Name: STATE_MACHINE_AWS_REGION
+                      Value: "${AwsRegion}"
+                    - Name: STATE_MACHINE_ARTIFACT_BUCKET_NAME
+                      Value.$: "$.Artifact.BucketName"
+                    - Name: STATE_MACHINE_ARTIFACT_OBJECT_KEY
+                      Value.$: "$.Artifact.ObjectKey"
+                    - Name: STATE_MACHINE_DESTINATION_JSON
+                      Value.$: States.JsonToString($.Task.Destination)
+                    - Name: STATE_MACHINE_DESTINATION_MODE
+                      Value.$: "$.Task.Destination.Mode"
+                    - Name: STATE_MACHINE_DESTINATION_BUCKET_NAME
+                      Value.$: "$.Task.Destination.BucketName"
+                    - Name: STATE_MACHINE_DESTINATION_OBJECT_KEY_PREFIX
+                      Value.$: "$.Task.Destination.ObjectKeyPrefix"
+                    # Guaranteed and required values should be listed and
+                    # accessed directly. Optional or conditional values can be
+                    # pulled from the JSON, to avoid state machine runtime
+                    # errors
+                    - Name: STATE_MACHINE_TASK_JSON
+                      Value.$: States.JsonToString($.Task)
+                    - Name: STATE_MACHINE_ARTIFACT_JSON
+                      Value.$: States.JsonToString($.Artifact)
+                    - Name: STATE_MACHINE_TASK_TOKEN
+                      Value.$: "$$.Task.Token"
+                    - Name: STATE_MACHINE_TASK_TYPE
+                      Value.$: "$.Task.Type"
+                  Name: "${TranscodeContainerName}"
+            NetworkConfiguration:
+              AwsvpcConfiguration:
+                AssignPublicIp: ENABLED
+                Subnets:
+                  - "${VpcPublicSubnet1}"
+                  - "${VpcPublicSubnet2}"
+            PropagateTags: TASK_DEFINITION
+            TaskDefinition: "${HlsEcsTaskDefinitionArn}"
           ResultPath: "$.TaskResult"
           OutputPath: "$"
           Next: TaskResult Callbacks Map

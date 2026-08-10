@@ -17,6 +17,8 @@ Parameters:
     Type: String
   FtpCopyEcsTaskDefinitionImage:
     Type: String
+  HlsEcsTaskDefinitionImage:
+    Type: String
   # Optional
   EnableSqsJobExecution:
     Type: String
@@ -1143,6 +1145,117 @@ Resources:
         - { Key: prx:ops:environment, Value: !Ref EnvironmentType }
         - { Key: prx:dev:application, Value: Porter }
       TaskRoleArn: !GetAtt TranscodeEcsTaskIamRole.Arn
+  # HSL ECS Service
+  HlsEcsTaskLogGroup:
+    Type: AWS::Logs::LogGroup
+    DeletionPolicy: Delete
+    UpdateReplacePolicy: Delete
+    Properties:
+      RetentionInDays: 14
+      Tags:
+        - { Key: prx:meta:tagging-version, Value: "2021-04-07" }
+        - { Key: prx:cloudformation:stack-name, Value: !Ref AWS::StackName }
+        - { Key: prx:cloudformation:stack-id, Value: !Ref AWS::StackId }
+        - { Key: prx:ops:environment, Value: !Ref EnvironmentType }
+        - { Key: prx:dev:application, Value: Porter }
+  HlsEcsTaskExecutionIamRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Statement:
+          - Action: sts:AssumeRole
+            Effect: Allow
+            Principal:
+              Service: ecs-tasks.amazonaws.com
+        Version: "2012-10-17"
+      Policies:
+        # https://docs.aws.amazon.com/AmazonECS/latest/developerguide/task_execution_IAM_role.html#task-execution-ecr-conditionkeys
+        # An alternative to the managed AmazonECSTaskExecutionRolePolicy, which
+        # restrics access to a specific VPC and VPC endpoint
+        - PolicyName: TaskExecutionPolicy
+          PolicyDocument:
+            Statement:
+              - Action:
+                  - ecr:GetAuthorizationToken
+                  - logs:CreateLogStream
+                  - logs:PutLogEvents
+                Effect: Allow
+                Resource: "*"
+              - Action:
+                  - ecr:BatchCheckLayerAvailability
+                  - ecr:GetDownloadUrlForLayer
+                  - ecr:BatchGetImage
+                Effect: Allow
+                Resource: "*"
+            Version: "2012-10-17"
+      Tags:
+        - { Key: prx:meta:tagging-version, Value: "2021-04-07" }
+        - { Key: prx:cloudformation:stack-name, Value: !Ref AWS::StackName }
+        - { Key: prx:cloudformation:stack-id, Value: !Ref AWS::StackId }
+        - { Key: prx:ops:environment, Value: !Ref EnvironmentType }
+        - { Key: prx:dev:application, Value: Porter }
+  HlsEcsTaskIamRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Statement:
+          - Action: sts:AssumeRole
+            Effect: Allow
+            Principal:
+              Service: ecs-tasks.amazonaws.com
+        Version: "2012-10-17"
+      Policies:
+        # Allow it to put CloudWatch Metrics
+        - PolicyName: PutCloudWatchMetric
+          PolicyDocument:
+            Statement:
+              - Action: cloudwatch:PutMetricData
+                Effect: Allow
+                Resource: "*"
+            Version: "2012-10-17"
+        # Allow it to send task results
+        - PolicyName: SendTaskStatus
+          PolicyDocument:
+            Statement:
+              - Action: states:SendTask*
+                Effect: Allow
+                Resource: "*"
+            Version: "2012-10-17"
+      ManagedPolicyArns:
+        # Transcode operations are always pulling FROM the artifact bucket
+        - !Ref ArtifactBucketReadOnlyAccessPolicy
+      Tags:
+        - { Key: prx:meta:tagging-version, Value: "2021-04-07" }
+        - { Key: prx:cloudformation:stack-name, Value: !Ref AWS::StackName }
+        - { Key: prx:cloudformation:stack-id, Value: !Ref AWS::StackId }
+        - { Key: prx:ops:environment, Value: !Ref EnvironmentType }
+        - { Key: prx:dev:application, Value: Porter }
+  HlsEcsTaskDefinition:
+    Type: AWS::ECS::TaskDefinition
+    Properties:
+      ContainerDefinitions:
+        - Essential: true
+          Image: !Ref HlsEcsTaskDefinitionImage
+          LogConfiguration:
+            LogDriver: awslogs
+            Options:
+              awslogs-group: !Ref HlsEcsTaskLogGroup
+              awslogs-region: !Ref AWS::Region
+              awslogs-stream-prefix: ecs
+          Name: !Sub ${AWS::StackName}-hls-container
+      Cpu: "16384"
+      ExecutionRoleArn: !GetAtt HlsEcsTaskExecutionIamRole.Arn
+      Memory: "32768"
+      NetworkMode: awsvpc
+      RequiresCompatibilities:
+        - FARGATE
+      Tags:
+        - { Key: prx:meta:tagging-version, Value: "2021-04-07" }
+        - { Key: prx:cloudformation:stack-name, Value: !Ref AWS::StackName }
+        - { Key: prx:cloudformation:stack-id, Value: !Ref AWS::StackId }
+        - { Key: prx:ops:environment, Value: !Ref EnvironmentType }
+        - { Key: prx:dev:application, Value: Porter }
+      TaskRoleArn: !GetAtt HlsEcsTaskIamRole.Arn
   # FTP Copy ECS Service
   FtpCopyEcsTaskLogGroup:
     Type: AWS::Logs::LogGroup
