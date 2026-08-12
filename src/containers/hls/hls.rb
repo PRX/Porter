@@ -135,7 +135,7 @@ begin
     "-maxrate:v:4 26750k",
     "-bufsize:v:4 50000k",
 
-    "-force_key_frames expr:gte(t,n_forced*2)",
+    # "-force_key_frames expr:gte(t,n_forced*2)",
     "-c:a aac",
     "-b:a 192k",
     "-ar 48000",
