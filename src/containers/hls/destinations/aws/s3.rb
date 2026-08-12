@@ -1,3 +1,5 @@
+require "aws-sdk-sts"
+
 def send_to_s3(filename)
   region = ENV["STATE_MACHINE_AWS_REGION"]
   destination = JSON.parse(ENV["STATE_MACHINE_DESTINATION_JSON"])
