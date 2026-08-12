@@ -2540,6 +2540,8 @@ Resources:
                   - !GetAtt TranscodeEcsTaskIamRole.Arn
                   - !GetAtt FtpCopyEcsTaskExecutionIamRole.Arn
                   - !GetAtt FtpCopyEcsTaskIamRole.Arn
+                  - !GetAtt HlsEcsTaskExecutionIamRole.Arn
+                  - !GetAtt HlsEcsTaskIamRole.Arn
             Version: "2012-10-17"
         # https://docs.aws.amazon.com/step-functions/latest/dg/ecs-iam.html
         - PolicyName: EcsSyncStaticResourcesPolicy
