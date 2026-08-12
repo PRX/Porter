@@ -177,9 +177,12 @@ begin
   raise StandardError, "FFmpeg failed" unless system(*ffmpeg_cmd)
 
   ["480", "720", "1080", "1440", "2160"].each do |size|
-    send_to_s3("#{size}.ts")
+    send_to_s3("#{size}p.ts")
     send_to_s3("#{size}.m3u8")
   end
+
+  send_to_s3("audio.m3u8")
+  send_to_s3("audio.m3u8")
 
   send_to_s3("index.m3u8")
 
