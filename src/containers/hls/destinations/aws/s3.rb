@@ -55,7 +55,7 @@ def send_to_s3(filename)
   end
 
   put_object_params[:bucket] = ENV["STATE_MACHINE_DESTINATION_BUCKET_NAME"]
-  put_object_params[:key] = "#{ENV["STATE_MACHINE_DESTINATION_OBJECT_KEY_PREFIX"]}/#{filename}"
+  put_object_params[:key] = [ENV["STATE_MACHINE_DESTINATION_OBJECT_KEY_PREFIX"], filename].join
 
   puts "Destination object key: #{put_object_params[:key]}"
 
