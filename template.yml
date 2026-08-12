@@ -126,6 +126,7 @@ Resources:
                 - !GetAtt TranscriptionJobResultsLambdaIamRole.Arn
                 - !GetAtt CallbackLambdaIamRole.Arn
                 - !GetAtt TranscodeEcsTaskIamRole.Arn
+                - !GetAtt HlsEcsTaskIamRole.Arn
         Version: "2012-10-17"
       ManagedPolicyArns:
         # Calls to s3.copyObject need read access to the artifact bucket
@@ -1112,6 +1113,7 @@ Resources:
         - !Ref ArtifactBucketReadOnlyAccessPolicy
         # Also writing metadata to the artifact bucket for the output Lambda
         # to read from
+        # TODO This is no longer necessary?
         - !Ref ArtifactBucketWriteAccessPolicy
       Tags:
         - { Key: prx:meta:tagging-version, Value: "2021-04-07" }
