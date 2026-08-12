@@ -2613,6 +2613,8 @@ Resources:
         FtpCopyEcsTaskDefinitionArn: !Ref FtpCopyEcsTaskDefinition
         TranscodeContainerName: !Sub ${AWS::StackName}-transcode-container
         TranscodeEcsTaskDefinitionArn: !Ref TranscodeEcsTaskDefinition
+        HlsContainerName: !Sub ${AWS::StackName}-hls-container
+        HlsEcsTaskDefinitionArn: !Ref HlsEcsTaskDefinition
         TranscriptionJobResultsLambdaFunctionArn: !GetAtt TranscriptionJobResultsLambdaFunction.Arn
         TranscriptionJobStartLambdaFunctionArn: !GetAtt TranscriptionJobStartLambdaFunction.Arn
         VpcPublicSubnet1: !Ref PublicSubnet1

@@ -495,7 +495,7 @@ States:
                       Value.$: "$$.Task.Token"
                     - Name: STATE_MACHINE_TASK_TYPE
                       Value.$: "$.Task.Type"
-                  Name: "${TranscodeContainerName}"
+                  Name: "${HlsContainerName}"
             NetworkConfiguration:
               AwsvpcConfiguration:
                 AssignPublicIp: ENABLED
