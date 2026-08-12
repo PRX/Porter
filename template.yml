@@ -2554,6 +2554,7 @@ Resources:
                 Resource:
                   - !Ref TranscodeEcsTaskDefinition
                   - !Ref FtpCopyEcsTaskDefinition
+                  - !Ref HlsEcsTaskDefinition
               - Action:
                   - ecs:StopTask
                   - ecs:DescribeTasks
