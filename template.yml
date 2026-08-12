@@ -1243,9 +1243,11 @@ Resources:
               awslogs-region: !Ref AWS::Region
               awslogs-stream-prefix: ecs
           Name: !Sub ${AWS::StackName}-hls-container
-      Cpu: "16384"
+      # Cpu: "16384"
+      Cpu: "4096"
       ExecutionRoleArn: !GetAtt HlsEcsTaskExecutionIamRole.Arn
-      Memory: "32768"
+      # Memory: "32768"
+      Memory: "8192"
       NetworkMode: awsvpc
       RequiresCompatibilities:
         - FARGATE
