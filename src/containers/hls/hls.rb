@@ -176,15 +176,43 @@ begin
 
   raise StandardError, "FFmpeg failed" unless system(*ffmpeg_cmd)
 
+  prefix = ENV["STATE_MACHINE_DESTINATION_OBJECT_KEY_PREFIX"]
+  task_result["Assets"]["Variants"] = []
+
   ["480", "720", "1080", "1440", "2160"].each do |size|
     send_to_s3("#{size}p.ts")
     send_to_s3("#{size}p.m3u8")
+    task_result["Assets"]["Variants"].push({
+      PresetLabel: "#{size}P",
+      Playlist: {
+        ObjectKey: [prefix, "#{size}p.m3u8"].join
+      },
+      Media: {
+        ObjectKey: [prefix, "#{size}p.ts"].join,
+        IncludesAudioStreams: false,
+        IncludesVideoStreams: true
+      }
+    })
   end
 
   send_to_s3("audio.m3u8")
   send_to_s3("audio.m3u8")
+  task_result["Assets"]["Variants"].push({
+    PresetLabel: "AUDIO",
+    Playlist: {
+      ObjectKey: [prefix, "audio.m3u8"].join
+    },
+    Media: {
+      ObjectKey: [prefix, "audio.ts"].join,
+      IncludesAudioStreams: true,
+      IncludesVideoStreams: false
+    }
+  })
 
   send_to_s3("index.m3u8")
+  task_result["Assets"]["MasterPlaylist"] = {
+    ObjectKey: [prefix, "index.m3u8"].join
+  }
 
   end_time = Time.now.to_i
   duration = end_time - start_time

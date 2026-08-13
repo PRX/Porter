@@ -26,6 +26,7 @@ Many input and output methods are supported to allow flexibility with other appl
     -   [Copy](#copy)
     -   [Image Transform](#image-transform)
     -   [Transcode](#transcode)
+    -   [HLS](#hls)
     -   [Transcribe](#transcribe)
     -   [WAV Wrap](#wav-wrap)
     -   [Detect Silence](#detect-silence)
