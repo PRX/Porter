@@ -1036,7 +1036,7 @@ States:
           Catch:
             - { ErrorEquals: [States.ALL], ResultPath: "$.Error", Next: TaskResult Error Callback Map }
 
-          Resource: "${HlsParallelOrchestratorLambdaFunctionArn}"
+          Resource: "${HlsParallelResultLambdaFunctionArn}"
           Parameters: # Payload provided to the Lambda function
             Job:
               Id.$: "$.Job.Id"
