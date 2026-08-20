@@ -346,6 +346,9 @@ States:
               StringEquals: HLS
               Next: HLS Task Fargate Execution
             - Variable: "$.Task.Type"
+              StringEquals: HLSParallel
+              Next: HLS Parallel Orchestrator
+            - Variable: "$.Task.Type"
               StringEquals: Image
               Next: Image Task Handler
             - Variable: "$.Task.Type"
