@@ -1042,6 +1042,7 @@ States:
               Id.$: "$.Job.Id"
             Artifact.$: "$.Artifact"
             Task.$: "$.Task"
+            Orchestration.$: "$.Orchestration"
             VariantResults.$: "$.VariantResults"
 
           # Add the return value of the Lambda function to the default state output
