@@ -19,6 +19,8 @@ Parameters:
     Type: String
   HlsEcsTaskDefinitionImage:
     Type: String
+  HlsParallelEcsTaskDefinitionImage:
+    Type: String
   # Optional
   EnableSqsJobExecution:
     Type: String
@@ -127,6 +129,7 @@ Resources:
                 - !GetAtt CallbackLambdaIamRole.Arn
                 - !GetAtt TranscodeEcsTaskIamRole.Arn
                 - !GetAtt HlsEcsTaskIamRole.Arn
+                - !GetAtt HlsParallelEcsTaskIamRole.Arn
         Version: "2012-10-17"
       ManagedPolicyArns:
         # Calls to s3.copyObject need read access to the artifact bucket
@@ -1147,7 +1150,7 @@ Resources:
         - { Key: prx:ops:environment, Value: !Ref EnvironmentType }
         - { Key: prx:dev:application, Value: Porter }
       TaskRoleArn: !GetAtt TranscodeEcsTaskIamRole.Arn
-  # HSL ECS Service
+  # HLS ECS Service
   HlsEcsTaskLogGroup:
     Type: AWS::Logs::LogGroup
     DeletionPolicy: Delete
@@ -1258,6 +1261,117 @@ Resources:
         - { Key: prx:ops:environment, Value: !Ref EnvironmentType }
         - { Key: prx:dev:application, Value: Porter }
       TaskRoleArn: !GetAtt HlsEcsTaskIamRole.Arn
+  # HLS Parallel ECS Service
+  HlsParallelEcsTaskLogGroup:
+    Type: AWS::Logs::LogGroup
+    DeletionPolicy: Delete
+    UpdateReplacePolicy: Delete
+    Properties:
+      RetentionInDays: 14
+      Tags:
+        - { Key: prx:meta:tagging-version, Value: "2021-04-07" }
+        - { Key: prx:cloudformation:stack-name, Value: !Ref AWS::StackName }
+        - { Key: prx:cloudformation:stack-id, Value: !Ref AWS::StackId }
+        - { Key: prx:ops:environment, Value: !Ref EnvironmentType }
+        - { Key: prx:dev:application, Value: Porter }
+  HlsParallelEcsTaskExecutionIamRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Statement:
+          - Action: sts:AssumeRole
+            Effect: Allow
+            Principal:
+              Service: ecs-tasks.amazonaws.com
+        Version: "2012-10-17"
+      Policies:
+        # https://docs.aws.amazon.com/AmazonECS/latest/developerguide/task_execution_IAM_role.html#task-execution-ecr-conditionkeys
+        # An alternative to the managed AmazonECSTaskExecutionRolePolicy, which
+        # restrics access to a specific VPC and VPC endpoint
+        - PolicyName: TaskExecutionPolicy
+          PolicyDocument:
+            Statement:
+              - Action:
+                  - ecr:GetAuthorizationToken
+                  - logs:CreateLogStream
+                  - logs:PutLogEvents
+                Effect: Allow
+                Resource: "*"
+              - Action:
+                  - ecr:BatchCheckLayerAvailability
+                  - ecr:GetDownloadUrlForLayer
+                  - ecr:BatchGetImage
+                Effect: Allow
+                Resource: "*"
+            Version: "2012-10-17"
+      Tags:
+        - { Key: prx:meta:tagging-version, Value: "2021-04-07" }
+        - { Key: prx:cloudformation:stack-name, Value: !Ref AWS::StackName }
+        - { Key: prx:cloudformation:stack-id, Value: !Ref AWS::StackId }
+        - { Key: prx:ops:environment, Value: !Ref EnvironmentType }
+        - { Key: prx:dev:application, Value: Porter }
+  HlsParallelEcsTaskIamRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Statement:
+          - Action: sts:AssumeRole
+            Effect: Allow
+            Principal:
+              Service: ecs-tasks.amazonaws.com
+        Version: "2012-10-17"
+      Policies:
+        # Allow it to put CloudWatch Metrics
+        - PolicyName: PutCloudWatchMetric
+          PolicyDocument:
+            Statement:
+              - Action: cloudwatch:PutMetricData
+                Effect: Allow
+                Resource: "*"
+            Version: "2012-10-17"
+        # Allow it to send task results
+        - PolicyName: SendTaskStatus
+          PolicyDocument:
+            Statement:
+              - Action: states:SendTask*
+                Effect: Allow
+                Resource: "*"
+            Version: "2012-10-17"
+      ManagedPolicyArns:
+        # Transcode operations are always pulling FROM the artifact bucket
+        - !Ref ArtifactBucketReadOnlyAccessPolicy
+      Tags:
+        - { Key: prx:meta:tagging-version, Value: "2021-04-07" }
+        - { Key: prx:cloudformation:stack-name, Value: !Ref AWS::StackName }
+        - { Key: prx:cloudformation:stack-id, Value: !Ref AWS::StackId }
+        - { Key: prx:ops:environment, Value: !Ref EnvironmentType }
+        - { Key: prx:dev:application, Value: Porter }
+  HlsParallelEcsTaskDefinition:
+    Type: AWS::ECS::TaskDefinition
+    Properties:
+      ContainerDefinitions:
+        - Essential: true
+          Image: !Ref HlsParallelEcsTaskDefinitionImage
+          LogConfiguration:
+            LogDriver: awslogs
+            Options:
+              awslogs-group: !Ref HlsParallelEcsTaskLogGroup
+              awslogs-region: !Ref AWS::Region
+              awslogs-stream-prefix: ecs
+          Name: !Sub ${AWS::StackName}-hls-parallel-container
+      Cpu: "16384"
+      ExecutionRoleArn: !GetAtt HlsParallelEcsTaskExecutionIamRole.Arn
+      Memory: "32768"
+      NetworkMode: awsvpc
+      RequiresCompatibilities:
+        - FARGATE
+      Tags:
+        - { Key: prx:meta:tagging-version, Value: "2021-04-07" }
+        - { Key: prx:cloudformation:stack-name, Value: !Ref AWS::StackName }
+        - { Key: prx:cloudformation:stack-id, Value: !Ref AWS::StackId }
+        - { Key: prx:ops:environment, Value: !Ref EnvironmentType }
+        - { Key: prx:dev:application, Value: Porter }
+      TaskRoleArn: !GetAtt HlsParallelEcsTaskIamRole.Arn
   # FTP Copy ECS Service
   FtpCopyEcsTaskLogGroup:
     Type: AWS::Logs::LogGroup
@@ -2218,6 +2332,117 @@ Resources:
         - { Key: prx:cloudformation:stack-id, Value: !Ref AWS::StackId }
         - { Key: prx:ops:environment, Value: !Ref EnvironmentType }
         - { Key: prx:dev:application, Value: Porter }
+  # HLS Parallel Orchestrator Lambda
+  HlsParallelOrchestratorLambdaIamRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Statement:
+          - Action: sts:AssumeRole
+            Effect: Allow
+            Principal:
+              Service: lambda.amazonaws.com
+        Version: "2012-10-17"
+      ManagedPolicyArns:
+        # - !Ref ArtifactBucketReadOnlyAccessPolicy
+        - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+      Tags:
+        - { Key: prx:meta:tagging-version, Value: "2021-04-07" }
+        - { Key: prx:cloudformation:stack-name, Value: !Ref AWS::StackName }
+        - { Key: prx:cloudformation:stack-id, Value: !Ref AWS::StackId }
+        - { Key: prx:ops:environment, Value: !Ref EnvironmentType }
+        - { Key: prx:dev:application, Value: Porter }
+  HlsParallelOrchestratorLambdaFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      Architectures: [arm64]
+      CodeUri: src/lambdas/hls-parallel/
+      Description: >-
+        Orchestrates parallel states for creating HLS variants
+      Handler: orchestrator.handler
+      Layers:
+        - !Ref AwsSdkJsV3LambdaLayer
+        - !Ref PorterUtilLambdaLayer
+      MemorySize: 128
+      Role: !GetAtt HlsParallelOrchestratorLambdaIamRole.Arn
+      Runtime: nodejs24.x
+      Tags:
+        prx:meta:tagging-version: "2021-04-07"
+        prx:cloudformation:stack-name: !Ref AWS::StackName
+        prx:cloudformation:stack-id: !Ref AWS::StackId
+        prx:ops:environment: !Ref EnvironmentType
+        prx:dev:application: Porter
+      Timeout: 8
+  HlsParallelOrchestratorLambdaLogGroup:
+    Type: AWS::Logs::LogGroup
+    DeletionPolicy: Delete
+    UpdateReplacePolicy: Delete
+    Properties:
+      LogGroupName: !Sub /aws/lambda/${HlsParallelOrchestratorLambdaFunction}
+      RetentionInDays: 30
+      Tags:
+        - { Key: prx:meta:tagging-version, Value: "2021-04-07" }
+        - { Key: prx:cloudformation:stack-name, Value: !Ref AWS::StackName }
+        - { Key: prx:cloudformation:stack-id, Value: !Ref AWS::StackId }
+        - { Key: prx:ops:environment, Value: !Ref EnvironmentType }
+        - { Key: prx:dev:application, Value: Porter }
+  # HLS Parallel Result Lambda
+  HlsParallelResultLambdaIamRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Statement:
+          - Action: sts:AssumeRole
+            Effect: Allow
+            Principal:
+              Service: lambda.amazonaws.com
+        Version: "2012-10-17"
+      ManagedPolicyArns:
+        # - !Ref ArtifactBucketReadOnlyAccessPolicy
+        - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+      Tags:
+        - { Key: prx:meta:tagging-version, Value: "2021-04-07" }
+        - { Key: prx:cloudformation:stack-name, Value: !Ref AWS::StackName }
+        - { Key: prx:cloudformation:stack-id, Value: !Ref AWS::StackId }
+        - { Key: prx:ops:environment, Value: !Ref EnvironmentType }
+        - { Key: prx:dev:application, Value: Porter }
+  HlsParallelResultLambdaFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      Architectures: [arm64]
+      CodeUri: src/lambdas/hls-parallel/
+      Description: >-
+        Processes results of parallel states for creating HLS variants
+      Environment:
+        Variables:
+          S3_DESTINATION_WRITER_ROLE: !GetAtt S3DestinationWriterRole.Arn
+      Handler: result.handler
+      Layers:
+        - !Ref AwsSdkJsV3LambdaLayer
+        - !Ref PorterUtilLambdaLayer
+      MemorySize: 128
+      Role: !GetAtt HlsParallelResultLambdaIamRole.Arn
+      Runtime: nodejs24.x
+      Tags:
+        prx:meta:tagging-version: "2021-04-07"
+        prx:cloudformation:stack-name: !Ref AWS::StackName
+        prx:cloudformation:stack-id: !Ref AWS::StackId
+        prx:ops:environment: !Ref EnvironmentType
+        prx:dev:application: Porter
+      Timeout: 30
+  HlsParallelResultLambdaLogGroup:
+    Type: AWS::Logs::LogGroup
+    DeletionPolicy: Delete
+    UpdateReplacePolicy: Delete
+    Properties:
+      LogGroupName: !Sub /aws/lambda/${HlsParallelResultLambdaFunction}
+      RetentionInDays: 30
+      Tags:
+        - { Key: prx:meta:tagging-version, Value: "2021-04-07" }
+        - { Key: prx:cloudformation:stack-name, Value: !Ref AWS::StackName }
+        - { Key: prx:cloudformation:stack-id, Value: !Ref AWS::StackId }
+        - { Key: prx:ops:environment, Value: !Ref EnvironmentType }
+        - { Key: prx:dev:application, Value: Porter }
   # Transcribe Start Lambda
   TranscriptionJobStartLambdaFunction:
     Type: AWS::Serverless::Function
@@ -2529,6 +2754,8 @@ Resources:
                   - !GetAtt ToneDetectionLambdaFunction.Arn
                   - !GetAtt EasDetectionLambdaFunction.Arn
                   - !GetAtt WaveformLambdaFunction.Arn
+                  - !GetAtt HlsParallelOrchestratorLambdaFunction.Arn
+                  - !GetAtt HlsParallelResultLambdaFunction.Arn
             Version: "2012-10-17"
         - PolicyName: PassRoleToEcsPolicy
           PolicyDocument:
@@ -2542,6 +2769,8 @@ Resources:
                   - !GetAtt FtpCopyEcsTaskIamRole.Arn
                   - !GetAtt HlsEcsTaskExecutionIamRole.Arn
                   - !GetAtt HlsEcsTaskIamRole.Arn
+                  - !GetAtt HlsParallelEcsTaskExecutionIamRole.Arn
+                  - !GetAtt HlsParallelEcsTaskIamRole.Arn
             Version: "2012-10-17"
         # https://docs.aws.amazon.com/step-functions/latest/dg/ecs-iam.html
         - PolicyName: EcsSyncStaticResourcesPolicy
@@ -2555,6 +2784,7 @@ Resources:
                   - !Ref TranscodeEcsTaskDefinition
                   - !Ref FtpCopyEcsTaskDefinition
                   - !Ref HlsEcsTaskDefinition
+                  - !Ref HlsParallelEcsTaskDefinition
               - Action:
                   - ecs:StopTask
                   - ecs:DescribeTasks
@@ -2605,6 +2835,8 @@ Resources:
         ToneDetectionLambdaFunctionArn: !GetAtt ToneDetectionLambdaFunction.Arn
         EasDetectionLambdaFunctionArn: !GetAtt EasDetectionLambdaFunction.Arn
         WaveformLambdaFunctionArn: !GetAtt WaveformLambdaFunction.Arn
+        HlsParallelOrchestratorLambdaFunctionArn: !GetAtt HlsParallelOrchestratorLambdaFunction.Arn
+        HlsParallelResultLambdaFunctionArn: !GetAtt HlsParallelResultLambdaFunction.Arn
         IngestLambdaFunctionArn: !GetAtt IngestLambdaFunction.Arn
         InspectMediaLambdaFunctionArn: !GetAtt InspectMediaLambdaFunction.Arn
         JobSerializerLambdaFunctionArn: !GetAtt JobSerializerLambdaFunction.Arn
@@ -2617,7 +2849,9 @@ Resources:
         TranscodeContainerName: !Sub ${AWS::StackName}-transcode-container
         TranscodeEcsTaskDefinitionArn: !Ref TranscodeEcsTaskDefinition
         HlsContainerName: !Sub ${AWS::StackName}-hls-container
+        HlsParallelContainerName: !Sub ${AWS::StackName}-hls-parallel-container
         HlsEcsTaskDefinitionArn: !Ref HlsEcsTaskDefinition
+        HlsParallelEcsTaskDefinitionArn: !Ref HlsParallelEcsTaskDefinition
         TranscriptionJobResultsLambdaFunctionArn: !GetAtt TranscriptionJobResultsLambdaFunction.Arn
         TranscriptionJobStartLambdaFunctionArn: !GetAtt TranscriptionJobStartLambdaFunction.Arn
         VpcPublicSubnet1: !Ref PublicSubnet1

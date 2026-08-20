@@ -1,0 +1,11 @@
+# frozen_string_literal: true
+
+source "https://rubygems.org"
+
+ruby file: ".tool-versions"
+
+gem "aws-sdk-cloudwatch", "~> 1"
+gem "aws-sdk-s3", "~> 1"
+gem "aws-sdk-states", "~> 1"
+gem "aws-sdk-sts", "~> 1"
+gem "nokogiri"

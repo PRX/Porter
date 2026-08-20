@@ -1,186 +1,315 @@
+QueryLanguage: JSONPath
 StartAt: Normalize Input
 States:
   # Start of pre-processing
   Normalize Input:
-    Comment: Normalizes input data
+    # Sample input:
+    #     { Job: { Id: "123", Source: {…}, Tasks: […], Callbacks: […] } }
+    # Sample output:
+    #     {
+    #       Job: { Id: "123", Source: {…}, Tasks: […], Callbacks: […], SerializedJobs: […], ExecutionTrace: […] },
+    #       State: "DONE"
+    #     }
     Type: Task
-    InputPath: "$"
-    Resource: "${NormalizeInputLambdaFunctionArn}"
-    Parameters:
-      Input.$: "$"
-      StateMachine:
-        Id.$: "$$.StateMachine.Id"
-    ResultPath: "$"
-    OutputPath: "$"
-    Next: JobReceived Callbacks Map
+    QueryLanguage: JSONPath
+    Comment: Normalizes execution input
     Retry:
-      - ErrorEquals:
-          - MissingTaskTypeError
-        MaxAttempts: 0
-      - ErrorEquals:
-          - States.ALL
-        IntervalSeconds: 1
-        MaxAttempts: 2
-        BackoffRate: 1
+      - { ErrorEquals: [MissingTaskTypeError], MaxAttempts: 0 } # Don't retry
+      - { ErrorEquals: [States.ALL], IntervalSeconds: 1, MaxAttempts: 2, BackoffRate: 1 }
     Catch:
-      - ErrorEquals:
-          - States.ALL
-        ResultPath: "$.Error"
-        Next: Normalize Input Catcher
+        # Add the error object to the state input before passing to the catcher
+      - { ErrorEquals: [States.ALL], ResultPath: "$.Error", Next: Normalize Input Catcher }
+
+    Resource: "${NormalizeInputLambdaFunctionArn}"
+    Parameters: # Payload provided to the Lambda function
+      Input.$: "$"
+
+    # Proceed down the happy path
+    Next: JobReceived Callbacks Map
   Normalize Input Catcher:
-    Comment: Add a parameter so normalize errors can be identified
+    # Sample input
+    #     {
+    #       Job: { Id: "123", Source: {…}, Tasks: […], Callbacks: […] },
+    #       Error: {…}
+    #     }
+    # Sample output:
+    #     {
+    #       Job: { Id: "123", Source: {…}, Tasks: […], Callbacks: […] },
+    #       Error: {…},
+    #       State: NORMALIZE_INPUT_ERROR
+    #     }
     Type: Pass
-    InputPath: "$"
+    QueryLanguage: JSONPath
+    Comment: Add a field to the state so normalize errors can be identified
+
+    # Set the output State to a static string value
     Result: NORMALIZE_INPUT_ERROR
     ResultPath: "$.State"
-    OutputPath: "$"
-    Next: Add Empty TaskResults
+
+    # Skip to post-processing
+    Next: Add Empty TasksMapResults
 
   JobReceived Callbacks Map:
+    # Sample input:
+    #     {
+    #       Job: { Id: "123", Source: {…}, Tasks: […], Callbacks: […], SerializedJobs: […], ExecutionTrace: […] },
+    #       State: "DONE"
+    #     }
+    # Sample output:
+    #     {
+    #       Job: { Id: "123", Source: {…}, Tasks: […], Callbacks: […], SerializedJobs: […], ExecutionTrace: […] },
+    #       State: "DONE",
+    #       JobReceivedMapResultNulls: [null, null]
+    #     }
     Type: Map
+    QueryLanguage: JSONPath
     Comment: Iterates over all callback endpoints to indicate the job was received
-    InputPath: "$"
-    ItemsPath: "$.Job.Callbacks"
-    Parameters:
-      Callback.$: "$$.Map.Item.Value"
+    # Retries are handled directly on the callback state in the iterator
+    # If callbacks fail, there's no point in having a fallback catcher, since we would only use that to send callbacks
+
+    # Add the result of the Map (an array containing the results of each iteration) to the default output
+    # (This field will not be shown in future sample state data)
+    ResultPath: "$.JobReceivedMapResultNulls"
+
+    # Proceed down the happy path
+    Next: Ingest Source File
+
+    MaxConcurrency: 0
+    ItemsPath: "$.Job.Callbacks" # This references post-InputPath input
+    ItemSelector: # Initial state for each ItemProcessor iteration
+      Callback.$: "$$.Map.Item.Value" # Reference the current item being processed from the array indicated by ItemsPath
       StateMachine:
         Id.$: "$$.StateMachine.Id"
       Execution:
         Id.$: "$$.Execution.Id"
-      Message: # The JSON of this value will be sent to endpoints
-        JobReceived:
+      Message: # The callbacks Lambda function uses the JSON of this value as the message sent to each callback
+        JobReceived: # The `JobReceived` field MUST be included in these callback messages per our published API
           Job:
             Id.$: "$.Job.Id"
           Execution:
             Id.$: "$$.Execution.Id"
           State: RECEIVED
-    ResultPath: "$.Void" # The output of the iterator states is discarded
-    OutputPath: "$"
-    Next: Ingest Source File
-    MaxConcurrency: 0
-    Iterator:
+    ItemProcessor:
+      ProcessorConfig: { Mode: INLINE }
       StartAt: Send JobReceived Callback
       States:
         Send JobReceived Callback:
+          # Sample input:
+          #     {
+          #       Callback: {…},
+          #       StateMachine: { Id: "wxyz" },
+          #       Execution: { Id: "a1b2c3" },
+          #       Message: {…}
+          #     }
+          # Sample output: (will become an element in JobReceivedMapResultNulls)
+          #     null
           Type: Task
+          QueryLanguage: JSONPath
           Comment: >-
             Sends a job received message for a single callback endpoint in
             the iterator
-          InputPath: "$"
           Resource: "${CallbackLambdaFunctionArn}"
-          ResultPath: "$"
-          OutputPath: "$"
-          End: true
           Retry:
-            - ErrorEquals:
-                - States.ALL
-              IntervalSeconds: 5
-              MaxAttempts: 3
-              BackoffRate: 2
+            - { ErrorEquals: [States.ALL], IntervalSeconds: 5, MaxAttempts: 3, BackoffRate: 2 }
+
+          End: true
 
   Ingest Source File:
-    Comment: Creates an artifact of the source file in S3
+    # Sample input:
+    #     {
+    #       Job: { Id: "123", Source: {…}, Tasks: […], Callbacks: […], SerializedJobs: […], ExecutionTrace: […] },
+    #       State: "DONE"
+    #     }
+    # Sample output:
+    #     {
+    #       Job: { Id: "123", Source: {…}, Tasks: […], Callbacks: […], SerializedJobs: […], ExecutionTrace: […] },
+    #       State: "DONE",
+    #       Artifact: {…}
+    #     }
     Type: Task
-    InputPath: "$"
-    Parameters:
+    QueryLanguage: JSONPath
+    Comment: Creates an artifact in S3 of the source file
+    Retry:
+      - { ErrorEquals: [UnknownSourceModeError], MaxAttempts: 0 } # Don't retry
+      - { ErrorEquals: [States.ALL], IntervalSeconds: 5, MaxAttempts: 3, BackoffRate: 2 }
+    Catch:
+      # Add the error object to the state input before passing to the catcher
+      - { ErrorEquals: [States.ALL], ResultPath: "$.Error", Next: Ingest Source File Catcher }
+
+    Resource: "${IngestLambdaFunctionArn}"
+    Parameters: # Payload provided to the Lambda function
       Job:
         Source.$: "$.Job.Source"
       Execution:
         Id.$: "$$.Execution.Id"
-    Resource: "${IngestLambdaFunctionArn}"
+
+    # Add the return value of the Lambda function to the default state output
     ResultPath: "$.Artifact"
-    OutputPath: "$"
+
+    # Proceed down the happy path
     Next: Detect Source File Type
-    Retry:
-      - ErrorEquals:
-          - UnknownSourceModeError
-        MaxAttempts: 0
-      - ErrorEquals:
-          - States.ALL
-        IntervalSeconds: 5
-        MaxAttempts: 3
-        BackoffRate: 2
-    Catch:
-      - ErrorEquals:
-          - States.ALL
-        ResultPath: "$.Error"
-        Next: Ingest Source File Catcher
   Ingest Source File Catcher:
-    Comment: Add a parameter so ingest errors can be identified
+    # Sample input:
+    #     {
+    #       Job: { Id: "123", Source: {…}, Tasks: […], Callbacks: […], SerializedJobs: […], ExecutionTrace: […] },
+    #       State: "DONE",
+    #       Error: {}
+    #     }
+    # Sample output:
+    #     {
+    #       Job: { Id: "123", Source: {…}, Tasks: […], Callbacks: […], SerializedJobs: […], ExecutionTrace: […] },
+    #       State: SOURCE_FILE_INGEST_ERROR,
+    #       Error: {}
+    #     }
     Type: Pass
-    InputPath: "$"
+    QueryLanguage: JSONPath
+    Comment: Add a field to the state so ingest errors can be identified
+
+    # Set the output State to a static string value
     Result: SOURCE_FILE_INGEST_ERROR
     ResultPath: "$.State"
-    OutputPath: "$"
-    Next: Add Empty TaskResults
+
+    # Skip to post-processing
+    Next: Add Empty TasksMapResults
 
   Detect Source File Type:
+    # Sample input:
+    #     {
+    #       Job: { Id: "123", Source: {…}, Tasks: […], Callbacks: […], SerializedJobs: […], ExecutionTrace: […] },
+    #       State: "DONE",
+    #       Artifact: {…}
+    #     }
+    # Sample output:
+    #     {
+    #       Job: { Id: "123", Source: {…}, Tasks: […], Callbacks: […], SerializedJobs: […], ExecutionTrace: […] },
+    #       State: "DONE",
+    #       Artifact: { …, Descriptor: {…} }
+    #     }
     Comment: Detects the file type of the source file artifact
     Type: Task
-    InputPath: "$"
-    Parameters:
-      Artifact.$: "$.Artifact"
-    Resource: "${SourceTypeLambdaFunctionArn}"
-    ResultPath: "$.Artifact.Descriptor"
-    OutputPath: "$"
-    Next: Tasks Map
+    QueryLanguage: JSONPath
     Retry:
-      - ErrorEquals:
-          - States.ALL
-        IntervalSeconds: 5
-        MaxAttempts: 3
-        BackoffRate: 2
+      - { ErrorEquals: [States.ALL], IntervalSeconds: 5, MaxAttempts: 3, BackoffRate: 2 }
     Catch:
-      - ErrorEquals:
-          - States.ALL
-        ResultPath: "$.Error"
-        Next: Detect Source File Type Catcher
+      # Add the error object to the state input before passing to the catcher
+      - { ErrorEquals: [States.ALL], ResultPath: "$.Error", Next: Detect Source File Type Catcher }
+
+    Resource: "${SourceTypeLambdaFunctionArn}"
+    Parameters: # Payload provided to the Lambda function
+      Artifact.$: "$.Artifact"
+
+    # Add the return value of the Lambda function to the default state output
+    ResultPath: "$.Artifact.Descriptor"
+
+    # Proceed down the happy path
+    Next: Tasks Map
   Detect Source File Type Catcher:
-    Comment: Add a parameter so type detection errors can be identified
+    # Sample input:
+    #     {
+    #       Job: { Id: "123", Source: {…}, Tasks: […], Callbacks: […], SerializedJobs: […], ExecutionTrace: […] },
+    #       State: "DONE",
+    #       Artifact: {…},
+    #       Error: {…}
+    #     }
+    # Sample output:
+    #     {
+    #       Job: { Id: "123", Source: {…}, Tasks: […], Callbacks: […], SerializedJobs: […], ExecutionTrace: […] },
+    #       State: "SOURCE_FILE_TYPE_DETECTION_ERROR",
+    #       Artifact: {…},
+    #       Error: {…}
+    #     }
     Type: Pass
-    InputPath: "$"
+    QueryLanguage: JSONPath
+    Comment: Add a field to the state so type detection errors can be identified
+
+    # Set the output State to a static string value
     Result: SOURCE_FILE_TYPE_DETECTION_ERROR
     ResultPath: "$.State"
-    OutputPath: "$"
-    Next: Add Empty TaskResults
+
+    # Skip to post-processing
+    Next: Add Empty TasksMapResults
   # End of pre-processing
 
   # Start of task execution
   Tasks Map:
-    # The key output of this map state is the TaskResults array. There will
-    # be one element for each task, whether it succeeded or failed. Successful
-    # task elements will have a `Task` property, and failed tasks will have a
-    # `Type` property.
+    # The `TasksMapResults` field in the output will be an array, where each element is the final output of an iteration of
+    # the map. For example, if a job has three tasks, `TasksMapResults` will be an array with three elements, regardless of
+    # whether those tasks succeeded or failed.
+    #
+    # For successful tasks (those that aren't caught for any reason), the element in the array will be an object with
+    # the task's results, like { Task: "___SOME_TASK__TYPE___", …other task-specifc fields }.
+    #
+    # For unsuccessful tasks (those caught for any reason), the element will be the original task definition from the
+    # job, such as { Type: "___SOME_TASK__TYPE___" }.
+    #
+    # Note the distinction between the `Task` and `Type` fields in the two different cases.
+    #
+    # Sample input:
+    #     {
+    #       Job: { Id: "123", Source: {…}, Tasks: […], Callbacks: […], SerializedJobs: […], ExecutionTrace: […] },
+    #       State: "DONE",
+    #       Artifact: { Descriptor: {…} }
+    #     }
+    # Sample output:
+    #     {
+    #       Job: { Id: "123", Source: {…}, Tasks: […], Callbacks: […], SerializedJobs: […], ExecutionTrace: […] },
+    #       State: "DONE",
+    #       Artifact: { Descriptor: {…} },
+    #       TasksMapResults: […]
+    #     }
     Type: Map
+    QueryLanguage: JSONPath
     Comment: Iterates over all tasks included in the job
-    InputPath: "$"
-    ItemsPath: "$.Job.Tasks"
-    Parameters:
-      # Parameters' value is what is passed to each state within the iterator,
-      # but each state decides independetly what is passed to its backing
-      # resource (Lambda, etc). For example, Callbacks is available to each
-      # state, but usually not passed into Lambdas, since most tasks don't
-      # utilize that data.
+    Catch:
+        # Add the error object to the state input before passing to the catcher
+      - { ErrorEquals: [States.ALL], ResultPath: "$.Error", Next: Tasks Map Catcher }
+
+    # Add the result of the Map (an array containing the results of each iteration) to the default output
+    ResultPath: "$.TasksMapResults"
+
+    # Proceed down the happy path
+    Next: JobResult Callback Map
+
+    MaxConcurrency: 0
+    ItemsPath: "$.Job.Tasks" # This references post-InputPath input
+    ItemSelector: # Initial state for each ItemProcessor iteration
       Job:
         Id.$: "$.Job.Id"
       Execution:
         Id.$: "$$.Execution.Id"
       Artifact.$: "$.Artifact"
       TaskIndex.$: "$$.Map.Item.Index"
-      Task.$: "$$.Map.Item.Value" # This value is a task defined in the job input, e.g., { "Type": "Copy" }
+      Task.$: "$$.Map.Item.Value" # This is the current iteration's element from Job.Tasks, e.g., { "Type": "Copy" }
       Callbacks.$: "$.Job.Callbacks"
-    ResultPath: "$.TaskResults"
-    OutputPath: "$"
-    Next: JobResult Callback Map
-    MaxConcurrency: 0
-    Iterator:
+    ItemProcessor:
+      ProcessorConfig: { Mode: INLINE }
       StartAt: Route Task By Type
       States:
+        # The general shape of a task map iteration is:
+        #   1. Route the task, based on Task.Type
+        #   2. One or more task-specific states that do the work
+        #   3. Send callbacks with the task results
+        # One of two callback states will send callbacks, depending on if the
+        # task was successful. Because these callback states are the final
+        # states of the iteration, their output is important: it will be what
+        # ends up in the map's ResultPath ($.TasksMapResults).
+        #
+        # All task-specific states, not just the final state, should catch
+        # to the TaskResult Error Callback Map.
+        #
+        # The ResultPath for states that are returning the final output of a
+        # task's operation (i.e., states immediately prior to the callbacks
+        # map) must be $.TaskResult, and their return value must be the
+        # expected standard task output (e.g., { Task: 'Copy' })
+
         Route Task By Type:
+          # Sample input/output: See map's ItemSelector
           Type: Choice
+          QueryLanguage: JSONPath
           Comment: >-
             For the current task being iterated, routes to the appropriate
             state
+
           Default: Unknown Task Type
           Choices:
             - Variable: "$.Task.Type"
@@ -241,79 +370,85 @@ States:
         # This is a no-op. No callbacks are sent, and any record of this task
         # will be filtered out of the job result callbacks
         Unknown Task Type:
+          # Sample output:
+          #     { Task: "UnknownTaskType" }
           Type: Pass
+          QueryLanguage: JSONPath
           Comment: Handles and blackholes tasks with an unknown type
-          End: true
-          ResultPath: "$"
-          Result:
-            Task: "Null"
 
-        # Task operations
-        # - The InputPath and OutputPath of all of these must be $, so that
-        #   all data is available to states down the line.
-        # - The ResultPath for states that are returning the final output of a
-        #   task's operation (i.e., states immediately prior to the callbacks
-        #   map) must be $.TaskResult, and their return value must be the
-        #   expected standard task output (e.g., { Task: 'Copy' })
-        # - All task operation states, not just the final state, should catch
-        #   to the TaskResult Error Callback Map.
+          # Even though we do no work for this task, we still return a
+          # reasonably-well-formed result from the ItemProcessor, which will
+          # appear in the Map state's results array.
+          Result:
+            Task: "UnknownTaskType"
+
+          End: true
+
         Inspect Task Handler:
+          # Sample input: See map's ItemSelector
+          # Sample output: ItemSelector with TaskResult
           Type: Task
+          QueryLanguage: JSONPath
           Comment: Inspects the artifact file
+          Retry:
+            - { ErrorEquals: [States.ALL], IntervalSeconds: 5, MaxAttempts: 3, BackoffRate: 2 }
+          Catch:
+            - { ErrorEquals: [States.ALL], ResultPath: "$.Error", Next: TaskResult Error Callback Map }
+
           Resource: "${InspectMediaLambdaFunctionArn}"
-          InputPath: "$"
-          Parameters:
+          Parameters: # Payload provided to the Lambda function
             Job:
               Id.$: "$.Job.Id"
             Artifact.$: "$.Artifact"
             Task.$: "$.Task"
+
+          # Add the return value of the Lambda function to the default state output
           ResultPath: "$.TaskResult"
-          OutputPath: "$"
+
           Next: TaskResult Callbacks Map
-          Retry:
-            - ErrorEquals:
-                - States.ALL
-              IntervalSeconds: 5
-              MaxAttempts: 3
-              BackoffRate: 2
-          Catch:
-            - ErrorEquals:
-                - States.ALL
-              ResultPath: "$.Error"
-              Next: TaskResult Error Callback Map
+
         Copy Task Handler:
+          # Sample input: See map's ItemSelector
+          # Sample output: ItemSelector with TaskResult
           Type: Task
+          QueryLanguage: JSONPath
           Comment: Copies the artifact
+          Retry:
+            - { ErrorEquals: [UnknownCopyTaskModeError], MaxAttempts: 0 }
+            - { ErrorEquals: [States.ALL], IntervalSeconds: 5, MaxAttempts: 3, BackoffRate: 2 }
+          Catch:
+            - { ErrorEquals: [States.ALL], ResultPath: "$.Error", Next: TaskResult Error Callback Map }
+
           Resource: "${CopyLambdaFunctionArn}"
-          InputPath: "$"
-          Parameters:
+          Parameters: # Payload provided to the Lambda function
             Job:
               Id.$: "$.Job.Id"
             Artifact.$: "$.Artifact"
             Task.$: "$.Task"
+
+          # Add the return value of the Lambda function to the default state output
           ResultPath: "$.TaskResult"
-          OutputPath: "$"
+
           Next: TaskResult Callbacks Map
-          Retry:
-            - ErrorEquals:
-                - UnknownCopyTaskModeError
-              MaxAttempts: 0
-            - ErrorEquals:
-                - States.ALL
-              IntervalSeconds: 5
-              MaxAttempts: 3
-              BackoffRate: 2
-          Catch:
-            - ErrorEquals:
-                - States.ALL
-              ResultPath: "$.Error"
-              Next: TaskResult Error Callback Map
+
         FTP Copy Task Fargate Execution:
+          # Sample input: See map's ItemSelector
+          # Sample output: ItemSelector with TaskResult
           Type: Task
+          QueryLanguage: JSONPath
           Comment: Sends artifact to an FTP destination
+          Retry:
+            - { ErrorEquals: [States.ALL], IntervalSeconds: 10, MaxAttempts: 3, BackoffRate: 2 }
+          Catch:
+            - { ErrorEquals: [States.ALL], ResultPath: "$.Error", Next: TaskResult Error Callback Map }
+
+          # Add the return value of the Fargate task to the default state output
+          ResultPath: "$.TaskResult"
+
+          Next: TaskResult Callbacks Map
+
           Resource: arn:aws:states:::ecs:runTask.waitForTaskToken
-          InputPath: "$"
-          Parameters:
+          Parameters: # Fargate RunTask request parameters
             Cluster: "${EcsClusterArn}"
             LaunchType: FARGATE
             Overrides:
@@ -352,26 +487,25 @@ States:
                   - "${VpcPublicSubnet2}"
             PropagateTags: TASK_DEFINITION
             TaskDefinition: "${FtpCopyEcsTaskDefinitionArn}"
-          ResultPath: "$.TaskResult"
-          OutputPath: "$"
-          Next: TaskResult Callbacks Map
-          Retry:
-            - ErrorEquals:
-                - States.ALL
-              IntervalSeconds: 10
-              MaxAttempts: 3
-              BackoffRate: 2
-          Catch:
-            - ErrorEquals:
-                - States.ALL
-              ResultPath: "$.Error"
-              Next: TaskResult Error Callback Map
+
         Transcode Task Fargate Execution:
+          # Sample input: See map's ItemSelector
+          # Sample output: ItemSelector with TaskResult
           Type: Task
+          QueryLanguage: JSONPath
           Comment: Transcodes multimedia artifact
+          Retry:
+            - { ErrorEquals: [States.ALL], IntervalSeconds: 15, MaxAttempts: 5, BackoffRate: 2 }
+          Catch:
+            - { ErrorEquals: [States.ALL], ResultPath: "$.Error", Next: TaskResult Error Callback Map }
+
+          # Add the return value of the Fargate task to the default state output
+          ResultPath: "$.TaskResult"
+
+          Next: TaskResult Callbacks Map
+
           Resource: arn:aws:states:::ecs:runTask.waitForTaskToken
-          InputPath: "$"
-          Parameters:
+          Parameters: # Fargate RunTask request parameters
             Cluster: "${EcsClusterArn}"
             LaunchType: FARGATE
             Overrides:
@@ -432,26 +566,213 @@ States:
                   - "${VpcPublicSubnet2}"
             PropagateTags: TASK_DEFINITION
             TaskDefinition: "${TranscodeEcsTaskDefinitionArn}"
-          ResultPath: "$.TaskResult"
-          OutputPath: "$"
-          Next: TaskResult Callbacks Map
-          Retry:
-            - ErrorEquals:
-                - States.ALL
-              IntervalSeconds: 15
-              MaxAttempts: 5
-              BackoffRate: 2
-          Catch:
-            - ErrorEquals:
-                - States.ALL
-              ResultPath: "$.Error"
-              Next: TaskResult Error Callback Map
-        HLS Task Fargate Execution:
+
+        Image Task Handler:
+          # Sample input: See map's ItemSelector
+          # Sample output: ItemSelector with TaskResult
           Type: Task
-          Comment: Prepares an artifact for HLS delivery
-          Resource: arn:aws:states:::ecs:runTask.waitForTaskToken
-          InputPath: "$"
+          QueryLanguage: JSONPath
+          Comment: Manipulates and converts image artifacts
+          Retry:
+            - { ErrorEquals: [States.ALL], IntervalSeconds: 5, MaxAttempts: 3, BackoffRate: 2 }
+          Catch:
+            - { ErrorEquals: [States.ALL], ResultPath: "$.Error", Next: TaskResult Error Callback Map }
+
+          Resource: "${ImageTransformLambdaFunctionArn}"
+          Parameters: # Payload provided to the Lambda function
+            Job:
+              Id.$: "$.Job.Id"
+            Artifact.$: "$.Artifact"
+            Task.$: "$.Task"
+
+          # Add the return value of the Lambda function to the default state output
+          ResultPath: "$.TaskResult"
+
+          Next: TaskResult Callbacks Map
+
+        WAV Wrap Task Handler:
+          # Sample input: See map's ItemSelector
+          # Sample output: ItemSelector with TaskResult
+          Type: Task
+          QueryLanguage: JSONPath
+          Comment: WAV wraps audio artifacts
+          Retry:
+            - { ErrorEquals: [States.ALL], IntervalSeconds: 5, MaxAttempts: 3, BackoffRate: 2 }
+          Catch:
+            - { ErrorEquals: [States.ALL], ResultPath: "$.Error", Next: TaskResult Error Callback Map }
+
+          Resource: "${WavWrapLambdaFunctionArn}"
+          Parameters: # Payload provided to the Lambda function
+            Job:
+              Id.$: "$.Job.Id"
+            Artifact.$: "$.Artifact"
+            Task.$: "$.Task"
+
+          # Add the return value of the Lambda function to the default state output
+          ResultPath: "$.TaskResult"
+
+          Next: TaskResult Callbacks Map
+
+        Detect Silence Task Handler:
+          # Sample input: See map's ItemSelector
+          # Sample output: ItemSelector with TaskResult
+          Type: Task
+          QueryLanguage: JSONPath
+          Comment: Detects silence in audio files
+          Retry:
+            - { ErrorEquals: [States.ALL], IntervalSeconds: 5, MaxAttempts: 3, BackoffRate: 2 }
+          Catch:
+            - { ErrorEquals: [States.ALL], ResultPath: "$.Error", Next: TaskResult Error Callback Map }
+
+          Resource: "${SilenceDetectionLambdaFunctionArn}"
+          Parameters: # Payload provided to the Lambda function
+            Job:
+              Id.$: "$.Job.Id"
+            Artifact.$: "$.Artifact"
+            Task.$: "$.Task"
+
+          # Add the return value of the Lambda function to the default state output
+          ResultPath: "$.TaskResult"
+
+          Next: TaskResult Callbacks Map
+
+        Detect Tone Task Handler:
+          # Sample input: See map's ItemSelector
+          # Sample output: ItemSelector with TaskResult
+          Type: Task
+          QueryLanguage: JSONPath
+          Comment: Detects tones in audio files
+          Retry:
+            - { ErrorEquals: [States.ALL], IntervalSeconds: 5, MaxAttempts: 3, BackoffRate: 2 }
+          Catch:
+            - { ErrorEquals: [States.ALL], ResultPath: "$.Error", Next: TaskResult Error Callback Map }
+
+          Resource: "${ToneDetectionLambdaFunctionArn}"
+          Parameters: # Payload provided to the Lambda function
+            Job:
+              Id.$: "$.Job.Id"
+            Artifact.$: "$.Artifact"
+            Task.$: "$.Task"
+
+          # Add the return value of the Lambda function to the default state output
+          ResultPath: "$.TaskResult"
+
+          Next: TaskResult Callbacks Map
+
+        Detect EAS Task Handler:
+          # Sample input: See map's ItemSelector
+          # Sample output: ItemSelector with TaskResult
+          Type: Task
+          QueryLanguage: JSONPath
+          Comment: Detects alert tones in audio files
+          Retry:
+            - { ErrorEquals: [States.ALL], IntervalSeconds: 5, MaxAttempts: 3, BackoffRate: 2 }
+          Catch:
+            - { ErrorEquals: [States.ALL], ResultPath: "$.Error", Next: TaskResult Error Callback Map }
+
+          Resource: "${EasDetectionLambdaFunctionArn}"
+          Parameters: # Payload provided to the Lambda function
+            Job:
+              Id.$: "$.Job.Id"
+            Artifact.$: "$.Artifact"
+            Task.$: "$.Task"
+
+          # Add the return value of the Lambda function to the default state output
+          ResultPath: "$.TaskResult"
+
+          Next: TaskResult Callbacks Map
+
+        Waveform Task Handler:
+          # Sample input: See map's ItemSelector
+          # Sample output: ItemSelector with TaskResult
+          Type: Task
+          QueryLanguage: JSONPath
+          Comment: Generates waveform data from audio files
+          Retry:
+            - { ErrorEquals: [States.ALL], IntervalSeconds: 5, MaxAttempts: 3, BackoffRate: 2 }
+          Catch:
+            - { ErrorEquals: [States.ALL], ResultPath: "$.Error", Next: TaskResult Error Callback Map }
+
+          Resource: "${WaveformLambdaFunctionArn}"
+          Parameters: # Payload provided to the Lambda function
+            Job:
+              Id.$: "$.Job.Id"
+            Artifact.$: "$.Artifact"
+            Task.$: "$.Task"
+
+          # Add the return value of the Lambda function to the default state output
+          ResultPath: "$.TaskResult"
+
+          Next: TaskResult Callbacks Map
+
+        Transcribe Task Job Start:
+          # Sample input: See map's ItemSelector
+          # Sample output: ItemSelector with TranscriptionJob
+          Type: Task
+          QueryLanguage: JSONPath
+          Comment: Transcribes audio from artifacts
+          Retry:
+            - { ErrorEquals: [InvalidTranscribeTaskInputError, UnknownDestinationModeError], MaxAttempts: 0 }
+            - { ErrorEquals: [States.ALL], IntervalSeconds: 5, MaxAttempts: 3, BackoffRate: 2 }
+          Catch:
+            - { ErrorEquals: [States.ALL], ResultPath: "$.Error", Next: TaskResult Error Callback Map }
+
+          Resource: arn:${AwsPartition}:states:::lambda:invoke.waitForTaskToken
           Parameters:
+            FunctionName: "${TranscriptionJobStartLambdaFunctionArn}"
+            Payload: # Payload provided to the Lambda function
+              Job:
+                Id.$: "$.Job.Id"
+              Execution:
+                Id.$: "$$.Execution.Id"
+              Artifact.$: "$.Artifact"
+              Task.$: "$.Task"
+              TaskIteratorIndex.$: "$.TaskIndex"
+              TaskToken.$: "$$.Task.Token"
+
+          # Add the return value of the Lambda function to the default state output
+          ResultPath: "$.TranscriptionJob"
+
+          Next: Transcribe Task Job Success Handler
+        Transcribe Task Job Success Handler:
+          # Sample input: ItemSelector with TranscriptionJob
+          # Sample output: Input with TaskResult
+          Type: Task
+          QueryLanguage: JSONPath
+          Comment: Formats the output of a transcribe task
+          Retry:
+            - { ErrorEquals: [States.ALL], IntervalSeconds: 5, MaxAttempts: 3, BackoffRate: 2 }
+          Catch:
+            - { ErrorEquals: [States.ALL], ResultPath: "$.Error", Next: TaskResult Error Callback Map }
+
+          Resource: "${TranscriptionJobResultsLambdaFunctionArn}"
+          Parameters: # Payload provided to the Lambda function
+            Task.$: "$.Task"
+            TranscriptionJob.$: "$.TranscriptionJob"
+
+          # Add the return value of the Lambda function to the default state output
+          ResultPath: "$.TaskResult"
+
+          Next: TaskResult Callbacks Map
+
+        HLS Task Fargate Execution:
+          # Sample input: See map's ItemSelector
+          # Sample output: ItemSelector with TaskResult
+          Type: Task
+          QueryLanguage: JSONPath
+          Comment: Prepares an artifact for HLS delivery
+          Retry:
+            - { ErrorEquals: [States.ALL], IntervalSeconds: 15, MaxAttempts: 5, BackoffRate: 2 }
+          Catch:
+            - { ErrorEquals: [States.ALL], ResultPath: "$.Error", Next: TaskResult Error Callback Map }
+
+          # Add the return value of the Fargate task to the default state output
+          ResultPath: "$.TaskResult"
+
+          Next: TaskResult Callbacks Map
+
+          Resource: arn:aws:states:::ecs:runTask.waitForTaskToken
+          Parameters: # Fargate RunTask request parameters
             Cluster: "${EcsClusterArn}"
             LaunchType: FARGATE
             Overrides:
@@ -504,225 +825,233 @@ States:
                   - "${VpcPublicSubnet2}"
             PropagateTags: TASK_DEFINITION
             TaskDefinition: "${HlsEcsTaskDefinitionArn}"
-          ResultPath: "$.TaskResult"
-          OutputPath: "$"
-          Next: TaskResult Callbacks Map
-          Retry:
-            - ErrorEquals:
-                - States.ALL
-              IntervalSeconds: 15
-              MaxAttempts: 5
-              BackoffRate: 2
-          Catch:
-            - ErrorEquals:
-                - States.ALL
-              ResultPath: "$.Error"
-              Next: TaskResult Error Callback Map
-        Image Task Handler:
+
+        HLS Parallel Orchestrator:
+          # Sample input: See map's ItemSelector
+          # Sample output:
+          #     {
+          #       Job: { Id: "123" },
+          #       Execution: { Id: "a1b2c3" },
+          #       Artifact: {…},
+          #       TaskIndex: 1/2/3/etc,
+          #       Task: {…},
+          #       Callbacks: {…},
+          #       Orchestration: {
+          #         Preset: {…},
+          #         VariantSubtasks: […]
+          #       }
+          #     }
           Type: Task
-          Comment: Manipulates and converts image artifacts
-          Resource: "${ImageTransformLambdaFunctionArn}"
-          InputPath: "$"
-          Parameters:
+          QueryLanguage: JSONPath
+          Comment: Orchestrates parallel states for creating HLS variants
+          Retry:
+            - { ErrorEquals: [UnknownPresetError], MaxAttempts: 0 } # Don't retry
+            - { ErrorEquals: [States.ALL], IntervalSeconds: 5, MaxAttempts: 3, BackoffRate: 2 }
+          Catch:
+            - { ErrorEquals: [States.ALL], ResultPath: "$.Error", Next: TaskResult Error Callback Map }
+
+          Resource: "${HlsParallelOrchestratorLambdaFunctionArn}"
+          Parameters: # Payload provided to the Lambda function
             Job:
               Id.$: "$.Job.Id"
             Artifact.$: "$.Artifact"
             Task.$: "$.Task"
-          ResultPath: "$.TaskResult"
-          OutputPath: "$"
-          Next: TaskResult Callbacks Map
+
+          # Add the return value of the Lambda function to the default state output
+          ResultPath: "$.Orchestration"
+
+          Next: HLS Parallel Workers Map
+        HLS Parallel Workers Map:
+          # Sample input:
+          #     {
+          #       Job: { Id: "123" },
+          #       Execution: { Id: "a1b2c3" },
+          #       Artifact: {…},
+          #       TaskIndex: 1/2/3/etc,
+          #       Task: {…},
+          #       Callbacks: {…},
+          #       Orchestration: {
+          #         Preset: {…},
+          #         VariantSubtasks: […]
+          #       }
+          #     }
+          # Sample output:
+          #     {
+          #       Job: { Id: "123" },
+          #       Execution: { Id: "a1b2c3" },
+          #       Artifact: {…},
+          #       TaskIndex: 1/2/3/etc,
+          #       Task: {…},
+          #       Callbacks: {…},
+          #       Orchestration: {
+          #         Preset: {…},
+          #         VariantSubtasks: […]
+          #       },
+          #       VariantResults: […]
+          #     }
+          Type: Map
+          QueryLanguage: JSONPath
+          Comment: >-
+            Iterates over all callback endpoints to send messages when tasks
+            are successful
           Retry:
-            - ErrorEquals:
-                - States.ALL
-              IntervalSeconds: 5
-              MaxAttempts: 3
-              BackoffRate: 2
+            - { ErrorEquals: [States.ALL], IntervalSeconds: 15, MaxAttempts: 5, BackoffRate: 2 }
           Catch:
-            - ErrorEquals:
-                - States.ALL
-              ResultPath: "$.Error"
-              Next: TaskResult Error Callback Map
-        WAV Wrap Task Handler:
+            - { ErrorEquals: [States.ALL], ResultPath: "$.Error", Next: TaskResult Error Callback Map }
+
+          # Add the result of the Map (an array containing the results of each iteration) to the default output.
+          ResultPath: "$.VariantResults"
+
+          Next: HLS Parallel Result Handler
+
+          MaxConcurrency: 0
+          ItemsPath: "$.Orchestration.VariantSubtasks"
+          ItemSelector: # Initial state for each ItemProcessor iteration
+            Task.$: "$.Task"
+            Artifact.$: "$.Artifact"
+            VariantSubtask.$: "$$.Map.Item.Value"
+          ItemProcessor:
+            ItemProcessor: { Mode: INLINE }
+            StartAt: HLS Parallel Worker
+            States:
+              HLS Parallel Worker:
+                # Sample input:
+                #     {
+                #       Task: {…},
+                #       Artifact: {…},
+                #       VariantSubtask: { PresetLabel: "___SOME_LABEL___", FFmpegCommandParts: […] }
+                #     }
+                # Sample output:
+                #     {
+                #       PresetLabel: "___SOME_PRESET_LABEL___",
+                #       Media: { ObjectKey: "___SOME_OBJECT_KEY___" },
+                #       M3U8: "…"
+                #     }
+                Type: Task
+                Comment: Prepares an artifact for HLS delivery
+                # No Retry or Catch; let the containing Map state handle that if this fails
+
+                ResultPath: "$.TaskResult"
+
+                End: true
+
+                Resource: arn:aws:states:::ecs:runTask.waitForTaskToken
+                Parameters: # Fargate RunTask request parameters
+                  Cluster: "${EcsClusterArn}"
+                  LaunchType: FARGATE
+                  Overrides:
+                    ContainerOverrides:
+                      - Environment:
+                          - Name: STATE_MACHINE_AWS_REGION
+                            Value: "${AwsRegion}"
+
+                          - Name: STATE_MACHINE_ARTIFACT_BUCKET_NAME
+                            Value.$: "$.Artifact.BucketName"
+                          - Name: STATE_MACHINE_ARTIFACT_OBJECT_KEY
+                            Value.$: "$.Artifact.ObjectKey"
+
+                          - Name: STATE_MACHINE_TASK_TOKEN
+                            Value.$: "$$.Task.Token"
+
+                          - Name: STATE_MACHINE_HLS_PRESET_LABEL
+                            Value.$: "$.VariantSubtask.PresetLabel"
+
+                          - Name: STATE_MACHINE_HLS_FILE_STEM
+                            Value.$: "$.VariantSubtask.FileStem"
+
+                          - Name: STATE_MACHINE_FFMPEG_COMMAND_PARTS_JSON
+                            Value.$: States.JsonToString($.VariantSubtask.FFmpegCommandParts)
+
+                          - Name: STATE_MACHINE_DESTINATION_JSON
+                            Value.$: States.JsonToString($.Task.Destination)
+                          - Name: STATE_MACHINE_S3_DESTINATION_WRITER_ROLE
+                            Value: "${S3DestinationWriterRoleArn}"
+
+                          # - Name: STATE_MACHINE_ARN
+                          #   Value.$: "$$.StateMachine.Id"
+                          # - Name: STATE_MACHINE_NAME
+                          #   Value.$: "$$.StateMachine.Name"
+                          # - Name: STATE_MACHINE_EXECUTION_ID
+                          #   Value.$: "$$.Execution.Id"
+                          # - Name: STATE_MACHINE_JOB_ID
+                          #   Value.$: "$.Job.Id"
+                          # - Name: STATE_MACHINE_TASK_INDEX
+                          #   Value.$: States.Format('{}', $.TaskIndex)
+                          # Guaranteed and required values should be listed and
+                          # accessed directly. Optional or conditional values can be
+                          # pulled from the JSON, to avoid state machine runtime
+                          # errors
+                          # - Name: STATE_MACHINE_TASK_JSON
+                          #   Value.$: States.JsonToString($.Task)
+                          # - Name: STATE_MACHINE_ARTIFACT_JSON
+                          #   Value.$: States.JsonToString($.Artifact)
+                          # - Name: STATE_MACHINE_TASK_TYPE
+                          #   Value.$: "$.Task.Type"
+                        Name: "${HlsParallelContainerName}"
+                  NetworkConfiguration:
+                    AwsvpcConfiguration:
+                      AssignPublicIp: ENABLED
+                      Subnets:
+                        - "${VpcPublicSubnet1}"
+                        - "${VpcPublicSubnet2}"
+                  PropagateTags: TASK_DEFINITION
+                  TaskDefinition: "${HlsParallelEcsTaskDefinitionArn}"
+        HLS Parallel Result Handler:
+          # Sample input:
+          #     {
+          #       Job: { Id: "123" },
+          #       Execution: { Id: "a1b2c3" },
+          #       Artifact: {…},
+          #       TaskIndex: 1/2/3/etc,
+          #       Task: {…},
+          #       Callbacks: {…},
+          #       Orchestration: {
+          #         Preset: {…},
+          #         VariantSubtasks: […]
+          #       },
+          #       VariantResults: […]
+          #     }
+          # Sample output:
+          #     {
+          #       Job: { Id: "123" },
+          #       Execution: { Id: "a1b2c3" },
+          #       Artifact: {…},
+          #       TaskIndex: 1/2/3/etc,
+          #       Task: {…},
+          #       Callbacks: {…},
+          #       Orchestration: {
+          #         Artifact: {…},
+          #         Preset: {…},
+          #         VariantSubtasks: […]
+          #       },
+          #       VariantResults: […],
+          #       TaskResult: {…}
+          #     }
           Type: Task
-          Comment: WAV wraps audio artifacts
-          Resource: "${WavWrapLambdaFunctionArn}"
-          InputPath: "$"
-          Parameters:
+          QueryLanguage: JSONPath
+          Comment: Output for parallelized HLS work
+          Retry:
+            - { ErrorEquals: [States.ALL], IntervalSeconds: 5, MaxAttempts: 3, BackoffRate: 2 }
+          Catch:
+            - { ErrorEquals: [States.ALL], ResultPath: "$.Error", Next: TaskResult Error Callback Map }
+
+          Resource: "${HlsParallelOrchestratorLambdaFunctionArn}"
+          Parameters: # Payload provided to the Lambda function
             Job:
               Id.$: "$.Job.Id"
             Artifact.$: "$.Artifact"
             Task.$: "$.Task"
+            VariantResults.$: "$.VariantResults"
+
+          # Add the return value of the Lambda function to the default state output
           ResultPath: "$.TaskResult"
-          OutputPath: "$"
+
           Next: TaskResult Callbacks Map
-          Retry:
-            - ErrorEquals:
-                - States.ALL
-              IntervalSeconds: 5
-              MaxAttempts: 3
-              BackoffRate: 2
-          Catch:
-            - ErrorEquals:
-                - States.ALL
-              ResultPath: "$.Error"
-              Next: TaskResult Error Callback Map
-        Detect Silence Task Handler:
-          Type: Task
-          Comment: Detects silence in audio files
-          Resource: "${SilenceDetectionLambdaFunctionArn}"
-          InputPath: "$"
-          Parameters:
-            Job:
-              Id.$: "$.Job.Id"
-            Artifact.$: "$.Artifact"
-            Task.$: "$.Task"
-          ResultPath: "$.TaskResult"
-          OutputPath: "$"
-          Next: TaskResult Callbacks Map
-          Retry:
-            - ErrorEquals:
-                - States.ALL
-              IntervalSeconds: 5
-              MaxAttempts: 3
-              BackoffRate: 2
-          Catch:
-            - ErrorEquals:
-                - States.ALL
-              ResultPath: "$.Error"
-              Next: TaskResult Error Callback Map
-        Detect Tone Task Handler:
-          Type: Task
-          Comment: Detects tones in audio files
-          Resource: "${ToneDetectionLambdaFunctionArn}"
-          InputPath: "$"
-          Parameters:
-            Job:
-              Id.$: "$.Job.Id"
-            Artifact.$: "$.Artifact"
-            Task.$: "$.Task"
-          ResultPath: "$.TaskResult"
-          OutputPath: "$"
-          Next: TaskResult Callbacks Map
-          Retry:
-            - ErrorEquals:
-                - States.ALL
-              IntervalSeconds: 5
-              MaxAttempts: 3
-              BackoffRate: 2
-          Catch:
-            - ErrorEquals:
-                - States.ALL
-              ResultPath: "$.Error"
-              Next: TaskResult Error Callback Map
-        Detect EAS Task Handler:
-          Type: Task
-          Comment: Detects alert tones in audio files
-          Resource: "${EasDetectionLambdaFunctionArn}"
-          InputPath: "$"
-          Parameters:
-            Job:
-              Id.$: "$.Job.Id"
-            Artifact.$: "$.Artifact"
-            Task.$: "$.Task"
-          ResultPath: "$.TaskResult"
-          OutputPath: "$"
-          Next: TaskResult Callbacks Map
-          Retry:
-            - ErrorEquals:
-                - States.ALL
-              IntervalSeconds: 5
-              MaxAttempts: 3
-              BackoffRate: 2
-          Catch:
-            - ErrorEquals:
-                - States.ALL
-              ResultPath: "$.Error"
-              Next: TaskResult Error Callback Map
-        Waveform Task Handler:
-          Type: Task
-          Comment: Generates waveform data from audio files
-          Resource: "${WaveformLambdaFunctionArn}"
-          InputPath: "$"
-          Parameters:
-            Job:
-              Id.$: "$.Job.Id"
-            Artifact.$: "$.Artifact"
-            Task.$: "$.Task"
-          ResultPath: "$.TaskResult"
-          OutputPath: "$"
-          Next: TaskResult Callbacks Map
-          Retry:
-            - ErrorEquals:
-                - States.ALL
-              IntervalSeconds: 5
-              MaxAttempts: 3
-              BackoffRate: 2
-          Catch:
-            - ErrorEquals:
-                - States.ALL
-              ResultPath: "$.Error"
-              Next: TaskResult Error Callback Map
-        Transcribe Task Job Start:
-          Type: Task
-          Comment: Transcribes audio from artifacts
-          Resource: arn:${AwsPartition}:states:::lambda:invoke.waitForTaskToken
-          InputPath: "$"
-          Parameters:
-            FunctionName: "${TranscriptionJobStartLambdaFunctionArn}"
-            Payload:
-              Job:
-                Id.$: "$.Job.Id"
-              Execution:
-                Id.$: "$$.Execution.Id"
-              Artifact.$: "$.Artifact"
-              Task.$: "$.Task"
-              TaskIteratorIndex.$: "$.TaskIndex"
-              TaskToken.$: "$$.Task.Token"
-          ResultPath: "$.TranscriptionJob"
-          OutputPath: "$"
-          Next: Transcribe Task Job Success Handler
-          Retry:
-            - ErrorEquals:
-                - InvalidTranscribeTaskInputError
-                - UnknownDestinationModeError
-              MaxAttempts: 0
-            - ErrorEquals:
-                - States.ALL
-              IntervalSeconds: 5
-              MaxAttempts: 3
-              BackoffRate: 2
-          Catch:
-            - ErrorEquals:
-                - States.ALL
-              ResultPath: "$.Error"
-              Next: TaskResult Error Callback Map
-        Transcribe Task Job Success Handler:
-          Type: Task
-          Comment: Formats the output of a transcribe task
-          Resource: "${TranscriptionJobResultsLambdaFunctionArn}"
-          InputPath: "$"
-          Parameters:
-            Task.$: "$.Task"
-            TranscriptionJob.$: "$.TranscriptionJob"
-          ResultPath: "$.TaskResult"
-          OutputPath: "$"
-          Next: TaskResult Callbacks Map
-          Retry:
-            - ErrorEquals:
-                - States.ALL
-              IntervalSeconds: 5
-              MaxAttempts: 3
-              BackoffRate: 2
-          Catch:
-            - ErrorEquals:
-                - States.ALL
-              ResultPath: "$.Error"
-              Next: TaskResult Error Callback Map
 
         # Task callbacks
-        # All tasks operations end up at one of these callback states,
+        # All valid tasks operations end up at one of these callback states,
         # depending on whether the task was successful or not. The value for
-        # a given task in the TaskResults array coming out of the Tasks Map
+        # a given task in the TasksMapResults array coming out of the Tasks Map
         # will be the output whichever of these callback states is used.
         #
         # For failed tasks, the task callback will include information about
@@ -732,58 +1061,97 @@ States:
         # The output for a successful task is the result of the task.
         # The output for a failed task is the original input task definition.
         TaskResult Callbacks Map:
+          # Sample input:
+          #     {
+          #       Job: { Id: "123" },
+          #       Execution: { Id: "a1b2c3" },
+          #       Artifact: {…},
+          #       TaskIndex: 1/2/3/etc,
+          #       Task: {…},
+          #       Callbacks: {…},
+          #       TaskResult: { Task: "___SOME_TASK_TYPE___", …other_task_fields },
+          #     }
+          # Sample output: (will become an element in TasksMapResults)
+          #     { Task: "___SOME_TASK_TYPE___", …other_result_fields }
           Type: Map
+          QueryLanguage: JSONPath
           Comment: >-
             Iterates over all callback endpoints to send messages when tasks
             are successful
-          InputPath: "$"
-          ItemsPath: "$.Callbacks"
-          Parameters:
+
+          # Add the result of the Map (an array containing the results of each iteration) to the default output
+          ResultPath: "$.TaskResultCallbacksMapResultNulls"
+
+          # Use the TaskResult as the final output of this iteration
+          OutputPath: "$.TaskResult"
+
+          End: true
+
+          MaxConcurrency: 0
+          ItemsPath: "$.Callbacks" # This references post-InputPath input
+          ItemSelector: # Initial state for each ItemProcessor iteration
             Callback.$: "$$.Map.Item.Value"
             StateMachine:
               Id.$: "$$.StateMachine.Id"
             Execution:
               Id.$: "$$.Execution.Id"
             TaskIteratorIndex.$: "$.TaskIndex"
-            Message: # The JSON of this value will be sent to endpoints
+            Message: # The callbacks Lambda function uses the JSON of this value as the message sent to each callback
               Task.$: "$.Task"
-              TaskResult:
+              TaskResult: # The `TaskResult` field MUST be included in these callback messages per our published API
                 Job:
                   Id.$: "$.Job.Id"
                 Execution:
                   Id.$: "$$.Execution.Id"
                 Result.$: "$.TaskResult"
-          ResultPath: "$.Void" # The output of the iterator states is discarded
-          OutputPath: "$.TaskResult"
-          End: true
-          MaxConcurrency: 0
-          Iterator:
+          ItemProcessor:
+            ProcessorConfig: { Mode: INLINE }
             StartAt: Send TaskResult Callback
             States:
               Send TaskResult Callback:
+                # Sample input: See map's ItemSelector
+                # Sample output: (will become an element in TaskResultCallbacksMapResultNulls)
+                #     null
                 Type: Task
                 Comment: >-
                   Sends a callback message to a single endpoint when tasks
                   are successful
-                InputPath: "$"
-                Resource: "${CallbackLambdaFunctionArn}"
-                ResultPath: "$"
-                OutputPath: "$"
-                End: true
                 Retry:
-                  - ErrorEquals:
-                      - States.ALL
-                    IntervalSeconds: 5
-                    MaxAttempts: 3
-                    BackoffRate: 2
+                  - { ErrorEquals: [States.ALL], IntervalSeconds: 5, MaxAttempts: 3, BackoffRate: 2 }
+
+                Resource: "${CallbackLambdaFunctionArn}"
+
+                End: true
         TaskResult Error Callback Map:
+          # Sample input:
+          #     {
+          #       Job: { Id: "123" },
+          #       Execution: { Id: "a1b2c3" },
+          #       Artifact: {…},
+          #       TaskIndex: 1/2/3/etc,
+          #       Task: {…},
+          #       Callbacks: {…},
+          #       Error: {…},
+          #     }
+          # Sample output: (will become an element in TasksMapResults)
+          #     { Type: "___SOME_TASK_TYPE___", …other_task_fields }
           Type: Map
+          QueryLanguage: JSONPath
           Comment: >-
             Iterates over all callback endpoints to send messages when tasks
             fail
-          InputPath: "$"
-          ItemsPath: "$.Callbacks"
-          Parameters:
+
+          # Add the result of the Map (an array containing the results of each iteration) to the default output
+          ResultPath: "$.TaskResultErrorCallbacksMapResultNulls"
+
+          # Use the Task as the final output of this iteration
+          OutputPath: "$.Task"
+
+          End: true
+
+          MaxConcurrency: 0
+          ItemsPath: "$.Callbacks" # This references post-InputPath input
+          ItemSelector: # Initial state for each ItemProcessor iteration
             Callback.$: "$$.Map.Item.Value"
             StateMachine:
               Id.$: "$$.StateMachine.Id"
@@ -792,7 +1160,7 @@ States:
             TaskIteratorIndex.$: "$.TaskIndex"
             Message: # The JSON of this value will be sent to endpoints
               Task.$: "$.Task"
-              TaskResult:
+              TaskResult: # The `TaskResult` field MUST be included in these callback messages per our published API
                 Job:
                   Id.$: "$.Job.Id"
                 Execution:
@@ -802,71 +1170,131 @@ States:
                 # like:
                 # { Error: "SomeError", Cause: "Something went wrong" }
                 Error.$: "$.Error"
-          ResultPath: "$.Void" # The output of the iterator states is discarded
-          OutputPath: "$.Task"
-          End: true
-          MaxConcurrency: 0
-          Iterator:
+          ItemProcessor:
+            ProcessorConfig: { Mode: INLINE }
             StartAt: Send TaskResult Error Callback
             States:
               Send TaskResult Error Callback:
+                # Sample input: See map's ItemSelector
+                # Sample output: (will become an element in TaskResultErrorCallbacksMapResultNulls)
+                #     null
                 Type: Task
                 Comment: >-
                   Sends a callback message to a single endpoint when tasks
                   fail
-                InputPath: "$"
-                Resource: "${CallbackLambdaFunctionArn}"
-                ResultPath: "$"
-                OutputPath: "$"
-                End: true
                 Retry:
-                  - ErrorEquals:
-                      - States.ALL
-                    IntervalSeconds: 5
-                    MaxAttempts: 3
-                    BackoffRate: 2
-    Catch:
-      - ErrorEquals:
-          - States.ALL
-        ResultPath: "$.Error"
-        Next: Tasks Map Catcher
+                  - { ErrorEquals: [States.ALL], IntervalSeconds: 5, MaxAttempts: 3, BackoffRate: 2 }
+
+                Resource: "${CallbackLambdaFunctionArn}"
+
+                End: true
   Tasks Map Catcher:
-    Comment: >-
-      Add a parameter so task map errors can be identified. Is NOT responsible
-      for catching individual task execution errors (like if a Copy task fails)
+    # This state generally doesn't come into play if a task within the Task Map fails, as those failures are caught
+    # within the map itself. Certain conditions can cause the Tasks Map state to fail hard enough to end up here,
+    # though.
+    #
+    # Sample input:
+    #     {
+    #       Job: { Id: "123", Source: {…}, Tasks: […], Callbacks: […], SerializedJobs: […], ExecutionTrace: […] },
+    #       State: "DONE",
+    #       Artifact: { Descriptor: {…} },
+    #       Error: {…}
+    #     }
+    # Sample output:
+    #     {
+    #       Job: { Id: "123", Source: {…}, Tasks: […], Callbacks: […], SerializedJobs: […], ExecutionTrace: […] },
+    #       State: "ITERATOR_ERROR",
+    #       Artifact: { Descriptor: {…} },
+    #       Error: {…}
+    #     }
     Type: Pass
-    InputPath: "$"
+    QueryLanguage: JSONPath
+    Comment: >-
+      Add a field so task map errors can be identified. Is NOT responsible
+      for catching individual task execution errors (like if a Copy task fails)
+
+    # Set the output State to a static string value
     Result: ITERATOR_ERROR
     ResultPath: "$.State"
-    OutputPath: "$"
-    Next: Add Empty TaskResults
+
+    # Proceed to post-processing through the failure path
+    Next: Add Empty TasksMapResults
   # End of task execution
 
-  # States below this will expect $.TaskResults to exist
-  Add Empty TaskResults:
-    Comment: >-
-      Add a TaskResults key with an empty array value, for cases where the task
-      iterator does not succeed and it's not otherwise added
+  Add Empty TasksMapResults:
+    # Sample input:
+    #     {
+    #       Job: { Id: "123", Source: {…}, Tasks: […], Callbacks: […], SerializedJobs: […], ExecutionTrace: […] },
+    #       State: "___SOME_ERROR___",
+    #       Error: {…}
+    #       …may contain other fields
+    #     }
+    # Sample output:
+    #     {
+    #       Job: { Id: "123", Source: {…}, Tasks: […], Callbacks: […], SerializedJobs: […], ExecutionTrace: […] },
+    #       State: "___SOME_ERROR___",
+    #       Error: {…},
+    #       TasksMapResults: [],
+    #       …may contain other fields
+    #     }
     Type: Pass
-    InputPath: "$"
+    QueryLanguage: JSONPath
+    Comment: >-
+      Add a TasksMapResults key with an empty array value, for cases where the task
+      iterator does not succeed and it's not otherwise added
+
+    # Set the TasksMapResults field in the state to an empty array
     Result: []
-    ResultPath: "$.TaskResults"
-    OutputPath: "$"
+    ResultPath: "$.TasksMapResults"
+
     Next: JobResult Callback Map
+
+  # States below here will expect $.TasksMapResults to exist on their input
 
   # Start of post-processing
   JobResult Callback Map:
+    # Sample input:
+    #     {
+    #       Job: { Id: "123", Source: {…}, Tasks: […], Callbacks: […], SerializedJobs: […], ExecutionTrace: […] },
+    #       State: "___SOME_STATE___",
+    #       TasksMapResults: […],
+    #
+    #       May contain…
+    #       Error: {…},
+    #       …other fields
+    #     }
+    # Sample output:
+    #     {
+    #       Job: { Id: "123", Source: {…}, Tasks: […], Callbacks: […], SerializedJobs: […], ExecutionTrace: […] },
+    #       State: "___SOME_STATE___",
+    #       TasksMapResults: […],
+    #       JobResultMapResultNulls: [null, null]
+    #
+    #       May contain…
+    #       Error: {…},
+    #       …other fields
+    #     }
     Type: Map
+    QueryLanguage: JSONPath
     Comment: Iterates over all callback endpoints to send job results
-    InputPath: "$"
-    ItemsPath: "$.Job.Callbacks"
-    Parameters:
+    # Retries are handled directly on the callback state in the iterator
+    # If callbacks fail, there's no point in having a fallback catcher, since we would only use that to send callbacks
+
+    # Add the result of the Map (an array containing the results of each iteration) to the default output
+    # (This field will not be shown in future sample state data)
+    ResultPath: "$.JobResultMapResultNulls"
+
+    Next: Serialized Jobs Map
+
+    MaxConcurrency: 0
+    ItemsPath: "$.Job.Callbacks" # This references post-InputPath input
+    ItemSelector: # Initial state for each ItemProcessor iteration
       Callback.$: "$$.Map.Item.Value"
       StateMachine:
         Id.$: "$$.StateMachine.Id"
       Execution:
         Id.$: "$$.Execution.Id"
-      Message: # The JSON of this value will be sent to endpoints
+      Message: # The callbacks Lambda function uses the JSON of this value as the message sent to each callback
         JobResult:
           Job:
             Id.$: "$.Job.Id"
@@ -875,76 +1303,128 @@ States:
           State.$: "$.State"
           # Task/Type = Null elements are filtered out.
           # Successful tasks will have a Task property
-          TaskResults.$: "$.TaskResults.[?(@.Task && @.Task != 'Null')]"
+          TaskResults.$: "$.TasksMapResults.[?(@.Task && @.Task != 'UnknownTaskType')]"
           # Failed tasks will have a Type property
-          FailedTasks.$: "$.TaskResults.[?(@.Type && @.Type != 'Null')]"
-    ResultPath: "$.Void" # The output of the iterator states is discarded
-    OutputPath: "$"
-    Next: Serialized Jobs Map
-    MaxConcurrency: 0
-    Iterator:
+          FailedTasks.$: "$.TasksMapResults.[?(@.Type && @.Type != 'UnknownTaskType')]"
+    ItemProcessor:
+      ProcessorConfig: { Mode: INLINE }
       StartAt: Send JobResult Callback
       States:
         Send JobResult Callback:
+          # Sample input:
+          #     {
+          #       Callback: {…},
+          #       StateMachine: { Id: "wxyz" },
+          #       Execution: { Id: "a1b2c3" },
+          #       Message: {…}
+          #     }
+          # Sample output: (will become an element in JobResultMapResultNulls)
+          #     null
           Type: Task
+          QueryLanguage: JSONPath
           Comment: >-
             Sends a callback message to a single endpoint in the iterator with
             a job result
-          InputPath: "$"
-          Resource: "${CallbackLambdaFunctionArn}"
-          ResultPath: "$"
-          OutputPath: "$"
-          End: true
           Retry:
-            - ErrorEquals:
-                - States.ALL
-              IntervalSeconds: 5
-              MaxAttempts: 3
-              BackoffRate: 2
+            - { ErrorEquals: [States.ALL], IntervalSeconds: 5, MaxAttempts: 3, BackoffRate: 2 }
+
+          Resource: "${CallbackLambdaFunctionArn}"
+
+          End: true
 
   Serialized Jobs Map:
+    # Sample input:
+    #     {
+    #       Job: { Id: "123", Source: {…}, Tasks: […], Callbacks: […], SerializedJobs: […], ExecutionTrace: […] },
+    #       State: "___SOME_STATE___",
+    #       TasksMapResults: [],
+    #       SerializedJobsMapResultNulls: [null, null]
+    #
+    #       May contain…
+    #       Error: {…},
+    #       …other fields
+    #     }
+    # Sample output:
+    #     {
+    #       Job: { Id: "123", Source: {…}, Tasks: […], Callbacks: […], SerializedJobs: […], ExecutionTrace: […] },
+    #       State: "___SOME_STATE___",
+    #       TasksMapResults: [],
+    #       Void: [null, null]
+    #
+    #       May contain…
+    #       Error: {…},
+    #       …other fields
+    #     }
     Type: Map
+    QueryLanguage: JSONPath
     Comment: Iterates over all serialized jobs and sends them to SNS
-    InputPath: "$"
-    ItemsPath: "$.Job.SerializedJobs"
-    Parameters:
+
+    # Add the result of the Map (an array containing the results of each iteration) to the default output
+    # (This field will not be shown in future sample state data)
+    ResultPath: "$.SerializedJobsMapResultNulls"
+
+    Next: Normalize Output
+
+    MaxConcurrency: 0
+    ItemsPath: "$.Job.SerializedJobs" # This references post-InputPath input
+    ItemSelector: # Initial state for each ItemProcessor iteration
       Execution:
         Id.$: "$$.Execution.Id"
       ExecutionTrace.$: "$.Job.ExecutionTrace"
       SerializedJob.$: "$$.Map.Item.Value"
-    ResultPath: "$.Void" # The output of the iterator states is discarded
-    OutputPath: "$"
-    Next: Normalize Output
-    MaxConcurrency: 0
-    Iterator:
+    ItemProcessor:
+      ProcessorConfig: { Mode: INLINE }
       StartAt: Start Serialized Job Execution
       States:
         Start Serialized Job Execution:
+          # Sample input:
+          #     {
+          #       Execution: { Id: "a1b2c3" },
+          #       ExecutionTrace: {…},
+          #       SerializedJob: {…}
+          #     }
+          # Sample output: (will become an element in SerializedJobsMapResultNulls)
+          #     null
           Type: Task
+          QueryLanguage: JSONPath
           Comment: Sends a serialized job to the job execution SNS topic
-          InputPath: "$"
-          Resource: "${JobSerializerLambdaFunctionArn}"
-          ResultPath: "$"
-          OutputPath: "$"
-          End: true
           Retry:
-            - ErrorEquals:
-                - States.ALL
-              IntervalSeconds: 5
-              MaxAttempts: 3
-              BackoffRate: 2
+            - { ErrorEquals: [States.ALL], IntervalSeconds: 5, MaxAttempts: 3, BackoffRate: 2 }
+
+          Resource: "${JobSerializerLambdaFunctionArn}"
+
+          End: true
 
   Normalize Output:
-    Comment: Normalizes output data
+    # This normalizes the actual Step Function execution's output, which,
+    # currently, nothing consumes. This normalization step does not affect
+    # data sent as callbacks. The output of this step is intended to match the
+    # job result callback data, though.
+    #
+    # Sample input:
+    #     {
+    #       Job: { Id: "123", Source: {…}, Tasks: […], Callbacks: […], SerializedJobs: […], ExecutionTrace: […] },
+    #       State: "DONE",
+    #       Artifact: { …, Descriptor: {…} },
+    #       TasksMapResults: [{…}, {…}, {…}]
+    #     }
+    # Sample output:
+    #     {
+    #       Time: "2026-…",
+    #       Timestamp: 1787150969.658,
+    #       JobResult: {…}
+    #     }
     Type: Task
-    InputPath: "$"
+    QueryLanguage: JSONPath
+    Comment: Normalizes output data
+
     Retry:
-      - ErrorEquals:
-          - States.ALL
-        IntervalSeconds: 1
-        MaxAttempts: 2
-        BackoffRate: 1
-    Parameters:
+      # There's no Catch because at this point we have already sent callbacks,
+      # so there's no one else to tell if things go wrong.
+      - { ErrorEquals: [], IntervalSeconds: 1, MaxAttempts: 2, BackoffRate: 1 }
+
+    Resource: "${NormalizeOutputLambdaFunctionArn}"
+    Parameters: # Payload provided to the Lambda function
       StateMachine:
         Id.$: "$$.StateMachine.Id"
       Message:
@@ -954,10 +1434,8 @@ States:
           Execution:
             Id.$: "$$.Execution.Id"
           State.$: "$.State"
-          TaskResults.$: "$.TaskResults.[?(@.Task && @.Task != 'Null')]"
-          FailedTasks.$: "$.TaskResults.[?(@.Type && @.Type != 'Null')]"
-    Resource: "${NormalizeOutputLambdaFunctionArn}"
-    ResultPath: "$"
-    OutputPath: "$"
+          TaskResults.$: "$.TasksMapResults.[?(@.Task && @.Task != 'UnknownTaskType')]"
+          FailedTasks.$: "$.TasksMapResults.[?(@.Type && @.Type != 'UnknownTaskType')]"
+
     End: true
   # End of post-processing
