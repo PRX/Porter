@@ -14,6 +14,9 @@ import { PublishCommand, SNSClient } from "@aws-sdk/client-sns";
 
 const sns = new SNSClient({ apiVersion: "2010-03-31" });
 
+/**
+ * @returns {Promise<void>}
+ */
 export const handler = async (event) => {
   console.log(JSON.stringify({ msg: "State input", input: event }));
 
