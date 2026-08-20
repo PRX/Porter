@@ -934,8 +934,6 @@ States:
                 Comment: Prepares an artifact for HLS delivery
                 # No Retry or Catch; let the containing Map state handle that if this fails
 
-                ResultPath: "$.TaskResult"
-
                 End: true
 
                 Resource: arn:aws:states:::ecs:runTask.waitForTaskToken
