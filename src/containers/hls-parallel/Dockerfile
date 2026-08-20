@@ -19,7 +19,6 @@ RUN bundle install
 
 ADD hls.rb telemetry.rb .
 ADD destinations/aws/s3.rb destinations/aws/
-ADD presets/standard_podcast_2026_v1.rb presets/
 RUN chmod +x ./hls.rb
 
 ENTRYPOINT ["./hls.rb"]
