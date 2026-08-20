@@ -10,8 +10,6 @@
 // state machine metadata.
 //
 // The function returns the normalized Input.
-//
-// The result path and output path MUST both be "$".
 
 import sendTelemetry from "./telemetry.js";
 
