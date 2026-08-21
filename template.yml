@@ -78,6 +78,10 @@ Parameters:
       - prod
   TranscodeJobNamePrefix:
     Type: String
+  # Constants
+  kImageId:
+    Type: AWS::SSM::Parameter::Value<AWS::EC2::Image::Id>
+    Default: /aws/service/ecs/optimized-ami/amazon-linux-2023/arm64/recommended/image_id
 
 Resources:
   # Managed IAM Policies
@@ -1035,6 +1039,280 @@ Resources:
         - { Key: prx:cloudformation:stack-id, Value: !Ref AWS::StackId }
         - { Key: prx:ops:environment, Value: !Ref EnvironmentType }
         - { Key: prx:dev:application, Value: Porter }
+  # EC2 Auto Scaling
+  InstanceRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Statement:
+          - Action: sts:AssumeRole
+            Effect: Allow
+            Principal:
+              Service: ec2.amazonaws.com
+        Version: "2012-10-17"
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AmazonEC2ContainerServiceforEC2Role
+        - arn:aws:iam::aws:policy/AmazonSSMManagedInstanceCore
+      # Policies:
+      #   - PolicyDocument:
+      #       Statement:
+      #         - Action: events:PutEvents
+      #           Effect: Allow
+      #           Resource: !Sub arn:${AWS::Partition}:events:${AWS::Region}:${AWS::AccountId}:event-bus/default
+      #           Sid: AllowDefaultEventBusPut
+      #       Version: "2012-10-17"
+      #     PolicyName: DefaultEventBus
+      Tags:
+        - { Key: prx:meta:tagging-version, Value: "2021-04-07" }
+        - { Key: prx:cloudformation:stack-name, Value: !Ref AWS::StackName }
+        - { Key: prx:cloudformation:stack-id, Value: !Ref AWS::StackId }
+        - { Key: prx:ops:environment, Value: !Ref EnvironmentType }
+        - { Key: prx:dev:application, Value: Porter }
+  InstanceProfile:
+    Type: AWS::IAM::InstanceProfile
+    Properties:
+      Roles:
+        - !Ref InstanceRole
+  InstanceRoleSetHealthPolicy:
+    Type: AWS::IAM::Policy
+    Properties:
+      PolicyName: AutoscalingSetInstanceHealthAarch64
+      PolicyDocument:
+        Statement:
+          - Action: autoscaling:SetInstanceHealth
+            Effect: Allow
+            Resource: !Sub arn:${AWS::Partition}:autoscaling:${AWS::Region}:${AWS::AccountId}:autoScalingGroup:*:autoScalingGroupName/${Asg}
+        Version: "2012-10-17"
+      Roles:
+        - !Ref InstanceRole
+  AsgInstanceKeyPair:
+    Type: AWS::EC2::KeyPair
+    Properties:
+      KeyName: !Sub ${AWS::StackName}-asg-2026-07-aarch64
+      KeyType: ed25519
+      Tags:
+        - { Key: prx:meta:tagging-version, Value: "2021-04-07" }
+        - { Key: prx:cloudformation:stack-name, Value: !Ref AWS::StackName }
+        - { Key: prx:cloudformation:stack-id, Value: !Ref AWS::StackId }
+        - { Key: prx:ops:environment, Value: !Ref EnvironmentType }
+        - { Key: prx:dev:application, Value: Infrastructure }
+  # If the logical ID of this resource changes, it needs to be changed in the
+  # user data and metadata as well
+  # https://docs.aws.amazon.com/AmazonECS/latest/developerguide/ecs-optimized_AMI.html
+  # Changing the properties of this resource will cause the ASG instances to
+  # get replaced, based on the defined UpdatePolicy.
+  Ec2LaunchTemplate:
+    Type: AWS::EC2::LaunchTemplate
+    Properties:
+      LaunchTemplateData:
+        IamInstanceProfile:
+          Arn: !GetAtt InstanceProfile.Arn
+        ImageId: !Ref kImageId
+        InstanceType: g7.4xlarge
+        KeyName: !Ref AsgInstanceKeyPair
+        Monitoring:
+          Enabled: false # Specifies whether detailed monitoring is enabled
+        NetworkInterfaces:
+          - AssociatePublicIpAddress: true
+            DeleteOnTermination: true
+            DeviceIndex: 0
+            # Groups:
+            #   - !Ref SharedEcsAsgInstanceSecurityGroupId
+            Ipv6AddressCount: 1
+        UserData:
+          # User data runs commands on EC2 instances when they are launched. To
+          # support configuration updates on running EC2 instance, the user
+          # data should primarily be used to run cfn-init. Any further launch
+          # scripts or tasks should be defined in the resource metadata that
+          # cfn-init loads, and that cfn-hup watches for changes.
+          # https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/user-data.html
+          # https://docs.aws.amazon.com/AmazonECS/latest/developerguide/bootstrap_container_instance.html#multi-part_user_data
+          # https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/cfn-helper-scripts-reference.html#cfn-helper-scripts-reference-amazon-amis
+          Fn::Base64:
+            Fn::Sub: |
+              #!/bin/bash
+              # The logs for this are found in: /var/log/cloud-init-output.log
+              # Except the cfn-signal seems to get logged to /var/log/cfn-init.log
+              # along with the rest of the cfn-init logs
+              #
+              # Despite what the docs say, the CloudFormation helper scripts are not preinstalled, so we install them
+              # with aws-cfn-bootstrap. aws-cli fails to install as part of the cfn-init packages, so it's installed
+              # here, even though they both use yum. Other packages should be installed through cfn-init.
+              yum install -y aws-cfn-bootstrap aws-cli
+
+              # --resource is the logical ID of the resource in a CloudFormation stack (generally a stack launched from
+              # this template) that includes AWS::CloudFormation::Init metadata. By convention, this is the same
+              # resource where this user data script (what you're reading right now) is defined.
+              # https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/cfn-init.html
+              # https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-resource-init.html
+              /opt/aws/bin/cfn-init -v --region ${AWS::Region} --stack ${AWS::StackName} --resource Ec2LaunchTemplate
+
+              # Use to the return status of calling cfn-init to signal if there's an issue with initialization
+              # --resource is the logical ID of the resource that contains the creation policy to signal
+              # https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/cfn-signal.html
+              # https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-attribute-creationpolicy.html
+              /opt/aws/bin/cfn-signal -e $? --region ${AWS::Region} --stack ${AWS::StackName} --resource Asg
+      TagSpecifications:
+        - ResourceType: launch-template
+          Tags:
+            - { Key: prx:meta:tagging-version, Value: "2021-04-07" }
+            - { Key: prx:cloudformation:stack-name, Value: !Ref AWS::StackName }
+            - { Key: prx:cloudformation:stack-id, Value: !Ref AWS::StackId }
+            - { Key: prx:ops:environment, Value: !Ref EnvironmentType }
+            - { Key: prx:dev:application, Value: Common }
+    Metadata:
+      # https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-resource-init.html
+      # This AWS::CloudFormation::Init metadata is queried by cfn-init, which
+      # is installed and run as part of the launch template's user data.
+      #
+      # When this metadata changes, cfn-init will reload and rerun it on
+      # existing intances, so you CANNOT assume that it will only be run once
+      # for an instance in its lifetime.
+      #
+      # Config sections are processed in this order:
+      # packages, groups, users, sources, files, commands, services
+      AWS::CloudFormation::Init:
+        config:
+          packages:
+            yum:
+              jq: []
+              bind-utils: []
+          files:
+            /etc/ecs/ecs.config:
+              # https://docs.aws.amazon.com/AmazonECS/latest/developerguide/ecs-agent-config.html
+              # https://docs.aws.amazon.com/AmazonECS/latest/developerguide/specifying-sensitive-data-parameters.html#secrets-iam-parameters
+              content: !Sub |
+                ECS_CLUSTER=${EcsCluster}
+                ECS_ENABLE_AWSLOGS_EXECUTIONROLE_OVERRIDE=true
+  # If the logical ID of this resource changes, it must also be changed in the
+  # arguments of cfn-signal in the launch template's user data
+  Asg:
+    Type: AWS::AutoScaling::AutoScalingGroup
+    CreationPolicy:
+      # https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-attribute-creationpolicy.html
+      # Defines policies that apply when CloudFormation is creating a new ASG
+      # resource, either during initial stack launch, or if a replacing update
+      # is configured to replace the entire ASG. These policies force
+      # CloudFormation to wait for explicit signals being sent to before
+      # considering the creation complete. These signals are generaly sent by
+      # the EC2 instances being launched along side the ASG, using the
+      # cfn-signal helper script in the launch template's user data.
+      # Without such a policy, CloudFormation will generally consider the ASG
+      # creation complete without caring about what the instances are doing.
+      AutoScalingCreationPolicy:
+        # The docs claim that this only applies to replacement updates (i.e.,
+        # WillReplace: true), and not to initial resource creation.
+        MinSuccessfulInstancesPercent: 0 # TODO Set to 100
+      ResourceSignal:
+        # The number of success signals required before the ASG resource can
+        # be considered succesfully created. This value must not be larger than
+        # the default MinSize of the ASG, or it will never succeed.
+        Count: !If [CreateProductionResources, 4, 0] # TODO Find a good value
+        # How long to wait for signals from EC2 instances
+        Timeout: PT5M
+    UpdatePolicy:
+      # https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-attribute-updatepolicy.html
+      # AutoScalingReplacingUpdate and AutoScalingRollingUpdate apply only when
+      # the LaunchTemplate changes (which includes cloud-init user data).
+      # NOTE: Changes to the UpdatePolicy should be made in their own stack
+      # update. Avoid updating the UpdatePolicy and other aspects of the
+      # AWS::AutoScaling::AutoScalingGroup in the same stack update.
+      AutoScalingReplacingUpdate:
+        # https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-attribute-updatepolicy.html#cfn-attributes-updatepolicy-replacingupdate
+        # false: Replace only instances within the ASG
+        # true: Replace the entire ASG
+        WillReplace: false
+      # AutoScalingRollingUpdate:
+      #   # https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-attribute-updatepolicy.html#cfn-attributes-updatepolicy-rollingupdate
+      #   # Applies when CloudFormation wants to update the ASG and its instances
+      #   # in a rolling manner (i.e., WillReplace: false).
+      #   MaxBatchSize: 10
+      #   MinInstancesInService: !If [IsProduction, 3, 1]
+      #   MinSuccessfulInstancesPercent: 100
+      #   PauseTime: PT1M
+      #   SuspendProcesses:
+      #     # https://docs.aws.amazon.com/autoscaling/ec2/APIReference/API_SuspendProcesses.html
+      #     # https://aws.amazon.com/premiumsupport/knowledge-center/auto-scaling-group-rolling-updates/
+      #     - AlarmNotification
+      #     - AZRebalance
+      #     - HealthCheck
+      #     - ReplaceUnhealthy
+      #     - ScheduledActions
+      #   WaitOnResourceSignals: true
+      AutoScalingScheduledAction:
+        # https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-attribute-updatepolicy.html#cfn-attributes-updatepolicy-scheduledactions
+        # Applies when a scheduled action is in effect.
+        # - true: Doesn't change min/max/desired unless one of those values
+        # changed in the template. Otherwise, a differnece between the template
+        # value and the actual value is ignored (i.e. actual value preserved).
+        # - false: Lets CloudFormation change the ASG's size values to match the
+        # template values, even if a scheduled action is in effect.
+        IgnoreUnmodifiedGroupSizeProperties: true
+    Properties:
+      Cooldown: "120"
+      HealthCheckGracePeriod: 0
+      HealthCheckType: EC2
+      LaunchTemplate:
+        LaunchTemplateId: !Ref Ec2LaunchTemplate
+        Version: !GetAtt Ec2LaunchTemplate.LatestVersionNumber
+      MaxInstanceLifetime: 1209600 # 14 days
+      MaxSize: !If [CreateProductionResources, "75", "20"]
+      MetricsCollection:
+        - Granularity: 1Minute
+      MinSize: 0
+      NewInstancesProtectedFromScaleIn: false
+      Tags:
+        - { PropagateAtLaunch: true, Key: Name, Value: !Sub "${AWS::StackName}_shared-asg-aarch64" }
+        - { PropagateAtLaunch: true, Key: prx:meta:tagging-version, Value: "2021-04-07" }
+        - { PropagateAtLaunch: true, Key: prx:cloudformation:stack-name, Value: !Ref AWS::StackName }
+        - { PropagateAtLaunch: true, Key: prx:cloudformation:stack-id, Value: !Ref AWS::StackId }
+        - { PropagateAtLaunch: true, Key: prx:ops:environment, Value: !Ref EnvironmentType }
+        - { PropagateAtLaunch: true, Key: prx:dev:application, Value: Common }
+      TerminationPolicies:
+        - OldestInstance
+        - Default
+      VPCZoneIdentifier:
+        - !Ref PublicSubnet1
+        - !Ref PublicSubnet2
+  # The capacity provider is associated with the ECS cluster in the x86-64
+  # template, for that's where the association resource was originally created
+  # and it's a pain to move.
+  BasicCapacityProvider:
+    Type: AWS::ECS::CapacityProvider
+    Properties:
+      AutoScalingGroupProvider:
+        AutoScalingGroupArn: !Ref Asg
+        ManagedDraining: ENABLED
+        ManagedScaling:
+          InstanceWarmupPeriod: 180
+          MaximumScalingStepSize: 10
+          MinimumScalingStepSize: 1
+          Status: ENABLED
+          TargetCapacity: 100
+        ManagedTerminationProtection: DISABLED
+      Tags:
+        - { Key: prx:meta:tagging-version, Value: "2021-04-07" }
+        - { Key: prx:cloudformation:stack-name, Value: !Ref AWS::StackName }
+        - { Key: prx:cloudformation:stack-id, Value: !Ref AWS::StackId }
+        - { Key: prx:ops:environment, Value: !Ref EnvironmentType }
+        - { Key: prx:dev:application, Value: Common }
+  ClusterCapacityProviderAssociation:
+    # This is handling associations for capacity providers, even ones not
+    # created in this template. It exists here because we used to only have one
+    # ASG template, and moving it is sort of a pain.
+    Type: AWS::ECS::ClusterCapacityProviderAssociations
+    Properties:
+      Cluster: !Ref EcsCluster
+      CapacityProviders:
+        - !Ref BasicCapacityProvider
+        # - !If [IsStaging, FARGATE, !Ref "AWS::NoValue"]
+        # - !If [IsStaging, FARGATE_SPOT, !Ref "AWS::NoValue"]
+      DefaultCapacityProviderStrategy:
+        # With only one default capacity provider, the base and weight won't
+        # factor into scheduling; everything will be even within the ASG
+        - Base: 0
+          Weight: 1
+          CapacityProvider: !Ref BasicCapacityProvider
   # Transcode ECS Service
   TranscodeEcsTaskLogGroup:
     Type: AWS::Logs::LogGroup
@@ -2857,6 +3135,7 @@ Resources:
         VpcPublicSubnet1: !Ref PublicSubnet1
         VpcPublicSubnet2: !Ref PublicSubnet2
         WavWrapLambdaFunctionArn: !GetAtt WavWrapLambdaFunction.Arn
+        BasicCapacityProviderName: !Ref BasicCapacityProvider
       DefinitionUri: state-machine.asl.yml
       Role: !GetAtt StateMachineIamRole.Arn
       Tags:

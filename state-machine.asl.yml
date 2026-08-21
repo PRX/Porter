@@ -938,8 +938,11 @@ States:
 
                 Resource: arn:aws:states:::ecs:runTask.waitForTaskToken
                 Parameters: # Fargate RunTask request parameters
+                  CapacityProviderStrategy:
+                    - CapacityProvider: "${BasicCapacityProviderName}"
+                      Base: 0
+                      Weight: 1
                   Cluster: "${EcsClusterArn}"
-                  LaunchType: FARGATE
                   Overrides:
                     ContainerOverrides:
                       - Environment:
