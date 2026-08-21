@@ -17,7 +17,7 @@ States:
       - { ErrorEquals: [MissingTaskTypeError], MaxAttempts: 0 } # Don't retry
       - { ErrorEquals: [States.ALL], IntervalSeconds: 1, MaxAttempts: 2, BackoffRate: 1 }
     Catch:
-        # Add the error object to the state input before passing to the catcher
+      # Add the error object to the state input before passing to the catcher
       - { ErrorEquals: [States.ALL], ResultPath: "$.Error", Next: Normalize Input Catcher }
 
     Resource: "${NormalizeInputLambdaFunctionArn}"
@@ -261,7 +261,7 @@ States:
     QueryLanguage: JSONPath
     Comment: Iterates over all tasks included in the job
     Catch:
-        # Add the error object to the state input before passing to the catcher
+      # Add the error object to the state input before passing to the catcher
       - { ErrorEquals: [States.ALL], ResultPath: "$.Error", Next: Tasks Map Catcher }
 
     # Add the result of the Map (an array containing the results of each iteration) to the default output
