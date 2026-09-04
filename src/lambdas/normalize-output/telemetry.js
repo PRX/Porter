@@ -1,11 +1,11 @@
+/** @import { MetricDatum } from "@aws-sdk/client-cloudwatch" */
+
 import {
   CloudWatchClient,
   PutMetricDataCommand,
 } from "@aws-sdk/client-cloudwatch";
 
 const cloudwatch = new CloudWatchClient({ apiVersion: "2010-08-01" });
-
-/** @typedef {import("@aws-sdk/client-cloudwatch").MetricDatum} MetricDatum */
 
 export default async function send(event) {
   // This is to avoid sending metrics during the test suite
