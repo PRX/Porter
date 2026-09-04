@@ -86,13 +86,11 @@ def send_to_s3(path, object_name = nil)
   put_object_params[:bucket] = ENV["STATE_MACHINE_DESTINATION_BUCKET_NAME"]
   put_object_params[:key] = [ENV["STATE_MACHINE_DESTINATION_OBJECT_KEY_PREFIX"], object_name].join
 
-  puts "Destination object key: #{put_object_params[:key]}"
-
   # look up the content type based on the file extension, default to octet-stream if unknown
   put_object_params[:content_type] = CONTENT_TYPES.fetch(File.extname(object_name), DEFAULT_CONTENT_TYPE)
 
   # Upload the encoded file to the S3
-  puts "Writing output to S3 destination"
+  puts "Writing #{path} to s3://#{put_object_params[:bucket]}/#{put_object_params[:key]}"
   put_ouput_s3tm = Aws::S3::TransferManager.new(client: s3_destination_writer)
   put_ouput_s3tm.upload_file(path, **put_object_params)
 end
