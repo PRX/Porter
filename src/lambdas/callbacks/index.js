@@ -216,6 +216,7 @@ async function putErrorMetric() {
 
 /**
  * @param {object} event
+ * @returns {Promise<void>}
  */
 export const handler = async (event) => {
   console.log(JSON.stringify({ msg: "State input", input: event }));

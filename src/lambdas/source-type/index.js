@@ -14,13 +14,24 @@ const s3 = new S3Client({
 });
 
 /**
+ * @typedef {object} Artifact
+ * @property {!string} BucketName
+ * @property {!string} ObjectKey
+ */
+
+/**
+ * @typedef {object} Payload
+ * @property {!Artifact} Artifact
+ */
+
+/**
  * @typedef {object} SourceTypeResult
  * @property {string} [Extension]
  * @property {string} [MIME]
  */
 
 /**
- * @param {object} event
+ * @param {Payload} event
  * @returns {Promise<SourceTypeResult>}
  */
 export const handler = async (event) => {
