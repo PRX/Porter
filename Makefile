@@ -1,5 +1,9 @@
 # SHELL = /bin/sh
 
+# Containers own their dependencies and test runners, since they pin their own
+# Ruby and may need tooling the repo root does not.
+CONTAINER_DIRS := $(dir $(wildcard src/containers/*/Makefile))
+
 all: clean check build
 ci: check
 
@@ -15,7 +19,7 @@ build:
 check: lint test
 deploy-check: lint jest
 lint: cfnlint biome typescript standardrb
-test: minitest jest
+test: minitest jest container-test
 
 cfnlint:
 	cfn-lint --ignore-checks W --template template.yml
@@ -35,7 +39,11 @@ minitest:
 jest:
 	npm test
 
+container-test:
+	@for d in $(CONTAINER_DIRS); do $(MAKE) -C $$d test || exit 1; done
+
 bootstrap:
 	bundle install
 	npm install
 	pip3 install -r requirements.txt
+	@for d in $(CONTAINER_DIRS); do $(MAKE) -C $$d bootstrap || exit 1; done
