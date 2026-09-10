@@ -701,6 +701,58 @@ Resources:
     Properties:
       RouteTableId: !Ref PublicRouteTable
       SubnetId: !Ref PublicSubnet2
+  PublicSubnet3:
+    # DeletionPolicy: Retain
+    DependsOn: IPv6VpcCidrBlock
+    Type: AWS::EC2::Subnet
+    # UpdateReplacePolicy: Retain
+    Properties:
+      AvailabilityZone: !Select [2, !GetAZs ""]
+      CidrBlock: !Select [2, !Cidr [!GetAtt VPC.CidrBlock, 3, !Ref SubnetIPv4CidrBits]]
+      Ipv6CidrBlock: !Select [2, !Cidr [!Select [0, !GetAtt VPC.Ipv6CidrBlocks], 3, !Ref SubnetIPv6CidrBits]]
+      Tags:
+        - { Key: prx:meta:tagging-version, Value: "2021-04-07" }
+        - { Key: prx:cloudformation:stack-name, Value: !Ref AWS::StackName }
+        - { Key: prx:cloudformation:stack-id, Value: !Ref AWS::StackId }
+        - { Key: prx:ops:environment, Value: !Ref EnvironmentType }
+        - { Key: prx:dev:application, Value: Porter }
+        - Key: Name
+          Value:
+            Fn::Sub:
+              - ${AWS::StackName}_public-2_${ZoneName}
+              - ZoneName: !Select [2, !GetAZs ""]
+      VpcId: !Ref VPC
+  PublicSubnet3RouteTableAssociation:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      RouteTableId: !Ref PublicRouteTable
+      SubnetId: !Ref PublicSubnet3
+  PublicSubnet4:
+    # DeletionPolicy: Retain
+    DependsOn: IPv6VpcCidrBlock
+    Type: AWS::EC2::Subnet
+    # UpdateReplacePolicy: Retain
+    Properties:
+      AvailabilityZone: !Select [3, !GetAZs ""]
+      CidrBlock: !Select [3, !Cidr [!GetAtt VPC.CidrBlock, 3, !Ref SubnetIPv4CidrBits]]
+      Ipv6CidrBlock: !Select [3, !Cidr [!Select [0, !GetAtt VPC.Ipv6CidrBlocks], 4, !Ref SubnetIPv6CidrBits]]
+      Tags:
+        - { Key: prx:meta:tagging-version, Value: "2021-04-07" }
+        - { Key: prx:cloudformation:stack-name, Value: !Ref AWS::StackName }
+        - { Key: prx:cloudformation:stack-id, Value: !Ref AWS::StackId }
+        - { Key: prx:ops:environment, Value: !Ref EnvironmentType }
+        - { Key: prx:dev:application, Value: Porter }
+        - Key: Name
+          Value:
+            Fn::Sub:
+              - ${AWS::StackName}_public-2_${ZoneName}
+              - ZoneName: !Select [3, !GetAZs ""]
+      VpcId: !Ref VPC
+  PublicSubnet4RouteTableAssociation:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      RouteTableId: !Ref PublicRouteTable
+      SubnetId: !Ref PublicSubnet4
   # ACL for public subnets
   PublicSubnetNetworkAcl:
     Type: AWS::EC2::NetworkAcl
@@ -899,6 +951,16 @@ Resources:
     Properties:
       NetworkAclId: !Ref PublicSubnetNetworkAcl
       SubnetId: !Ref PublicSubnet2
+  PublicSubnet3NetworkAclAssociation:
+    Type: AWS::EC2::SubnetNetworkAclAssociation
+    Properties:
+      NetworkAclId: !Ref PublicSubnetNetworkAcl
+      SubnetId: !Ref PublicSubnet3
+  PublicSubnet4NetworkAclAssociation:
+    Type: AWS::EC2::SubnetNetworkAclAssociation
+    Properties:
+      NetworkAclId: !Ref PublicSubnetNetworkAcl
+      SubnetId: !Ref PublicSubnet4
   # Routing for private subnets
   PrivateRouteTable:
     Type: AWS::EC2::RouteTable
@@ -1274,6 +1336,8 @@ Resources:
       VPCZoneIdentifier:
         - !Ref PublicSubnet1
         - !Ref PublicSubnet2
+        - !Ref PublicSubnet3
+        - !Ref PublicSubnet4
   # The capacity provider is associated with the ECS cluster in the x86-64
   # template, for that's where the association resource was originally created
   # and it's a pain to move.
@@ -3134,6 +3198,8 @@ Resources:
         TranscriptionJobStartLambdaFunctionArn: !GetAtt TranscriptionJobStartLambdaFunction.Arn
         VpcPublicSubnet1: !Ref PublicSubnet1
         VpcPublicSubnet2: !Ref PublicSubnet2
+        VpcPublicSubnet3: !Ref PublicSubnet3
+        VpcPublicSubnet4: !Ref PublicSubnet4
         WavWrapLambdaFunctionArn: !GetAtt WavWrapLambdaFunction.Arn
         BasicCapacityProviderName: !Ref BasicCapacityProvider
       DefinitionUri: state-machine.asl.yml

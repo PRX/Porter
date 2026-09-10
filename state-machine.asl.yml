@@ -998,6 +998,8 @@ States:
                       Subnets:
                         - "${VpcPublicSubnet1}"
                         - "${VpcPublicSubnet2}"
+                        - "${VpcPublicSubnet3}"
+                        - "${VpcPublicSubnet4}"
                   PropagateTags: TASK_DEFINITION
                   TaskDefinition: "${HlsParallelEcsTaskDefinitionArn}"
         HLS Parallel Result Handler:
