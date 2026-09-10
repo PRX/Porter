@@ -81,7 +81,7 @@ Parameters:
   # Constants
   kImageId:
     Type: AWS::SSM::Parameter::Value<AWS::EC2::Image::Id>
-    Default: /aws/service/ecs/optimized-ami/amazon-linux-2023/arm64/recommended/image_id
+    Default: /aws/service/ecs/optimized-ami/amazon-linux-2023/al2023-ami-ecs-hvm-2023.0.20260813-kernel-6.1-x86_64/image_id
 
 Resources:
   # Managed IAM Policies
