@@ -937,7 +937,7 @@ States:
                 End: true
 
                 Resource: arn:aws:states:::ecs:runTask.waitForTaskToken
-                Parameters: # Fargate RunTask request parameters
+                Parameters: # ECS RunTask request parameters
                   CapacityProviderStrategy:
                     - CapacityProvider: "${BasicCapacityProviderName}"
                       Base: 0
@@ -994,7 +994,7 @@ States:
                         Name: "${HlsParallelContainerName}"
                   NetworkConfiguration:
                     AwsvpcConfiguration:
-                      AssignPublicIp: ENABLED
+                      AssignPublicIp: DISABLED
                       Subnets:
                         - "${VpcPublicSubnet1}"
                         - "${VpcPublicSubnet2}"

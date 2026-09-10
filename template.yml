@@ -1207,7 +1207,7 @@ Resources:
         # The number of success signals required before the ASG resource can
         # be considered succesfully created. This value must not be larger than
         # the default MinSize of the ASG, or it will never succeed.
-        Count: !If [CreateProductionResources, 4, 0] # TODO Find a good value
+        Count: !If [CreateProductionResources, 0, 0] # TODO Find a good value
         # How long to wait for signals from EC2 instances
         Timeout: PT5M
     UpdatePolicy:
@@ -1531,7 +1531,7 @@ Resources:
       Memory: "32768"
       NetworkMode: awsvpc
       RequiresCompatibilities:
-        - FARGATE
+        - EC2
       Tags:
         - { Key: prx:meta:tagging-version, Value: "2021-04-07" }
         - { Key: prx:cloudformation:stack-name, Value: !Ref AWS::StackName }
