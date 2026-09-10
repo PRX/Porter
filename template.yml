@@ -1262,7 +1262,7 @@ Resources:
       MinSize: 0
       NewInstancesProtectedFromScaleIn: false
       Tags:
-        - { PropagateAtLaunch: true, Key: Name, Value: !Sub "${AWS::StackName}_shared-asg-aarch64" }
+        - { PropagateAtLaunch: true, Key: Name, Value: !Sub "${AWS::StackName}-asg-aarch64" }
         - { PropagateAtLaunch: true, Key: prx:meta:tagging-version, Value: "2021-04-07" }
         - { PropagateAtLaunch: true, Key: prx:cloudformation:stack-name, Value: !Ref AWS::StackName }
         - { PropagateAtLaunch: true, Key: prx:cloudformation:stack-id, Value: !Ref AWS::StackId }
