@@ -1108,7 +1108,7 @@ Resources:
         IamInstanceProfile:
           Arn: !GetAtt InstanceProfile.Arn
         ImageId: !Ref kImageId
-        InstanceType: g7.4xlarge
+        InstanceType: g7e.4xlarge
         KeyName: !Ref AsgInstanceKeyPair
         Monitoring:
           Enabled: false # Specifies whether detailed monitoring is enabled
