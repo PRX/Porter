@@ -81,7 +81,7 @@ Parameters:
   # Constants
   kImageId:
     Type: AWS::SSM::Parameter::Value<AWS::EC2::Image::Id>
-    Default: /aws/service/ecs/optimized-ami/amazon-linux-2023/al2023-ami-ecs-hvm-2023.0.20260813-kernel-6.1-x86_64/image_id
+    Default: /aws/service/ecs/optimized-ami/amazon-linux-2023/gpu/recommended/image_id
 
 Resources:
   # Managed IAM Policies
@@ -701,58 +701,6 @@ Resources:
     Properties:
       RouteTableId: !Ref PublicRouteTable
       SubnetId: !Ref PublicSubnet2
-  PublicSubnet3:
-    # DeletionPolicy: Retain
-    DependsOn: IPv6VpcCidrBlock
-    Type: AWS::EC2::Subnet
-    # UpdateReplacePolicy: Retain
-    Properties:
-      AvailabilityZone: !Select [2, !GetAZs ""]
-      CidrBlock: !Select [2, !Cidr [!GetAtt VPC.CidrBlock, 3, !Ref SubnetIPv4CidrBits]]
-      Ipv6CidrBlock: !Select [2, !Cidr [!Select [0, !GetAtt VPC.Ipv6CidrBlocks], 3, !Ref SubnetIPv6CidrBits]]
-      Tags:
-        - { Key: prx:meta:tagging-version, Value: "2021-04-07" }
-        - { Key: prx:cloudformation:stack-name, Value: !Ref AWS::StackName }
-        - { Key: prx:cloudformation:stack-id, Value: !Ref AWS::StackId }
-        - { Key: prx:ops:environment, Value: !Ref EnvironmentType }
-        - { Key: prx:dev:application, Value: Porter }
-        - Key: Name
-          Value:
-            Fn::Sub:
-              - ${AWS::StackName}_public-2_${ZoneName}
-              - ZoneName: !Select [2, !GetAZs ""]
-      VpcId: !Ref VPC
-  PublicSubnet3RouteTableAssociation:
-    Type: AWS::EC2::SubnetRouteTableAssociation
-    Properties:
-      RouteTableId: !Ref PublicRouteTable
-      SubnetId: !Ref PublicSubnet3
-  PublicSubnet4:
-    # DeletionPolicy: Retain
-    DependsOn: IPv6VpcCidrBlock
-    Type: AWS::EC2::Subnet
-    # UpdateReplacePolicy: Retain
-    Properties:
-      AvailabilityZone: !Select [3, !GetAZs ""]
-      CidrBlock: !Select [3, !Cidr [!GetAtt VPC.CidrBlock, 3, !Ref SubnetIPv4CidrBits]]
-      Ipv6CidrBlock: !Select [3, !Cidr [!Select [0, !GetAtt VPC.Ipv6CidrBlocks], 4, !Ref SubnetIPv6CidrBits]]
-      Tags:
-        - { Key: prx:meta:tagging-version, Value: "2021-04-07" }
-        - { Key: prx:cloudformation:stack-name, Value: !Ref AWS::StackName }
-        - { Key: prx:cloudformation:stack-id, Value: !Ref AWS::StackId }
-        - { Key: prx:ops:environment, Value: !Ref EnvironmentType }
-        - { Key: prx:dev:application, Value: Porter }
-        - Key: Name
-          Value:
-            Fn::Sub:
-              - ${AWS::StackName}_public-2_${ZoneName}
-              - ZoneName: !Select [3, !GetAZs ""]
-      VpcId: !Ref VPC
-  PublicSubnet4RouteTableAssociation:
-    Type: AWS::EC2::SubnetRouteTableAssociation
-    Properties:
-      RouteTableId: !Ref PublicRouteTable
-      SubnetId: !Ref PublicSubnet4
   # ACL for public subnets
   PublicSubnetNetworkAcl:
     Type: AWS::EC2::NetworkAcl
@@ -951,16 +899,6 @@ Resources:
     Properties:
       NetworkAclId: !Ref PublicSubnetNetworkAcl
       SubnetId: !Ref PublicSubnet2
-  PublicSubnet3NetworkAclAssociation:
-    Type: AWS::EC2::SubnetNetworkAclAssociation
-    Properties:
-      NetworkAclId: !Ref PublicSubnetNetworkAcl
-      SubnetId: !Ref PublicSubnet3
-  PublicSubnet4NetworkAclAssociation:
-    Type: AWS::EC2::SubnetNetworkAclAssociation
-    Properties:
-      NetworkAclId: !Ref PublicSubnetNetworkAcl
-      SubnetId: !Ref PublicSubnet4
   # Routing for private subnets
   PrivateRouteTable:
     Type: AWS::EC2::RouteTable
@@ -1170,7 +1108,7 @@ Resources:
         IamInstanceProfile:
           Arn: !GetAtt InstanceProfile.Arn
         ImageId: !Ref kImageId
-        InstanceType: g7e.4xlarge
+        InstanceType: g5.4xlarge
         KeyName: !Ref AsgInstanceKeyPair
         Monitoring:
           Enabled: false # Specifies whether detailed monitoring is enabled
