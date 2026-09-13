@@ -19,3 +19,8 @@ tmp
 
 # mediastreamvalidator / hlsreport output
 validation_data.*
+
+# local HLS harness output
+src/containers/hls/out/
+src/containers/hls/artifact.file
+src/containers/hls/hls/
