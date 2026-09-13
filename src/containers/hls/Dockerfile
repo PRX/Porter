@@ -15,11 +15,13 @@ ADD Gemfile .
 ADD Gemfile.lock .
 ADD .tool-versions .
 RUN gem install bundler
-RUN bundle install
+RUN bundle config set --local without development && bundle install
 
-ADD hls.rb telemetry.rb .
-ADD destinations/aws/s3.rb destinations/aws/
-ADD presets/standard_podcast_2026_v1.rb presets/
+ADD hls.rb telemetry.rb Makefile .
+ADD destinations destinations/
+ADD presets presets/
+ADD lib lib/
+ADD test test/
 RUN chmod +x ./hls.rb
 
 ENTRYPOINT ["./hls.rb"]

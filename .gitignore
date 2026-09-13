@@ -16,3 +16,6 @@ samconfig.stag.toml
 samconfig.prod.toml
 vendor
 tmp
+
+# mediastreamvalidator / hlsreport output
+validation_data.*
