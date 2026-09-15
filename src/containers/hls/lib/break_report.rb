@@ -34,9 +34,6 @@ module Hls
         end
       end
 
-      private
-
-      # Running total of EXTINF durations
       def cumulative_boundaries(playlist)
         total = 0.0
         out = []
@@ -51,6 +48,8 @@ module Hls
       def closest_index(boundaries, wanted)
         boundaries.each_with_index.min_by { |b, _| (b - wanted).abs }.last
       end
+
+      private
 
       # Matches how boundary times are expressed everywhere else.
       def round6(value)

@@ -16,6 +16,8 @@ module PlaylistTestSettings
   AUDIO_CODEC = "mp4a.40.2"
   AUDIO_LANGUAGE = "en"
   AUDIO_CHANNELS = "2"
+  AUDIO_FRAME_SAMPLES = 1024
+  AUDIO_SAMPLE_RATE = "48000"
 end
 
 describe Hls::Playlists do
@@ -61,9 +63,10 @@ describe Hls::Playlists do
 
   def pdt = "2026-08-28T05:55:22.556Z"
 
-  def playlists_for(dir)
+  def playlists_for(dir, breaks: [])
     Hls::Playlists.new(
       dir: dir,
+      breaks: breaks,
       video_rungs: [
         Hls::Playlists::Rendition.new(playlist: "720p.m3u8", media: "720p.ts", label: "720P"),
         Hls::Playlists::Rendition.new(playlist: "480p.m3u8", media: "480p.ts", label: "480P")
@@ -161,6 +164,61 @@ describe Hls::Playlists do
         build_package(dir)
         playlists_for(dir).write_all
         _(File.read(File.join(dir, "index.m3u8"))).must_include "#EXT-X-VERSION:4"
+      end
+    end
+  end
+
+  describe "ad break markers" do
+    # Fixture boundaries: video 6.0 and 12.0; audio 6.016 and 12.0267.
+    it "marks each break after the segment that ends at it, in the delivery renditions" do
+      Dir.mktmpdir do |dir|
+        build_package(dir)
+        result = playlists_for(dir, breaks: [6.0]).write_all
+
+        %w[720p.m3u8 480p.m3u8 audio.m3u8].each do |pl|
+          lines = File.readlines(File.join(dir, pl)).map(&:chomp)
+          at = lines.index("#EXT-X-CUE-OUT")
+          _(at).wont_be_nil
+          _(lines[at - 1]).must_equal "720p.ts".sub("720p", pl.sub(".m3u8", ""))
+          _(lines[at + 1]).must_equal "#EXT-X-CUE-IN"
+          _(lines[at + 2]).must_match(/\A#EXTINF:/)
+        end
+        _(result[:ad_breaks_marked]).must_equal 1
+      end
+    end
+
+    it "leaves the trickplay playlist alone" do
+      Dir.mktmpdir do |dir|
+        build_package(dir)
+        playlists_for(dir, breaks: [6.0]).write_all
+        _(File.read(File.join(dir, "iframe.m3u8"))).wont_include "#EXT-X-CUE-OUT"
+      end
+    end
+
+    it "writes nothing when no breaks were requested" do
+      Dir.mktmpdir do |dir|
+        build_package(dir)
+        result = playlists_for(dir).write_all
+        _(File.read(File.join(dir, "720p.m3u8"))).wont_include "#EXT-X-CUE-OUT"
+        _(result[:ad_breaks_marked]).must_equal 0
+      end
+    end
+
+    it "is idempotent" do
+      Dir.mktmpdir do |dir|
+        build_package(dir)
+        playlists_for(dir, breaks: [6.0]).write_all
+        playlists_for(dir, breaks: [6.0]).write_all
+        _(File.read(File.join(dir, "audio.m3u8")).scan("#EXT-X-CUE-OUT").length).must_equal 1
+      end
+    end
+
+    it "refuses a break with no segment boundary near it" do
+      # Marking the nearest boundary instead would point at a place with no break.
+      Dir.mktmpdir do |dir|
+        build_package(dir)
+        e = _ { playlists_for(dir, breaks: [3.0]).write_all }.must_raise RuntimeError
+        _(e.message).must_match(/no segment boundary at ad break 3\.0s/)
       end
     end
   end

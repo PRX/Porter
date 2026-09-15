@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 require "json"
+require_relative "break_report"
 
 module Hls
   # Writes the master playlists
@@ -26,6 +27,9 @@ module Hls
       "High 10" => "6E"
     }.freeze
 
+    # Ad break marker - cue out and immediately back in!
+    CUE_MARKERS = "#EXT-X-CUE-OUT\n#EXT-X-CUE-IN\n"
+
     Rendition = Struct.new(:playlist, :media, :label)
 
     # dir               -- output directory holding the media playlists
@@ -34,13 +38,16 @@ module Hls
     # iframe            -- Rendition for the trickplay variant
     # settings          -- the preset (see presets/*.rb)
     # program_date_time -- ISO8601 wall-clock anchor for the first sample, for interstitials
-    def initialize(dir:, video_rungs:, audio:, iframe:, settings:, program_date_time:)
+    # breaks            -- ad break times in seconds, become EXT-X-CUE-OUT/CUE-IN pairs
+    def initialize(dir:, video_rungs:, audio:, iframe:, settings:, program_date_time:,
+      breaks: [])
       @dir = dir
       @video_rungs = video_rungs
       @audio = audio
       @iframe = iframe
       @s = settings
       @pdt = program_date_time
+      @breaks = breaks.map(&:to_f)
     end
 
     # Writes both masters and normalizes the media playlists. Returns a Hash of
@@ -49,6 +56,7 @@ module Hls
       target_duration = harmonize_target_duration
       lifted = raise_media_versions
       stamp_program_date_time
+      ad_breaks_marked = mark_ad_breaks
       iframe_info = finalize_iframe_playlist
 
       audio_rate = measure(@audio.playlist)
@@ -81,6 +89,7 @@ module Hls
       {
         target_duration: target_duration,
         program_date_time: @pdt,
+        ad_breaks_marked: ad_breaks_marked,
         versions_lifted: lifted,
         iframe: iframe_info.merge(
           resolution: iframe_props[:resolution], frame_rate: iframe_props[:frame_rate],
@@ -167,6 +176,54 @@ module Hls
 
     def media_playlists
       @video_rungs.map(&:playlist) + [@audio.playlist, @iframe.playlist]
+    end
+
+    # Trickplay is excluded
+    def delivery_playlists
+      @video_rungs.map(&:playlist) + [@audio.playlist]
+    end
+
+    # A CUE-OUT/CUE-IN pair after the segment that ends at each break.
+    def mark_ad_breaks
+      return 0 if @breaks.empty?
+
+      # Audio cuts on its own frame grid, so it lands near the boundary, not on it.
+      tolerance = Rational(@s::AUDIO_FRAME_SAMPLES, @s::AUDIO_SAMPLE_RATE.to_i).to_f
+
+      delivery_playlists.each do |pl|
+        after = segment_indexes_for_breaks(pl, tolerance)
+        rewrite(pl) { |text| insert_cue_markers(text, after) }
+      end
+      @breaks.length
+    end
+
+    # Per playlist rather than computed once: hls.rb compares the video rungs to each
+    # other but not audio; this will catch drifted audio renditions
+    def segment_indexes_for_breaks(playlist, tolerance)
+      ends = BreakReport.cumulative_boundaries(File.join(@dir, playlist))
+      raise "#{playlist} has no segments to place breaks against" if ends.empty?
+
+      @breaks.map do |b|
+        index = BreakReport.closest_index(ends, b)
+        gap = (ends[index] - b).abs
+        if gap > tolerance
+          raise "#{playlist} has no segment boundary at ad break #{b}s: nearest is " \
+                "#{ends[index].round(6)}s, #{(gap * 1000).round(3)}ms away"
+        end
+        index
+      end
+    end
+
+    # Rewrites the whole playlist, so a second pass cannot double up the tags.
+    def insert_cue_markers(text, after)
+      index = -1
+      text.lines.reject { |l| l.start_with?("#EXT-X-CUE-OUT", "#EXT-X-CUE-IN") }.map { |line|
+        # A bare line is the segment URI, which closes a segment.
+        next line if line.start_with?("#") || line.strip.empty?
+
+        index += 1
+        after.include?(index) ? line + CUE_MARKERS : line
+      }.join
     end
 
     def required_target_duration(playlist)
