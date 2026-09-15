@@ -204,12 +204,18 @@ begin
   # Wall-clock anchor for EXT-X-PROGRAM-DATE-TIME. VOD has no real wall clock, so
   # this is the packaging time -- what matters is that one value goes into every
   # media playlist, and that the caller gets it back to compute interstitial
-  # START-DATEs from the break times without refetching a playlist.
+  # START-DATEs from the break times without refetching a playlist,
+  # you know, once we add in the interstitials.
   program_date_time = Time.now.utc.strftime("%Y-%m-%dT%H:%M:%S.%LZ")
 
   playlist_result = Hls::Playlists.new(
-    dir: work, video_rungs: video_renditions, audio: audio_rendition,
-    iframe: iframe_rendition, settings: preset, program_date_time: program_date_time
+    dir: work,
+    video_rungs: video_renditions,
+    audio: audio_rendition,
+    iframe: iframe_rendition,
+    settings: preset,
+    program_date_time: program_date_time,
+    breaks: layout.breaks.map { |b| b.at.to_f }
   ).write_all
   puts JSON.dump({msg: "Playlists written"}.merge(playlist_result))
 

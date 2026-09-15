@@ -1,7 +1,9 @@
 # frozen_string_literal: true
 
 require "minitest/autorun"
+require "fileutils"
 require "json"
+require "tmpdir"
 require_relative "harness/task_runner"
 
 describe "hls.rb" do
@@ -51,8 +53,15 @@ describe "hls.rb" do
 
   describe "a complete task" do
     # One real encode, shared by the assertions below.
+    # A real directory, so assertions can read the bytes a client would fetch.
+    def self.out_dir
+      @out_dir ||= Dir.mktmpdir("hls-test-out").tap do |d|
+        Minitest.after_run { FileUtils.remove_entry(d) }
+      end
+    end
+
     def self.completed
-      @completed ||= TaskRunner.run(source: source,
+      @completed ||= TaskRunner.run(source: source, upload_to: out_dir,
         task: {"Type" => "HLS", "Preset" => preset_name, "AdBreaks" => [7.5]})
     end
 
@@ -89,6 +98,25 @@ describe "hls.rb" do
       _(breaks.first["ActualTime"]).must_equal 7.5
       # zero-based, so the ad goes after the segment ending at 7.5s
       _(breaks.first["InsertAfterSegmentIndex"]).must_equal 1
+    end
+
+    it "marks the break in the delivery playlists, but not trickplay" do
+      self.class.completed
+      counts = %w[480p.m3u8 audio.m3u8 iframe.m3u8].map do |name|
+        text = File.read(File.join(self.class.out_dir, name))
+        text.scan("#EXT-X-CUE-OUT").length
+      end
+      _(counts).must_equal [1, 1, 0]
+    end
+
+    it "puts a CUE-OUT/CUE-IN pair after the segment that ends at the break" do
+      # Adjacent: a splice point, not a span.
+      self.class.completed
+      lines = File.readlines(File.join(self.class.out_dir, "480p.m3u8")).map(&:chomp)
+      at = lines.index("#EXT-X-CUE-OUT")
+      _(lines[at - 1]).must_equal "480p.ts"
+      _(lines[at + 1]).must_equal "#EXT-X-CUE-IN"
+      _(lines[at + 2]).must_match(/\A#EXTINF:/)
     end
 
     it "reports the program date time the interstitial START-DATEs resolve against" do
