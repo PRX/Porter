@@ -772,9 +772,13 @@ States:
           Next: TaskResult Callbacks Map
 
           Resource: arn:aws:states:::ecs:runTask.waitForTaskToken
-          Parameters: # Fargate RunTask request parameters
+          Parameters: # ECS RunTask request parameters
+            CapacityProviderStrategy:
+              - CapacityProvider: "${BasicCapacityProviderName}"
+                Base: 0
+                Weight: 1
             Cluster: "${EcsClusterArn}"
-            LaunchType: FARGATE
+            LaunchType: EC2
             Overrides:
               ContainerOverrides:
                 - Environment:
