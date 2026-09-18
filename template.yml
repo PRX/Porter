@@ -654,8 +654,7 @@ Resources:
     Properties:
       AvailabilityZone: !Select [0, !GetAZs ""]
       CidrBlock: !Select [0, !Cidr [!GetAtt VPC.CidrBlock, 1, !Ref SubnetIPv4CidrBits]]
-      #                       ⬇️ Incr.          ⬇️ Always zero                  ⬇️ Total number of CIDR blocks needed
-      Ipv6CidrBlock: !Select [0, !Cidr [!Select [0, !GetAtt VPC.Ipv6CidrBlocks], 3, !Ref SubnetIPv6CidrBits]]
+      Ipv6CidrBlock: !Select [0, !Cidr [!Select [0, !GetAtt VPC.Ipv6CidrBlocks], 1, !Ref SubnetIPv6CidrBits]]
       Tags:
         - { Key: prx:meta:tagging-version, Value: "2021-04-07" }
         - { Key: prx:cloudformation:stack-name, Value: !Ref AWS::StackName }
@@ -681,8 +680,7 @@ Resources:
     Properties:
       AvailabilityZone: !Select [1, !GetAZs ""]
       CidrBlock: !Select [1, !Cidr [!GetAtt VPC.CidrBlock, 2, !Ref SubnetIPv4CidrBits]]
-      #                       ⬇️ Incr.          ⬇️ Always zero                  ⬇️ Total number of CIDR blocks needed
-      Ipv6CidrBlock: !Select [1, !Cidr [!Select [0, !GetAtt VPC.Ipv6CidrBlocks], 3, !Ref SubnetIPv6CidrBits]]
+      Ipv6CidrBlock: !Select [1, !Cidr [!Select [0, !GetAtt VPC.Ipv6CidrBlocks], 2, !Ref SubnetIPv6CidrBits]]
       Tags:
         - { Key: prx:meta:tagging-version, Value: "2021-04-07" }
         - { Key: prx:cloudformation:stack-name, Value: !Ref AWS::StackName }
@@ -707,8 +705,7 @@ Resources:
     # UpdateReplacePolicy: Retain
     Properties:
       AvailabilityZone: !Select [2, !GetAZs ""]
-      CidrBlock: !Select [2, !Cidr [!GetAtt VPC.CidrBlock, 2, !Ref SubnetIPv4CidrBits]]
-      #                       ⬇️ Incr.          ⬇️ Always zero                  ⬇️ Total number of CIDR blocks needed
+      CidrBlock: !Select [2, !Cidr [!GetAtt VPC.CidrBlock, 3, !Ref SubnetIPv4CidrBits]]
       Ipv6CidrBlock: !Select [2, !Cidr [!Select [0, !GetAtt VPC.Ipv6CidrBlocks], 3, !Ref SubnetIPv6CidrBits]]
       Tags:
         - { Key: prx:meta:tagging-version, Value: "2021-04-07" }
