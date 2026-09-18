@@ -705,8 +705,8 @@ Resources:
     # UpdateReplacePolicy: Retain
     Properties:
       AvailabilityZone: !Select [2, !GetAZs ""]
-      CidrBlock: !Select [2, !Cidr [!GetAtt VPC.CidrBlock, 3, !Ref SubnetIPv4CidrBits]]
-      Ipv6CidrBlock: !Select [2, !Cidr [!Select [0, !GetAtt VPC.Ipv6CidrBlocks], 3, !Ref SubnetIPv6CidrBits]]
+      CidrBlock: !Select [4, !Cidr [!GetAtt VPC.CidrBlock, 5, !Ref SubnetIPv4CidrBits]]
+      Ipv6CidrBlock: !Select [4, !Cidr [!Select [0, !GetAtt VPC.Ipv6CidrBlocks], 5, !Ref SubnetIPv6CidrBits]]
       Tags:
         - { Key: prx:meta:tagging-version, Value: "2021-04-07" }
         - { Key: prx:cloudformation:stack-name, Value: !Ref AWS::StackName }
