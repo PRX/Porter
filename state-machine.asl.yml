@@ -778,7 +778,6 @@ States:
                 Base: 0
                 Weight: 1
             Cluster: "${EcsClusterArn}"
-            LaunchType: EC2
             Overrides:
               ContainerOverrides:
                 - Environment:
@@ -823,7 +822,7 @@ States:
                   Name: "${HlsContainerName}"
             NetworkConfiguration:
               AwsvpcConfiguration:
-                AssignPublicIp: ENABLED
+                AssignPublicIp: DISABLED
                 Subnets:
                   - "${VpcPublicSubnet1}"
                   - "${VpcPublicSubnet2}"
