@@ -268,7 +268,6 @@ export const handler = async (event) => {
 
     const region = QueueUrl.match(/[a-z]{2}-[a-z]+-[0-9]+/)[0];
     const sqs = new SQSClient({
-      apiVersion: "2012-11-05",
       region,
       retryStrategy,
       requestHandler,
