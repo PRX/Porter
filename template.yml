@@ -1379,120 +1379,120 @@ Resources:
         - { Key: prx:ops:environment, Value: !Ref EnvironmentType }
         - { Key: prx:dev:application, Value: Porter }
   # Private subnets
-  # bPrivateSubnet1:
-  #   # DeletionPolicy: Retain
-  #   DependsOn: IPv6VpcCidrBlock
-  #   Type: AWS::EC2::Subnet
-  #   # UpdateReplacePolicy: Retain
-  #   Properties:
-  #     AvailabilityZone: !Select [0, !GetAZs ""]
-  #     CidrBlock: !Select [15, !Cidr [!GetAtt bVPC.CidrBlock, 16, 12]] # 12 for /20 network with 16 subnets
-  #     Ipv6CidrBlock: !Select [15, !Cidr [!Select [0, !GetAtt bVPC.Ipv6CidrBlocks], 256, 64]] # 64 for /64
-  #     Tags:
-  #       - { Key: prx:meta:tagging-version, Value: "2021-04-07" }
-  #       - { Key: prx:cloudformation:stack-name, Value: !Ref AWS::StackName }
-  #       - { Key: prx:cloudformation:stack-id, Value: !Ref AWS::StackId }
-  #       - { Key: prx:ops:environment, Value: !Ref EnvironmentType }
-  #       - { Key: prx:dev:application, Value: Porter }
-  #       - Key: Name
-  #         Value:
-  #           Fn::Sub:
-  #             - ${AWS::StackName}_private-1_${ZoneName}
-  #             - ZoneName: !Select [0, !GetAZs ""]
-  #     VpcId: !Ref bVPC
-  # bPrivateSubnet1RouteTableAssociation:
-  #   Type: AWS::EC2::SubnetRouteTableAssociation
-  #   Properties:
-  #     RouteTableId: !Ref bPrivateRouteTable
-  #     SubnetId: !Ref bPrivateSubnet1
-  # bPrivateSubnet2:
-  #   # DeletionPolicy: Retain
-  #   DependsOn: IPv6VpcCidrBlock
-  #   Type: AWS::EC2::Subnet
-  #   # UpdateReplacePolicy: Retain
-  #   Properties:
-  #     AvailabilityZone: !Select [1, !GetAZs ""]
-  #     CidrBlock: !Select [14, !Cidr [!GetAtt bVPC.CidrBlock, 16, 12]] # 12 for /20 network with 16 subnets
-  #     Ipv6CidrBlock: !Select [14, !Cidr [!Select [0, !GetAtt bVPC.Ipv6CidrBlocks], 256, 64]] # 64 for /64
-  #     Tags:
-  #       - { Key: prx:meta:tagging-version, Value: "2021-04-07" }
-  #       - { Key: prx:cloudformation:stack-name, Value: !Ref AWS::StackName }
-  #       - { Key: prx:cloudformation:stack-id, Value: !Ref AWS::StackId }
-  #       - { Key: prx:ops:environment, Value: !Ref EnvironmentType }
-  #       - { Key: prx:dev:application, Value: Porter }
-  #       - Key: Name
-  #         Value:
-  #           Fn::Sub:
-  #             - ${AWS::StackName}_private-2_${ZoneName}
-  #             - ZoneName: !Select [1, !GetAZs ""]
-  #     VpcId: !Ref bVPC
-  # bPrivateSubnet2RouteTableAssociation:
-  #   Type: AWS::EC2::SubnetRouteTableAssociation
-  #   Properties:
-  #     RouteTableId: !Ref bPrivateRouteTable
-  #     SubnetId: !Ref bPrivateSubnet2
-  # # ACL for private subnets
-  # # Private subnets allow all inbound and outbound traffic
-  # bPrivateSubnetNetworkAcl:
-  #   Type: AWS::EC2::NetworkAcl
-  #   Properties:
-  #     Tags:
-  #       - { Key: Name, Value: !Sub "${AWS::StackName}_private" }
-  #       - { Key: prx:meta:tagging-version, Value: "2021-04-07" }
-  #       - { Key: prx:cloudformation:stack-name, Value: !Ref AWS::StackName }
-  #       - { Key: prx:cloudformation:stack-id, Value: !Ref AWS::StackId }
-  #       - { Key: prx:ops:environment, Value: !Ref EnvironmentType }
-  #       - { Key: prx:dev:application, Value: Porter }
-  #     VpcId: !Ref bVPC
-  # ##
-  # bPrivateSubnetIPv4AllowAllInboundTrafficNetworkAclEntry:
-  #   Type: AWS::EC2::NetworkAclEntry
-  #   Properties:
-  #     CidrBlock: 0.0.0.0/0
-  #     Egress: false
-  #     NetworkAclId: !Ref bPrivateSubnetNetworkAcl
-  #     Protocol: -1 # All
-  #     RuleAction: allow
-  #     RuleNumber: 100
-  # bPrivateSubnetIPv6AllowAllInboundTrafficNetworkAclEntry:
-  #   Type: AWS::EC2::NetworkAclEntry
-  #   Properties:
-  #     Egress: false
-  #     Ipv6CidrBlock: ::/0
-  #     NetworkAclId: !Ref bPrivateSubnetNetworkAcl
-  #     Protocol: -1 # All
-  #     RuleAction: allow
-  #     RuleNumber: 101
-  # ##
-  # bPrivateSubnetIPv4AllowAllOutboudTrafficNetworkAclEntry:
-  #   Type: AWS::EC2::NetworkAclEntry
-  #   Properties:
-  #     CidrBlock: 0.0.0.0/0
-  #     Egress: true
-  #     NetworkAclId: !Ref bPrivateSubnetNetworkAcl
-  #     Protocol: -1 # All
-  #     RuleAction: allow
-  #     RuleNumber: 100
-  # bPrivateSubnetIPv6AllowAllOutboudTrafficNetworkAclEntry:
-  #   Type: AWS::EC2::NetworkAclEntry
-  #   Properties:
-  #     Egress: true
-  #     Ipv6CidrBlock: ::/0
-  #     NetworkAclId: !Ref bPrivateSubnetNetworkAcl
-  #     Protocol: -1 # All
-  #     RuleAction: allow
-  #     RuleNumber: 101
-  # ##
-  # bPrivateSubnet1NetworkAclAssociation:
-  #   Type: AWS::EC2::SubnetNetworkAclAssociation
-  #   Properties:
-  #     NetworkAclId: !Ref bPrivateSubnetNetworkAcl
-  #     SubnetId: !Ref bPrivateSubnet1
-  # bPrivateSubnet2NetworkAclAssociation:
-  #   Type: AWS::EC2::SubnetNetworkAclAssociation
-  #   Properties:
-  #     NetworkAclId: !Ref bPrivateSubnetNetworkAcl
-  #     SubnetId: !Ref bPrivateSubnet2
+  bPrivateSubnet1:
+    # DeletionPolicy: Retain
+    DependsOn: IPv6VpcCidrBlock
+    Type: AWS::EC2::Subnet
+    # UpdateReplacePolicy: Retain
+    Properties:
+      AvailabilityZone: !Select [0, !GetAZs ""]
+      CidrBlock: !Select [15, !Cidr [!GetAtt bVPC.CidrBlock, 16, 12]] # 12 for /20 network with 16 subnets
+      Ipv6CidrBlock: !Select [15, !Cidr [!Select [0, !GetAtt bVPC.Ipv6CidrBlocks], 256, 64]] # 64 for /64
+      Tags:
+        - { Key: prx:meta:tagging-version, Value: "2021-04-07" }
+        - { Key: prx:cloudformation:stack-name, Value: !Ref AWS::StackName }
+        - { Key: prx:cloudformation:stack-id, Value: !Ref AWS::StackId }
+        - { Key: prx:ops:environment, Value: !Ref EnvironmentType }
+        - { Key: prx:dev:application, Value: Porter }
+        - Key: Name
+          Value:
+            Fn::Sub:
+              - ${AWS::StackName}_private-1_${ZoneName}
+              - ZoneName: !Select [0, !GetAZs ""]
+      VpcId: !Ref bVPC
+  bPrivateSubnet1RouteTableAssociation:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      RouteTableId: !Ref bPrivateRouteTable
+      SubnetId: !Ref bPrivateSubnet1
+  bPrivateSubnet2:
+    # DeletionPolicy: Retain
+    DependsOn: IPv6VpcCidrBlock
+    Type: AWS::EC2::Subnet
+    # UpdateReplacePolicy: Retain
+    Properties:
+      AvailabilityZone: !Select [1, !GetAZs ""]
+      CidrBlock: !Select [14, !Cidr [!GetAtt bVPC.CidrBlock, 16, 12]] # 12 for /20 network with 16 subnets
+      Ipv6CidrBlock: !Select [14, !Cidr [!Select [0, !GetAtt bVPC.Ipv6CidrBlocks], 256, 64]] # 64 for /64
+      Tags:
+        - { Key: prx:meta:tagging-version, Value: "2021-04-07" }
+        - { Key: prx:cloudformation:stack-name, Value: !Ref AWS::StackName }
+        - { Key: prx:cloudformation:stack-id, Value: !Ref AWS::StackId }
+        - { Key: prx:ops:environment, Value: !Ref EnvironmentType }
+        - { Key: prx:dev:application, Value: Porter }
+        - Key: Name
+          Value:
+            Fn::Sub:
+              - ${AWS::StackName}_private-2_${ZoneName}
+              - ZoneName: !Select [1, !GetAZs ""]
+      VpcId: !Ref bVPC
+  bPrivateSubnet2RouteTableAssociation:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      RouteTableId: !Ref bPrivateRouteTable
+      SubnetId: !Ref bPrivateSubnet2
+  # ACL for private subnets
+  # Private subnets allow all inbound and outbound traffic
+  bPrivateSubnetNetworkAcl:
+    Type: AWS::EC2::NetworkAcl
+    Properties:
+      Tags:
+        - { Key: Name, Value: !Sub "${AWS::StackName}_private" }
+        - { Key: prx:meta:tagging-version, Value: "2021-04-07" }
+        - { Key: prx:cloudformation:stack-name, Value: !Ref AWS::StackName }
+        - { Key: prx:cloudformation:stack-id, Value: !Ref AWS::StackId }
+        - { Key: prx:ops:environment, Value: !Ref EnvironmentType }
+        - { Key: prx:dev:application, Value: Porter }
+      VpcId: !Ref bVPC
+  ##
+  bPrivateSubnetIPv4AllowAllInboundTrafficNetworkAclEntry:
+    Type: AWS::EC2::NetworkAclEntry
+    Properties:
+      CidrBlock: 0.0.0.0/0
+      Egress: false
+      NetworkAclId: !Ref bPrivateSubnetNetworkAcl
+      Protocol: -1 # All
+      RuleAction: allow
+      RuleNumber: 100
+  bPrivateSubnetIPv6AllowAllInboundTrafficNetworkAclEntry:
+    Type: AWS::EC2::NetworkAclEntry
+    Properties:
+      Egress: false
+      Ipv6CidrBlock: ::/0
+      NetworkAclId: !Ref bPrivateSubnetNetworkAcl
+      Protocol: -1 # All
+      RuleAction: allow
+      RuleNumber: 101
+  ##
+  bPrivateSubnetIPv4AllowAllOutboudTrafficNetworkAclEntry:
+    Type: AWS::EC2::NetworkAclEntry
+    Properties:
+      CidrBlock: 0.0.0.0/0
+      Egress: true
+      NetworkAclId: !Ref bPrivateSubnetNetworkAcl
+      Protocol: -1 # All
+      RuleAction: allow
+      RuleNumber: 100
+  bPrivateSubnetIPv6AllowAllOutboudTrafficNetworkAclEntry:
+    Type: AWS::EC2::NetworkAclEntry
+    Properties:
+      Egress: true
+      Ipv6CidrBlock: ::/0
+      NetworkAclId: !Ref bPrivateSubnetNetworkAcl
+      Protocol: -1 # All
+      RuleAction: allow
+      RuleNumber: 101
+  ##
+  bPrivateSubnet1NetworkAclAssociation:
+    Type: AWS::EC2::SubnetNetworkAclAssociation
+    Properties:
+      NetworkAclId: !Ref bPrivateSubnetNetworkAcl
+      SubnetId: !Ref bPrivateSubnet1
+  bPrivateSubnet2NetworkAclAssociation:
+    Type: AWS::EC2::SubnetNetworkAclAssociation
+    Properties:
+      NetworkAclId: !Ref bPrivateSubnetNetworkAcl
+      SubnetId: !Ref bPrivateSubnet2
   ##############################################################################
   ##############################################################################
   ##############################################################################
