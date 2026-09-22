@@ -1489,10 +1489,10 @@ Resources:
   #     NetworkAclId: !Ref bPrivateSubnetNetworkAcl
   #     SubnetId: !Ref bPrivateSubnet1
   # bPrivateSubnet2NetworkAclAssociation:
-    Type: AWS::EC2::SubnetNetworkAclAssociation
-    Properties:
-      NetworkAclId: !Ref bPrivateSubnetNetworkAcl
-      SubnetId: !Ref bPrivateSubnet2
+  #   Type: AWS::EC2::SubnetNetworkAclAssociation
+  #   Properties:
+  #     NetworkAclId: !Ref bPrivateSubnetNetworkAcl
+  #     SubnetId: !Ref bPrivateSubnet2
   ##############################################################################
   ##############################################################################
   ##############################################################################
