@@ -38,7 +38,7 @@
     "aws-sdk-client-mock": "^4.1.0",
     "aws-sdk-client-mock-jest": "^4.1.0",
     "dotenv": "*",
-    "jest": "^30.4.2",
+    "jest": "^30.5.1",
     "typescript": "*",
     "yaml-cfn": "*"
   },
