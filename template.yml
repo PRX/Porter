@@ -33,7 +33,7 @@ Parameters:
       - "False"
     Default: "True"
   SubnetIPv4CidrBits:
-    Default: 14
+    Default: 14 # 8 for /24, 16 for /16, 14 for /18 etc. Larger value gives larger network.
     Description: >-
       The number of subnet bits for each subnet's IPv4 CIDR.
       For example, a value of 8 will create CIDRs with a mask of "/24".
@@ -1123,7 +1123,7 @@ Resources:
     # UpdateReplacePolicy: Retain
     Properties:
       AvailabilityZone: !Select [0, !GetAZs ""]
-      CidrBlock: !Select [0, !Cidr [!GetAtt bVPC.CidrBlock, 1, !Ref SubnetIPv4CidrBits]]
+      CidrBlock: !Select [0, !Cidr [!GetAtt bVPC.CidrBlock, 1, 18]]
       Ipv6CidrBlock: !Select [0, !Cidr [!Select [0, !GetAtt bVPC.Ipv6CidrBlocks], 1, !Ref SubnetIPv6CidrBits]]
       Tags:
         - { Key: prx:meta:tagging-version, Value: "2021-04-07" }
@@ -1149,7 +1149,7 @@ Resources:
     # UpdateReplacePolicy: Retain
     Properties:
       AvailabilityZone: !Select [1, !GetAZs ""]
-      CidrBlock: !Select [1, !Cidr [!GetAtt bVPC.CidrBlock, 2, !Ref SubnetIPv4CidrBits]]
+      CidrBlock: !Select [1, !Cidr [!GetAtt bVPC.CidrBlock, 2, 18]]
       Ipv6CidrBlock: !Select [1, !Cidr [!Select [0, !GetAtt bVPC.Ipv6CidrBlocks], 2, !Ref SubnetIPv6CidrBits]]
       Tags:
         - { Key: prx:meta:tagging-version, Value: "2021-04-07" }
