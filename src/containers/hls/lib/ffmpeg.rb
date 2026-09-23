@@ -28,13 +28,15 @@ module Hls
     # input        -- path to the downloaded artifact
     # dir          -- output directory
     # audio_parts  -- directory for the segment muxer's audio parts
-    def initialize(input:, dir:, rungs:, layout:, settings:, audio_parts:)
+    # encoder -- an Hls::Encoders profile; defaults to the preset's
+    def initialize(input:, dir:, rungs:, layout:, settings:, audio_parts:, encoder: nil)
       @input = input
       @dir = dir
       @rungs = rungs
       @layout = layout
       @s = settings
       @audio_parts = audio_parts
+      @enc = encoder || settings::VIDEO_ENCODER.new
     end
 
     def command
@@ -43,6 +45,7 @@ module Hls
         "-hide_banner",
         ["-loglevel", "warning"],
         "-y",
+        @enc.input_flags,
         ["-i", @input],
         ["-filter_complex", filter_complex],
         video_output,
@@ -73,27 +76,17 @@ module Hls
 
     # One branch of the split, normalized to a rung's size and rate.
     def scale_branch(input, size, fps, output)
-      scale = [
-        "scale=#{size}",
-        # stops a non-16:9 source being stretched
-        "force_original_aspect_ratio=decrease",
-        # `H.264 4:2:0` cannot code an odd luma width
-        "force_divisible_by=2",
-        # always use the Lanczos scaling algorithm for the video resolution conversion
-        "flags=lanczos"
-      ].join(":")
+      "[#{input}]#{@enc.scale_filters(size: size, fps: fps)}[#{output}]"
+    end
 
-      filters = [
-        scale,
-        # constant rate, which the frame-exact boundary math requires; a VFR
-        # source otherwise gets breaks on frames that do not exist
-        "fps=#{fps}",
-        # square pixels, so coded size equals display size and RESOLUTION matches
-        # what a validator reads from the SPS
-        "setsar=1"
-      ].join(",")
+    # Profile options carry no stream specifier; only the caller knows whether a
+    # flag is per-rung (:v:0) or per-output (:v).
+    def specified(pairs, spec)
+      pairs.map { |name, value| ["-#{name}#{spec}", value] }
+    end
 
-      "[#{input}]#{filters}[#{output}]"
+    def pix_fmt_flags
+      @enc.pix_fmt ? ["-pix_fmt", @enc.pix_fmt] : []
     end
 
     def video_output
@@ -103,22 +96,20 @@ module Hls
       encodes = @rungs.each_with_index.map do |rung, i|
         bitrate = rung[:bitrate]
         [
-          ["-c:v:#{i}", "libx264"],
-          ["-preset:v:#{i}", @s::PRESET],
+          ["-c:v:#{i}", @enc.codec],
+          specified(@enc.speed, ":v:#{i}"),
           ["-profile:v:#{i}", "high"],
-          # B-frame guidance for H.264 is 2-3.
-          ["-bf:v:#{i}", "3"],
-          ["-b:v:#{i}", bitrate],
-          ["-maxrate:v:#{i}", bitrate],
-          ["-bufsize:v:#{i}", "#{kbps(bitrate) * 2}k"],
+          ["-bf:v:#{i}", @enc.b_frames],
+          specified(@enc.rate_control(bitrate: bitrate, bufsize: "#{kbps(bitrate) * 2}k"), ":v:#{i}"),
 
           # An explicit list calculated in boundaries.rb
           ["-force_key_frames:v:#{i}", @layout.keyframes.join(",")],
 
-          # Any keyframe not in our list becomes an unwanted segment boundary, so
-          # scene-change detection is off and -g is deliberately unset
-          # A uniform-cadence ladder could use -g; our boundaries are irregular by design.
-          ["-sc_threshold:v:#{i}", "0"]
+          # Whatever the encoder needs so the only keyframes are the ones above.
+          # -g is deliberately unset: a uniform-cadence ladder could use it, but
+          # our boundaries are irregular by design.
+          specified(@enc.keyframe_options, ":v:#{i}"),
+          specified(@enc.extra_flags, ":v:#{i}")
         ]
       end
 
@@ -127,7 +118,7 @@ module Hls
         encodes,
         # Video rungs carry no audio: it is delivered once via an AUDIO group
         "-an",
-        ["-pix_fmt", "yuv420p"],
+        pix_fmt_flags,
         hls_muxer(hls_time: @s::HLS_TIME),
         # ffmpeg's own master playlist is discarded
         ["-master_pl_name", @s::FFMPEG_RAW_MASTER],
@@ -147,19 +138,14 @@ module Hls
       [
         ["-map", "[v_iframe]"],
         "-an",
-        ["-c:v", "libx264"],
-        ["-preset:v", @s::PRESET],
+        ["-c:v", @enc.codec],
+        specified(@enc.speed, ":v"),
         ["-profile:v", "high"],
-        ["-pix_fmt", "yuv420p"],
-        ["-b:v", @s::IFRAME_BITRATE],
-        ["-maxrate", "#{cap}k"],
-        ["-bufsize", "#{(cap / 2.0).round}k"],
-        # -g 1 -keyint_min 1: every frame an IDR, which is what makes an
-        # I-frames-only playlist possible at all. -sc_threshold 0 for consistency;
-        # with -g 1 there is nothing left for scene detection to add.
-        ["-g", "1"],
-        ["-keyint_min", "1"],
-        ["-sc_threshold", "0"],
+        pix_fmt_flags,
+        specified(@enc.trickplay_rate_control(bitrate: @s::IFRAME_BITRATE,
+          cap: "#{cap}k", bufsize: "#{(cap / 2.0).round}k"), ":v"),
+        # every frame an IDR, which is what makes an I-frames-only playlist possible
+        specified(@enc.all_idr_options, ""),
         hls_muxer(hls_time: format("%.6f", 1.0 / @s::IFRAME_FPS)),
         ["-hls_segment_filename", File.join(@dir, @s::IFRAME_MEDIA)],
         File.join(@dir, @s::IFRAME_PLAYLIST)

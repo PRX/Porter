@@ -28,6 +28,7 @@ require "aws-sdk-states"
 require "aws-sdk-s3"
 load "./telemetry.rb"
 load "./destinations/aws/s3.rb"
+load "./lib/encoders.rb"
 load "./presets/standard_podcast_2026_v1.rb"
 load "./lib/boundaries.rb"
 load "./lib/ffmpeg.rb"
@@ -53,6 +54,15 @@ begin
   # For now, always use this
   preset = Presets::StandardPodcast2026::V1
 
+  # Which encoder runs is a property of where this task landed, not of the request,
+  # so it comes from the deployment rather than the task JSON. Unset means the
+  # preset's default; an unrecognized name raises rather than quietly using the CPU.
+  encoder = Hls::Encoders.resolve(ENV["HLS_VIDEO_ENCODER"]) || preset::VIDEO_ENCODER.new
+  unless encoder.available?
+    raise StandardError, "video encoder #{encoder.codec} is unavailable: " \
+                         "#{encoder.unavailable_reason}"
+  end
+
   # Get the artifact file from S3
   puts "Downloading artifact"
   get_artifact_s3tm.download_file("artifact.file", bucket: ENV["STATE_MACHINE_ARTIFACT_BUCKET_NAME"], key: ENV["STATE_MACHINE_ARTIFACT_OBJECT_KEY"])
@@ -77,6 +87,8 @@ begin
     ObjectKeyPrefix: ENV["STATE_MACHINE_DESTINATION_OBJECT_KEY_PREFIX"],
     Preset: {
       Name: preset::NAME,
+      # The same preset name can now mean two different encodes.
+      Encoder: encoder.codec,
       PossibleLabels: preset::POSSIBLE_LABELS
     },
     Assets: {}
@@ -123,7 +135,7 @@ begin
 
   ffmpeg_cmd = Hls::FFmpeg.new(
     input: "artifact.file", dir: work, rungs: rungs, layout: layout,
-    settings: preset, audio_parts: audio_parts
+    settings: preset, audio_parts: audio_parts, encoder: encoder
   ).command
 
   puts JSON.dump({msg: "Running FFmpeg", full_command: ffmpeg_cmd})
