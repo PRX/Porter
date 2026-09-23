@@ -1366,6 +1366,11 @@ Resources:
     Properties:
       NetworkAclId: !Ref bPublicSubnetNetworkAcl
       SubnetId: !Ref bPublicSubnet2
+  bPublicSubnet3NetworkAclAssociation:
+    Type: AWS::EC2::SubnetNetworkAclAssociation
+    Properties:
+      NetworkAclId: !Ref bPublicSubnetNetworkAcl
+      SubnetId: !Ref bPublicSubnet3
   # Routing for private subnets
   bPrivateRouteTable:
     Type: AWS::EC2::RouteTable
