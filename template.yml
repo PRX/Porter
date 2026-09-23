@@ -2181,7 +2181,7 @@ Resources:
         - { Key: prx:cloudformation:stack-id, Value: !Ref AWS::StackId }
         - { Key: prx:ops:environment, Value: !Ref EnvironmentType }
         - { Key: prx:dev:application, Value: Porter }
-      VpcId: !Ref VPC
+      VpcId: !Ref bVPC
   FtpCopyEcsTaskSecurityGroupAlbDynamicPortIngress:
     Type: AWS::EC2::SecurityGroupIngress
     Properties:
