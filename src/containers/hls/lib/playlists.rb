@@ -139,14 +139,16 @@ module Hls
     # small TARGETDURATION and must not be dragged up.
     def harmonize_target_duration
       playlists = @video_rungs.map(&:playlist) + [@audio.playlist]
-      target = playlists.map { |pl| required_target_duration(pl) }.max
-
+      longest = playlists.map { |pl| required_target_duration(pl) }.max
       range = @s::TARGET_DURATION_RANGE
-      unless range.cover?(target)
-        raise "EXT-X-TARGETDURATION is #{target}s, outside the allowed range " \
-              "#{range.min}-#{range.max}s. Adjust TARGET (and HLS_TIME, which is " \
-              "the min_segment floor that evicts grid points near a break and so " \
-              "lengthens the adjacent segment)."
+
+      # use the range min as a floor (b/c of breaks, there may be shorter segments; that's fine)
+      # the boundaries logic should prevent this from happening, but just in case,
+      # do check no segment exceeds the range max; that's not ok (re: RFC 8216)
+      target = [longest, range.min].max
+      if target > range.max
+        raise "EXT-X-TARGETDURATION is #{target}s, above the allowed maximum " \
+              "#{range.max}s. Lower MAX_SEG, which caps segment length."
       end
 
       playlists.each do |pl|
