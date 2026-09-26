@@ -772,12 +772,15 @@ States:
           Next: TaskResult Callbacks Map
 
           Resource: arn:aws:states:::ecs:runTask.waitForTaskToken
+          # Parameters: # ECS RunTask request parameters
+          #   CapacityProviderStrategy:
+          #     - CapacityProvider: "${BasicCapacityProviderName}"
+          #       Base: 0
+          #       Weight: 1
+          #   Cluster: "${EcsClusterArn}"
           Parameters: # ECS RunTask request parameters
-            CapacityProviderStrategy:
-              - CapacityProvider: "${BasicCapacityProviderName}"
-                Base: 0
-                Weight: 1
             Cluster: "${EcsClusterArn}"
+            LaunchType: FARGATE
             Overrides:
               ContainerOverrides:
                 - Environment:
@@ -822,10 +825,11 @@ States:
                   Name: "${HlsContainerName}"
             NetworkConfiguration:
               AwsvpcConfiguration:
-                AssignPublicIp: DISABLED
+                AssignPublicIp: ENABLED
                 Subnets:
                   - "${VpcPublicSubnet1}"
                   - "${VpcPublicSubnet2}"
+                  - "${VpcPublicSubnet3}"
             PropagateTags: TASK_DEFINITION
             TaskDefinition: "${HlsEcsTaskDefinitionArn}"
 

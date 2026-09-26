@@ -46,4 +46,4 @@ bootstrap:
 	bundle install
 	npm install
 	pip3 install -r requirements.txt
-	@for d in $(CONTAINER_DIRS); do $(MAKE) -C $$d bootstrap || exit 1; done
+	# @for d in $(CONTAINER_DIRS); do $(MAKE) -C $$d bootstrap || exit 1; done
