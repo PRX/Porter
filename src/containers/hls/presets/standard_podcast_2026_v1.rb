@@ -14,7 +14,9 @@ module Presets
         {height: 480, size: "854x480", bitrate: "1200k"}
       ].freeze
 
-      PRESET = "medium"
+      # Default encoder, some are platform dependent (i.e. Nvidia GPU, or Apple Silicon?).
+      # Deployment can override with `HLS_VIDEO_ENCODER`
+      VIDEO_ENCODER = Hls::Encoders::X264
 
       # Every rung is normalized to this, and the boundary math is quantized against it
       # TODO: think about if this should be 23.976 or 24 fps, or different preset?

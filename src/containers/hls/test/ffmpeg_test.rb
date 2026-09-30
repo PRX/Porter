@@ -2,13 +2,14 @@
 
 # Argument construction only -- nothing is executed. Run: make test
 require "minitest/autorun"
+require_relative "../lib/encoders"
 require_relative "../lib/ffmpeg"
 require_relative "../lib/boundaries"
 
 module FFmpegTestSettings
   FPS = "30"
   HLS_TIME = 2
-  PRESET = "medium"
+  VIDEO_ENCODER = Hls::Encoders::X264
   AUDIO_BITRATE = "192k"
   AUDIO_SAMPLE_RATE = "48000"
   AUDIO_CHANNELS = "2"
@@ -167,8 +168,8 @@ describe Hls::FFmpeg do
 
     it "rate caps the encode at the configured factor" do
       # All-IDR content is spiky enough that an uncapped encode gets flagged.
-      _(value_after(cmd, "-maxrate")).must_equal "225k"   # 150k * 1.5
-      _(value_after(cmd, "-bufsize")).must_equal "113k"
+      _(value_after(cmd, "-maxrate:v")).must_equal "225k"   # 150k * 1.5
+      _(value_after(cmd, "-bufsize:v")).must_equal "113k"
     end
   end
 
@@ -227,6 +228,142 @@ describe Hls::FFmpeg do
       c = cmd(breaks: [])
       _(value_after(c, "-force_key_frames:v:0")).must_include "6.000000"
       _(value_after(c, "-segment_times")).must_include "12.000000"
+    end
+  end
+end
+
+describe Hls::Encoders do
+  def layout
+    Hls::Boundaries.build(duration: 60.0, target: 6, fps: "30", hls_time: 1,
+      breaks: [10.5], max_seg: 6, min_segment: 2)
+  end
+
+  def command_for(encoder)
+    Hls::FFmpeg.new(input: "in.mp4", dir: "/tmp/o", encoder: encoder,
+      rungs: [{height: 720, size: "1280x720", bitrate: "2800k"}],
+      layout: layout, settings: FFmpegTestSettings, audio_parts: "/tmp/o/_p").command
+  end
+
+  def value_after(cmd, flag)
+    i = cmd.index(flag)
+    i && cmd[i + 1]
+  end
+
+  describe ".resolve" do
+    it "returns nil when unset, so the caller falls back to the preset" do
+      _(Hls::Encoders.resolve(nil)).must_be_nil
+      _(Hls::Encoders.resolve("")).must_be_nil
+    end
+
+    it "raises on an unknown name rather than falling back to the CPU" do
+      e = _ { Hls::Encoders.resolve("nvidia") }.must_raise RuntimeError
+      _(e.message).must_match(/unknown video encoder/)
+    end
+
+    it "maps each name to its codec" do
+      got = %w[libx264 videotoolbox nvenc].map { |n| Hls::Encoders.resolve(n).codec }
+      _(got).must_equal %w[libx264 h264_videotoolbox h264_nvenc]
+    end
+  end
+
+  describe "availability" do
+    # libx264 with its codec or one option swapped out
+    def x264_with(codec: "libx264", option: nil)
+      Class.new(Hls::Encoders::X264) do
+        define_method(:codec) { codec }
+        define_method(:extra_flags) { option ? [option] : [] }
+      end.new
+    end
+
+    it "is available when ffmpeg can encode with it and all its options" do
+      enc = Hls::Encoders::X264.new
+      _(enc.available?).must_equal true
+      _(enc.unavailable_reason).must_be_nil
+    end
+
+    it "reports ffmpeg's error for an encoder this build lacks" do
+      enc = x264_with(codec: "h264_not_a_real_encoder")
+      _(enc.available?).must_equal false
+      _(enc.unavailable_reason).must_equal "this ffmpeg is not built with h264_not_a_real_encoder"
+    end
+
+    # ffmpeg exits 0 for this and only warns, which is how a flag meant for one
+    # encoder silently does nothing on another.
+    it "is unavailable when the encoder does not take one of its options" do
+      enc = x264_with(option: ["mpv_flags", "+qp_rd"])
+      _(enc.available?).must_equal false
+      _(enc.unavailable_reason).must_match(/mpv_flags .* has not been used for any stream/)
+    end
+  end
+
+  describe "nvenc" do
+    # These two replace -sc_threshold, which is an x264-only option. Without them
+    # nvenc adds its own I-frames, and every one is an unplanned segment boundary.
+    it "swaps sc_threshold for forced-idr and no-scenecut" do
+      cmd = command_for(Hls::Encoders::Nvenc.new)
+      _(cmd.grep(/sc_threshold/)).must_be_empty
+      _(value_after(cmd, "-forced-idr:v:0")).must_equal "1"
+      _(value_after(cmd, "-no-scenecut:v:0")).must_equal "1"
+    end
+
+    it "still forces a keyframe at every boundary" do
+      cmd = command_for(Hls::Encoders::Nvenc.new)
+      _(value_after(cmd, "-force_key_frames:v:0")).must_equal layout.keyframes.join(",")
+    end
+
+    it "keeps decoded frames on the GPU and omits pix_fmt" do
+      cmd = command_for(Hls::Encoders::Nvenc.new)
+      _(cmd[cmd.index("-i") - 4, 4]).must_equal(
+        ["-hwaccel", "cuda", "-hwaccel_output_format", "cuda"]
+      )
+      _(cmd).wont_include "-pix_fmt"
+    end
+
+    it "scales with scale_npp, keeping lanczos and the aspect handling" do
+      filters = value_after(command_for(Hls::Encoders::Nvenc.new), "-filter_complex")
+      _(filters).must_include "scale_npp=w=1280:h=720"
+      _(filters).must_include "interp_algo=lanczos"
+      _(filters).must_include "force_original_aspect_ratio=decrease"
+      _(filters).must_include "force_divisible_by=2"
+      # reset_sar does what setsar=1 does, so the separate filter goes away
+      _(filters).must_include "reset_sar=1"
+      _(filters).wont_include "setsar"
+    end
+  end
+
+  describe "videotoolbox" do
+    it "uses the hardware encoder but keeps software scaling" do
+      cmd = command_for(Hls::Encoders::VideoToolbox.new)
+      _(value_after(cmd, "-c:v:0")).must_equal "h264_videotoolbox"
+      filters = value_after(cmd, "-filter_complex")
+      _(filters).must_include "flags=lanczos"
+      _(filters).must_include "setsar=1"
+      _(filters).wont_include "scale_npp"
+    end
+
+    it "omits the flags it has no option for" do
+      # No -preset, and nothing for keyframes beyond -force_key_frames.
+      cmd = command_for(Hls::Encoders::VideoToolbox.new)
+      _(cmd.grep(/\A-preset/)).must_be_empty
+      _(cmd.grep(/sc_threshold|forced-idr|no-scenecut/)).must_be_empty
+      _(value_after(cmd, "-force_key_frames:v:0")).wont_be_nil
+    end
+
+    it "still names a pixel format, which it accepts directly" do
+      _(value_after(command_for(Hls::Encoders::VideoToolbox.new), "-pix_fmt")).must_equal "yuv420p"
+    end
+
+    it "caps per-frame QP, with a loose maxrate and no bufsize" do
+      cmd = command_for(Hls::Encoders::VideoToolbox.new)
+      _(value_after(cmd, "-b:v:0")).must_equal "2800k"
+      _(value_after(cmd, "-maxrate:v:0")).must_equal "11200k"
+      _(value_after(cmd, "-qmax:v:0")).must_equal "36"
+      _(cmd.grep(/\A-bufsize:v:\d\z/)).must_be_empty
+    end
+
+    it "loosens the QP ceiling below 720p" do
+      rc = Hls::Encoders::VideoToolbox.new.rate_control(bitrate: "1200k", bufsize: "2400k", height: 480)
+      _(rc).must_include ["qmax", "40"]
     end
   end
 end

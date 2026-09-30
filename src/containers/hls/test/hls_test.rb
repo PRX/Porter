@@ -3,6 +3,7 @@
 require "minitest/autorun"
 require "fileutils"
 require "json"
+require "open3"
 require "tmpdir"
 require_relative "harness/task_runner"
 
@@ -23,6 +24,11 @@ describe "hls.rb" do
       },
       **opts
     )
+  end
+
+  def logged(run, msg)
+    # The backtrace is plain text; every other log line is one JSON object.
+    run.output.lines.grep(/\A\{/).map { |l| JSON.parse(l) }.find { |l| l["msg"] == msg }
   end
 
   describe "input validation" do
@@ -131,7 +137,50 @@ describe "hls.rb" do
     end
   end
 
+  describe "when ffmpeg fails" do
+    # Stubs the encode: real output from a shell that writes both streams.
+    def with_failing_ffmpeg
+      failed = Open3.capture3("sh", "-c", "echo to-stdout; echo a-warning >&2; echo the-error >&2; exit 3")
+      original = Open3.method(:capture3)
+      # Only the encode: ffprobe and the encoder's availability probe run for real.
+      Open3.define_singleton_method(:capture3) do |*args, **opts|
+        encode = args.first == "ffmpeg" && args.include?("artifact.file")
+        encode ? failed : original.call(*args, **opts)
+      end
+      yield
+    ensure
+      Open3.define_singleton_method(:capture3, original)
+    end
+
+    it "logs stdout and stderr in full" do
+      run = with_failing_ffmpeg { run_task }
+      out = logged(run, "FFmpeg output")
+      _(out["exit_status"]).must_equal 3
+      _(out["stdout"]).must_equal "to-stdout\n"
+      _(out["stderr"]).must_equal "a-warning\nthe-error\n"
+    end
+
+    it "reports the tail of stderr through the callback" do
+      run = with_failing_ffmpeg { run_task }
+      _(run.failure[:cause]).must_equal "FFmpeg failed (exit 3): a-warning\nthe-error"
+    end
+
+    it "logs no ffmpeg output for a failure before the encode" do
+      _(logged(run_task(preset: "nope"), "FFmpeg output")).must_be_nil
+    end
+  end
+
   describe "source requirements" do
+    it "fails on an unreadable source with ffprobe's own error, logged in full" do
+      Dir.mktmpdir do |dir|
+        junk = File.join(dir, "junk.mp4")
+        File.write(junk, "not a video")
+        run = run_task(source: junk)
+        _(run.failure[:cause]).must_match(/\AFFprobe failed \(exit \d+\): .*Invalid data found/m)
+        _(logged(run, "FFprobe output")["stderr"]).must_include "Invalid data found"
+      end
+    end
+
     it "fails when no rung is at or below the source height" do
       run = run_task(source: File.expand_path("samples/tiny-video.ts", __dir__))
       _(run.ok?).must_equal false
