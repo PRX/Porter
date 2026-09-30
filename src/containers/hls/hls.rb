@@ -43,7 +43,12 @@ def probe(file, entries, stream: nil)
   args = ["ffprobe", "-v", "error"]
   args += ["-select_streams", stream] if stream
   args += ["-show_entries", entries, "-of", "csv=p=0", file]
-  IO.popen(args, &:read).lines.first.to_s.strip
+  stdout, stderr, status = Open3.capture3(*args)
+  unless status.success?
+    puts JSON.dump({msg: "FFprobe output", exit_status: status.exitstatus, stdout: stdout, stderr: stderr})
+    raise StandardError, "FFprobe failed (exit #{status.exitstatus}): #{stderr.strip}"
+  end
+  stdout.lines.first.to_s.strip
 end
 
 begin
@@ -53,33 +58,35 @@ begin
 
   # For now, always use this
   preset = Presets::StandardPodcast2026::V1
-
-  # Which encoder runs is a property of where this task landed, not of the request,
-  # so it comes from the deployment rather than the task JSON. Unset means the
-  # preset's default; an unrecognized name raises rather than quietly using the CPU.
-  encoder = Hls::Encoders.resolve(ENV["HLS_VIDEO_ENCODER"]) || preset::VIDEO_ENCODER.new
-  unless encoder.available?
-    raise StandardError, "video encoder #{encoder.codec} is unavailable: " \
-                         "#{encoder.unavailable_reason}"
-  end
-
-  # Get the artifact file from S3
-  puts "Downloading artifact"
-  get_artifact_s3tm.download_file("artifact.file", bucket: ENV["STATE_MACHINE_ARTIFACT_BUCKET_NAME"], key: ENV["STATE_MACHINE_ARTIFACT_OBJECT_KEY"])
-
   raise StandardError, "Unsupported preset" unless task["Preset"] == preset::NAME
 
-  # Ad break times, in seconds from the start of the asset. Optional: with none,
-  # the segment layout is the plain grid and no break metadata is reported. Each
-  # break becomes a segment boundary AND a keyframe, quantized to a whole frame, so
-  # what comes back in AdBreaks may differ slightly from what was asked for.
+  # The encoder is a property of where this task is run (not of the request)
+  # unrecognized or unavailable encoders raise rather than quietly using the CPU
+  # i.e. if this isn't working, we should fix the deployment & config
+  encoder = Hls::Encoders.resolve(ENV["HLS_VIDEO_ENCODER"]) || preset::VIDEO_ENCODER.new
+  unless encoder.available?
+    raise StandardError, "video encoder #{encoder.codec} is unavailable: #{encoder.unavailable_reason}"
+  end
+
+  # Ad break times, in seconds from the start of the asset.
+  # breaks are optional: with none specified, the segment layout is the plain grid
+  # and no break metadata is reported.
+  # Each break becomes a segment boundary and keyframe, quantized to a whole frame, so
+  # what comes back in the response's AdBreaks may differ slightly from what was asked for.
   ad_breaks = Array(task["AdBreaks"]).map { |t| Float(t) }
   unless ad_breaks.all?(&:finite?) && ad_breaks.all?(&:positive?)
     raise StandardError, "AdBreaks must be positive numbers of seconds"
   end
 
+  # Get the artifact file from S3
+  puts "Downloading artifact"
+  artifact_bucket = ENV["STATE_MACHINE_ARTIFACT_BUCKET_NAME"]
+  artifact_key = ENV["STATE_MACHINE_ARTIFACT_OBJECT_KEY"]
+  get_artifact_s3tm.download_file("artifact.file", bucket: artifact_bucket, key: artifact_key)
+
   puts JSON.dump({msg: "Starting task…"})
   send_start_metric
+  start_time = Time.now.to_i
 
   task_result = {
     Task: ENV["STATE_MACHINE_TASK_TYPE"],
@@ -87,14 +94,11 @@ begin
     ObjectKeyPrefix: ENV["STATE_MACHINE_DESTINATION_OBJECT_KEY_PREFIX"],
     Preset: {
       Name: preset::NAME,
-      # The same preset name can now mean two different encodes.
       Encoder: encoder.codec,
       PossibleLabels: preset::POSSIBLE_LABELS
     },
     Assets: {}
   }
-
-  start_time = Time.now.to_i
 
   work = preset::WORK_DIR
   audio_parts = File.join(work, preset::AUDIO_PARTS_DIR)
@@ -107,47 +111,56 @@ begin
   raise StandardError, "Artifact has no video stream" if source_height.zero?
   raise StandardError, "Could not determine artifact duration" unless duration.positive?
 
-  # Rungs taller than the source are dropped rather than upscaled. Logged, not
-  # silent -- a distribution target may require a variant that got skipped, and then
-  # the too-small source is what needs fixing.
+  # No rungs? that's an error
+  # Rungs taller than the source? Dropped (and logged) rather than upscaled.
   rungs, skipped = Hls::FFmpeg.select_rungs(preset::RUNGS, source_height)
   if rungs.empty?
     raise StandardError, "No rungs at or below the source height (#{source_height}p)"
   end
   puts JSON.dump({
     msg: "Source inspected",
-    duration: duration, height: source_height, source_fps: source_fps,
+    duration: duration,
+    height: source_height,
+    source_fps: source_fps,
     output_fps: preset::FPS,
-    encoding: rungs.map { |r| r[:height] }, skipped_as_upscale: skipped,
+    encoding: rungs.map { |r| r[:height] },
+    skipped_as_upscale: skipped,
     ad_breaks_requested: ad_breaks
   })
 
-  # One boundary set, three views of it. They differ only in rounding: video
-  # keyframes are biased half a frame early so ffmpeg picks the intended frame,
+  # One boundary set, three views of it (mostly to work with ffmpeg).
+  # They differ only in rounding:
+  # video keyframes are biased half a frame early so ffmpeg picks the intended frame,
   # audio splits use the exact times, and the break times are reported as-is.
-  # audio_grain is one audio frame in seconds
+  # audio_grain is one audio frame in seconds (maybe calculate in boundaries instead?)
   layout = Hls::Boundaries.build(
-    duration: duration, target: preset::TARGET, fps: preset::FPS,
-    hls_time: preset::HLS_TIME, breaks: ad_breaks, max_seg: preset::MAX_SEG,
+    duration: duration,
+    target: preset::TARGET,
+    fps: preset::FPS,
+    hls_time: preset::HLS_TIME,
+    breaks: ad_breaks,
+    max_seg: preset::MAX_SEG,
     min_segment: preset::MIN_SEGMENT,
     audio_grain: Rational(preset::AUDIO_FRAME_SAMPLES, preset::AUDIO_SAMPLE_RATE.to_i)
   )
 
   ffmpeg_cmd = Hls::FFmpeg.new(
-    input: "artifact.file", dir: work, rungs: rungs, layout: layout,
-    settings: preset, audio_parts: audio_parts, encoder: encoder
+    input: "artifact.file",
+    dir: work,
+    rungs: rungs,
+    layout: layout,
+    settings: preset,
+    audio_parts: audio_parts,
+    encoder: encoder
   ).command
 
   puts JSON.dump({msg: "Running FFmpeg", full_command: ffmpeg_cmd})
-  # capture2e, not system: on failure ffmpeg's own diagnostics are the only useful
-  # thing to report, and `system` leaves them where the task result cannot reach
-  # them. Tail only -- a wall of output is not worth putting in a callback.
-  ff_output, ff_status = Open3.capture2e(*ffmpeg_cmd)
+  ff_stdout, ff_stderr, ff_status = Open3.capture3(*ffmpeg_cmd)
   unless ff_status.success?
-    tail = ff_output.lines.last(20).join.strip
+    tail = ff_stderr.lines.last(20).join.strip
     raise StandardError, "FFmpeg failed (exit #{ff_status.exitstatus}): #{tail}"
   end
-  puts JSON.dump({msg: "FFmpeg finished", stderr_tail: ff_output.lines.last(5).join.strip})
+  puts JSON.dump({msg: "FFmpeg finished", stderr_tail: ff_stderr.lines.last(5).join.strip})
 
   # ffmpeg can exit 0 having written nothing useful. Without this, the first sign
   # is an ENOENT from the packer or the upload, which reads like a bug here rather
@@ -185,10 +198,14 @@ begin
                          "probably truncated or its header duration is wrong; the " \
                          "break layout was computed for the latter."
   end
-  puts JSON.dump({msg: "Outputs verified", segments: counts.values.first,
-                  encoded_duration: encoded.round(3), source_duration: duration.round(3)})
+  puts JSON.dump({
+    msg: "Outputs verified",
+    segments: counts.values.first,
+    encoded_duration: encoded.round(3),
+    source_duration: duration.round(3)
+  })
 
-  # ffmpeg's own master playlist is discarded; see lib/playlists.rb.
+  # ffmpeg's own (not so great) master playlist is discarded; see lib/playlists.rb.
   FileUtils.rm_f(File.join(work, preset::FFMPEG_RAW_MASTER))
 
   # The audio rendition comes out of the segment muxer as many parts, because that
@@ -205,13 +222,10 @@ begin
 
   rendition = Hls::Playlists::Rendition
   video_renditions = rungs.map do |r|
-    rendition.new(playlist: "#{r[:height]}p.m3u8", media: "#{r[:height]}p.ts",
-      label: preset.rung_label(r[:height]))
+    rendition.new(playlist: "#{r[:height]}p.m3u8", media: "#{r[:height]}p.ts", label: preset.rung_label(r[:height]))
   end
-  audio_rendition = rendition.new(playlist: preset::AUDIO_PLAYLIST,
-    media: preset::AUDIO_MEDIA, label: "AUDIO")
-  iframe_rendition = rendition.new(playlist: preset::IFRAME_PLAYLIST,
-    media: preset::IFRAME_MEDIA, label: "IFRAME")
+  audio_rendition = rendition.new(playlist: preset::AUDIO_PLAYLIST, media: preset::AUDIO_MEDIA, label: "AUDIO")
+  iframe_rendition = rendition.new(playlist: preset::IFRAME_PLAYLIST, media: preset::IFRAME_MEDIA, label: "IFRAME")
 
   # Wall-clock anchor for EXT-X-PROGRAM-DATE-TIME. VOD has no real wall clock, so
   # this is the packaging time -- what matters is that one value goes into every
@@ -309,6 +323,15 @@ begin
 rescue => e
   puts JSON.dump({msg: "Task failed!", error: e.class.name, cause: e.message})
   puts e.backtrace
+  # Logs on any failure once ffmpeg has run, including a clean exit with bad outputs.
+  if ff_status
+    puts JSON.dump({
+      msg: "FFmpeg output",
+      exit_status: ff_status.exitstatus,
+      stdout: ff_stdout,
+      stderr: ff_stderr
+    })
+  end
 
   sf.send_task_failure({
     task_token: ENV["STATE_MACHINE_TASK_TOKEN"],

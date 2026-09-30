@@ -14,9 +14,8 @@ module Presets
         {height: 480, size: "854x480", bitrate: "1200k"}
       ].freeze
 
-      # Which encoder produces the video. Deployment can override with
-      # HLS_VIDEO_ENCODER; the encode speed setting belongs to the encoder, since
-      # "medium" and "p4" are different vocabularies.
+      # Default encoder, some are platform dependent (i.e. Nvidia GPU, or Apple Silicon?).
+      # Deployment can override with `HLS_VIDEO_ENCODER`
       VIDEO_ENCODER = Hls::Encoders::X264
 
       # Every rung is normalized to this, and the boundary math is quantized against it

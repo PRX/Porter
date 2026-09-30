@@ -266,6 +266,36 @@ describe Hls::Encoders do
     end
   end
 
+  describe "availability" do
+    # libx264 with its codec or one option swapped out
+    def x264_with(codec: "libx264", option: nil)
+      Class.new(Hls::Encoders::X264) do
+        define_method(:codec) { codec }
+        define_method(:extra_flags) { option ? [option] : [] }
+      end.new
+    end
+
+    it "is available when ffmpeg can encode with it and all its options" do
+      enc = Hls::Encoders::X264.new
+      _(enc.available?).must_equal true
+      _(enc.unavailable_reason).must_be_nil
+    end
+
+    it "reports ffmpeg's error for an encoder this build lacks" do
+      enc = x264_with(codec: "h264_not_a_real_encoder")
+      _(enc.available?).must_equal false
+      _(enc.unavailable_reason).must_equal "this ffmpeg is not built with h264_not_a_real_encoder"
+    end
+
+    # ffmpeg exits 0 for this and only warns, which is how a flag meant for one
+    # encoder silently does nothing on another.
+    it "is unavailable when the encoder does not take one of its options" do
+      enc = x264_with(option: ["mpv_flags", "+qp_rd"])
+      _(enc.available?).must_equal false
+      _(enc.unavailable_reason).must_match(/mpv_flags .* has not been used for any stream/)
+    end
+  end
+
   describe "nvenc" do
     # These two replace -sc_threshold, which is an x264-only option. Without them
     # nvenc adds its own I-frames, and every one is an unplanned segment boundary.
@@ -299,10 +329,6 @@ describe Hls::Encoders do
       _(filters).must_include "reset_sar=1"
       _(filters).wont_include "setsar"
     end
-
-    it "requires a GPU device to be present" do
-      _(Hls::Encoders::Nvenc.new.available?).must_equal !Dir.glob("/dev/nvidia*").empty?
-    end
   end
 
   describe "videotoolbox" do
@@ -325,6 +351,19 @@ describe Hls::Encoders do
 
     it "still names a pixel format, which it accepts directly" do
       _(value_after(command_for(Hls::Encoders::VideoToolbox.new), "-pix_fmt")).must_equal "yuv420p"
+    end
+
+    it "caps per-frame QP, with a loose maxrate and no bufsize" do
+      cmd = command_for(Hls::Encoders::VideoToolbox.new)
+      _(value_after(cmd, "-b:v:0")).must_equal "2800k"
+      _(value_after(cmd, "-maxrate:v:0")).must_equal "11200k"
+      _(value_after(cmd, "-qmax:v:0")).must_equal "36"
+      _(cmd.grep(/\A-bufsize:v:\d\z/)).must_be_empty
+    end
+
+    it "loosens the QP ceiling below 720p" do
+      rc = Hls::Encoders::VideoToolbox.new.rate_control(bitrate: "1200k", bufsize: "2400k", height: 480)
+      _(rc).must_include ["qmax", "40"]
     end
   end
 end

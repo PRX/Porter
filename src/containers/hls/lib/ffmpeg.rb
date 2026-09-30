@@ -94,14 +94,17 @@ module Hls
       var_stream_map = @rungs.each_with_index.map { |r, i| "v:#{i},name:#{r[:height]}p" }.join(" ")
 
       encodes = @rungs.each_with_index.map do |rung, i|
-        bitrate = rung[:bitrate]
+        rate_control = @enc.rate_control(
+          bitrate: rung[:bitrate],
+          bufsize: "#{kbps(rung[:bitrate]) * 2}k",
+          height: rung[:height]
+        )
         [
           ["-c:v:#{i}", @enc.codec],
           specified(@enc.speed, ":v:#{i}"),
           ["-profile:v:#{i}", "high"],
           ["-bf:v:#{i}", @enc.b_frames],
-          specified(@enc.rate_control(bitrate: bitrate, bufsize: "#{kbps(bitrate) * 2}k"), ":v:#{i}"),
-
+          specified(rate_control, ":v:#{i}"),
           # An explicit list calculated in boundaries.rb
           ["-force_key_frames:v:#{i}", @layout.keyframes.join(",")],
 
@@ -142,8 +145,9 @@ module Hls
         specified(@enc.speed, ":v"),
         ["-profile:v", "high"],
         pix_fmt_flags,
-        specified(@enc.trickplay_rate_control(bitrate: @s::IFRAME_BITRATE,
-          cap: "#{cap}k", bufsize: "#{(cap / 2.0).round}k"), ":v"),
+        ["-b:v", @s::IFRAME_BITRATE],
+        ["-maxrate:v", "#{cap}k"],
+        ["-bufsize:v", "#{(cap / 2.0).round}k"],
         # every frame an IDR, which is what makes an I-frames-only playlist possible
         specified(@enc.all_idr_options, ""),
         hls_muxer(hls_time: format("%.6f", 1.0 / @s::IFRAME_FPS)),

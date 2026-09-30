@@ -70,11 +70,12 @@ module Hls
       iframe_props = video_properties(@iframe.media)
       raise "#{@iframe.media} has no video stream" if iframe_props.nil?
 
+      # Same threshold as validator SHOULD 235045, which cannot run in the pipeline.
       if iframe_rate[:peak] > 2 * iframe_rate[:average]
-        # Advisory, but it means the trickplay encode was not rate capped.
         puts JSON.dump({
           msg: "WARNING: trickplay peak is more than twice its average; " \
-               "tighten the trickplay rate cap",
+               "tighten the trickplay rate cap. Ignore for h264_videotoolbox, " \
+               "which cannot bound single-frame size, so always trips this.",
           peak_kbps: iframe_rate[:peak] / 1000,
           average_kbps: iframe_rate[:average] / 1000
         })
