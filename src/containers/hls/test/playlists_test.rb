@@ -127,13 +127,24 @@ describe Hls::Playlists do
       end
     end
 
-    it "refuses to write a playlist outside the allowed range" do
+    it "refuses to write a playlist whose segments exceed the allowed maximum" do
       Dir.mktmpdir do |dir|
         build_package(dir, video_durations: [14.0, 6.0])
         err = _ { playlists_for(dir).write_all }.must_raise RuntimeError
-        _(err.message).must_match(/outside the allowed range/)
+        _(err.message).must_match(/above the allowed maximum/)
         # and must not leave a master behind
         _(File.exist?(File.join(dir, "index.m3u8"))).must_equal false
+      end
+    end
+
+    it "declares the range floor when every segment is shorter than it" do
+      Dir.mktmpdir do |dir|
+        build_package(dir, video_durations: [5.3, 4.9, 3.55],
+          audio_durations: [5.290667, 4.9, 3.55])
+        playlists_for(dir).write_all
+        %w[720p.m3u8 480p.m3u8 audio.m3u8].each do |name|
+          _(File.read(File.join(dir, name))).must_include "#EXT-X-TARGETDURATION:6"
+        end
       end
     end
   end
