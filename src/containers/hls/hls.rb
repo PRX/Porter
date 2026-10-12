@@ -30,6 +30,7 @@ load "./telemetry.rb"
 load "./destinations/aws/s3.rb"
 load "./lib/encoders.rb"
 load "./presets/standard_podcast_2026_v1.rb"
+load "./presets/standard_podcast_2026_v1_24fps.rb"
 load "./lib/boundaries.rb"
 load "./lib/ffmpeg.rb"
 load "./lib/ts_packer.rb"
@@ -56,9 +57,9 @@ begin
 
   task = JSON.parse(ENV["STATE_MACHINE_TASK_JSON"])
 
-  # For now, always use this
-  preset = Presets::StandardPodcast2026::V1
-  raise StandardError, "Unsupported preset" unless task["Preset"] == preset::NAME
+  presets = [Presets::StandardPodcast2026::V1, Presets::StandardPodcast2026::V1At24fps]
+  preset = presets.find { |pr| task["Preset"] == pr::NAME }
+  raise StandardError, "Unsupported preset" unless preset
 
   # The encoder is a property of where this task is run (not of the request)
   # unrecognized or unavailable encoders raise rather than quietly using the CPU
