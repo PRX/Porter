@@ -24,7 +24,7 @@ run = TaskRunner.run(
   source: source,
   task: {
     "Type" => "HLS",
-    "Preset" => "Standard Podcast 2026 v1",
+    "Preset" => ENV.fetch("HLS_PRESET", "Standard Podcast 2026 v1"),
     "AdBreaks" => breaks
   },
   upload_to: outdir,

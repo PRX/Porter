@@ -762,6 +762,11 @@ Individual variant details in the task output will include the appropriate label
   The `compat`ibility playlist is for players whose adaptive logic treats the audio-only variant,
   if present, as the bottom rung of the video ladder and plays video w/o audio (e.g. VLC).
 
+- **Standard Podcast 2026 v1 24fps:** Identical to Standard Podcast 2026 v1, except
+  every video rung is normalized to 24fps instead of 30fps. Suits sources shot at
+  23.976 or 24fps, which it encodes without dropping frames; a 30fps source loses one
+  frame in five. Possible labels are the same.
+
 #### Ad Breaks
 
 Ads can only be inserted into an HLS stream *between* segments
