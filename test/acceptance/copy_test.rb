@@ -321,7 +321,7 @@ describe :porter do
             {
               Type: "Copy",
               Mode: "FTP/Passive",
-              URL: "ftp://dlpuser:rNrKYTX9g7z3RgJRmxWuGHbeu@ftp.dlptest.com/file.ext",
+              URL: "ftp://dlpuser:xc8IycnK7MvzRBWRR7272j1lr@ftp.dlptest.com/file.ext",
               MaxAttempts: 5
             }
           ]
@@ -348,7 +348,7 @@ describe :porter do
             {
               Type: "Copy",
               Mode: "FTP/Active",
-              URL: "ftp://dlpuser:rNrKYTX9g7z3RgJRmxWuGHbeu@ftp.dlptest.com/file2.ext",
+              URL: "ftp://dlpuser:xc8IycnK7MvzRBWRR7272j1lr@ftp.dlptest.com/file2.ext",
               MaxAttempts: 5
             }
           ]
