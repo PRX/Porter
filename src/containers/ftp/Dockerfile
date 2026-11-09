@@ -1,7 +1,7 @@
 FROM public.ecr.aws/amazonlinux/amazonlinux:2023
 
 RUN dnf update -y \
-    && dnf install -y ruby3.2 ruby-devel make gcc
+    && dnf install -y ruby3.2 ruby-devel make gcc openssl openssl-devel
 
 ENV APP_HOME=/ftp
 RUN mkdir -p $APP_HOME
