@@ -105,8 +105,9 @@ describe "hls.rb" do
       end
       video, iframe, audio = first_pts
       _(iframe).must_equal video
-      # 1024 samples at 48kHz, in 90kHz ticks
-      _(video - audio).must_equal 1024 * 90_000 / 48_000
+      # the encoder's priming at 48kHz, in 90kHz ticks
+      priming = Hls::FFmpeg.audio_priming(Presets::StandardPodcast2026::V1)
+      _(video - audio).must_equal priming * 90_000 / 48_000
     end
 
     it "uploads each rendition's media and playlist, plus both masters" do

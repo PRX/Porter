@@ -1,5 +1,6 @@
 # frozen_string_literal: true
 
+require "open3"
 require_relative "timing"
 
 module Hls
@@ -70,6 +71,35 @@ module Hls
       selected = all_rungs.select { |r| r[:height] <= source_height }
       skipped = all_rungs.reject { |r| r[:height] <= source_height }.map { |r| r[:height] }
       [selected, skipped]
+    end
+
+    # The audio encode, shared with the priming probe so both run the same encoder.
+    def self.audio_encode(settings)
+      [
+        ["-c:a", "aac"],
+        ["-b:a", settings::AUDIO_BITRATE],
+        # Forced, not inherited: a 5.1 source would otherwise stay 5.1 while the
+        # master playlist declares CHANNELS from this same constant, so the
+        # playlist would misdescribe the stream.
+        ["-ac", settings::AUDIO_CHANNELS],
+        ["-ar", settings::AUDIO_SAMPLE_RATE]
+      ]
+    end
+
+    # Samples the audio encoder emits before the audio starts. Encoders differ (1024 for
+    # ffmpeg's aac, 2112 for Apple's), so a short encode of silence asks this one: it
+    # stamps its first packet that far before zero.
+    def self.audio_priming(settings)
+      cmd = ["ffmpeg", "-hide_banner", "-loglevel", "error", "-f", "lavfi",
+        "-i", "anullsrc=r=#{settings::AUDIO_SAMPLE_RATE}", "-t", "0.1",
+        audio_encode(settings), "-f", "framecrc", "-"].flatten
+      stdout, stderr, status = Open3.capture3(*cmd)
+      first = stdout.lines.reject { |l| l.start_with?("#") }.first.to_s
+      pts = Integer(first.split(",")[2].to_s.strip, exception: false)
+      unless status.success? && pts && pts <= 0
+        raise StandardError, "Could not measure the audio encoder's priming delay: #{stderr.strip}"
+      end
+      -pts
     end
 
     private
@@ -222,13 +252,7 @@ module Hls
     def audio_output
       [
         ["-map", @keep ? "[acut]" : "0:a:0"],
-        ["-c:a", "aac"],
-        ["-b:a", @s::AUDIO_BITRATE],
-        # Forced, not inherited: a 5.1 source would otherwise stay 5.1 while the
-        # master playlist declares CHANNELS from this same constant, so the
-        # playlist would misdescribe the stream.
-        ["-ac", @s::AUDIO_CHANNELS],
-        ["-ar", @s::AUDIO_SAMPLE_RATE],
+        self.class.audio_encode(@s),
         ["-f", "segment"],
         # The offset goes on the inner mpegts muxer: the segment muxer times its list
         # from zero, so an offset on it would be added to the first part's duration.

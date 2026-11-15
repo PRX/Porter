@@ -219,6 +219,20 @@ describe Hls::FFmpeg do
     end
   end
 
+  describe ".audio_priming" do
+    it "reads the priming delay from the encoder's first packet" do
+      # ffmpeg's aac; Apple's aac_at would be 2112
+      _(Hls::FFmpeg.audio_priming(FFmpegTestSettings)).must_equal 1024
+    end
+
+    it "fails loudly when the probe encode does" do
+      broken = Module.new { include FFmpegTestSettings }
+      broken.const_set(:AUDIO_SAMPLE_RATE, "0")
+      err = _ { Hls::FFmpeg.audio_priming(broken) }.must_raise StandardError
+      _(err.message).must_match(/priming delay/)
+    end
+  end
+
   describe "shape" do
     it "decodes the input exactly once" do
       _(cmd.count("-i")).must_equal 1

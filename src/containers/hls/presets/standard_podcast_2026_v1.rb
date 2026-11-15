@@ -49,9 +49,6 @@ module Presets
       AUDIO_CODEC = "mp4a.40.2"
 
       AUDIO_FRAME_SAMPLES = 1024
-      # Samples ffmpeg's aac encoder emits before the audio starts. Its first packet is
-      # stamped this far before zero; test/scripts/av_sync.rb measures the result.
-      AUDIO_PRIMING_SAMPLES = 1024
       AUDIO_CHANNELS = "2"
       AUDIO_LANGUAGE = "en"
 
