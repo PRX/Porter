@@ -9,6 +9,11 @@
 # runs pick the same frames on the same grid, so each kept flash must land at its
 # control position minus what was removed before it, with its beep just as far away;
 # comparing against the control cancels the jitter of a 23.976fps flash onset.
+#
+# That comparison can't see an offset both runs share, such as audio and video being
+# shifted by different amounts when muxed. So a 30fps source, whose flashes land on
+# exact frames, is packaged too, and each beep must be as far from its flash as it is
+# in the source.
 require "json"
 require "open3"
 require "tmpdir"
@@ -24,6 +29,8 @@ POSITION_TOLERANCE = 0.001
 # Audio is cut sample-exactly, but the beep can fall differently across AAC frames once
 # its position shifts, so allow one AAC frame of detection difference.
 OFFSET_TOLERANCE = 1024.0 / 48000
+# The source measures within 0.02ms of zero; the smallest known fault is 21ms (AAC priming).
+ABSOLUTE_TOLERANCE = 0.005
 
 def sh!(*cmd)
   out, err, status = Open3.capture3(*cmd)
@@ -31,11 +38,14 @@ def sh!(*cmd)
   out + err
 end
 
-def make_source(path)
-  flash = "drawbox=x=0:y=0:w=iw:h=ih:color=white:t=fill:enable='lt(mod(t+#{OFFSET},1),0.05)'"
+# rate "30" puts every flash on an exact frame at a whole second, so its onset has no
+# jitter; any other rate flashes for 0.05s from each second.
+def make_source(path, rate: "24000/1001")
+  on = (rate == "30") ? "lt(mod(n+#{(OFFSET * 30).round},30),1)" : "lt(mod(t+#{OFFSET},1),0.05)"
+  flash = "drawbox=x=0:y=0:w=iw:h=ih:color=white:t=fill:enable='#{on}'"
   beep = "aevalsrc='if(lt(mod(t,1),0.02),sin(2*PI*1000*t),0)':s=44100:d=#{DURATION}"
   sh!("ffmpeg", "-hide_banner", "-loglevel", "error", "-y",
-    "-itsoffset", OFFSET.to_s, "-f", "lavfi", "-i", "color=black:s=854x480:r=24000/1001:d=#{DURATION},#{flash}",
+    "-itsoffset", OFFSET.to_s, "-f", "lavfi", "-i", "color=black:s=854x480:r=#{rate}:d=#{DURATION},#{flash}",
     "-f", "lavfi", "-i", beep, "-map", "0:v", "-map", "1:a",
     "-c:v", "libx264", "-preset", "veryfast", "-pix_fmt", "yuv420p", "-c:a", "aac", "-b:a", "128k", path)
 end
@@ -68,9 +78,19 @@ end
 # Each flash as [position in the delivered timeline, beep minus flash], absolute pts
 # for the offset since that is what a player syncs on.
 def measure(out)
-  flashes, video_start = flash_onsets(File.join(out, "480p.ts"))
-  beeps = beep_onsets(File.join(out, "audio.ts"))
+  measure_files(File.join(out, "480p.ts"), File.join(out, "audio.ts"))
+end
+
+def measure_files(video, audio)
+  flashes, video_start = flash_onsets(video)
+  beeps = beep_onsets(audio)
   flashes.map { |f| [f - video_start, beeps.min_by { |b| (b - f).abs } - f] }
+end
+
+# Worst beep-minus-flash difference from the source's. The last flash is skipped: the
+# audio ends at DURATION, so it has no beep.
+def absolute_error(rows, reference)
+  rows[0...-1].map { |_, offset| (offset - reference).abs }.max
 end
 
 # Kept spans laid end to end: [source from, source to, delivered start].
@@ -122,10 +142,20 @@ Dir.mktmpdir("av-sync") do |dir|
   puts "worst position error:    #{format("%.6f", worst.call(:position_error))} s vs control minus removed (limit #{POSITION_TOLERANCE})"
   puts "worst beep offset change:#{format("%.6f", worst.call(:offset_change))} s vs control (limit #{format("%.6f", OFFSET_TOLERANCE)})"
 
+  exact_source = File.join(dir, "flash-beep-30fps.mp4")
+  make_source(exact_source, rate: "30")
+  reference = measure_files(exact_source, exact_source)[0...-1].map(&:last).sum / (DURATION - 1)
+  exact_dirs = [package(exact_source, []).first, package(exact_source, CUTS).first]
+  absolute = exact_dirs.map { |d| absolute_error(measure(d), reference) }
+  puts "source beep offset:      #{format("%.6f", reference)} s after its flash (30fps source)"
+  puts "worst absolute error:    #{format("%.6f", absolute[0])} s uncut, #{format("%.6f", absolute[1])} s cut, " \
+       "vs source (limit #{ABSOLUTE_TOLERANCE})"
+
   ok = rows.map { |r| r[:k] } == expected &&
     worst.call(:position_error) <= POSITION_TOLERANCE &&
-    worst.call(:offset_change) <= OFFSET_TOLERANCE
+    worst.call(:offset_change) <= OFFSET_TOLERANCE &&
+    absolute.max <= ABSOLUTE_TOLERANCE
   puts ok ? "PASS" : "FAIL"
-  [control_dir, cut_dir].each { |d| FileUtils.remove_entry(d) }
+  [control_dir, cut_dir, *exact_dirs].each { |d| FileUtils.remove_entry(d) }
   exit(ok ? 0 : 1)
 end
