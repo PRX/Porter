@@ -8,9 +8,10 @@ require_relative "../lib/boundaries"
 describe Hls::Boundaries do
   # Defaults matching the preset, so each test only states what it varies.
   def build(breaks: [], duration: 300.216583, target: 6, fps: "30", hls_time: 2,
-    max_seg: nil, audio_grain: nil)
+    max_seg: nil, audio_grain: nil, audio_priming: nil)
     Hls::Boundaries.build(duration: duration, target: target, fps: fps,
-      hls_time: hls_time, breaks: breaks, max_seg: max_seg, audio_grain: audio_grain)
+      hls_time: hls_time, breaks: breaks, max_seg: max_seg, audio_grain: audio_grain,
+      audio_priming: audio_priming)
   end
 
   def gaps(list, duration)
@@ -139,6 +140,16 @@ describe Hls::Boundaries do
       offsets = layout.segments.zip(layout.audio_splits)
         .map { |s, a| (s.to_f - a.to_f).round(6) }
       _(offsets.uniq).must_equal [(grain / 2).to_f.round(6)]
+    end
+
+    it "moves audio splits later by the priming delay" do
+      # The segment muxer counts from its first packet, which the encoder stamps the
+      # priming delay before zero.
+      grain = Rational(1024, 48_000)
+      layout = build(breaks: [90.5], audio_grain: grain, audio_priming: grain)
+      layout.segments.zip(layout.audio_splits).each do |s, a|
+        _(a.to_f - s.to_f).must_be_close_to (grain / 2).to_f, 0.000002
+      end
     end
 
     it "leaves audio splits equal to the boundaries when no grain is given" do
