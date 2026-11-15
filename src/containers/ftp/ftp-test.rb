@@ -7,7 +7,7 @@ ftp.passive = true
 ftp.binary = true
 
 ftp.connect("ftp.dlptest.com", "21")
-p ftp.login("dlpuser", "rNrKYTX9g7z3RgJRmxWuGHbeu")
+p ftp.login("dlpuser", "xc8IycnK7MvzRBWRR7272j1lr")
 
 ftp.put("ftp-test.rb", "ftp-test.rb") do |chunk|
   p chunk
