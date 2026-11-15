@@ -275,8 +275,8 @@ describe "hls.rb" do
 
     it "fails when the encoder adds keyframes of its own" do
       # A keyframe a second on top of the forced list: every rung gains the same extra
-      # segments, so only audio differs. Prepended to outlive hls.rb reloading the class;
-      # the flag confines it to this test.
+      # segments, so only audio differs. The prepend can't be undone, so the flag confines
+      # it to this test.
       require_relative "../lib/encoders"
       extra_keyframes = true
       Hls::Encoders::X264.prepend(Module.new do
