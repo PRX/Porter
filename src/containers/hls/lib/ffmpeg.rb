@@ -1,5 +1,7 @@
 # frozen_string_literal: true
 
+require_relative "timing"
+
 module Hls
   # Builds the ffmpeg argument list for the whole package: one decode, fanned out
   # through filter_complex into three outputs across two muxers.
@@ -150,7 +152,7 @@ module Hls
         ["-bufsize:v", "#{(cap / 2.0).round}k"],
         # every frame an IDR, which is what makes an I-frames-only playlist possible
         specified(@enc.all_idr_options, ""),
-        hls_muxer(hls_time: format("%.6f", 1.0 / @s::IFRAME_FPS)),
+        hls_muxer(hls_time: Timing.fmt(Rational(1, @s::IFRAME_FPS))),
         ["-hls_segment_filename", File.join(@dir, @s::IFRAME_MEDIA)],
         File.join(@dir, @s::IFRAME_PLAYLIST)
       ]

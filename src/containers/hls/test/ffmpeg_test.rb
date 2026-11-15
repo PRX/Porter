@@ -28,7 +28,18 @@ FFMPEG_TEST_RUNGS = [
   {height: 480, size: "854x480", bitrate: "1200k"}
 ].freeze
 
+# Shared by both describe blocks below.
+module CommandHelpers
+  # Value that follows a given flag.
+  def value_after(list, flag)
+    i = list.index(flag)
+    i && list[i + 1]
+  end
+end
+
 describe Hls::FFmpeg do
+  include CommandHelpers
+
   def layout(breaks: [90.5])
     Hls::Boundaries.build(duration: 300.0, target: 6, fps: "30", hls_time: 2, breaks: breaks)
   end
@@ -37,12 +48,6 @@ describe Hls::FFmpeg do
     Hls::FFmpeg.new(input: "artifact.file", dir: "out", rungs: rungs,
       layout: layout(breaks: breaks), settings: FFmpegTestSettings,
       audio_parts: "out/_audio_parts").command
-  end
-
-  # Value that follows a given flag.
-  def value_after(list, flag)
-    i = list.index(flag)
-    i && list[i + 1]
   end
 
   describe ".select_rungs" do
@@ -233,6 +238,8 @@ describe Hls::FFmpeg do
 end
 
 describe Hls::Encoders do
+  include CommandHelpers
+
   def layout
     Hls::Boundaries.build(duration: 60.0, target: 6, fps: "30", hls_time: 1,
       breaks: [10.5], max_seg: 6, min_segment: 2)
@@ -242,11 +249,6 @@ describe Hls::Encoders do
     Hls::FFmpeg.new(input: "in.mp4", dir: "/tmp/o", encoder: encoder,
       rungs: [{height: 720, size: "1280x720", bitrate: "2800k"}],
       layout: layout, settings: FFmpegTestSettings, audio_parts: "/tmp/o/_p").command
-  end
-
-  def value_after(cmd, flag)
-    i = cmd.index(flag)
-    i && cmd[i + 1]
   end
 
   describe ".resolve" do

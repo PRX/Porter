@@ -1,6 +1,8 @@
 # frozen_string_literal: true
 
 require "json"
+require_relative "media_playlist"
+require_relative "timing"
 
 module Hls
   # Concatenates `segment` muxer output into one file plus a byterange playlist.
@@ -47,7 +49,7 @@ module Hls
           unaligned ||= !aligned
           sink.write(data)
 
-          body << format("#EXTINF:%.6f,", duration)
+          body << "#EXTINF:#{Timing.fmt(duration)},"
           body << "#EXT-X-BYTERANGE:#{data.bytesize}@#{offset}"
           body << File.basename(@out_media)
 
@@ -144,18 +146,7 @@ module Hls
     # Each part's duration, in order. Trust the segment muxer's own EXTINF values
     # rather than recomputing -- it knows the real packet timing.
     def read_parts
-      entries = []
-      duration = nil
-      File.foreach(@parts_playlist) do |line|
-        line = line.strip
-        if (m = line.match(/\A#EXTINF:([\d.]+)/))
-          duration = m[1].to_f
-        elsif !line.empty? && !line.start_with?("#") && duration
-          entries << [duration, line]
-          duration = nil
-        end
-      end
-      entries
+      MediaPlaylist.segments(@parts_playlist).map { |s| [s.duration, s.uri] }
     end
 
     def write_playlist(body, longest)

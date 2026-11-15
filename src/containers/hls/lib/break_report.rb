@@ -1,9 +1,14 @@
 # frozen_string_literal: true
 
+require_relative "media_playlist"
+require_relative "timing"
+
 module Hls
   # Maps each requested ad break onto the segment boundary it actually landed on.
   module BreakReport
     class << self
+      include Timing
+
       # breaks: Boundaries::Break values
       # playlist: any video rendition's media playlist; they are all
       #   boundary-identical by construction, so which one does not matter
@@ -14,7 +19,7 @@ module Hls
       def build(breaks, playlist, tolerance:)
         return [] if breaks.nil? || breaks.empty?
 
-        boundaries = cumulative_boundaries(playlist)
+        boundaries = MediaPlaylist.boundaries(playlist)
         raise "#{playlist} has no segments to place breaks against" if boundaries.empty?
 
         breaks.map do |brk|
@@ -34,26 +39,8 @@ module Hls
         end
       end
 
-      def cumulative_boundaries(playlist)
-        total = 0.0
-        out = []
-        File.foreach(playlist) do |line|
-          next unless (m = line.match(/\A#EXTINF:([\d.]+)/))
-          total += m[1].to_f
-          out << total
-        end
-        out
-      end
-
       def closest_index(boundaries, wanted)
         boundaries.each_with_index.min_by { |b, _| (b - wanted).abs }.last
-      end
-
-      private
-
-      # Matches how boundary times are expressed everywhere else.
-      def round6(value)
-        value.round(6)
       end
     end
   end

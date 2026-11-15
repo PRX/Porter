@@ -38,19 +38,6 @@ load "./lib/break_report.rb"
 
 sf = Aws::States::Client.new
 
-# Probe a single value off the artifact. Array form, so no shell is involved.
-def probe(file, entries, stream: nil)
-  args = ["ffprobe", "-v", "error"]
-  args += ["-select_streams", stream] if stream
-  args += ["-show_entries", entries, "-of", "csv=p=0", file]
-  stdout, stderr, status = Open3.capture3(*args)
-  unless status.success?
-    puts JSON.dump({msg: "FFprobe output", exit_status: status.exitstatus, stdout: stdout, stderr: stderr})
-    raise StandardError, "FFprobe failed (exit #{status.exitstatus}): #{stderr.strip}"
-  end
-  stdout.lines.first.to_s.strip
-end
-
 begin
   get_artifact_s3tm = Aws::S3::TransferManager.new
 
@@ -105,9 +92,9 @@ begin
   FileUtils.rm_rf(work)
   FileUtils.mkdir_p(audio_parts)
 
-  duration = probe("artifact.file", "format=duration").to_f
-  source_height = probe("artifact.file", "stream=height", stream: "v:0").to_i
-  source_fps = probe("artifact.file", "stream=r_frame_rate", stream: "v:0")
+  duration = Hls::Probe.value("artifact.file", "format=duration").to_f
+  source_height = Hls::Probe.value("artifact.file", "stream=height", stream: "v:0").to_i
+  source_fps = Hls::Probe.value("artifact.file", "stream=r_frame_rate", stream: "v:0")
   raise StandardError, "Artifact has no video stream" if source_height.zero?
   raise StandardError, "Could not determine artifact duration" unless duration.positive?
 
@@ -179,17 +166,15 @@ begin
   # simply encodes less of it, writing every file. The layout was computed for the
   # full duration, so breaks past the real content would be reported against
   # whatever boundary happened to be closest. Compare output against the plan.
-  extinf_total = ->(playlist) {
-    File.foreach(File.join(work, playlist)).sum { |l|
-      (m = l.match(/\A#EXTINF:([\d.]+)/)) ? m[1].to_f : 0.0
-    }
-  }
-  counts = rungs.to_h { |r| ["#{r[:height]}p", File.foreach(File.join(work, "#{r[:height]}p.m3u8")).count { |l| l.start_with?("#EXTINF:") }] }
+  rung_segments = rungs.to_h do |r|
+    ["#{r[:height]}p", Hls::MediaPlaylist.segments(File.join(work, "#{r[:height]}p.m3u8"))]
+  end
+  counts = rung_segments.transform_values(&:size)
   if counts.values.uniq.length > 1
     raise StandardError, "video rungs disagree on segment count: #{counts.inspect}. " \
                          "Every rung gets the same keyframe list, so they must match."
   end
-  encoded = extinf_total.call("#{rungs.first[:height]}p.m3u8")
+  encoded = rung_segments.values.first.sum(&:duration)
   # One second covers final-frame rounding (0.095s on a 54-minute asset) without
   # tolerating a missing segment.
   if (encoded - duration).abs > 1.0
