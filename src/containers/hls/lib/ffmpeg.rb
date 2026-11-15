@@ -83,10 +83,10 @@ module Hls
     # Removes the AdBreaks ranges from video and audio before anything else sees them,
     # so every rung, trickplay and the audio rendition share one edited timeline.
     #
-    # Cut points go to trim as frame and sample counts, not seconds: after fps one
-    # video pts is one frame, and after aresample one audio pts is one sample, so a cut
-    # at 12.533333s is start_pts=376 (30fps) and start_pts=601600 (48kHz). Seconds
-    # would need decimals, and setpts=PTS-0.666667/TB can give two frames the same pts.
+    # trim gets cut points as frame and sample counts, not seconds: fps sets the video
+    # time base to one frame, and aresample sets the audio's to one sample, so a cut at
+    # 12.533333s is start_pts=376 (30fps) and start_pts=601600 (48kHz). Seconds would
+    # need decimals, and setpts=PTS-0.666667/TB can give two frames the same pts.
     # concat lays each span after the last, so spans are rebased to start at 0 -- by
     # their own source start, which also keeps the source's A/V offset in the first span.
     def cut_stage
