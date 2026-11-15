@@ -31,3 +31,12 @@ A source with no video stream, which the task refuses - regenerate with:
     ffmpeg -f lavfi -i sine=frequency=440:sample_rate=8000:duration=0.1 \
       -c:a aac -b:a 8k source-audio-only.m4a
 ```
+
+## `source-480p-video-only.mp4`
+
+A 480p source with no audio stream, which the task refuses - regenerate with:
+```
+    ffmpeg -f lavfi -i testsrc=size=854x480:rate=30:duration=1 \
+      -c:v libx264 -preset veryslow -crf 40 -pix_fmt yuv420p -an \
+      -movflags +faststart source-480p-video-only.mp4
+```

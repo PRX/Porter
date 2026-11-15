@@ -187,6 +187,12 @@ describe "hls.rb" do
       _(run.failure[:cause]).must_match(/No rungs at or below the source height/)
     end
 
+    it "fails on a source with no audio stream" do
+      run = run_task(source: File.expand_path("samples/source-480p-video-only.mp4", __dir__))
+      _(run.ok?).must_equal false
+      _(run.failure[:cause]).must_equal "Artifact has no audio stream"
+    end
+
     it "fails on a source with no video stream" do
       run = run_task(source: File.expand_path("samples/source-audio-only.m4a", __dir__))
       _(run.ok?).must_equal false

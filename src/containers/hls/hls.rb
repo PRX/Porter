@@ -104,6 +104,10 @@ begin
   if rungs.empty?
     raise StandardError, "No rungs at or below the source height (#{source_height}p)"
   end
+  # Otherwise ffmpeg fails to map the audio and reports only that it failed.
+  if Hls::Probe.value("artifact.file", "stream=codec_type", stream: "a:0").empty?
+    raise StandardError, "Artifact has no audio stream"
+  end
   puts JSON.dump({
     msg: "Source inspected",
     duration: duration,
