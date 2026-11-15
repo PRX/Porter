@@ -2,12 +2,14 @@
 
 # Runs hls.rb end to end without an AWS account
 #   ruby test/harness/run_local.rb <source> <outdir> [breaks]
+# breaks is a comma list of seconds, or JSON for ranges: '[10.5,[14.7,16.2],20.383]'
 require "json"
 require_relative "task_runner"
 
 source = ARGV[0] or abort "usage: run_local.rb <source> <outdir> [breaks]"
 outdir = ARGV[1] or abort "usage: run_local.rb <source> <outdir> [breaks]"
-breaks = (ARGV[2] || "10.5,14.717,20.383").split(",").map(&:to_f)
+raw_breaks = ARGV[2] || "10.5,14.717,20.383"
+breaks = raw_breaks.start_with?("[") ? JSON.parse(raw_breaks) : raw_breaks.split(",").map(&:to_f)
 
 abort "no such source: #{source}" unless File.file?(source)
 FileUtils.mkdir_p(outdir)

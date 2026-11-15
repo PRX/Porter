@@ -130,4 +130,47 @@ describe Hls::BreakReport do
       end
     end
   end
+
+  describe "a break that replaced a cut range" do
+    # What hls.rb hands over when AdBreaks had [start, end] pairs
+    def placed(requested, at, removed)
+      require_relative "../lib/edits"
+      Hls::Edits::Placed.new(requested: requested, at: at, removed: removed)
+    end
+
+    it "echoes the pair it was asked for and how much was removed" do
+      Dir.mktmpdir do |dir|
+        pl = playlist_with_boundaries(dir, [6.0, 12.0, 18.0])
+        r = Hls::BreakReport.build([placed([12.0, 17.0], "12.000000", Rational(5))], pl,
+          tolerance: BREAK_REPORT_TOLERANCE).first
+        _(r).must_equal({RequestedTime: [12.0, 17.0], ActualTime: 12.0, InsertAfterSegmentIndex: 1, RemovedDuration: 5.0})
+        _(r.keys).must_equal %i[RequestedTime ActualTime InsertAfterSegmentIndex RemovedDuration]
+      end
+    end
+
+    it "keeps a point beside it in today's three-key shape" do
+      Dir.mktmpdir do |dir|
+        pl = playlist_with_boundaries(dir, [6.0, 12.0, 18.0])
+        r = Hls::BreakReport.build([placed(6.0, "6.000000", nil), placed([12.0, 17.0], "12.000000", Rational(5))],
+          pl, tolerance: BREAK_REPORT_TOLERANCE)
+        _(r.first.keys).must_equal %i[RequestedTime ActualTime InsertAfterSegmentIndex]
+      end
+    end
+
+    it "rounds the echoed pair to the microsecond" do
+      _(Hls::BreakReport.requested_formatted([Rational(376, 30), 20.0])).must_equal [12.533333, 20.0]
+    end
+
+    it "survives a round trip through JSON" do
+      Dir.mktmpdir do |dir|
+        require "json"
+        pl = playlist_with_boundaries(dir, [6.0, 12.0, 18.0])
+        r = Hls::BreakReport.build([placed([12.0, 17.0], "12.000000", Rational(5))], pl,
+          tolerance: BREAK_REPORT_TOLERANCE)
+        parsed = JSON.parse(JSON.dump(r)).first
+        _(parsed["RequestedTime"]).must_equal [12.0, 17.0]
+        _(parsed["RemovedDuration"]).must_equal 5.0
+      end
+    end
+  end
 end

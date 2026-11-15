@@ -9,7 +9,8 @@ module Hls
     class << self
       include Timing
 
-      # breaks: Boundaries::Break values
+      # breaks: Boundaries::Break, or Edits::Placed which adds removed for a cut range
+      #   e.g. [10, [20, 30]] which indicates a break at 10s and a cut from 20s to 30s.
       # playlist: any video rendition's media playlist; they are all
       #   boundary-identical by construction, so which one does not matter
       # tolerance: how far ActualTime may sit from the frame we asked for before
@@ -28,15 +29,23 @@ module Hls
           landed = boundaries[index]
 
           if (landed - wanted).abs > tolerance
-            raise "break #{brk.requested} requested at #{round6(wanted)}s but the nearest is #{round6(landed)}s."
+            raise "break #{requested_formatted(brk.requested).inspect} requested at #{round6(wanted)}s but the nearest is #{round6(landed)}s."
           end
 
-          {
-            RequestedTime: round6(brk.requested.to_f),
+          entry = {
+            RequestedTime: requested_formatted(brk.requested),
             ActualTime: round6(landed),
             InsertAfterSegmentIndex: index
           }
+          removed = brk.respond_to?(:removed) && brk.removed
+          entry[:RemovedDuration] = round6(removed.to_f) if removed
+          entry
         end
+      end
+
+      def requested_formatted(requested)
+        return round6(requested.to_f) unless requested.is_a?(Array)
+        requested.map { |t| t && round6(t.to_f) }
       end
 
       def closest_index(boundaries, wanted)

@@ -44,10 +44,10 @@ describe Hls::FFmpeg do
     Hls::Boundaries.build(duration: 300.0, target: 6, fps: "30", hls_time: 2, breaks: breaks)
   end
 
-  def cmd(rungs: FFMPEG_TEST_RUNGS, breaks: [90.5])
+  def cmd(rungs: FFMPEG_TEST_RUNGS, breaks: [90.5], keep: nil, encoder: nil)
     Hls::FFmpeg.new(input: "artifact.file", dir: "out", rungs: rungs,
       layout: layout(breaks: breaks), settings: FFmpegTestSettings,
-      audio_parts: "out/_audio_parts").command
+      audio_parts: "out/_audio_parts", encoder: encoder, keep: keep).command
   end
 
   describe ".select_rungs" do
@@ -233,6 +233,72 @@ describe Hls::FFmpeg do
       c = cmd(breaks: [])
       _(value_after(c, "-force_key_frames:v:0")).must_include "6.000000"
       _(value_after(c, "-segment_times")).must_include "12.000000"
+    end
+  end
+
+  describe "cutting AdBreaks ranges" do
+    # Source spans to keep, as Hls::Edits produces them
+    def spans(*pairs) = pairs.map { |from, to| [Rational(from), to && Rational(to)] }
+
+    def graph(keep) = value_after(cmd(keep: keep), "-filter_complex")
+
+    it "leaves the command alone when nothing is cut" do
+      _(cmd(keep: nil)).must_equal cmd
+      _(value_after(cmd, "-filter_complex")).must_match(/\A\[0:v\]split=4/)
+      _(value_after(cmd, "-filter_complex")).wont_match(/trim|concat|aresample/)
+      _(value_after(cmd, "-map")).wont_be_nil
+      _(cmd).must_include "0:a:0"
+    end
+
+    it "normalizes the rate once, then splits video and audio into one branch per span" do
+      g = graph(spans([0, 65], [70, nil]))
+      _(g).must_match(/\A\[0:v\]fps=30,split=2\[c0\]\[c1\];\[0:a:0\]aresample=48000,asplit=2\[d0\]\[d1\];/)
+    end
+
+    it "trims each span by whole frames and samples, rebased by its own start" do
+      g = graph(spans([0, 65], [70, nil]))
+      _(g).must_include "[c0]trim=start_pts=0:end_pts=1950,setpts=PTS-0[k0]"
+      _(g).must_include "[d0]atrim=start_pts=0:end_pts=3120000,asetpts=PTS-0[e0]"
+      # the last span runs to the end of the source
+      _(g).must_include "[c1]trim=start_pts=2100,setpts=PTS-2100[k1]"
+      _(g).must_include "[d1]atrim=start_pts=3360000,asetpts=PTS-3360000[e1]"
+    end
+
+    it "joins the spans and feeds the existing split from the result" do
+      g = graph(spans([0, 65], [70, nil]))
+      _(g).must_include "[k0][e0][k1][e1]concat=n=2:v=1:a=1[vcut][acut];[vcut]split=4[s_1080p]"
+    end
+
+    it "starts the first span late for a head trim" do
+      _(graph(spans([3, 65], [70, nil]))).must_include "[c0]trim=start_pts=90:end_pts=1950,setpts=PTS-90[k0]"
+    end
+
+    it "never writes a decimal into a trim, even for an edge like 2/3 of a second" do
+      g = graph(spans([0, Rational(2, 3)], [Rational(76, 30), nil]))
+      _(g).must_include "trim=start_pts=0:end_pts=20"
+      _(g).must_include "atrim=start_pts=0:end_pts=32000"
+      _(g.scan(/(?:start|end)_pts=[^:,\[]+|PTS-[^\[]+/).grep(/\./)).must_be_empty
+    end
+
+    it "encodes audio from the cut, through the same muxer" do
+      c = cmd(keep: spans([0, 65], [70, nil]))
+      _(c).must_include "[acut]"
+      _(c).wont_include "0:a:0"
+      _(value_after(c, "-segment_times")).wont_be_nil
+    end
+
+    it "still decodes the input exactly once" do
+      _(cmd(keep: spans([0, 65], [70, nil])).count("-i")).must_equal 1
+    end
+
+    it "refuses a span that isn't on the frame grid" do
+      _ { cmd(keep: spans([0, Rational(1, 7)], [1, nil])) }.must_raise RuntimeError
+    end
+
+    it "cuts the same way for nvenc, after its GPU input flags" do
+      c = cmd(keep: spans([0, 65], [70, nil]), encoder: Hls::Encoders::Nvenc.new)
+      _(c.index("-hwaccel")).must_be :<, c.index("-i")
+      _(value_after(c, "-filter_complex")).must_match(/\A\[0:v\]fps=30,split=2.*concat=n=2:v=1:a=1\[vcut\]\[acut\];\[vcut\]split=4/)
     end
   end
 end

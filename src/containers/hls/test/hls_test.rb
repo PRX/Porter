@@ -6,6 +6,7 @@ require "json"
 require "open3"
 require "tmpdir"
 require_relative "harness/task_runner"
+require_relative "../lib/media_playlist"
 
 describe "hls.rb" do
   def self.preset_name = "Standard Podcast 2026 v1"
@@ -31,6 +32,13 @@ describe "hls.rb" do
     run.output.lines.grep(/\A\{/).map { |l| JSON.parse(l) }.find { |l| l["msg"] == msg }
   end
 
+  # A real directory per shared encode, so assertions can read the bytes a client would fetch.
+  def self.out_dir(name)
+    (@out_dirs ||= {})[name] ||= Dir.mktmpdir("hls-test-#{name}").tap do |d|
+      Minitest.after_run { FileUtils.remove_entry(d) }
+    end
+  end
+
   describe "input validation" do
     it "refuses a preset it does not implement" do
       run = run_task(preset: "Some Other Preset")
@@ -50,6 +58,18 @@ describe "hls.rb" do
       _(run.failure[:error]).must_equal "ArgumentError"
     end
 
+    it "refuses a malformed range, naming it" do
+      run = run_task(breaks: [5.0, [6.0]])
+      _(run.ok?).must_equal false
+      _(run.failure[:cause]).must_match(/AdBreaks\[1\] \[6.0\]: a range is \[start, end\]/)
+    end
+
+    it "refuses ranges that overlap" do
+      run = run_task(breaks: [[3.0, 6.0], [5.0, 8.0]])
+      _(run.ok?).must_equal false
+      _(run.failure[:cause]).must_match(/overlap or touch/)
+    end
+
     it "reports failure through the callback rather than raising" do
       run = run_task(preset: "nope")
       _(run.failure[:task_token]).must_equal "task-runner-token"
@@ -59,15 +79,8 @@ describe "hls.rb" do
 
   describe "a complete task" do
     # One real encode, shared by the assertions below.
-    # A real directory, so assertions can read the bytes a client would fetch.
-    def self.out_dir
-      @out_dir ||= Dir.mktmpdir("hls-test-out").tap do |d|
-        Minitest.after_run { FileUtils.remove_entry(d) }
-      end
-    end
-
     def self.completed
-      @completed ||= TaskRunner.run(source: source, upload_to: out_dir,
+      @completed ||= TaskRunner.run(source: source, upload_to: out_dir(:complete),
         task: {"Type" => "HLS", "Preset" => preset_name, "AdBreaks" => [7.5]})
     end
 
@@ -109,7 +122,7 @@ describe "hls.rb" do
     it "marks the break in the delivery playlists, but not trickplay" do
       self.class.completed
       counts = %w[480p.m3u8 audio.m3u8 iframe.m3u8].map do |name|
-        text = File.read(File.join(self.class.out_dir, name))
+        text = File.read(File.join(self.class.out_dir(:complete), name))
         text.scan("#EXT-X-CUE-OUT").length
       end
       _(counts).must_equal [1, 1, 0]
@@ -118,7 +131,7 @@ describe "hls.rb" do
     it "puts a CUE-OUT/CUE-IN pair after the segment that ends at the break" do
       # Adjacent: a splice point, not a span.
       self.class.completed
-      lines = File.readlines(File.join(self.class.out_dir, "480p.m3u8")).map(&:chomp)
+      lines = File.readlines(File.join(self.class.out_dir(:complete), "480p.m3u8")).map(&:chomp)
       at = lines.index("#EXT-X-CUE-OUT")
       _(lines[at - 1]).must_equal "480p.ts"
       _(lines[at + 1]).must_equal "#EXT-X-CUE-IN"
@@ -134,6 +147,79 @@ describe "hls.rb" do
       run = run_task(breaks: [])
       _(run.ok?).must_equal true
       _(run.task_result.key?("AdBreaks")).must_equal false
+    end
+
+    it "adds no cut fields when nothing was cut" do
+      result = self.class.completed.task_result
+      _(result.key?("Duration")).must_equal false
+      _(result.key?("Trims")).must_equal false
+    end
+  end
+
+  describe "cutting AdBreaks ranges" do
+    # Two real encodes of the 13s sample, shared by the assertions below.
+    # 4-6 removed with a break there, and a point at 9 that lands at 7.
+    def self.cut
+      @cut ||= TaskRunner.run(source: source, upload_to: out_dir(:cut),
+        task: {"Type" => "HLS", "Preset" => preset_name, "AdBreaks" => [[4.0, 6.0], 9.0]})
+    end
+
+    # The first 2s and everything from 11s trimmed, plus a point at 6 that lands at 4.
+    def self.trimmed
+      @trimmed ||= TaskRunner.run(source: source, upload_to: out_dir(:trimmed),
+        task: {"Type" => "HLS", "Preset" => preset_name, "AdBreaks" => [[0, 2.0], [11.0, nil], 6.0]})
+    end
+
+    def total(name, playlist)
+      Hls::MediaPlaylist.segments(File.join(self.class.out_dir(name), playlist)).sum(&:duration)
+    end
+
+    it "removes the range and reports both breaks in the edited timeline" do
+      run = self.class.cut
+      _(run.failure).must_be_nil
+      _(run.task_result["AdBreaks"]).must_equal [
+        {"RequestedTime" => [4.0, 6.0], "ActualTime" => 4.0, "InsertAfterSegmentIndex" => 0, "RemovedDuration" => 2.0},
+        {"RequestedTime" => 9.0, "ActualTime" => 7.0, "InsertAfterSegmentIndex" => 1}
+      ]
+    end
+
+    it "shortens every rendition by what was removed" do
+      self.class.cut
+      _(total(:cut, "480p.m3u8")).must_be_close_to 11.0, 0.001
+      _(total(:cut, "iframe.m3u8")).must_be_close_to 11.0, 0.5
+      # audio may run over by an AAC frame
+      _(total(:cut, "audio.m3u8")).must_be_close_to 11.0, 1024.0 / 48000 * 2
+      _(self.class.cut.task_result["Duration"]).must_be_close_to 11.0, 0.001
+    end
+
+    it "marks both breaks in the delivery playlists, but not trickplay" do
+      self.class.cut
+      counts = %w[480p.m3u8 audio.m3u8 iframe.m3u8].map do |name|
+        File.read(File.join(self.class.out_dir(:cut), name)).scan("#EXT-X-CUE-OUT").length
+      end
+      _(counts).must_equal [2, 2, 0]
+    end
+
+    it "trims the start and end without placing breaks there" do
+      run = self.class.trimmed
+      _(run.failure).must_be_nil
+      _(run.task_result["AdBreaks"]).must_equal [
+        {"RequestedTime" => 6.0, "ActualTime" => 4.0, "InsertAfterSegmentIndex" => 0}
+      ]
+      _(run.task_result["Trims"]).must_equal [
+        {"RequestedTime" => [0.0, 2.0], "RemovedDuration" => 2.0},
+        {"RequestedTime" => [11.0, nil], "RemovedDuration" => 2.0}
+      ]
+      _(run.task_result["Duration"]).must_be_close_to 9.0, 0.001
+      _(total(:trimmed, "480p.m3u8")).must_be_close_to 9.0, 0.001
+    end
+
+    it "says when a time is in the edited timeline" do
+      # 3.5 lands at 0.5 once 0-3 is gone, too early for the muxer's first split
+      run = run_task(breaks: [[0, 3.0], 3.5])
+      _(run.ok?).must_equal false
+      _(run.failure[:cause]).must_match(/not reachable/)
+      _(run.failure[:cause]).must_match(/edited timeline, after removing 3.0s/)
     end
   end
 

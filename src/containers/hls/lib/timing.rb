@@ -1,7 +1,8 @@
 # frozen_string_literal: true
 
 module Hls
-  # Exact time arithmetic, so times are quantized and formatted by one rule.
+  # Exact time arithmetic shared by Boundaries and Edits, which quantize the same
+  # times and so must use one rule.
   module Timing
     module_function
 

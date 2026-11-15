@@ -30,6 +30,7 @@ load "./telemetry.rb"
 load "./destinations/aws/s3.rb"
 load "./lib/encoders.rb"
 load "./presets/standard_podcast_2026_v1.rb"
+load "./lib/edits.rb"
 load "./lib/boundaries.rb"
 load "./lib/ffmpeg.rb"
 load "./lib/ts_packer.rb"
@@ -55,15 +56,12 @@ begin
     raise StandardError, "video encoder #{encoder.codec} is unavailable: #{encoder.unavailable_reason}"
   end
 
-  # Ad break times, in seconds from the start of the asset.
+  # Ad breaks, and sections to remove (see Hls::Edits), in seconds from the start of the asset.
   # breaks are optional: with none specified, the segment layout is the plain grid
   # and no break metadata is reported.
   # Each break becomes a segment boundary and keyframe, quantized to a whole frame, so
   # what comes back in the response's AdBreaks may differ slightly from what was asked for.
-  ad_breaks = Array(task["AdBreaks"]).map { |t| Float(t) }
-  unless ad_breaks.all?(&:finite?) && ad_breaks.all?(&:positive?)
-    raise StandardError, "AdBreaks must be positive numbers of seconds"
-  end
+  ad_break_entries = Hls::Edits.parse(task["AdBreaks"])
 
   # Get the artifact file from S3
   puts "Downloading artifact"
@@ -116,24 +114,43 @@ begin
     output_fps: preset::FPS,
     encoding: rungs.map { |r| r[:height] },
     skipped_as_upscale: skipped,
-    ad_breaks_requested: ad_breaks
+    ad_breaks_requested: task["AdBreaks"]
   })
+
+  # From here on, every time is in the edited timeline.
+  edit = Hls::Edits.build(ad_break_entries, duration: duration, fps: preset::FPS)
+  if edit.cut?
+    puts JSON.dump({
+      msg: "Cutting source",
+      keep: edit.keep.map { |from, to| [Hls::Timing.round6(from), to && Hls::Timing.round6(to)] },
+      edited_duration: Hls::Timing.round6(edit.duration),
+      trims: edit.trims.map { |t| {position: t.position, removed: Hls::Timing.round6(t.removed)} }
+    })
+  end
 
   # One boundary set, three views of it (mostly to work with ffmpeg).
   # They differ only in rounding:
   # video keyframes are biased half a frame early so ffmpeg picks the intended frame,
   # audio splits use the exact times, and the break times are reported as-is.
   # audio_grain is one audio frame in seconds (maybe calculate in boundaries instead?)
-  layout = Hls::Boundaries.build(
-    duration: duration,
-    target: preset::TARGET,
-    fps: preset::FPS,
-    hls_time: preset::HLS_TIME,
-    breaks: ad_breaks,
-    max_seg: preset::MAX_SEG,
-    min_segment: preset::MIN_SEGMENT,
-    audio_grain: Rational(preset::AUDIO_FRAME_SAMPLES, preset::AUDIO_SAMPLE_RATE.to_i)
-  )
+  begin
+    layout = Hls::Boundaries.build(
+      duration: edit.duration,
+      target: preset::TARGET,
+      fps: preset::FPS,
+      hls_time: preset::HLS_TIME,
+      breaks: edit.breaks.map(&:boundary_time),
+      max_seg: preset::MAX_SEG,
+      min_segment: preset::MIN_SEGMENT,
+      audio_grain: Rational(preset::AUDIO_FRAME_SAMPLES, preset::AUDIO_SAMPLE_RATE.to_i)
+    )
+  rescue RuntimeError => e
+    raise unless edit.cut?
+    # Its times are edited-timeline times, which a caller thinking in source time
+    # would not recognize.
+    raise e.class, "#{e.message} Times are in the edited timeline, after removing " \
+                   "#{Hls::Timing.round6(edit.removed)}s of AdBreaks ranges."
+  end
 
   ffmpeg_cmd = Hls::FFmpeg.new(
     input: "artifact.file",
@@ -142,7 +159,8 @@ begin
     layout: layout,
     settings: preset,
     audio_parts: audio_parts,
-    encoder: encoder
+    encoder: encoder,
+    keep: edit.keep
   ).command
 
   puts JSON.dump({msg: "Running FFmpeg", full_command: ffmpeg_cmd})
@@ -179,19 +197,23 @@ begin
                          "Every rung gets the same keyframe list, so they must match."
   end
   encoded = rung_segments.values.first.sum(&:duration)
+  # Compared against the edited duration: the layout was computed for that.
   # One second covers final-frame rounding (0.095s on a 54-minute asset) without
   # tolerating a missing segment.
-  if (encoded - duration).abs > 1.0
+  expected_duration = edit.duration.to_f
+  if (encoded - expected_duration).abs > 1.0
+    edited = edit.cut? ? " once the AdBreaks ranges are removed" : ""
     raise StandardError, "encoded duration #{format("%.3f", encoded)}s does not match " \
-                         "the source's #{format("%.3f", duration)}s. The source is " \
-                         "probably truncated or its header duration is wrong; the " \
-                         "break layout was computed for the latter."
+                         "the source's #{format("%.3f", expected_duration)}s#{edited}. The " \
+                         "source is probably truncated or its header duration is wrong; " \
+                         "the break layout was computed for the latter."
   end
   puts JSON.dump({
     msg: "Outputs verified",
     segments: counts.values.first,
     encoded_duration: encoded.round(3),
-    source_duration: duration.round(3)
+    source_duration: duration.round(3),
+    expected_duration: expected_duration.round(3)
   })
 
   # ffmpeg's own (not so great) master playlist is discarded; see lib/playlists.rb.
@@ -285,13 +307,23 @@ begin
 
   # Reported rather than written as a file: this is metadata about the encode, not
   # an asset, so the consuming app gets it without a second fetch.
-  unless ad_breaks.empty?
+  unless edit.breaks.empty?
     task_result[:AdBreaks] = Hls::BreakReport.build(
-      layout.breaks,
+      Hls::Edits.placed(edit, layout),
       File.join(work, video_renditions.first.playlist),
       # Half a frame at the output rate: further means a different frame.
       tolerance: 1.0 / (2 * Rational(preset::FPS))
     )
+  end
+
+  # Only when something was cut, so results for point-only jobs keep their shape.
+  if edit.cut?
+    task_result[:Duration] = Hls::Timing.round6(encoded)
+    unless edit.trims.empty?
+      task_result[:Trims] = edit.trims.map do |t|
+        {RequestedTime: Hls::BreakReport.requested_formatted(t.requested), RemovedDuration: Hls::Timing.round6(t.removed)}
+      end
+    end
   end
 
   end_time = Time.now.to_i

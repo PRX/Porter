@@ -8,11 +8,12 @@ test:
 SAMPLES := $(abspath ../../../test/samples)
 SOURCE ?= $(SAMPLES)/big-buck-bunny-30s.mp4
 OUT ?= out
+# A comma list of seconds, or JSON with [start, end] ranges: BREAKS='[10.5,[14.7,16.2]]'
 BREAKS ?= 10.5,14.717,20.383
 
 hls-local:
 	@mkdir -p $(OUT)
-	bundle exec ruby test/harness/run_local.rb $(SOURCE) $(OUT) $(BREAKS)
+	bundle exec ruby test/harness/run_local.rb $(SOURCE) $(OUT) '$(BREAKS)'
 
 # Same, but with the container's ffmpeg -- the version that actually runs in prod.
 hls-local-docker:
@@ -22,6 +23,6 @@ hls-local-docker:
 	  -v $(SAMPLES):/samples:ro \
 	  -v $(abspath $(OUT)):/out \
 	  --entrypoint ruby porter-hls \
-	  test/harness/run_local.rb /samples/$(notdir $(SOURCE)) /out $(BREAKS)
+	  test/harness/run_local.rb /samples/$(notdir $(SOURCE)) /out '$(BREAKS)'
 
 .PHONY: bootstrap test hls-local hls-local-docker
