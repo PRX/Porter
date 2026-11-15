@@ -273,6 +273,22 @@ describe "hls.rb" do
       _(run.failure[:cause]).must_match(/No rungs at or below the source height/)
     end
 
+    it "fails when the encoder adds keyframes of its own" do
+      # A keyframe a second on top of the forced list: every rung gains the same extra
+      # segments, so only audio differs. Prepended to outlive hls.rb reloading the class;
+      # the flag confines it to this test.
+      require_relative "../lib/encoders"
+      extra_keyframes = true
+      Hls::Encoders::X264.prepend(Module.new do
+        define_method(:keyframe_options) { (extra_keyframes ? [["g", "30"]] : []) + super() }
+      end)
+      run = run_task(breaks: [7.5])
+      _(run.ok?).must_equal false
+      _(run.failure[:cause]).must_match(/audio has \d+ segments but video has \d+/)
+    ensure
+      extra_keyframes = false
+    end
+
     it "fails on a source with no audio stream" do
       run = run_task(source: File.expand_path("samples/source-480p-video-only.mp4", __dir__))
       _(run.ok?).must_equal false

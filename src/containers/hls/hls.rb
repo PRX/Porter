@@ -231,6 +231,14 @@ begin
   FileUtils.rm_rf(audio_parts)
   puts JSON.dump({msg: "Audio rendition packed", ranges: ranges})
 
+  # Same boundary list as the video keyframes, so the counts must match or
+  # InsertAfterSegmentIndex differs between playlists. The rung check above misses an
+  # encoder adding keyframes of its own (videotoolbox has, after dropping frames).
+  if ranges != counts.values.first
+    raise StandardError, "audio has #{ranges} segments but video has #{counts.values.first}. " \
+                         "The video encoder likely added keyframes of its own."
+  end
+
   rendition = Hls::Playlists::Rendition
   video_renditions = rungs.map do |r|
     rendition.new(playlist: "#{r[:height]}p.m3u8", media: "#{r[:height]}p.ts", label: preset.rung_label(r[:height]))
