@@ -170,6 +170,18 @@ describe "hls.rb" do
     end
   end
 
+  describe "the 24fps preset" do
+    it "encodes every rung at 24fps and lands the break on a 24fps frame" do
+      Dir.mktmpdir do |dir|
+        run = run_task(preset: "Standard Podcast 2026 v1 24fps", breaks: [7.5], upload_to: dir)
+        _(run.ok?).must_equal true
+        _(File.read(File.join(dir, "index.m3u8"))).must_include "FRAME-RATE=24.000"
+        actual = run.task_result["AdBreaks"].first["ActualTime"]
+        _((actual * 24 - (actual * 24).round).abs).must_be :<, 1e-3
+      end
+    end
+  end
+
   describe "source requirements" do
     it "fails on an unreadable source with ffprobe's own error, logged in full" do
       Dir.mktmpdir do |dir|
