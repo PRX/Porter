@@ -1,5 +1,7 @@
 # frozen_string_literal: true
 
+require_relative "timing"
+
 module Hls
   # Builds the ffmpeg argument list for the whole package: one decode, fanned out
   # through filter_complex into three outputs across two muxers.
@@ -29,7 +31,9 @@ module Hls
     # dir          -- output directory
     # audio_parts  -- directory for the segment muxer's audio parts
     # encoder -- an Hls::Encoders profile; defaults to the preset's
-    def initialize(input:, dir:, rungs:, layout:, settings:, audio_parts:, encoder: nil)
+    # keep         -- source spans to keep, [start, end] in seconds, end nil for the end;
+    #                 nil cuts nothing
+    def initialize(input:, dir:, rungs:, layout:, settings:, audio_parts:, encoder: nil, keep: nil)
       @input = input
       @dir = dir
       @rungs = rungs
@@ -37,6 +41,7 @@ module Hls
       @s = settings
       @audio_parts = audio_parts
       @enc = encoder || settings::VIDEO_ENCODER.new
+      @keep = keep
     end
 
     def command
@@ -71,7 +76,49 @@ module Hls
       # One extra branch for the trickplay stream
       branches << scale_branch("s_iframe", @s::IFRAME_SIZE, @s::IFRAME_FPS, "v_iframe")
 
-      (["[0:v]split=#{@rungs.length + 1}#{labels}"] + branches).join(";")
+      video = @keep ? "[vcut]" : "[0:v]"
+      (cut_stage + ["#{video}split=#{@rungs.length + 1}#{labels}"] + branches).join(";")
+    end
+
+    # Removes the AdBreaks ranges from video and audio before anything else sees them,
+    # so every rung, trickplay and the audio rendition share one edited timeline.
+    #
+    # Cut points go to trim as frame and sample counts, not seconds: after fps one
+    # video pts is one frame, and after aresample one audio pts is one sample, so a cut
+    # at 12.533333s is start_pts=376 (30fps) and start_pts=601600 (48kHz). Seconds
+    # would need decimals, and setpts=PTS-0.666667/TB can give two frames the same pts.
+    # concat lays each span after the last, so spans are rebased to start at 0 -- by
+    # their own source start, which also keeps the source's A/V offset in the first span.
+    def cut_stage
+      return [] unless @keep
+
+      fps = Rational(@s::FPS)
+      rate = Integer(@s::AUDIO_SAMPLE_RATE)
+      n = @keep.length
+      stage = [
+        "[0:v]fps=#{@s::FPS},split=#{n}#{(0...n).map { |i| "[c#{i}]" }.join}",
+        "[0:a:0]aresample=#{rate},asplit=#{n}#{(0...n).map { |i| "[d#{i}]" }.join}"
+      ]
+      @keep.each_with_index do |(from, to), i|
+        first_frame = frame_index(from, fps)
+        first_sample = (from * rate).round
+        video = "trim=start_pts=#{first_frame}"
+        audio = "atrim=start_pts=#{first_sample}"
+        if to
+          video += ":end_pts=#{frame_index(to, fps)}"
+          audio += ":end_pts=#{(to * rate).round}"
+        end
+        stage << "[c#{i}]#{video},setpts=PTS-#{first_frame}[k#{i}]"
+        stage << "[d#{i}]#{audio},asetpts=PTS-#{first_sample}[e#{i}]"
+      end
+      stage << "#{(0...n).map { |i| "[k#{i}][e#{i}]" }.join}concat=n=#{n}:v=1:a=1[vcut][acut]"
+    end
+
+    # Edits quantizes to frames, so anything else is a bug upstream, not a rounding choice.
+    def frame_index(time, fps)
+      frames = time * fps
+      raise "cut at #{time.to_f}s is not on the #{@s::FPS}fps frame grid" unless frames.denominator == 1
+      frames.to_i
     end
 
     # One branch of the split, normalized to a rung's size and rate.
@@ -150,7 +197,7 @@ module Hls
         ["-bufsize:v", "#{(cap / 2.0).round}k"],
         # every frame an IDR, which is what makes an I-frames-only playlist possible
         specified(@enc.all_idr_options, ""),
-        hls_muxer(hls_time: format("%.6f", 1.0 / @s::IFRAME_FPS)),
+        hls_muxer(hls_time: Timing.fmt(Rational(1, @s::IFRAME_FPS))),
         ["-hls_segment_filename", File.join(@dir, @s::IFRAME_MEDIA)],
         File.join(@dir, @s::IFRAME_PLAYLIST)
       ]
@@ -167,7 +214,7 @@ module Hls
     # AAC frame (1024 samples, 21.33ms at 48kHz).
     def audio_output
       [
-        ["-map", "0:a:0"],
+        ["-map", @keep ? "[acut]" : "0:a:0"],
         ["-c:a", "aac"],
         ["-b:a", @s::AUDIO_BITRATE],
         # Forced, not inherited: a 5.1 source would otherwise stay 5.1 while the

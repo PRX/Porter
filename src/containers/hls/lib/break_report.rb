@@ -1,10 +1,16 @@
 # frozen_string_literal: true
 
+require_relative "media_playlist"
+require_relative "timing"
+
 module Hls
   # Maps each requested ad break onto the segment boundary it actually landed on.
   module BreakReport
     class << self
-      # breaks: Boundaries::Break values
+      include Timing
+
+      # breaks: Boundaries::Break, or Edits::Placed which adds removed for a cut range
+      #   e.g. [10, [20, 30]] which indicates a break at 10s and a cut from 20s to 30s.
       # playlist: any video rendition's media playlist; they are all
       #   boundary-identical by construction, so which one does not matter
       # tolerance: how far ActualTime may sit from the frame we asked for before
@@ -14,7 +20,7 @@ module Hls
       def build(breaks, playlist, tolerance:)
         return [] if breaks.nil? || breaks.empty?
 
-        boundaries = cumulative_boundaries(playlist)
+        boundaries = MediaPlaylist.boundaries(playlist)
         raise "#{playlist} has no segments to place breaks against" if boundaries.empty?
 
         breaks.map do |brk|
@@ -23,37 +29,27 @@ module Hls
           landed = boundaries[index]
 
           if (landed - wanted).abs > tolerance
-            raise "break #{brk.requested} requested at #{round6(wanted)}s but the nearest is #{round6(landed)}s."
+            raise "break #{requested_formatted(brk.requested).inspect} requested at #{round6(wanted)}s but the nearest is #{round6(landed)}s."
           end
 
-          {
-            RequestedTime: round6(brk.requested.to_f),
+          entry = {
+            RequestedTime: requested_formatted(brk.requested),
             ActualTime: round6(landed),
             InsertAfterSegmentIndex: index
           }
+          removed = brk.respond_to?(:removed) && brk.removed
+          entry[:RemovedDuration] = round6(removed.to_f) if removed
+          entry
         end
       end
 
-      def cumulative_boundaries(playlist)
-        total = 0.0
-        out = []
-        File.foreach(playlist) do |line|
-          next unless (m = line.match(/\A#EXTINF:([\d.]+)/))
-          total += m[1].to_f
-          out << total
-        end
-        out
+      def requested_formatted(requested)
+        return round6(requested.to_f) unless requested.is_a?(Array)
+        requested.map { |t| t && round6(t.to_f) }
       end
 
       def closest_index(boundaries, wanted)
         boundaries.each_with_index.min_by { |b, _| (b - wanted).abs }.last
-      end
-
-      private
-
-      # Matches how boundary times are expressed everywhere else.
-      def round6(value)
-        value.round(6)
       end
     end
   end

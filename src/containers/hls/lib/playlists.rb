@@ -2,6 +2,9 @@
 
 require "json"
 require_relative "break_report"
+require_relative "media_playlist"
+require_relative "probe"
+require_relative "timing"
 
 module Hls
   # Writes the master playlists
@@ -103,25 +106,13 @@ module Hls
     # the byterange lengths is exact and cheap -- no need to re-probe the media.
     # Peak is the worst single segment, which is what BANDWIDTH means.
     def measure(playlist)
-      duration = nil
-      peak = 0
-      total_duration = 0.0
-      total_bytes = 0
+      ranged = MediaPlaylist.segments(File.join(@dir, playlist)).select(&:byterange)
+      raise "#{playlist} has no byterange segments" if ranged.empty?
 
-      File.foreach(File.join(@dir, playlist)) do |line|
-        if (m = line.match(/\A#EXTINF:([\d.]+)/))
-          duration = m[1].to_f
-        elsif (m = line.match(/\A#EXT-X-BYTERANGE:(\d+)@/)) && duration
-          bytes = m[1].to_i
-          rate = bytes * 8 / duration
-          peak = rate if rate > peak
-          total_duration += duration
-          total_bytes += bytes
-          duration = nil
-        end
-      end
-      raise "#{playlist} has no byterange segments" if total_duration.zero?
-
+      peak = ranged.map { |s| s.byterange[0] * 8 / s.duration }.max
+      total_bytes = ranged.sum { |s| s.byterange[0] }
+      # Added in order, not with #sum: its compensated float sum can move the truncated average.
+      total_duration = ranged.inject(0.0) { |t, s| t + s.duration }
       {peak: peak.to_i, average: (total_bytes * 8 / total_duration).to_i}
     end
 
@@ -203,7 +194,7 @@ module Hls
     # Per playlist rather than computed once: hls.rb compares the video rungs to each
     # other but not audio; this will catch drifted audio renditions
     def segment_indexes_for_breaks(playlist, tolerance)
-      ends = BreakReport.cumulative_boundaries(File.join(@dir, playlist))
+      ends = MediaPlaylist.boundaries(File.join(@dir, playlist))
       raise "#{playlist} has no segments to place breaks against" if ends.empty?
 
       @breaks.map do |b|
@@ -211,7 +202,7 @@ module Hls
         gap = (ends[index] - b).abs
         if gap > tolerance
           raise "#{playlist} has no segment boundary at ad break #{b}s: nearest is " \
-                "#{ends[index].round(6)}s, #{(gap * 1000).round(3)}ms away"
+                "#{Timing.round6(ends[index])}s, #{(gap * 1000).round(3)}ms away"
         end
         index
       end
@@ -230,14 +221,7 @@ module Hls
     end
 
     def required_target_duration(playlist)
-      longest = 0.0
-      File.foreach(File.join(@dir, playlist)) do |line|
-        if (m = line.match(/\A#EXTINF:([\d.]+)/))
-          v = m[1].to_f
-          longest = v if v > longest
-        end
-      end
-      half_up(longest)
+      half_up(MediaPlaylist.segments(File.join(@dir, playlist)).map(&:duration).max || 0.0)
     end
 
     # Explicit, so it does not look like an accident of Float#round's default.
@@ -316,14 +300,9 @@ module Hls
     # Per-variant video attributes read off the encoded stream, or nil for an
     # audio-only rendition.
     def video_properties(media)
-      # Array form, not backticks: no shell, so a path with spaces or shell
-      # metacharacters cannot break or be injected.
-      out = IO.popen([
-        "ffprobe", "-v", "error", "-select_streams", "v:0", "-show_entries",
+      out = Probe.run(File.join(@dir, media),
         "stream=width,height,profile,level,r_frame_rate,color_transfer",
-        "-of", "default=nw=1:nk=0", File.join(@dir, media),
-        err: File::NULL
-      ], &:read)
+        stream: "v:0", format: "default=nw=1:nk=0")
       fields = out.lines.filter_map do |l|
         k, _, v = l.strip.partition("=")
         [k, v] unless v.empty?

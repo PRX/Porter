@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 require "json"
+require_relative "timing"
 
 module Hls
   # Computes the segment-boundary layout for an asset with ad breaks.
@@ -72,6 +73,8 @@ module Hls
     Break = Struct.new(:requested, :at)
 
     class << self
+      include Timing
+
       # audio_grain is one audio frame in seconds (1024/48000 for AAC-LC at 48 kHz).
       def build(duration:, target:, fps:, hls_time:, breaks: [], max_seg: nil,
         min_segment: hls_time, audio_grain: nil)
@@ -88,7 +91,7 @@ module Hls
           raise "hls_time (#{hls_time.to_f}s) is longer than the segment target (#{target.to_f}s)"
         end
 
-        requested = breaks.map { |b| [b, quantize_one(b, fps)] }
+        requested = breaks.map { |b| [b, quantize(b, fps)] }
 
         # check for breaks that just won't work
         reject_unusable_breaks(requested, duration, fps)
@@ -241,19 +244,6 @@ module Hls
         end
 
         additions.empty? ? bounds : (bounds + additions).uniq.sort
-      end
-
-      def exact(value)
-        Rational(value.to_s)
-      end
-
-      def quantize_one(break_time, fps)
-        b = exact(break_time)
-        Rational((b * fps).round) / fps
-      end
-
-      def fmt(rational)
-        format("%.6f", rational)
       end
     end
   end
