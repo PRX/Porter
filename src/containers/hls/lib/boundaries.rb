@@ -76,8 +76,9 @@ module Hls
       include Timing
 
       # audio_grain is one audio frame in seconds (1024/48000 for AAC-LC at 48 kHz).
+      # audio_priming is the audio encoder's priming delay in seconds.
       def build(duration:, target:, fps:, hls_time:, breaks: [], max_seg: nil,
-        min_segment: hls_time, audio_grain: nil)
+        min_segment: hls_time, audio_grain: nil, audio_priming: nil)
         # no floats; all Rational for exact math and rounding
         duration = exact(duration)
         target = exact(target)
@@ -123,9 +124,11 @@ module Hls
         keyframes = bounds.map { |b| quantized.include?(b) ? b - half : b }
 
         # the segment muxer cuts at the first audio frame at or after the time given,
-        # so biasing by half a frame turns that into the nearest frame to the boundary
+        # so biasing by half a frame turns that into the nearest frame to the boundary.
+        # It counts from the first packet, which is the priming delay before zero.
         half_audio = audio_grain.nil? ? Rational(0) : exact(audio_grain) / 2
-        audio_splits = bounds.map { |b| b - half_audio }
+        priming = audio_priming.nil? ? Rational(0) : exact(audio_priming)
+        audio_splits = bounds.map { |b| b - half_audio + priming }
 
         Layout.new(
           keyframes: keyframes.map { |b| fmt(b) },

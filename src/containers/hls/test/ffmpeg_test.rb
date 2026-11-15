@@ -191,6 +191,15 @@ describe Hls::FFmpeg do
       _(value_after(cmd, "-segment_times")).wont_include "90.483333"
     end
 
+    it "offsets every output's timestamps alike, so no muxer shifts its own" do
+      offset = Hls::FFmpeg::TS_OFFSET
+      # the ladder and trickplay, on the hls muxer
+      _(cmd.each_cons(2).count { |a, b| a == "-output_ts_offset" && b == offset }).must_equal 2
+      # audio, on the mpegts muxer inside the segment muxer
+      _(value_after(cmd, "-segment_format_options")).must_equal "output_ts_offset=#{offset}"
+      _(value_after(cmd, "-avoid_negative_ts")).must_equal "disabled"
+    end
+
     it "sets segment_time_delta to zero" do
       _(value_after(cmd, "-segment_time_delta")).must_equal "0"
     end
@@ -207,6 +216,20 @@ describe Hls::FFmpeg do
 
     it "forces the channel count the master playlist declares" do
       _(value_after(cmd, "-ac")).must_equal FFmpegTestSettings::AUDIO_CHANNELS
+    end
+  end
+
+  describe ".audio_priming" do
+    it "reads the priming delay from the encoder's first packet" do
+      # ffmpeg's aac; Apple's aac_at would be 2112
+      _(Hls::FFmpeg.audio_priming(FFmpegTestSettings)).must_equal 1024
+    end
+
+    it "fails loudly when the probe encode does" do
+      broken = Module.new { include FFmpegTestSettings }
+      broken.const_set(:AUDIO_SAMPLE_RATE, "0")
+      err = _ { Hls::FFmpeg.audio_priming(broken) }.must_raise StandardError
+      _(err.message).must_match(/priming delay/)
     end
   end
 

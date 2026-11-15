@@ -142,7 +142,8 @@ begin
       breaks: edit.breaks.map(&:boundary_time),
       max_seg: preset::MAX_SEG,
       min_segment: preset::MIN_SEGMENT,
-      audio_grain: Rational(preset::AUDIO_FRAME_SAMPLES, preset::AUDIO_SAMPLE_RATE.to_i)
+      audio_grain: Rational(preset::AUDIO_FRAME_SAMPLES, preset::AUDIO_SAMPLE_RATE.to_i),
+      audio_priming: Rational(Hls::FFmpeg.audio_priming(preset), preset::AUDIO_SAMPLE_RATE.to_i)
     )
   rescue RuntimeError => e
     raise unless edit.cut?

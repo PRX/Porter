@@ -94,6 +94,22 @@ describe "hls.rb" do
       _(labels).must_equal %w[480P AUDIO IFRAME]
     end
 
+    it "starts audio its priming delay before video, on one timeline" do
+      # Each muxer shifting its own stream to zero would start them all together,
+      # leaving audio late by its priming and x264 video late by its B-frame delay.
+      self.class.completed
+      first_pts = %w[480p.ts iframe.ts audio.ts].map do |name|
+        out, = Open3.capture2("ffprobe", "-v", "error", "-show_entries", "packet=pts", "-of", "csv=p=0",
+          "-read_intervals", "%+#1", File.join(self.class.out_dir(:complete), name))
+        out.to_i
+      end
+      video, iframe, audio = first_pts
+      _(iframe).must_equal video
+      # the encoder's priming at 48kHz, in 90kHz ticks
+      priming = Hls::FFmpeg.audio_priming(Presets::StandardPodcast2026::V1)
+      _(video - audio).must_equal priming * 90_000 / 48_000
+    end
+
     it "uploads each rendition's media and playlist, plus both masters" do
       keys = self.class.completed.uploaded.map { |u| u[:key] }.sort
       _(keys).must_equal %w[

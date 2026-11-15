@@ -1,5 +1,6 @@
 # frozen_string_literal: true
 
+require "open3"
 require_relative "timing"
 
 module Hls
@@ -24,6 +25,12 @@ module Hls
   # The I-frame only variant makes keyframes every .5s, so it should be close enough for SSAI -
   # yeah, it's possible it could be up to .25s off, but for trickplay/scrubbing, that's fine and valid.
   class FFmpeg
+    # Seconds added to every output's timestamps. Encoders start below zero (AAC by its
+    # priming samples, x264 by its B-frame delay) and each muxer would otherwise shift
+    # its own stream up to zero by a different amount, putting audio and video out of
+    # sync. The same offset on every output keeps them above zero, so nothing shifts.
+    TS_OFFSET = "1"
+
     # rungs        -- [{height:, size:, bitrate:}] selected for this source
     # layout       -- Hls::Boundaries::Layout
     # settings     -- the preset
@@ -66,6 +73,35 @@ module Hls
       [selected, skipped]
     end
 
+    # The audio encode, shared with the priming probe so both run the same encoder.
+    def self.audio_encode(settings)
+      [
+        ["-c:a", "aac"],
+        ["-b:a", settings::AUDIO_BITRATE],
+        # Forced, not inherited: a 5.1 source would otherwise stay 5.1 while the
+        # master playlist declares CHANNELS from this same constant, so the
+        # playlist would misdescribe the stream.
+        ["-ac", settings::AUDIO_CHANNELS],
+        ["-ar", settings::AUDIO_SAMPLE_RATE]
+      ]
+    end
+
+    # Samples the audio encoder emits before the audio starts. Encoders differ (1024 for
+    # ffmpeg's aac, 2112 for Apple's), so a short encode of silence asks this one: it
+    # stamps its first packet that far before zero.
+    def self.audio_priming(settings)
+      cmd = ["ffmpeg", "-hide_banner", "-loglevel", "error", "-f", "lavfi",
+        "-i", "anullsrc=r=#{settings::AUDIO_SAMPLE_RATE}", "-t", "0.1",
+        audio_encode(settings), "-f", "framecrc", "-"].flatten
+      stdout, stderr, status = Open3.capture3(*cmd)
+      first = stdout.lines.reject { |l| l.start_with?("#") }.first.to_s
+      pts = Integer(first.split(",")[2].to_s.strip, exception: false)
+      unless status.success? && pts && pts <= 0
+        raise StandardError, "Could not measure the audio encoder's priming delay: #{stderr.strip}"
+      end
+      -pts
+    end
+
     private
 
     def filter_complex
@@ -83,10 +119,10 @@ module Hls
     # Removes the AdBreaks ranges from video and audio before anything else sees them,
     # so every rung, trickplay and the audio rendition share one edited timeline.
     #
-    # Cut points go to trim as frame and sample counts, not seconds: after fps one
-    # video pts is one frame, and after aresample one audio pts is one sample, so a cut
-    # at 12.533333s is start_pts=376 (30fps) and start_pts=601600 (48kHz). Seconds
-    # would need decimals, and setpts=PTS-0.666667/TB can give two frames the same pts.
+    # trim gets cut points as frame and sample counts, not seconds: fps sets the video
+    # time base to one frame, and aresample sets the audio's to one sample, so a cut at
+    # 12.533333s is start_pts=376 (30fps) and start_pts=601600 (48kHz). Seconds would
+    # need decimals, and setpts=PTS-0.666667/TB can give two frames the same pts.
     # concat lays each span after the last, so spans are rebased to start at 0 -- by
     # their own source start, which also keeps the source's A/V offset in the first span.
     def cut_stage
@@ -210,19 +246,18 @@ module Hls
     #
     # -segment_time_delta 0 because there is no keyframe-snapping slop to absorb:
     # every audio frame is a candidate split point, so the muxer lands on the first
-    # frame at or after each target. Residual drift versus video is bounded by one
-    # AAC frame (1024 samples, 21.33ms at 48kHz).
+    # frame at or after each target, counted from its first packet. Boundaries biases
+    # the targets so that is the frame nearest each video boundary, within half an
+    # AAC frame (512 samples, 10.67ms at 48kHz).
     def audio_output
       [
         ["-map", @keep ? "[acut]" : "0:a:0"],
-        ["-c:a", "aac"],
-        ["-b:a", @s::AUDIO_BITRATE],
-        # Forced, not inherited: a 5.1 source would otherwise stay 5.1 while the
-        # master playlist declares CHANNELS from this same constant, so the
-        # playlist would misdescribe the stream.
-        ["-ac", @s::AUDIO_CHANNELS],
-        ["-ar", @s::AUDIO_SAMPLE_RATE],
+        self.class.audio_encode(@s),
         ["-f", "segment"],
+        # The offset goes on the inner mpegts muxer: the segment muxer times its list
+        # from zero, so an offset on it would be added to the first part's duration.
+        ["-avoid_negative_ts", "disabled"],
+        ["-segment_format_options", "output_ts_offset=#{TS_OFFSET}"],
         ["-segment_times", @layout.audio_splits.join(",")],
         ["-segment_time_delta", "0"],
         ["-segment_format", "mpegts"],
@@ -237,6 +272,7 @@ module Hls
     def hls_muxer(hls_time:)
       [
         ["-f", "hls"],
+        ["-output_ts_offset", TS_OFFSET],
         ["-hls_time", hls_time.to_s],
         ["-hls_playlist_type", "vod"],
         ["-hls_list_size", "0"],
