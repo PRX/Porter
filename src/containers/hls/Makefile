@@ -25,4 +25,12 @@ hls-local-docker:
 	  --entrypoint ruby porter-hls \
 	  test/harness/run_local.rb /samples/$(notdir $(SOURCE)) /out '$(BREAKS)'
 
-.PHONY: bootstrap test hls-local hls-local-docker
+# Check A/V sync across AdBreaks cuts: test/scripts/av_sync.rb.
+hls-av-sync:
+	bundle exec ruby test/scripts/av_sync.rb
+
+hls-av-sync-docker:
+	docker build -t porter-hls .
+	docker run --rm --entrypoint ruby porter-hls test/scripts/av_sync.rb
+
+.PHONY: bootstrap test hls-local hls-local-docker hls-av-sync hls-av-sync-docker

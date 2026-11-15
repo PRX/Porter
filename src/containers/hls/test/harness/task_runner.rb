@@ -10,7 +10,7 @@ require "tmpdir"
 # Runs hls.rb with the AWS edges faked, so the entrypoint can be driven from a
 # test or from the local harness.
 #
-# Shared by test/hls_test.rb and test/harness/run_local.rb.
+# Shared by test/hls_test.rb, test/harness/run_local.rb and test/scripts/av_sync.rb.
 module TaskRunner
   CONTAINER = File.expand_path("../..", __dir__)
 
